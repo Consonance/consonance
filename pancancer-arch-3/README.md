@@ -7,5 +7,14 @@ framework to run Docker containers for the PanCancer project.
 
 ## Building
 
+## Dependencies
+
+### RabbitMQ
+
+Just use Docker, see https://registry.hub.docker.com/_/rabbitmq/
+
+    docker pull rabbitmq
+    docker run -d -e RABBITMQ_NODENAME=my-rabbit --name some-rabbit rabbitmq:3
+
 ## Testing
 
