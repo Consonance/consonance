@@ -36,6 +36,13 @@ Use Docker, see https://registry.hub.docker.com/_/rabbitmq/
 
 TODO: need to figure out how to connect this to my code e.g. what ports to connect to localhost on.
 
+###SQLlite
+
+Used to store state for the Coordinator and the VM Provisioner.
+
+* http://www.tutorialspoint.com/sqlite/sqlite_java.htm
+* https://bitbucket.org/xerial/sqlite-jdbc
+
 ## Testing
 
 ### Generating Jobs
