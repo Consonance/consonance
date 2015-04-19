@@ -38,3 +38,9 @@ TODO: need to figure out how to connect this to my code e.g. what ports to conne
 
 ## Testing
 
+### Generating Jobs
+
+    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json
+
+### Watching Queues
+
