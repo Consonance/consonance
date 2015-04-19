@@ -1,14 +1,11 @@
 {
-  "command" : "perl /usr/local/genetic-algo/1.0.0-genetic-algo/test_cmd.pl --arg ${int:arg1:0-80,increments:2,initial:2}",
+  "command" : "echo foo",
   "rabbitMQHost" : "localhost",
-  "rabbitMQUser" : "genetic_algo",
-  "rabbitMQPass" : "genetic_algo",
-  "rabbitMQQueueName" : "tvc_eval",
+  "rabbitMQUser" : "guest",
+  "rabbitMQPass" : "guest",
+  "rabbitMQQueueName" : "pancancer_arch_3",
   "overallRuntimeMaxHours" : 400,
   "overallIterationsMax" : 100,
-  "best_result_prob_dist" : "exp",
-  "best_result_prob_exp_b" : 0.8,
-  "next_param_prob_dist" : "normal",
-  "results" :  "/var/spool/genetic-algorithm.json",
-  "report" : "/var/log/generic-algorithm.report.log"
+  "results" :  "pancancer_arch_3.json",
+  "report" : "pancancer_arch_3.report.log"
 }

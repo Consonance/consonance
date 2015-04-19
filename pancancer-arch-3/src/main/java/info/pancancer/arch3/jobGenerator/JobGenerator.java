@@ -65,10 +65,13 @@ public class JobGenerator extends Base {
 
             // CONFIG
             queueName = (String) settings.get("rabbitMQQueueName");
+            System.out.println("QUEUE NAME: "+queueName);
 
             // SETUP QUEUE
             this.jchannel = u.setupQueue(settings, queueName + "_jobs");
             this.rchannel = u.setupQueue(settings, queueName + "_results");
+
+            System.out.println("RCHAN: "+rchannel);
 
             // RESULTS CONSUMER
             rconsumer = new QueueingConsumer(this.rchannel);
