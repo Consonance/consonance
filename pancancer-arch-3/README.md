@@ -38,7 +38,10 @@ TODO: need to figure out how to connect this to my code e.g. what ports to conne
 
 ###SQLlite
 
-http://www.tutorialspoint.com/sqlite/sqlite_java.htm
+Used to store state for the Coordinator and the VM Provisioner.
+
+* http://www.tutorialspoint.com/sqlite/sqlite_java.htm
+* https://bitbucket.org/xerial/sqlite-jdbc
 
 ## Testing
 
