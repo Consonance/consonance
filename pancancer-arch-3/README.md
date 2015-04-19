@@ -15,7 +15,13 @@ I'm trying to follow this guide for using Log4J so I can easily incorprate with 
 
 ### RabbitMQ
 
-Just use Docker, see https://registry.hub.docker.com/_/rabbitmq/
+#### Option 1 - Mac
+
+https://www.rabbitmq.com/install-homebrew.html
+
+#### Option 2 - Docker
+
+Use Docker, see https://registry.hub.docker.com/_/rabbitmq/
 
     docker pull rabbitmq
     docker run -d -e RABBITMQ_NODENAME=my-rabbit --name some-rabbit rabbitmq:3
