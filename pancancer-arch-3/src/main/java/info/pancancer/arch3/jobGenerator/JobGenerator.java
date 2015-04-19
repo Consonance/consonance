@@ -147,9 +147,27 @@ public class JobGenerator extends Base {
 
     private String makeNewJob(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
         // TODO: this will actually need to come from a file or web service
-        return ("{\n"
-          + "      \"command\" : \"echo foo\"\n"
-          + "    }");
+        return ("{ \n" +
+                "  \"uuid\": \"<uuid>\",\n" +
+                "  \"job\": {\n" +
+                "    \"job_hash\": \"<hash>\",\n" +
+                "    \"workflow_name\": \"Sanger\",\n" +
+                "    \"workflow_version\" : \"1.0.1\",\n" +
+                "    \"arguments\" : {\n" +
+                "      \"param1\": \"bar\",\n" +
+                "      \"param2\": \"1928\",\n" +
+                "      \"param3\": \"abc\"\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"provision\" : {\n" +
+                "    \"cores\": 8,\n" +
+                "    \"mem_gb\": 25,\n" +
+                "    \"storage_gb\": 1024,\n" +
+                "    \"bindle_profiles_to_run\": [\"<list_of_bindle_profiles_aka_anible_scripts>\"],\n" +
+                "    \"workflow_zips\": [\"http://s3/workflow.zip\"],\n" +
+                "    \"docker_images\": [\"seqware-whitestar\"]\n" +
+                "  }\n" +
+                "}");
     }
 
     private boolean exceededTimeOrJobs() {
