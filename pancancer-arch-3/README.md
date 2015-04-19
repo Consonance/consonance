@@ -17,7 +17,15 @@ I'm trying to follow this guide for using Log4J so I can easily incorprate with 
 
 #### Option 1 - Mac
 
-https://www.rabbitmq.com/install-homebrew.html
+See [install guide](https://www.rabbitmq.com/install-homebrew.html)
+
+Basically you do:
+
+    brew update
+    brew install rabbitmq
+    /usr/local/sbin/rabbitmq-server
+    
+And at that point the service is running.
 
 #### Option 2 - Docker
 
