@@ -34,5 +34,7 @@ Use Docker, see https://registry.hub.docker.com/_/rabbitmq/
     docker pull rabbitmq
     docker run -d -e RABBITMQ_NODENAME=my-rabbit --name some-rabbit rabbitmq:3
 
+TODO: need to figure out how to connect this to my code e.g. what ports to connect to localhost on.
+
 ## Testing
 
