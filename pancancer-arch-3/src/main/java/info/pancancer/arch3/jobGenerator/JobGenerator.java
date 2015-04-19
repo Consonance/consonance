@@ -25,23 +25,24 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import info.pancancer.arch3.Base;
 
 /**
  * Created by boconnor on 15-04-18.
  *
  * takes a --config option pointed to a config .json file
  */
-public class JobGenerator {
+public class JobGenerator extends Base {
 
     public JobGenerator(String configFile) {
-        
+
     }
 
     public static void main(String [] args)
     {
         OptionParser parser = new OptionParser();
         parser.accepts("config").withOptionalArg().ofType(String.class);
-        OptionSet options = parser.parse(argv);
+        OptionSet options = parser.parse(args);
 
         String configFile = null;
         if (options.has("config")) { configFile = (String)options.valueOf("config"); }
