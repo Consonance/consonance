@@ -37,6 +37,18 @@ public class Utilities extends Thread {
   private String outputFile = null;
   private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
 
+
+  // TODO: this will need to be moved into the Util and Worker classes
+      /*String cmd = (String) obj.get("command");
+      System.out.println("JOB: "+cmd);
+
+      Process p = new ProcessBuilder(cmd.split("\\s+")).start();
+      BufferedReader reader = new BufferedReader(new InputStreamReader((p.getInputStream())));
+      String currLine;
+      while((currLine = reader.readLine()) != null) {
+        result.append(currLine + "\n");
+      }*/
+
   public JSONObject parseJSONStr(String jsonStr) {
     JSONObject data = null;
 

@@ -13,12 +13,22 @@ import info.pancancer.arch3.utils.Utilities;
 
 /**
  * Created by boconnor on 15-04-18.
+ *
+ * This consumes the jobs and prepares messages for the VM and Job Queues.
+
+ It then monitors the results queue to see when jobs fail or finish.
+
+ Finally, for failed or finished workflows, it informats the VM about finished
+ VMs that can be terminated.
+ *
  */
 public class Coordinator extends Base {
 
   private JSONObject settings = null;
-  private Channel jchannel = null;
-  private Channel rchannel = null;
+  private Channel jobChannel = null;
+  private Channel resultsChannel = null;
+  private Channel vmChannel = null;
+  private Channel orderChannel = null;
   private Connection connection = null;
   private String queueName = null;
   private Utilities u = new Utilities();
@@ -40,13 +50,21 @@ public class Coordinator extends Base {
     try {
 
       settings = u.parseConfig(configFile);
+
       queueName = (String) settings.get("rabbitMQQueueName");
-      this.jchannel = u.setupQueue(settings, queueName+"_jobs");
-      this.rchannel = u.setupQueue(settings, queueName+"_results");
+      // read from
+      orderChannel = u.setupQueue(settings, queueName+"_orders");
+      // write to
+      jobChannel = u.setupQueue(settings, queueName+"_jobs");  // TODO: actually this one needs to be built on demand with full info
+      // write to
+      vmChannel = u.setupQueue(settings, queueName+"_vms");
+      // read from
+      resultsChannel = u.setupQueue(settings, queueName+"_results");
 
-      QueueingConsumer consumer = new QueueingConsumer(jchannel);
-      jchannel.basicConsume(queueName+"_jobs", true, consumer);
+      QueueingConsumer consumer = new QueueingConsumer(orderChannel);
+      orderChannel.basicConsume(queueName+"_orders", true, consumer);
 
+      // TODO: need threads that each read from orders and another that reads results
       while (true) {
 
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
@@ -56,10 +74,11 @@ public class Coordinator extends Base {
 
         // run the job
         String result = requestVm(message);
-        String result = runJob(message);
+        String result2 = requestJob(message);
 
-        // save results back in results queue
-        //reportResult(result);
+        // TODO need to take action on results in the queue as well
+        // read results back in results queue
+        //readResults(result);
 
         try {
           // pause
@@ -83,15 +102,18 @@ public class Coordinator extends Base {
 
   private String requestVm(String message) {
 
+    // TODO: should save information to persistant storage
+
     try {
 
-      Channel vmchannel = u.setupQueue(settings, queueName+"_vm_requests");
+      System.out.println("SENDING VM ORDER! "+queueName+"_vms");
 
-      System.out.println("SENDING VM ORDER! "+queueName+"_vm_requests");
+      int messages = vmChannel.queueDeclarePassive(queueName + "_vms").getMessageCount();
+      System.out.println("VM QUEUE SIZE: " + messages);
 
-      vmchannel.basicPublish("", queueName + "_vm_requests", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+      vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
 
-      System.out.println("  + RESULTS SENT BACK! "+queueName+"_vm_requests");
+      System.out.println(" + RESULTS SENT ! "+queueName+"_vms");
 
     } catch (IOException ex) {
       log.error(ex.toString());
@@ -101,12 +123,14 @@ public class Coordinator extends Base {
 
   }
 
-  private String runJob(String job) {
+  private String requestJob(String message) {
+
     StringBuffer result = new StringBuffer();
+
     try {
 
       // first process the command
-      JSONObject obj = u.parseJob(job);
+      JSONObject obj = u.parseJob(message);
 
       // - need to parse and enqueue into Job queue
       String workflowName = "";
@@ -122,45 +146,40 @@ public class Coordinator extends Base {
       memGb = (Long) provision.get("mem_gb");
       storageGb = (Long) provision.get("storage_gb");
 
-      Channel vmchannel = u.setupQueue(settings, queueName+"_job_requests_"+workflowName+"_"+workflowVersion+"_"+cores+"_"+memGb+"_"+storageGb);
+      // TODO: future feature...
+      // So this is strange, why does the queue name have all this info in it?  It's
+      // because we may have orders for the same workflow that actually need different resources
+      //Channel vmchannel = u.setupQueue(settings, queueName+"_job_requests_"+workflowName+"_"+workflowVersion+"_"+cores+"_"+memGb+"_"+storageGb);
 
-      System.out.println("SENDING JOB ORDER! "+queueName+"_job_requests_"+workflowName+"_"+workflowVersion+"_"+cores+"_"+memGb+"_"+storageGb);
+      System.out.println("SENDING JOB ORDER! "+queueName+"_jobs");
 
-      vmchannel.basicPublish("", queueName+"_job_requests_"+workflowName+"_"+workflowVersion+"_"+cores+"_"+memGb+"_"+storageGb,
-              MessageProperties.PERSISTENT_TEXT_PLAIN, job.getBytes());
+      int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
+      System.out.println("JOB QUEUE SIZE: " + messages);
 
-      System.out.println("  + RESULTS SENT BACK!");
+      jobChannel.basicPublish("", queueName+"_jobs",
+              MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
 
+      System.out.println("  + RESULTS SENT!");
 
-
-      // TODO: this will need to be moved into the Util and Worker classes
-      /*String cmd = (String) obj.get("command");
-      System.out.println("JOB: "+cmd);
-
-      Process p = new ProcessBuilder(cmd.split("\\s+")).start();
-      BufferedReader reader = new BufferedReader(new InputStreamReader((p.getInputStream())));
-      String currLine;
-      while((currLine = reader.readLine()) != null) {
-        result.append(currLine + "\n");
-      }*/
     } catch (IOException ex) {
       log.error(ex.toString());
     }
     return result.toString();
   }
 
+  // TODO: probably not needed
   private void reportResult(String result) {
     try {
 
       System.out.println("SENDING RESULTS BACK! "+queueName+"_results");
 
-      this.rchannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, result.getBytes());
+      resultsChannel.basicPublish("", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, result.getBytes());
 
       System.out.println("  + RESULTS SENT BACK! "+queueName+"_results");
 
 
     } catch (IOException ex) {
-      Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
+      log.error(ex.toString());
     }
   }
 

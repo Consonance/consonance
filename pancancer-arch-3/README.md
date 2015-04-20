@@ -7,15 +7,24 @@ framework to run Docker containers for the PanCancer project.
 
 ## Building
 
+Just a Java maven project so do the following:
+
+    mvn clean install
+
 ## Dependencies
+
+Eventually we will want everything in a single (or series) of Docker containers. This
+will make it much easy to redistribute but, for the time being, these can be installed
+on your development host directly.
+
+I'm focused on development on a Mac using HomeBrew, you will need to setup
+the dependencies using whatever system is appropriate for your environment.
 
 ### Log4J + Logstash
 
 I'm trying to follow this guide for using Log4J so I can easily incorprate with LogStash in the future: [guide](https://blog.dylants.com/2013/08/27/java-logging-creating-indexing-monitoring/).
 
 ### RabbitMQ
-
-#### Option 1 - Mac
 
 See [install guide](https://www.rabbitmq.com/install-homebrew.html)
 
@@ -24,17 +33,8 @@ Basically you do:
     brew update
     brew install rabbitmq
     /usr/local/sbin/rabbitmq-server
-    
+
 And at that point the service is running.
-
-#### Option 2 - Docker
-
-Use Docker, see https://registry.hub.docker.com/_/rabbitmq/
-
-    docker pull rabbitmq
-    docker run -d -e RABBITMQ_NODENAME=my-rabbit --name some-rabbit rabbitmq:3
-
-TODO: need to figure out how to connect this to my code e.g. what ports to connect to localhost on.
 
 ###SQLlite
 
@@ -45,9 +45,28 @@ Used to store state for the Coordinator and the VM Provisioner.
 
 ## Testing
 
-### Generating Jobs
+The following will let you test on a local box. This simulates a multiple machine/VM
+setup on a single box just using Java and RabbitMQ.  Eventually, this will just
+be one of multiple possible backends configured by the settings file. This single-machine,
+pure Java running example will be used for integration and other tests.
+
+### Job Generator
+
+This generates job orders on an infinite loop.
 
     java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json
 
-### Watching Queues
+### Coordinator
 
+This consumes the jobs and prepares messages for the VM and Job Queues.
+
+It then monitors the results queue to see when jobs fail or finish.
+
+Finally, for failed or finished workflows, it informats the VM about finished
+VMs that can be terminated.
+
+    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
+
+### Container Provisioner
+
+### Worker

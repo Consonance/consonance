@@ -53,8 +53,8 @@ public class JobGenerator extends Base {
             System.out.println("QUEUE NAME: "+queueName);
 
             // SETUP QUEUE
-            this.jchannel = u.setupQueue(settings, queueName + "_jobs");
-            this.rchannel = u.setupQueue(settings, queueName + "_results");
+            this.jchannel = u.setupQueue(settings, queueName + "_orders");
+            this.rchannel = u.setupQueue(settings, queueName + "_results"); // REMOVE
 
             System.out.println("RCHAN: "+rchannel);
 
@@ -129,7 +129,7 @@ public class JobGenerator extends Base {
     private String[] generateNewJobs(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
         ArrayList<String> jobs = new ArrayList<String>();
         try {
-            int messages = jchannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
+            int messages = jchannel.queueDeclarePassive(queueName + "_orders").getMessageCount();
             System.out.println("JOB QUEUE SIZE: " + messages);
             // if there are no messages then we'll want to add some new jobs
             if (messages < 10 && !exceededTimeOrJobs()) {
@@ -190,7 +190,7 @@ public class JobGenerator extends Base {
             try {
                 System.out.println("SENDING JOB:\n '" + msg + "'" + this.jchannel);
 
-                this.jchannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN, msg.getBytes());
+                this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN, msg.getBytes());
             } catch (IOException ex) {
                 log.error(ex.toString());
             }
