@@ -69,4 +69,19 @@ VMs that can be terminated.
 
 ### Container Provisioner
 
+    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
+
 ### Worker
+
+    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
+
+### Checking Results
+
+Temp object for helping with debugging.
+
+    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.CoordinatorResult --config conf/config.json
+
+## TODO
+
+* multi-client reading of queue seems problematic, not sure why, see https://www.rabbitmq.com/tutorials/tutorial-three-java.html
+* need job queues with different names based on the workflow and version they target, this will make it easier to run multiple workflow types at the same time

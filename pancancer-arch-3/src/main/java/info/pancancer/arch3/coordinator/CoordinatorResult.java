@@ -1,15 +1,13 @@
 package info.pancancer.arch3.coordinator;
 
 import com.rabbitmq.client.*;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import org.json.simple.JSONObject;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.utils.Utilities;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import org.json.simple.JSONObject;
+
+import java.io.IOException;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -22,7 +20,7 @@ import info.pancancer.arch3.utils.Utilities;
  VMs that can be terminated.
  *
  */
-public class Coordinator extends Base {
+public class CoordinatorResult extends Base {
 
   private JSONObject settings = null;
   private Channel jobChannel = null;
@@ -41,11 +39,11 @@ public class Coordinator extends Base {
 
     String configFile = null;
     if (options.has("config")) { configFile = (String)options.valueOf("config"); }
-    Coordinator c = new Coordinator(configFile);
+    CoordinatorResult c = new CoordinatorResult(configFile);
 
   }
 
-  private Coordinator(String configFile) {
+  private CoordinatorResult(String configFile) {
 
     try {
 
@@ -74,23 +72,12 @@ public class Coordinator extends Base {
       // TODO: need threads that each read from orders and another that reads results
       while (true) {
 
-        QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-        //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-        String message = new String(delivery.getBody());
-        System.out.println(" [x] Received job '" + message + "'");
 
-        // run the job
-        String result = requestVm(message);
-        String result2 = requestJob(message);
-
-        // TODO: need to take action on results in the queue as well
-        // read results back in results queue
-        // TODO: this will need to be in another thread
-        //readResults();
+        readResults();
 
         try {
           // pause
-          Thread.sleep(5000);
+          Thread.sleep(1000);
         } catch (InterruptedException ex) {
           log.error(ex.toString());
         }
@@ -99,8 +86,6 @@ public class Coordinator extends Base {
 
     } catch (IOException ex) {
       System.out.println(ex.toString()); ex.printStackTrace();
-    } catch (InterruptedException ex) {
-      log.error(ex.toString());
     } catch (ShutdownSignalException ex) {
       log.error(ex.toString());
     } catch (ConsumerCancelledException ex) {
@@ -182,10 +167,10 @@ public class Coordinator extends Base {
     try {
       QueueingConsumer consumer = new QueueingConsumer(resultsChannel);
       resultsChannel.basicConsume(queueName+"_results", true, consumer);
-      int tries = 2;
+      int tries = 1;
       while(tries > 0) {
         tries--;
-        QueueingConsumer.Delivery delivery = consumer.nextDelivery(10000);
+        QueueingConsumer.Delivery delivery = consumer.nextDelivery();
         if (delivery == null) {
           tries = 0;
           System.out.println("Came back null!!!");

@@ -132,7 +132,7 @@ public class JobGenerator extends Base {
             int messages = jchannel.queueDeclarePassive(queueName + "_orders").getMessageCount();
             System.out.println("JOB QUEUE SIZE: " + messages);
             // if there are no messages then we'll want to add some new jobs
-            if (messages < 10 && !exceededTimeOrJobs()) {
+            if (!exceededTimeOrJobs()) {
                 // TODO, actually generate new jobs if the job queue is empty
                 String newJob = makeNewJob(baseCmd, resultsArr, u);
                 if (newJob != null) { jobs.add(newJob); }
@@ -171,7 +171,11 @@ public class JobGenerator extends Base {
     }
 
     private boolean exceededTimeOrJobs() {
-        boolean dateResult = false;
+
+        // FIXME: hardcoded for testing
+        return(false);
+
+        /*boolean dateResult = false;
         Date curr = new Date();
         if (overallRuntimeMaxHours > 0) {
             long maxRuntime = overallRuntimeMaxHours * 60 * 60 * 1000;
@@ -182,7 +186,7 @@ public class JobGenerator extends Base {
         if (overallIterationsMax > 0) {
             itResult = this.currIterations > this.overallIterationsMax;
         }
-        return (dateResult || itResult);
+        return (dateResult || itResult); */
     }
 
     private void enqueueNewJobs(String[] initialJobs) {
