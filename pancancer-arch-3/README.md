@@ -94,5 +94,24 @@ To cleanup and delete all queues:
 
 ## TODO
 
-* multi-client reading of queue seems problematic, not sure why, see https://www.rabbitmq.com/tutorials/tutorial-three-java.html
+### Soon
+
+* finalize the message format between the layers, serializers
+* figure out impl class strategy and make an impl for the the ContainerProvisioner that just launches threads for workers
+    * worker threads
+    * workers that fail, are successful, etc
+    * flesh out worker to run docker and provide heartbeat, resources, etc
+* pick a storage mechanism for state used by the VMProvisioner and Coordinator
+* lifecycle of jobs
+    * enqueue, monitor, launch VMs, status, etc
+    * see diagram
+
+
+### Future
+
+* utilities for clearing the status persistence storage and the message queues if you need to "start over"
+* really great logging/reporting that's human readable
+* ability to turn off the VMProvisioner in case a human makes the worker nodes
+* log files loaded into the ELK stack for visualization
+* Docker container for the system, integration with Architecture Setup 3.0
 * need job queues with different names based on the workflow and version they target, this will make it easier to run multiple workflow types at the same time

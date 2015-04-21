@@ -7,5 +7,7 @@
   "overallRuntimeMaxHours" : 400,
   "overallIterationsMax" : 100,
   "results" :  "pancancer_arch_3.json",
-  "report" : "pancancer_arch_3.report.log"
+  "report" : "pancancer_arch_3.report.log",
+  "time_until_vm_lost_minutes" : "120",
+  "time_until_workflow_lost_minutes" : "120"
 }
