@@ -81,6 +81,17 @@ Temp object for helping with debugging.
 
     java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.CoordinatorResult --config conf/config.json
 
+## Cleanup
+
+To cleanup and delete all queues:
+
+    for i in `/usr/local/sbin/rabbitmqadmin list queues name | grep -v name | awk '{print $2}'`; \
+      do echo $i; \
+      /usr/local/sbin/rabbitmqadmin delete queue name="$i"; \
+      done;
+    /usr/local/sbin/rabbitmqadmin list queues name
+
+
 ## TODO
 
 * multi-client reading of queue seems problematic, not sure why, see https://www.rabbitmq.com/tutorials/tutorial-three-java.html

@@ -45,8 +45,7 @@ public class Worker extends Base {
             jobChannel = u.setupQueue(settings, queueName+"_jobs");
 
             // write to
-            resultsChannel = u.setupQueue(settings, queueName+"_results");
-            //resultsChannel.exchangeDeclare("results", "fanout");
+            resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
 
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
             jobChannel.basicConsume(queueName+"_jobs", true, consumer);
@@ -89,7 +88,7 @@ public class Worker extends Base {
     // TOOD: obviously, this will need to launch something using Youxia in the future
     private void launchJob(String message) {
         try {
-            resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            resultsChannel.basicPublish(queueName+"_results", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
             //resultsChannel.basicPublish("results", "", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
         } catch (IOException e) {
             log.error(e.toString());
@@ -98,7 +97,8 @@ public class Worker extends Base {
 
     private void finishJob(String message) {
         try {
-            resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            resultsChannel.basicPublish(queueName+"_results", "", null, message.getBytes());
+            //resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
         } catch (IOException e) {
             log.error(e.toString());
         }

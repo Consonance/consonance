@@ -173,6 +173,32 @@ public class Utilities extends Thread {
     return (channel);
 
   }
+
+  public Channel setupMultiQueue(JSONObject settings, String queue) {
+
+    String server = (String) settings.get("rabbitMQHost");
+    String user = (String) settings.get("rabbitMQUser");
+    String pass = (String) settings.get("rabbitMQPass");
+
+    Channel channel = null;
+
+    try {
+
+      ConnectionFactory factory = new ConnectionFactory();
+      factory.setHost(server);
+      factory.setUsername(user);
+      factory.setPassword(pass);
+      Connection connection = factory.newConnection();
+      channel = connection.createChannel();
+      channel.exchangeDeclare(queue, "fanout");
+
+    } catch (Exception ex) {
+      //Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
+      System.out.println(ex.toString());
+    }
+    return (channel);
+
+  }
   
   /** 
    * This is here to exclusively do cleanup after a cntl+c e.g. persist to disk

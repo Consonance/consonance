@@ -26,7 +26,6 @@ public class Coordinator extends Base {
 
   private JSONObject settings = null;
   private Channel jobChannel = null;
-  private Channel resultsChannel = null;
   private Channel vmChannel = null;
   private Channel orderChannel = null;
   private Connection connection = null;
@@ -59,14 +58,6 @@ public class Coordinator extends Base {
       // write to
       vmChannel = u.setupQueue(settings, queueName+"_vms");
       // read from
-
-
-
-      resultsChannel = u.setupQueue(settings, queueName+"_results");
-      // this declares a queue exchange where multiple consumers get the same message: https://www.rabbitmq.com/tutorials/tutorial-three-java.html
-      //resultsChannel.exchangeDeclare("results", "fanout");
-      //String multiReadQueueName = resultsChannel.queueDeclare().getQueue();
-      //resultsChannel.queueBind(multiReadQueueName, "results", "");
 
       QueueingConsumer consumer = new QueueingConsumer(orderChannel);
       orderChannel.basicConsume(queueName+"_orders", true, consumer);
@@ -173,50 +164,6 @@ public class Coordinator extends Base {
       log.error(ex.toString());
     }
     return result.toString();
-  }
-
-  private void readResults () {
-
-    System.out.println("ATTEMPTING TO READ RESULTS!");
-
-    try {
-      QueueingConsumer consumer = new QueueingConsumer(resultsChannel);
-      resultsChannel.basicConsume(queueName+"_results", true, consumer);
-      int tries = 2;
-      while(tries > 0) {
-        tries--;
-        QueueingConsumer.Delivery delivery = consumer.nextDelivery(10000);
-        if (delivery == null) {
-          tries = 0;
-          System.out.println("Came back null!!!");
-        } else {
-          String message = new String(delivery.getBody());
-          System.out.println(" [x] Received RESULT '" + message + "'");
-        }
-      }
-    } catch (IOException e) {
-      log.error(e.toString());
-    } catch (InterruptedException e) {
-      log.error(e.toString());
-    }
-
-
-  }
-
-  // TODO: probably not needed
-  private void reportResult(String result) {
-    try {
-
-      System.out.println("SENDING RESULTS BACK! "+queueName+"_results");
-
-      resultsChannel.basicPublish("", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, result.getBytes());
-
-      System.out.println("  + RESULTS SENT BACK! "+queueName+"_results");
-
-
-    } catch (IOException ex) {
-      log.error(ex.toString());
-    }
   }
 
 }

@@ -30,6 +30,7 @@ public class CoordinatorResult extends Base {
   private Connection connection = null;
   private String queueName = null;
   private Utilities u = new Utilities();
+  private QueueingConsumer resultsConsumer = null;
 
   public static void main(String[] argv) throws Exception {
 
@@ -60,11 +61,14 @@ public class CoordinatorResult extends Base {
 
 
 
-      resultsChannel = u.setupQueue(settings, queueName+"_results");
+      resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
       // this declares a queue exchange where multiple consumers get the same message: https://www.rabbitmq.com/tutorials/tutorial-three-java.html
-      //resultsChannel.exchangeDeclare("results", "fanout");
-      //String multiReadQueueName = resultsChannel.queueDeclare().getQueue();
-      //resultsChannel.queueBind(multiReadQueueName, "results", "");
+      String resultsQueue = resultsChannel.queueDeclare().getQueue();
+      resultsChannel.queueBind(resultsQueue, queueName+"_results", "");
+
+
+      resultsConsumer = new QueueingConsumer(resultsChannel);
+      resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
 
       QueueingConsumer consumer = new QueueingConsumer(orderChannel);
       orderChannel.basicConsume(queueName+"_orders", true, consumer);
@@ -75,12 +79,12 @@ public class CoordinatorResult extends Base {
 
         readResults();
 
-        try {
+        /*try {
           // pause
           Thread.sleep(1000);
         } catch (InterruptedException ex) {
           log.error(ex.toString());
-        }
+        }*/
 
       }
 
@@ -165,12 +169,11 @@ public class CoordinatorResult extends Base {
     System.out.println("ATTEMPTING TO READ RESULTS!");
 
     try {
-      QueueingConsumer consumer = new QueueingConsumer(resultsChannel);
-      resultsChannel.basicConsume(queueName+"_results", true, consumer);
-      int tries = 1;
+
+      int tries = 10;
       while(tries > 0) {
         tries--;
-        QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+        QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
         if (delivery == null) {
           tries = 0;
           System.out.println("Came back null!!!");
@@ -179,8 +182,6 @@ public class CoordinatorResult extends Base {
           System.out.println(" [x] Received RESULT '" + message + "'");
         }
       }
-    } catch (IOException e) {
-      log.error(e.toString());
     } catch (InterruptedException e) {
       log.error(e.toString());
     }
@@ -189,7 +190,7 @@ public class CoordinatorResult extends Base {
   }
 
   // TODO: probably not needed
-  private void reportResult(String result) {
+  /*private void reportResult(String result) {
     try {
 
       System.out.println("SENDING RESULTS BACK! "+queueName+"_results");
@@ -202,6 +203,6 @@ public class CoordinatorResult extends Base {
     } catch (IOException ex) {
       log.error(ex.toString());
     }
-  }
+  }*/
 
 }

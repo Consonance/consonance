@@ -47,8 +47,7 @@ public class ContainerProvisioner extends Base {
             vmChannel = u.setupQueue(settings, queueName+"_vms");
 
             // write to
-            resultsChannel = u.setupQueue(settings, queueName+"_results");
-            //resultsChannel.exchangeDeclare("results", "fanout");
+            resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
 
             QueueingConsumer consumer = new QueueingConsumer(vmChannel);
             vmChannel.basicConsume(queueName+"_vms", true, consumer);
@@ -89,7 +88,8 @@ public class ContainerProvisioner extends Base {
     // TOOD: obviously, this will need to launch something using Youxia in the future
     private void launchVM(String message) {
         try {
-            resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            //resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            resultsChannel.basicPublish(queueName+"_results", "", null, message.getBytes());
         } catch (IOException e) {
             log.error(e.toString());
         }
