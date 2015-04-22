@@ -93,10 +93,10 @@ To cleanup and delete all queues:
 
 ## Diagrams
 
-![Alt text](arch.png)
-![Alt text](error.png)
-![Alt text](flow.png)
-![Alt text](state.png)
+![Alt text](img/arch.png)
+![Alt text](img/error.png)
+![Alt text](img/flow.png)
+![Alt text](img/state.png)
 
 ## TODO
 
