@@ -5,6 +5,8 @@ import com.rabbitmq.client.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+
+import info.pancancer.arch3.beans.Order;
 import org.json.simple.JSONObject;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -60,7 +62,7 @@ public class Coordinator extends Base {
       // read from
 
       QueueingConsumer consumer = new QueueingConsumer(orderChannel);
-      orderChannel.basicConsume(queueName+"_orders", true, consumer);
+      orderChannel.basicConsume(queueName + "_orders", true, consumer);
 
       // TODO: need threads that each read from orders and another that reads results
       while (true) {
@@ -71,8 +73,10 @@ public class Coordinator extends Base {
         System.out.println(" [x] Received job '" + message + "'");
 
         // run the job
-        String result = requestVm(message);
-        String result2 = requestJob(message);
+        Order order = new Order().fromJSON(message);
+
+        String result = requestVm(order.getProvision().toJSON());
+        String result2 = requestJob(order.getJob().toJSON());
 
         // TODO: need to take action on results in the queue as well
         // read results back in results queue
@@ -127,23 +131,6 @@ public class Coordinator extends Base {
     StringBuffer result = new StringBuffer();
 
     try {
-
-      // first process the command
-      JSONObject obj = u.parseJob(message);
-
-      // - need to parse and enqueue into Job queue
-      String workflowName = "";
-      String workflowVersion = "";
-      long cores = 0;
-      long memGb = 0;
-      long storageGb = 0;
-      JSONObject job = (JSONObject) obj.get("job");
-      workflowName = (String) job.get("workflow_name");
-      workflowVersion = (String) job.get("workflow_version");
-      JSONObject provision = (JSONObject) obj.get("provision");
-      cores = (Long) provision.get("cores");
-      memGb = (Long) provision.get("mem_gb");
-      storageGb = (Long) provision.get("storage_gb");
 
       // TODO: future feature...
       // So this is strange, why does the queue name have all this info in it?  It's

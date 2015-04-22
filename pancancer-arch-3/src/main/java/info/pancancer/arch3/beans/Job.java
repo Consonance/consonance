@@ -1,5 +1,8 @@
 package info.pancancer.arch3.beans;
 
+import info.pancancer.arch3.utils.Utilities;
+import org.json.simple.JSONObject;
+
 import java.util.Map;
 import java.util.UUID;
 
@@ -8,7 +11,8 @@ import java.util.UUID;
  */
 public class Job {
 
-    String orderUUID = UUID.randomUUID().toString().toLowerCase();
+    Utilities u = new Utilities();
+    String uuid = UUID.randomUUID().toString().toLowerCase();
     String workflow;
     String workflowVersion;
     String jobHash;
@@ -19,21 +23,47 @@ public class Job {
         this.workflowVersion = workflowVersion;
         this.jobHash = jobHash;
         this.ini = ini;
+    }
 
+    public Job() {
+        super();
     }
 
     public String toJSON () {
 
-        String j = "{" +
-                "    \"job_hash\": \"<hash>\",\n" +
-                        "    \"workflow_name\": \"Sanger\",\n" +
-                        "    \"workflow_version\" : \"1.0.1\",\n" +
-                        "    \"arguments\" : {\n" +
-                        "      \"param1\": \"bar\",\n" +
-                        "      \"param2\": \"1928\",\n" +
-                        "      \"param3\": \"abc\"\n" +
-                        "    }\n";
-        return j;
+        StringBuffer j = new StringBuffer();
+        j.append("{" +
+        "\"message_type\": \"job\",\n" +
+        "\"job_hash\": \""+jobHash+"\",\n" +
+        "\"job_uuid\": \""+uuid+"\",\n" +
+        "\"workflow_name\": \""+workflow+"\",\n" +
+        "\"workflow_version\" : \""+workflowVersion+"\",\n" +
+        "\"arguments\" : {\n");
+
+        boolean first = true;
+        for (String key : ini.keySet()) {
+            if (first) { first = false; } else { j.append(",\n"); }
+            j.append("\""+key+"\": \""+ini.get(key)+"\"");
+        }
+        j.append("\n}\n");
+        j.append("}\n");
+        return(j.toString());
+    }
+
+    public Job fromJSON(String json) {
+
+        JSONObject obj = u.parseJob(json);
+        workflow = (String) obj.get("workflow_name");
+        workflowVersion = (String) obj.get("workflow_version");
+        jobHash = (String) obj.get("job_hash");
+        uuid = (String) obj.get("uuid");
+        JSONObject provision = (JSONObject) obj.get("arguments");
+        ini.clear();
+        for (Object key : provision.keySet()) {
+            ini.put((String)key, (String)provision.get(key));
+        }
+        return(this);
+
     }
 
 }

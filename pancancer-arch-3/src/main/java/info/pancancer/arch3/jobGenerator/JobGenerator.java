@@ -5,10 +5,14 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.UUID;
 
+import info.pancancer.arch3.beans.Order;
 import org.json.simple.JSONObject;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -136,8 +140,8 @@ public class JobGenerator extends Base {
             // if there are no messages then we'll want to add some new jobs
             if (!exceededTimeOrJobs()) {
                 // TODO, actually generate new jobs if the job queue is empty
-                String newJob = makeNewJob(baseCmd, resultsArr, u);
-                if (newJob != null) { jobs.add(newJob); }
+                Order newOrder = makeNewOrder(baseCmd, resultsArr, u);
+                if (newOrder != null) { jobs.add(newOrder.toJSON()); }
             }
 
         } catch (IOException ex) {
@@ -147,31 +151,38 @@ public class JobGenerator extends Base {
 
     }
 
-    private String makeNewJob(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
-        // TODO: this will actually need to come from a file or web service
-        String uuid = UUID.randomUUID().toString().toLowerCase();
-        return ("{ \n" +
-                "  \"message_type\": \"order\",\n" +
-                "  \"order_uuid\": \""+uuid+"\",\n" +
-                "  \"job\": {\n" +
-                "    \"job_hash\": \"<hash>\",\n" +
-                "    \"workflow_name\": \"Sanger\",\n" +
-                "    \"workflow_version\" : \"1.0.1\",\n" +
-                "    \"arguments\" : {\n" +
-                "      \"param1\": \"bar\",\n" +
-                "      \"param2\": \"1928\",\n" +
-                "      \"param3\": \"abc\"\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"provision\" : {\n" +
-                "    \"cores\": 8,\n" +
-                "    \"mem_gb\": 25,\n" +
-                "    \"storage_gb\": 1024,\n" +
-                "    \"bindle_profiles_to_run\": [\"<list_of_bindle_profiles_aka_anible_scripts>\"],\n" +
-                "    \"workflow_zips\": [\"http://s3/workflow.zip\"],\n" +
-                "    \"docker_images\": [\"seqware-whitestar\"]\n" +
-                "  }\n" +
-                "}");
+    // TODO: this will actually need to come from a file or web service
+    private Order makeNewOrder(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
+
+        try {
+
+            // TODO: will need to make this from parameters in INI
+            String uuid = UUID.randomUUID().toString().toLowerCase();
+            byte[] hash = MessageDigest.getInstance("MD5").digest(uuid.getBytes());
+            String hashStr = new String(hash);
+
+            // TODO: this will come from a web service or file
+            HashMap<String, String> hm = new HashMap<String, String>();
+            hm.put("param1", "bar");
+            hm.put("param2", "foo");
+
+            int cores = 8;
+            int memGb = 128;
+            int storageGb = 1024;
+            ArrayList<String> a = new ArrayList<String>();
+            a.add("ansible_playbook_path");
+
+            Order newOrder = new Order("DEWrapperWorkflow", "1.0.0", hashStr, hm, cores, memGb, storageGb, a);
+
+            return(newOrder);
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            log.error(e.toString());
+        }
+
+        return(null);
+
     }
 
     private boolean exceededTimeOrJobs() {
