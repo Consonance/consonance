@@ -7,6 +7,8 @@ import com.rabbitmq.client.QueueingConsumer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.UUID;
+
 import org.json.simple.JSONObject;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -147,8 +149,10 @@ public class JobGenerator extends Base {
 
     private String makeNewJob(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
         // TODO: this will actually need to come from a file or web service
+        String uuid = UUID.randomUUID().toString().toLowerCase();
         return ("{ \n" +
-                "  \"uuid\": \"<uuid>\",\n" +
+                "  \"message_type\": \"order\",\n" +
+                "  \"order_uuid\": \""+uuid+"\",\n" +
                 "  \"job\": {\n" +
                 "    \"job_hash\": \"<hash>\",\n" +
                 "    \"workflow_name\": \"Sanger\",\n" +
