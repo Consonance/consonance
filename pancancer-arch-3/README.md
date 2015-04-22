@@ -91,6 +91,12 @@ To cleanup and delete all queues:
       done;
     /usr/local/sbin/rabbitmqadmin list queues name
 
+## Diagrams
+
+![Alt text](arch.png)
+![Alt text](error.png)
+![Alt text](flow.png)
+![Alt text](state.png)
 
 ## TODO
 
