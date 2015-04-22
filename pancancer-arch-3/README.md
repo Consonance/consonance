@@ -43,6 +43,27 @@ Used to store state for the Coordinator and the VM Provisioner.
 * http://www.tutorialspoint.com/sqlite/sqlite_java.htm
 * https://bitbucket.org/xerial/sqlite-jdbc
 
+### PostgreSQL
+
+Install with Homebrew
+
+    boconnor@odm-boconnor ~$ brew install postgresql
+
+Now create a user:
+
+    boconnor@odm-boconnor ~$ createuser -P -s -e queue
+    Enter password for new role:
+    Enter it again:
+    CREATE ROLE queue PASSWORD 'md5f8ceabb22d9297bd28382151f35a2252' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
+
+Now create a DB:
+
+    boconnor@odm-boconnor ~$ createdb queue_status
+
+Connect to the DB if you need to:
+
+    boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue -W queue_status
+
 ## Testing
 
 The following will let you test on a local box. This simulates a multiple machine/VM
