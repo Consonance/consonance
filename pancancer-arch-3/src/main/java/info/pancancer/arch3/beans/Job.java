@@ -3,6 +3,7 @@ package info.pancancer.arch3.beans;
 import info.pancancer.arch3.utils.Utilities;
 import org.json.simple.JSONObject;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -56,9 +57,9 @@ public class Job {
         workflow = (String) obj.get("workflow_name");
         workflowVersion = (String) obj.get("workflow_version");
         jobHash = (String) obj.get("job_hash");
-        uuid = (String) obj.get("uuid");
+        uuid = (String) obj.get("job_uuid");
         JSONObject provision = (JSONObject) obj.get("arguments");
-        ini.clear();
+        ini = new HashMap<String, String>();
         for (Object key : provision.keySet()) {
             ini.put((String)key, (String)provision.get(key));
         }

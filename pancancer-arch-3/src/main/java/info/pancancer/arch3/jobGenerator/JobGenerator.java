@@ -40,6 +40,21 @@ public class JobGenerator extends Base {
     private int overallIterationsMax = 0;
     private int overallRuntimeMaxHours = 0;
 
+
+    public static void main(String [] args)
+    {
+        OptionParser parser = new OptionParser();
+        parser.accepts("config").withOptionalArg().ofType(String.class);
+        OptionSet options = parser.parse(args);
+
+        String configFile = null;
+        if (options.has("config")) { configFile = (String)options.valueOf("config"); }
+
+        JobGenerator jg = new JobGenerator(configFile);
+
+        jg.log.info("MASTER FINISHED, EXITING!");
+    }
+
     public JobGenerator(String configFile) {
         try {
 
@@ -75,7 +90,7 @@ public class JobGenerator extends Base {
                 // keep track of the iterations
                 currIterations++;
 
-                System.out.println("GENERATING NEW JOBS");
+                System.out.println("\nGENERATING NEW JOBS\n");
                 // TODO: this is fake, in a real program this is being read from JSONL file or web service
                 // check to see if new results are available and/or if the work queue is empty
                 String[] newJobs = generateNewJobs("", resultsArr, u);
@@ -84,14 +99,14 @@ public class JobGenerator extends Base {
                 if (newJobs.length > 0) {
                     enqueueNewJobs(newJobs);
                 } else {
-                    System.out.println("CAN'T FIND NEW STATE TO TRY, LIKELY CONVERGED");
+                    //System.out.println("CAN'T FIND NEW STATE TO TRY, LIKELY CONVERGED");
                     moreJobs = false;
                 }
 
                 // decide to exit
                 if (exceededTimeOrJobs() || !moreJobs) {
                     moreJobs = false;
-                    System.out.println("TIME OR JOBS EXCEEDED, EXITING");
+                    //System.out.println("TIME OR JOBS EXCEEDED, EXITING");
                 } else {
                     try {
                         // pause
@@ -114,20 +129,6 @@ public class JobGenerator extends Base {
         } catch (IOException ex) {
             log.error(ex.toString());
         }
-    }
-
-    public static void main(String [] args)
-    {
-        OptionParser parser = new OptionParser();
-        parser.accepts("config").withOptionalArg().ofType(String.class);
-        OptionSet options = parser.parse(args);
-
-        String configFile = null;
-        if (options.has("config")) { configFile = (String)options.valueOf("config"); }
-
-        JobGenerator jg = new JobGenerator(configFile);
-
-        jg.log.info("MASTER FINISHED, EXITING!");
     }
 
     // PRIVATE
@@ -154,34 +155,25 @@ public class JobGenerator extends Base {
     // TODO: this will actually need to come from a file or web service
     private Order makeNewOrder(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
 
-        try {
+        // TODO: will need to make this from parameters in INI
+        String uuid = UUID.randomUUID().toString().toLowerCase();
+        String hashStr = u.digest(uuid);
 
-            // TODO: will need to make this from parameters in INI
-            String uuid = UUID.randomUUID().toString().toLowerCase();
-            byte[] hash = MessageDigest.getInstance("MD5").digest(uuid.getBytes());
-            String hashStr = new String(hash);
+        // TODO: this will come from a web service or file
+        HashMap<String, String> hm = new HashMap<String, String>();
+        hm.put("param1", "bar");
+        hm.put("param2", "foo");
 
-            // TODO: this will come from a web service or file
-            HashMap<String, String> hm = new HashMap<String, String>();
-            hm.put("param1", "bar");
-            hm.put("param2", "foo");
+        int cores = 8;
+        int memGb = 128;
+        int storageGb = 1024;
+        ArrayList<String> a = new ArrayList<String>();
+        a.add("ansible_playbook_path");
 
-            int cores = 8;
-            int memGb = 128;
-            int storageGb = 1024;
-            ArrayList<String> a = new ArrayList<String>();
-            a.add("ansible_playbook_path");
+        Order newOrder = new Order("DEWrapperWorkflow", "1.0.0", hashStr, hm, cores, memGb, storageGb, a);
 
-            Order newOrder = new Order("DEWrapperWorkflow", "1.0.0", hashStr, hm, cores, memGb, storageGb, a);
+        return(newOrder);
 
-            return(newOrder);
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            log.error(e.toString());
-        }
-
-        return(null);
 
     }
 
@@ -207,7 +199,7 @@ public class JobGenerator extends Base {
     private void enqueueNewJobs(String[] initialJobs) {
         for (String msg : initialJobs) {
             try {
-                System.out.println("SENDING JOB:\n '" + msg + "'" + this.jchannel);
+                System.out.println("\nSENDING JOB:\n '" + msg + "'\n" + this.jchannel+" \n");
 
                 this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN, msg.getBytes());
             } catch (IOException ex) {

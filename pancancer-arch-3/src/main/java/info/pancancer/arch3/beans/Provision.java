@@ -1,9 +1,10 @@
 package info.pancancer.arch3.beans;
 
 import info.pancancer.arch3.utils.Utilities;
-import net.minidev.json.JSONArray;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,9 +59,9 @@ public class Provision {
         cores = (Long) obj.get("cores");
         memGb = (Long) obj.get("mem_gb");
         storageGb = (Long) obj.get("storage_gb");
-        uuid = (String) obj.get("uuid");
+        uuid = (String) obj.get("provision_uuid");
         JSONArray playbooks = (JSONArray) obj.get("bindle_profiles_to_run");
-        ansiblePlaybooks.clear();
+        ansiblePlaybooks = new ArrayList<String>();
         for (Object key : playbooks) {
             ansiblePlaybooks.add((String)key);
         }

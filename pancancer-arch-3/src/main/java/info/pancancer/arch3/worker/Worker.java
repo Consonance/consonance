@@ -51,7 +51,11 @@ public class Worker extends Base {
             jobChannel.basicConsume(queueName+"_jobs", true, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (true) {
+            boolean cont = true;
+            while (cont) {
+
+                // loop once
+                cont = false;
 
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);

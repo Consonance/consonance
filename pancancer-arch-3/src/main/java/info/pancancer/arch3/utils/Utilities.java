@@ -16,11 +16,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -313,5 +316,21 @@ public class Utilities extends Thread {
       Logger.getLogger(Utilities.class.getName()).log(Level.SEVERE, null, ex);
     }
     return(false);
+  }
+
+  public String digest(String plaintext) {
+    String result = null;
+    MessageDigest m = null;
+    try {
+      m = MessageDigest.getInstance("MD5");
+      m.reset();
+      m.update(plaintext.getBytes());
+      byte[] digest = m.digest();
+      BigInteger bigInt = new BigInteger(1,digest);
+      result = bigInt.toString(16);
+    } catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    return(result);
   }
 }

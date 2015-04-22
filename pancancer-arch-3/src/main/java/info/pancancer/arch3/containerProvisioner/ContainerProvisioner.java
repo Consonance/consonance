@@ -60,8 +60,14 @@ public class ContainerProvisioner extends Base {
                 String message = new String(delivery.getBody());
                 System.out.println(" [x] Received VM request '" + message + "'");
 
-                // TODO: this will obviously get much more complicated when integrated with Youxia
-                // launch VM
+
+
+                /*
+                So the logic for this is this tool dequeues requests and stores an order in the storage system.
+                That order's initial state is queued.  It then does a query to find the count of queued VMs
+                and then sees if that is > the max number of VMs to launch.  if
+                 */
+                // TODO: this will obviously get much more complicated when integrated with Youxia launch VM
                 String result = "{ \"VM-launched-message\": {} }";
                 launchVM(result);
 
@@ -90,6 +96,12 @@ public class ContainerProvisioner extends Base {
         try {
             //resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
             resultsChannel.basicPublish(queueName+"_results", "", null, message.getBytes());
+
+            /*
+            As a temporary test this code will launch a worker thread which will run for one job then
+            exit.  This will allow us to simulate
+             */
+
         } catch (IOException e) {
             log.error(e.toString());
         }
