@@ -9,6 +9,7 @@ import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
+import info.pancancer.arch3.worker.Worker;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
@@ -134,13 +135,12 @@ class ProvisionVMs {
             }
         }
 
-    }
+        // TOOD: obviously, this will need to launch something using Youxia in the future
+        private void launchVM(String message) {
 
+            new Worker(configFile).start();
 
-    // TOOD: obviously, this will need to launch something using Youxia in the future
-    private void launchVM(String message) {
-
-
+        }
 
     }
 

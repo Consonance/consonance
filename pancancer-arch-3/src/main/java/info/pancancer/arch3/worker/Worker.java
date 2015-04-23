@@ -6,14 +6,17 @@ import info.pancancer.arch3.utils.Utilities;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 /**
  * Created by boconnor on 15-04-18.
  */
-public class Worker extends Base {
+public class Worker extends Thread {
 
+    protected final Logger log = LoggerFactory.getLogger(getClass());
     private JSONObject settings = null;
     private Channel resultsChannel = null;
     private Channel jobChannel = null;
@@ -30,19 +33,22 @@ public class Worker extends Base {
         String configFile = null;
         if (options.has("config")) { configFile = (String)options.valueOf("config"); }
         Worker w = new Worker(configFile);
+        w.start();
 
     }
 
-    private Worker(String configFile) {
+    public Worker(String configFile) {
 
+        settings = u.parseConfig(configFile);
+        queueName = (String) settings.get("rabbitMQQueueName");
+
+    }
+
+    public void run () {
         try {
 
-            settings = u.parseConfig(configFile);
-
-            queueName = (String) settings.get("rabbitMQQueueName");
-
             // read from
-            jobChannel = u.setupQueue(settings, queueName+"_jobs");
+            jobChannel = u.setupQueue(settings, queueName + "_jobs");
 
             // write to
             resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
