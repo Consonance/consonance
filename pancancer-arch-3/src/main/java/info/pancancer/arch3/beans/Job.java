@@ -12,13 +12,14 @@ import java.util.UUID;
  */
 public class Job {
 
-    Utilities u = new Utilities();
-    String uuid = UUID.randomUUID().toString().toLowerCase();
-    String workflow;
-    String workflowVersion;
-    String jobHash;
-    Map<String, String> ini;
-    String state;
+
+    private String state;
+    private Utilities u = new Utilities();
+    private String uuid = UUID.randomUUID().toString().toLowerCase();
+    private String workflow;
+    private String workflowVersion;
+    private String jobHash;
+    private Map<String, String> ini;
 
     public Job(String workflow, String workflowVersion, String jobHash, Map<String, String>  ini) {
         this.workflow = workflow;
@@ -123,4 +124,5 @@ public class Job {
     public void setState(String state) {
         this.state = state;
     }
+
 }
