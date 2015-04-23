@@ -68,6 +68,11 @@ Connect to the DB if you need to:
 
     boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue -W queue_status
 
+Drop the DB if you need to clear it out:
+
+    boconnor@odm-boconnor pancancer-arch-3$ dropdb queue_status
+    boconnor@odm-boconnor ~$ createdb queue_status
+
 ## Testing
 
 The following will let you test on a local box. This simulates a multiple machine/VM

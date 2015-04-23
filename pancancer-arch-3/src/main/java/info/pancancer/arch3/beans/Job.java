@@ -18,6 +18,7 @@ public class Job {
     String workflowVersion;
     String jobHash;
     Map<String, String> ini;
+    String state;
 
     public Job(String workflow, String workflowVersion, String jobHash, Map<String, String>  ini) {
         this.workflow = workflow;
@@ -67,4 +68,59 @@ public class Job {
 
     }
 
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public Map<String, String> getIni() {
+        return ini;
+    }
+
+    public String getIniStr() {
+        StringBuffer sb = new StringBuffer();
+        for (String key : this.ini.keySet()) {
+            sb.append(key+"="+this.ini.get(key));
+        }
+        return(sb.toString());
+    }
+
+    public void setIni(Map<String, String> ini) {
+        this.ini = ini;
+    }
+
+    public String getJobHash() {
+        return jobHash;
+    }
+
+    public void setJobHash(String jobHash) {
+        this.jobHash = jobHash;
+    }
+
+    public String getWorkflowVersion() {
+        return workflowVersion;
+    }
+
+    public void setWorkflowVersion(String workflowVersion) {
+        this.workflowVersion = workflowVersion;
+    }
+
+    public String getWorkflow() {
+        return workflow;
+    }
+
+    public void setWorkflow(String workflow) {
+        this.workflow = workflow;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
 }
