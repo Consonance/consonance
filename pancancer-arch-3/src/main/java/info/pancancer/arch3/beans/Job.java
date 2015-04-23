@@ -12,12 +12,12 @@ import java.util.UUID;
  */
 public class Job {
 
-    Utilities u = new Utilities();
-    String uuid = UUID.randomUUID().toString().toLowerCase();
-    String workflow;
-    String workflowVersion;
-    String jobHash;
-    Map<String, String> ini;
+    private Utilities u = new Utilities();
+    private String uuid = UUID.randomUUID().toString().toLowerCase();
+    private String workflow;
+    private String workflowVersion;
+    private String jobHash;
+    private Map<String, String> ini;
 
     public Job(String workflow, String workflowVersion, String jobHash, Map<String, String>  ini) {
         this.workflow = workflow;
@@ -66,5 +66,45 @@ public class Job {
         return(this);
 
     }
+
+	public String getWorkflow() {
+		return workflow;
+	}
+
+	public void setWorkflow(String workflow) {
+		this.workflow = workflow;
+	}
+
+	public String getWorkflowVersion() {
+		return workflowVersion;
+	}
+
+	public void setWorkflowVersion(String workflowVersion) {
+		this.workflowVersion = workflowVersion;
+	}
+
+	public String getJobHash() {
+		return jobHash;
+	}
+
+	public void setJobHash(String jobHash) {
+		this.jobHash = jobHash;
+	}
+
+	public Map<String, String> getIni() {
+		return ini;
+	}
+
+	public void setIni(Map<String, String> ini) {
+		this.ini = ini;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public String setUuid(String uuid) {
+		return this.uuid = uuid;
+	}
 
 }
