@@ -19,7 +19,6 @@ public class ContainerProvisioner extends Base {
     private JSONObject settings = null;
     private Channel resultsChannel = null;
     private Channel vmChannel = null;
-    private Connection connection = null;
     private String queueName = null;
     private Utilities u = new Utilities();
 
@@ -44,7 +43,7 @@ public class ContainerProvisioner extends Base {
             queueName = (String) settings.get("rabbitMQQueueName");
 
             // read from
-            vmChannel = u.setupQueue(settings, queueName+"_vms");
+            vmChannel = u.setupQueue(settings, queueName + "_vms");
 
             // write to
             resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
@@ -106,5 +105,6 @@ public class ContainerProvisioner extends Base {
             log.error(e.toString());
         }
     }
+
 
 }

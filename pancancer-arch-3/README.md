@@ -60,6 +60,10 @@ Now create a DB:
 
     boconnor@odm-boconnor ~$ createdb queue_status
 
+Setup a schema for the DB:
+
+    boconnor@odm-boconnor pancancer-arch-3$ psql -h 127.0.0.1 -U queue -W queue_status < sql/schema.sql
+
 Connect to the DB if you need to:
 
     boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue -W queue_status
@@ -91,6 +95,10 @@ VMs that can be terminated.
 ### Container Provisioner
 
     java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
+
+Now with threads:
+
+    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
 
 ### Worker
 
