@@ -195,10 +195,10 @@ class ProvisionVMs {
                     // if this is true need to launch another container
                     if (numberRunningContainers < maxWorkers) {
                         // TODO: this will obviously get much more complicated when integrated with Youxia launch VM
-                        String result = "{ \"VM-launched-message\": {} }";
-                        launchVM(result);
+                        String uuid = db.getPendingProvisionUUID();
+                        launchVM(uuid);
                         // this just updates one that's pending
-                        db.updatePendingProvision();
+                        db.updatePendingProvision(uuid);
                     }
 
                     try {
@@ -218,9 +218,9 @@ class ProvisionVMs {
         }
 
         // TOOD: obviously, this will need to launch something using Youxia in the future
-        private void launchVM(String message) {
+        private void launchVM(String uuid) {
 
-            new Worker(configFile).start();
+            new Worker(configFile, uuid).start();
 
         }
 

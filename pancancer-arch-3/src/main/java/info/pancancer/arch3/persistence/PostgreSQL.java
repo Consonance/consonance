@@ -51,12 +51,35 @@ public class PostgreSQL extends Base {
         }
     }
 
-    public void updatePendingProvision() {
+    public String getPendingProvisionUUID() {
+
+        String uuid = null;
+
         try {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = 'running' where provision_id in (select provision_id from provision where status = 'pending' limit 1)";
+            String sql = "select provision_uuid from provision where status = 'pending' limit 1";
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                uuid = rs.getString(1);
+            }
+            rs.close();
+            stmt.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return(uuid);
+    }
+
+    public void updatePendingProvision(String uuid) {
+        try {
+
+            Statement stmt = conn.createStatement();
+
+            String sql = "update provision set status = 'running' where provision_id in (select provision_id from provision where status = 'pending' and provision_uuid = '"+uuid+"')";
             stmt.execute(sql);
             stmt.close();
 

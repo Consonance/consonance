@@ -23,6 +23,7 @@ public class Worker extends Thread {
     private Connection connection = null;
     private String queueName = null;
     private Utilities u = new Utilities();
+    private String uuid = null;
 
     public static void main(String[] argv) throws Exception {
 
@@ -32,15 +33,18 @@ public class Worker extends Thread {
 
         String configFile = null;
         if (options.has("config")) { configFile = (String)options.valueOf("config"); }
-        Worker w = new Worker(configFile);
-        w.start();
+
+        // TODO: can't run on the command line anymore!
+        //Worker w = new Worker(configFile);
+        //w.start();
 
     }
 
-    public Worker(String configFile) {
+    public Worker(String configFile, String uuid) {
 
         settings = u.parseConfig(configFile);
         queueName = (String) settings.get("rabbitMQQueueName");
+        this.uuid = uuid;
 
     }
 
@@ -70,9 +74,9 @@ public class Worker extends Thread {
 
                 // TODO: this will obviously get much more complicated when integrated with Youxia
                 // launch VM
-                String result = "{ \"Job-running-message\": {} }";
+                String result = "{ \"Job-running-message\": { \"provision-uuid\": \""+uuid+"\" } }";
                 launchJob(result);
-                result = "{ \"Job-finished-message\": {} }";
+                result = "{ \"Job-finished-message\": { \"provision-uuid\": \""+uuid+"\" } }";
                 finishJob(result);
 
                 try {
@@ -107,7 +111,7 @@ public class Worker extends Thread {
 
     private void finishJob(String message) {
         try {
-            resultsChannel.basicPublish(queueName+"_results", "", null, message.getBytes());
+            resultsChannel.basicPublish(queueName + "_results", "", null, message.getBytes());
             //resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
         } catch (IOException e) {
             log.error(e.toString());
