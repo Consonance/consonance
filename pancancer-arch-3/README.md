@@ -99,7 +99,7 @@ VMs that can be terminated.
 
 ### Container Provisioner
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
+    # java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
 
 Now with threads:
 
@@ -145,7 +145,10 @@ To cleanup and delete all queues:
 * lifecycle of jobs
     * enqueue, monitor, launch VMs, status, etc
     * see diagram
-
+* need to add
+    * error checking
+    * improve logging
+    * cleanup of messaging and DB handles
 
 ### Future
 
