@@ -4,6 +4,7 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.utils.Utilities;
 import org.json.simple.JSONObject;
 
 import java.sql.*;
@@ -79,7 +80,21 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = 'running' where provision_id in (select provision_id from provision where status = 'pending' and provision_uuid = '"+uuid+"')";
+            String sql = "update provision set status = '"+Utilities.RUNNING+"' where provision_id in (select provision_id from provision where status = '"+Utilities.PENDING+"' and provision_uuid = '"+uuid+"')";
+            stmt.execute(sql);
+            stmt.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void finishWork(String uuid) {
+        try {
+
+            Statement stmt = conn.createStatement();
+
+            String sql = "update provision set status = '"+ Utilities.SUCCESS+"' where provision_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 

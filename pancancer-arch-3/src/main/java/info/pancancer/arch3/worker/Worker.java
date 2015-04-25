@@ -2,6 +2,7 @@ package info.pancancer.arch3.worker;
 
 import com.rabbitmq.client.*;
 import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -74,17 +75,20 @@ public class Worker extends Thread {
 
                 // TODO: this will obviously get much more complicated when integrated with Youxia
                 // launch VM
-                String result = "{ \"Job-running-message\": { \"provision-uuid\": \""+uuid+"\" } }";
+                Status s = new Status(uuid, u.RUNNING, "vm_status_message", "vm is running");
+                String result = s.toJSON();
                 launchJob(result);
-                result = "{ \"Job-finished-message\": { \"provision-uuid\": \""+uuid+"\" } }";
-                finishJob(result);
 
                 try {
                     // pause
-                    Thread.sleep(5000);
+                    Thread.sleep(10000);
                 } catch (InterruptedException ex) {
                     log.error(ex.toString());
                 }
+
+                s = new Status(uuid, u.SUCCESS, "vm_status_message", "vm is finished and can be reaped");
+                result = s.toJSON();
+                finishJob(result);
 
             }
 

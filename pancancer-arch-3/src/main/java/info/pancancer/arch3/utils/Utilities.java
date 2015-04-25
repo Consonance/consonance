@@ -45,6 +45,7 @@ public class Utilities extends Thread {
   public final static String LOST = "lost";
   public final static String TERMINATED = "terminated";
   public final static String PROVISIONING = "provisioning";
+  // message types
   public final static String QUEUED = "queued";
 
 

@@ -7,6 +7,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
@@ -47,7 +48,7 @@ public class ContainerProvisionerThreads extends Base {
         ProvisionVMs t2 = new ProvisionVMs(configFile);
 
         // TODO
-        // CleanupVMs t3 = new CleanupVMs(configFile);
+        CleanupVMs t3 = new CleanupVMs(configFile);
     }
 
     private ContainerProvisionerThreads(String configFile) {
@@ -231,6 +232,95 @@ class ProvisionVMs {
     }
 }
 
+
+/**
+ * This dequeues the VM requests and stages them in the DB as pending so I can
+ * keep a count of what's running/pending/finished.
+ */
+class CleanupVMs {
+
+    private JSONObject settings = null;
+    private Channel resultsChannel = null;
+    private Channel vmChannel = null;
+    private String queueName = null;
+    private Utilities u = new Utilities();
+    private QueueingConsumer resultsConsumer = null;
+
+    private Inner inner;
+
+    private class Inner extends Thread {
+
+        private String configFile = null;
+
+        Inner(String config) {
+            super(config);
+            configFile = config;
+            start();
+        }
+
+        public void run() {
+            try {
+
+                settings = u.parseConfig(configFile);
+
+                queueName = (String) settings.get("rabbitMQQueueName");
+
+                // read from
+                resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
+                // this declares a queue exchange where multiple consumers get the same message: https://www.rabbitmq.com/tutorials/tutorial-three-java.html
+                String resultsQueue = resultsChannel.queueDeclare().getQueue();
+                resultsChannel.queueBind(resultsQueue, queueName+"_results", "");
+                resultsConsumer = new QueueingConsumer(resultsChannel);
+                resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
+
+                // writes to DB as well
+                PostgreSQL db = new PostgreSQL(settings);
+
+
+                // TODO: need threads that each read from orders and another that reads results
+                while (true) {
+
+                    QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
+                    //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                    String message = new String(delivery.getBody());
+                    System.out.println(" [x] Received VM request '" + message + "'");
+
+                    // now parse it as JSONObj
+                    Status status = new Status().fromJSON(message);
+
+                    // now update that DB record to be exited
+                    // TODO: this is acutally finishing the VM and not the work
+                    if (status.getState().equals(u.SUCCESS)) {
+                        db.finishWork(status.getUuid());
+                    }
+
+                    try {
+                        // pause
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ex) {
+                        //log.error(ex.toString());
+                    }
+
+                }
+
+            } catch (IOException ex) {
+                System.out.println(ex.toString());
+                ex.printStackTrace();
+            } catch (InterruptedException ex) {
+                //log.error(ex.toString());
+            } catch (ShutdownSignalException ex) {
+                //log.error(ex.toString());
+            } catch (ConsumerCancelledException ex) {
+                //log.error(ex.toString());
+            }
+        }
+
+    }
+
+    public CleanupVMs(String configFile) {
+        inner = new Inner(configFile);
+    }
+}
 
 
 
