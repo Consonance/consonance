@@ -2,6 +2,7 @@ package info.pancancer.arch3.worker;
 
 import com.rabbitmq.client.*;
 import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
 import joptsimple.OptionParser;
@@ -24,7 +25,7 @@ public class Worker extends Thread {
     private Connection connection = null;
     private String queueName = null;
     private Utilities u = new Utilities();
-    private String uuid = null;
+    private String vmUuid = null;
 
     public static void main(String[] argv) throws Exception {
 
@@ -41,16 +42,19 @@ public class Worker extends Thread {
 
     }
 
-    public Worker(String configFile, String uuid) {
+    public Worker(String configFile, String vmUuid) {
 
         settings = u.parseConfig(configFile);
         queueName = (String) settings.get("rabbitMQQueueName");
-        this.uuid = uuid;
+        this.vmUuid = vmUuid;
 
     }
 
     public void run () {
         try {
+
+            // the VM UUID
+            System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
 
             // read from
             jobChannel = u.setupQueue(settings, queueName + "_jobs");
@@ -66,19 +70,24 @@ public class Worker extends Thread {
             while (cont) {
 
                 // loop once
+                // TODO: this will be configurable so it could process multiple jobs before exiting
                 cont = false;
 
+                // get the job order
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 String message = new String(delivery.getBody());
                 System.out.println(" [x] Received Jobs request '" + message + "'");
 
-                // TODO: this will obviously get much more complicated when integrated with Youxia
+                Job job = new Job().fromJSON(message);
+
+                // TODO: this will obviously get much more complicated when integrated with Docker
                 // launch VM
-                Status s = new Status(uuid, u.RUNNING, "vm_status_message", "vm is running");
+                Status s = new Status(vmUuid, job.getUuid(), u.RUNNING, u.JOB_MESSAGE_TYPE, "job is starting");
                 String result = s.toJSON();
                 launchJob(result);
 
+                // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own thread, harvesting STDERR/STDOUT periodically
                 try {
                     // pause
                     Thread.sleep(10000);
@@ -86,7 +95,7 @@ public class Worker extends Thread {
                     log.error(ex.toString());
                 }
 
-                s = new Status(uuid, u.SUCCESS, "vm_status_message", "vm is finished and can be reaped");
+                s = new Status(vmUuid, job.getUuid(), u.SUCCESS, "vm_status_message", "vm is finished and can be reaped");
                 result = s.toJSON();
                 finishJob(result);
 

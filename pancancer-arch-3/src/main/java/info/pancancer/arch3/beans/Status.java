@@ -15,11 +15,13 @@ public class Status {
     private Utilities u = new Utilities();
     private String type = null;
     private String state = null;
-    private String uuid = null;
+    private String vmUuid = null;
+    private String jobUuid = null;
     private String message = null;
 
-    public Status(String uuid, String state, String type, String message) {
-        this.uuid = uuid;
+    public Status(String vmUuid, String jobUuid, String state, String type, String message) {
+        this.vmUuid = vmUuid;
+        this.jobUuid = jobUuid;
         this.state = state;
         this.type = type;
         this.message = message;
@@ -33,7 +35,8 @@ public class Status {
 
         StringBuffer j = new StringBuffer();
         j.append("{" +
-                "\"uuid\": \""+uuid+"\",\n" +
+                "\"vmUuid\": \""+vmUuid+"\",\n" +
+                "\"jobUuid\": \""+jobUuid+"\",\n" +
                 "\"type\": \""+type+"\",\n" +
                 "\"state\": \""+state+"\",\n" +
                 "\"message\": \""+message+"\"\n" +
@@ -44,7 +47,8 @@ public class Status {
     public Status fromJSON(String json) {
 
         JSONObject obj = u.parseJob(json);
-        uuid = (String) obj.get("uuid");
+        jobUuid = (String) obj.get("jobUuid");
+        vmUuid = (String) obj.get("vmUuid");
         state = (String) obj.get("state");
         message = (String) obj.get("message");
         type = (String) obj.get("type");
@@ -69,19 +73,27 @@ public class Status {
         this.state = state;
     }
 
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     public String getMessage() {
         return message;
     }
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public void setVmUuid(String vmUuid) {
+        this.vmUuid = vmUuid;
+    }
+
+    public String getJobUuid() {
+        return jobUuid;
+    }
+
+    public void setJobUuid(String jobUuid) {
+        this.jobUuid = jobUuid;
     }
 }
