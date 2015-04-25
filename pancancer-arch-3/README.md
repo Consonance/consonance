@@ -67,11 +67,11 @@ Now create a DB:
 
 Setup a schema for the DB:
 
-    boconnor@odm-boconnor pancancer-arch-3$ psql -h 127.0.0.1 -U queue -W queue_status < sql/schema.sql
+    boconnor@odm-boconnor pancancer-arch-3$ psql -h 127.0.0.1 -U queue_user -W queue_status < sql/schema.sql
 
 Connect to the DB if you need to:
 
-    boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue -W queue_status
+    boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue_user -W queue_status
 
 Drop the DB if you need to clear it out:
 
