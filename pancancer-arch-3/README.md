@@ -51,7 +51,8 @@ Install with Homebrew
 
 Now create a user:
 
-    boconnor@odm-boconnor ~$ createuser -P -s -e queue
+    # using 'queue' as the password by default
+    boconnor@odm-boconnor ~$ createuser -P -s -e queue_user
     Enter password for new role:
     Enter it again:
     CREATE ROLE queue PASSWORD 'md5f8ceabb22d9297bd28382151f35a2252' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
