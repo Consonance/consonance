@@ -89,7 +89,7 @@ public class PostgreSQL extends Base {
         }
     }
 
-    public void finishWork(String uuid) {
+    public void finishContainer(String uuid) {
         try {
 
             Statement stmt = conn.createStatement();

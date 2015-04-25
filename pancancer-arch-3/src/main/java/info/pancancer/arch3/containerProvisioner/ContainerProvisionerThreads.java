@@ -47,7 +47,7 @@ public class ContainerProvisionerThreads extends Base {
         // this actually launches worker daemons
         ProvisionVMs t2 = new ProvisionVMs(configFile);
 
-        // TODO
+        // this cleans up VMs, currently this is just a DB update but in the future it's a Youxia call
         CleanupVMs t3 = new CleanupVMs(configFile);
     }
 
@@ -289,9 +289,10 @@ class CleanupVMs {
                     Status status = new Status().fromJSON(message);
 
                     // now update that DB record to be exited
-                    // TODO: this is acutally finishing the VM and not the work
-                    if (status.getState().equals(u.SUCCESS)) {
-                        db.finishWork(status.getUuid());
+                    // this is acutally finishing the VM and not the work
+                    if (status.getState().equals(u.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                        // this is where it reaps, the job status message also contains the UUID for the VM
+                        db.finishContainer(status.getVmUuid());
                     }
 
                     try {

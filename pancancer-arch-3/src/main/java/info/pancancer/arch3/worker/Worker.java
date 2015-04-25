@@ -95,7 +95,7 @@ public class Worker extends Thread {
                     log.error(ex.toString());
                 }
 
-                s = new Status(vmUuid, job.getUuid(), u.SUCCESS, "vm_status_message", "vm is finished and can be reaped");
+                s = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "job is finished");
                 result = s.toJSON();
                 finishJob(result);
 
