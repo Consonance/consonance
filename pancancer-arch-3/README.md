@@ -73,6 +73,10 @@ Connect to the DB if you need to:
 
     boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue_user -W queue_status
 
+Delete the contents if you want to reset:
+
+    > delete from job; delete from provision;
+
 Drop the DB if you need to clear it out:
 
     boconnor@odm-boconnor pancancer-arch-3$ dropdb queue_status
