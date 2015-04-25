@@ -2,6 +2,7 @@ package info.pancancer.arch3.coordinator;
 
 import com.rabbitmq.client.*;
 import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
@@ -23,6 +24,11 @@ import java.io.IOException;
 
  Finally, for failed or finished workflows, it informats the VM about finished
  VMs that can be terminated.
+
+ TODO:
+
+ This needs to have a new thread that periodically checks on the DB table for Jobs to identify jobs that are lost/failed
+
  *
  */
 public class Coordinator extends Base {
@@ -120,16 +126,6 @@ class CoordinatorOrders {
           String result = requestVm(order.getProvision().toJSON());
           String result2 = requestJob(order.getJob().toJSON());
 
-          // TODO: need to take action on results in the queue as well read results back in results queue
-          // TODO: this will need to be in another thread
-
-        /*try {
-          // pause
-          Thread.sleep(5000);
-        } catch (InterruptedException ex) {
-          log.error(ex.toString());
-        }*/
-
         }
 
       } catch (IOException ex) {
@@ -186,6 +182,10 @@ class CoordinatorOrders {
 
         jobChannel.basicPublish("", queueName + "_jobs",
                 MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+
+        JSONObject settings = u.parseConfig(this.configFile);
+        PostgreSQL db = new PostgreSQL(settings);
+        db.createJob(new Job().fromJSON(message));
 
         System.out.println(" + MESSAGE SENT!\n" + message + "\n");
 
@@ -258,8 +258,14 @@ class CleanupJobs {
           // this is acutally finishing the VM and not the work
           if (status.getState().equals(u.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
             // this is where it reaps, the job status message also contains the UUID for the VM
-            db.finishContainer(status.getVmUuid());
+            db.finishJob(status.getJobUuid());
+          } else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED))
+                  && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+            // this is where it reaps, the job status message also contains the UUID for the VM
+            db.updateJob(status.getJobUuid(), status.getState());
           }
+
+          // TODO: deal with other situations here like
 
           try {
             // pause

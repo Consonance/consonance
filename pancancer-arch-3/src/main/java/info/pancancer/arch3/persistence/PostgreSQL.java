@@ -103,6 +103,34 @@ public class PostgreSQL extends Base {
         }
     }
 
+    public void finishJob(String uuid) {
+        try {
+
+            Statement stmt = conn.createStatement();
+
+            String sql = "update job set status = '"+ Utilities.SUCCESS+"' where job_uuid = '"+uuid+"'";
+            stmt.execute(sql);
+            stmt.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateJob(String uuid, String status) {
+        try {
+
+            Statement stmt = conn.createStatement();
+
+            String sql = "update job set status = '"+ status +"' where job_uuid = '"+uuid+"'";
+            stmt.execute(sql);
+            stmt.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public int getProvisionCount(String status) {
 
         int count = 0;
