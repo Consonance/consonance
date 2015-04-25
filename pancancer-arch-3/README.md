@@ -49,6 +49,10 @@ Install with Homebrew
 
     boconnor@odm-boconnor ~$ brew install postgresql
 
+Now launch it:
+
+    boconnor@odm-boconnor ~$ postgres -D /usr/local/var/postgres
+
 Now create a user:
 
     # using 'queue' as the password by default
