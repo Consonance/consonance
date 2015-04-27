@@ -36,13 +36,6 @@ Basically you do:
 
 And at that point the service is running.
 
-###SQLlite
-
-Used to store state for the Coordinator and the VM Provisioner.
-
-* http://www.tutorialspoint.com/sqlite/sqlite_java.htm
-* https://bitbucket.org/xerial/sqlite-jdbc
-
 ### PostgreSQL
 
 Install with Homebrew
