@@ -30,7 +30,6 @@ public class JobGenerator extends Base {
     private String outputFile = null;
     private JSONObject settings = null;
     private Channel jchannel = null;
-    private Channel rchannel = null;
     private Connection connection = null;
     private String queueName = null;
     private ArrayList<JSONObject> resultsArr = null;
@@ -56,79 +55,71 @@ public class JobGenerator extends Base {
     }
 
     public JobGenerator(String configFile) {
+
+
+        // UTILS OBJECT
+        Utilities u = new Utilities();
+        settings = u.parseConfig(configFile);
+        if (outputFile == null) { outputFile = (String) settings.get("results"); }
+        u.setupOutputFile(outputFile, settings);
+        overallRuntimeMaxHours = ((Number) settings.get("overallRuntimeMaxHours")).intValue();
+        overallIterationsMax = ((Number) settings.get("overallIterationsMax")).intValue();
+        // Utilities will handle persisting data to disk on exit
+        Runtime.getRuntime().addShutdownHook(u);
+        resultsArr = u.getResultsArr();
+
+        // CONFIG
+        queueName = (String) settings.get("rabbitMQQueueName");
+        System.out.println("QUEUE NAME: "+queueName);
+
+        // SETUP QUEUE
+        this.jchannel = u.setupQueue(settings, queueName + "_orders");
+
+        // LOOP, ADDING JOBS EVERY FEW MINUTES
+        boolean moreJobs = true;
+        while (moreJobs) {
+
+            moreJobs = false;
+
+            // keep track of the iterations
+            currIterations++;
+
+            System.out.println("\nGENERATING NEW JOBS\n");
+            // TODO: this is fake, in a real program this is being read from JSONL file or web service
+            // check to see if new results are available and/or if the work queue is empty
+            String[] newJobs = generateNewJobs("", resultsArr, u);
+
+            // enqueue new jobs if we have them
+            if (newJobs.length > 0) {
+                enqueueNewJobs(newJobs);
+            } else {
+                //System.out.println("CAN'T FIND NEW STATE TO TRY, LIKELY CONVERGED");
+                moreJobs = false;
+            }
+
+            // decide to exit
+            if (exceededTimeOrJobs() || !moreJobs) {
+                moreJobs = false;
+                //System.out.println("TIME OR JOBS EXCEEDED, EXITING");
+            } else {
+                try {
+                    // pause
+                    Thread.sleep(5000);
+                } catch (InterruptedException ex) {
+                    log.error(ex.toString());
+                }
+            }
+        }
+
         try {
 
-            // UTILS OBJECT
-            Utilities u = new Utilities();
-            settings = u.parseConfig(configFile);
-            if (outputFile == null) { outputFile = (String) settings.get("results"); }
-            u.setupOutputFile(outputFile, settings);
-            overallRuntimeMaxHours = ((Number) settings.get("overallRuntimeMaxHours")).intValue();
-            overallIterationsMax = ((Number) settings.get("overallIterationsMax")).intValue();
-            // Utilities will handle persisting data to disk on exit
-            Runtime.getRuntime().addShutdownHook(u);
-            resultsArr = u.getResultsArr();
-
-            // CONFIG
-            queueName = (String) settings.get("rabbitMQQueueName");
-            System.out.println("QUEUE NAME: "+queueName);
-
-            // SETUP QUEUE
-            this.jchannel = u.setupQueue(settings, queueName + "_orders");
-            this.rchannel = u.setupQueue(settings, queueName + "_results"); // REMOVE
-
-            System.out.println("RCHAN: "+rchannel);
-
-            // RESULTS CONSUMER
-            rconsumer = new QueueingConsumer(this.rchannel);
-            rchannel.basicConsume(queueName + "_results", true, rconsumer);
-
-            // LOOP, ADDING JOBS EVERY FEW MINUTES
-            boolean moreJobs = true;
-            while (moreJobs) {
-
-                // keep track of the iterations
-                currIterations++;
-
-                System.out.println("\nGENERATING NEW JOBS\n");
-                // TODO: this is fake, in a real program this is being read from JSONL file or web service
-                // check to see if new results are available and/or if the work queue is empty
-                String[] newJobs = generateNewJobs("", resultsArr, u);
-
-                // enqueue new jobs if we have them
-                if (newJobs.length > 0) {
-                    enqueueNewJobs(newJobs);
-                } else {
-                    //System.out.println("CAN'T FIND NEW STATE TO TRY, LIKELY CONVERGED");
-                    moreJobs = false;
-                }
-
-                // decide to exit
-                if (exceededTimeOrJobs() || !moreJobs) {
-                    moreJobs = false;
-                    //System.out.println("TIME OR JOBS EXCEEDED, EXITING");
-                } else {
-                    try {
-                        // pause
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ex) {
-                        log.error(ex.toString());
-                    }
-                }
-            }
-
-            try {
-
-                jchannel.getConnection().close(5000);
-                rchannel.getConnection().close(5000);
-
-            } catch (IOException ex) {
-                log.error(ex.toString());
-            }
+            jchannel.getConnection().close(5000);
 
         } catch (IOException ex) {
             log.error(ex.toString());
         }
+
+
     }
 
     // PRIVATE

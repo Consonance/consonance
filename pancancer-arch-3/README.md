@@ -145,6 +145,7 @@ To cleanup and delete all queues:
 
 ### Soon
 
+* BUG: the worker thread never exits!  And this causes problems marking the work as complete!
 * finalize the message format between the layers, serializers
 * figure out impl class strategy and make an impl for the the ContainerProvisioner that just launches threads for workers
     * worker threads

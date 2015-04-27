@@ -67,7 +67,6 @@ public class ContainerProvisionerThreads extends Base {
 class ProcessVMOrders {
 
     private JSONObject settings = null;
-    private Channel resultsChannel = null;
     private Channel vmChannel = null;
     private String queueName = null;
     private Utilities u = new Utilities();
@@ -94,9 +93,6 @@ class ProcessVMOrders {
                 // read from
                 vmChannel = u.setupQueue(settings, queueName + "_vms");
 
-                // write to
-                resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
-
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
 
@@ -106,10 +102,12 @@ class ProcessVMOrders {
                 // TODO: need threads that each read from orders and another that reads results
                 while (true) {
 
+                    System.out.println("CHECKING FOR NEW VM ORDER!");
+
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                     //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody());
-                    System.out.println(" [x] Received VM request '" + message + "'");
+                    System.out.println(" [x] Received New VM Request '" + message + "'");
 
                     // now parse it as a VM order
                     Provision p = new Provision();
@@ -190,11 +188,19 @@ class ProvisionVMs {
                 // TODO: need threads that each read from orders and another that reads results
                 while (true) {
 
+                    System.out.println("CHECKING RUNNING VMs");
+
                     // read from DB
                     int numberRunningContainers = db.getProvisionCount(Utilities.RUNNING);
+                    int numberPendingContainers = db.getProvisionCount(Utilities.PENDING);
+
+                    System.out.println("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
 
                     // if this is true need to launch another container
-                    if (numberRunningContainers < maxWorkers) {
+                    if (numberRunningContainers < maxWorkers && numberPendingContainers > 0) {
+
+                        System.out.println("  RUNNING CONTAINERS < "+maxWorkers+" SO WILL LAUNCH VM");
+
                         // TODO: this will obviously get much more complicated when integrated with Youxia launch VM
                         String uuid = db.getPendingProvisionUUID();
                         launchVM(uuid);
@@ -221,7 +227,7 @@ class ProvisionVMs {
         // TOOD: obviously, this will need to launch something using Youxia in the future
         private void launchVM(String uuid) {
 
-            new Worker(configFile, uuid).start();
+           new Worker(configFile, uuid).start();
 
         }
 
@@ -280,10 +286,12 @@ class CleanupVMs {
                 // TODO: need threads that each read from orders and another that reads results
                 while (true) {
 
+                    System.out.println("CHECKING FOR VMs TO REAP!");
+
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
                     //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody());
-                    System.out.println(" [x] Received VM request '" + message + "'");
+                    System.out.println(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
@@ -299,7 +307,7 @@ class CleanupVMs {
                         // pause
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
-                        //log.error(ex.toString());
+                        System.err.println(ex.toString());
                     }
 
                 }
@@ -308,11 +316,11 @@ class CleanupVMs {
                 System.out.println(ex.toString());
                 ex.printStackTrace();
             } catch (InterruptedException ex) {
-                //log.error(ex.toString());
+                System.err.println(ex.toString());
             } catch (ShutdownSignalException ex) {
-                //log.error(ex.toString());
+                System.err.println(ex.toString());
             } catch (ConsumerCancelledException ex) {
-                //log.error(ex.toString());
+                System.err.println(ex.toString());
             }
         }
 

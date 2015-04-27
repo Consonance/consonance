@@ -249,7 +249,7 @@ class CleanupJobs {
           QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
           //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
           String message = new String(delivery.getBody());
-          System.out.println(" [x] Received VM request '" + message + "'");
+          System.out.println(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
 
           // now parse it as JSONObj
           Status status = new Status().fromJSON(message);
