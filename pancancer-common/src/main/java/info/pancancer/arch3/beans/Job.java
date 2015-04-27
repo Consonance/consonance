@@ -12,6 +12,8 @@ import java.util.UUID;
  */
 public class Job {
 
+
+    private String state;
     private Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
@@ -67,44 +69,60 @@ public class Job {
 
     }
 
-	public String getWorkflow() {
-		return workflow;
-	}
+    public String getUuid() {
+        return uuid;
+    }
 
-	public void setWorkflow(String workflow) {
-		this.workflow = workflow;
-	}
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
-	public String getWorkflowVersion() {
-		return workflowVersion;
-	}
+    public Map<String, String> getIni() {
+        return ini;
+    }
 
-	public void setWorkflowVersion(String workflowVersion) {
-		this.workflowVersion = workflowVersion;
-	}
+    public String getIniStr() {
+        StringBuffer sb = new StringBuffer();
+        for (String key : this.ini.keySet()) {
+            sb.append(key+"="+this.ini.get(key));
+        }
+        return(sb.toString());
+    }
 
-	public String getJobHash() {
-		return jobHash;
-	}
+    public void setIni(Map<String, String> ini) {
+        this.ini = ini;
+    }
 
-	public void setJobHash(String jobHash) {
-		this.jobHash = jobHash;
-	}
+    public String getJobHash() {
+        return jobHash;
+    }
 
-	public Map<String, String> getIni() {
-		return ini;
-	}
+    public void setJobHash(String jobHash) {
+        this.jobHash = jobHash;
+    }
 
-	public void setIni(Map<String, String> ini) {
-		this.ini = ini;
-	}
+    public String getWorkflowVersion() {
+        return workflowVersion;
+    }
 
-	public String getUuid() {
-		return uuid;
-	}
+    public void setWorkflowVersion(String workflowVersion) {
+        this.workflowVersion = workflowVersion;
+    }
 
-	public String setUuid(String uuid) {
-		return this.uuid = uuid;
-	}
+    public String getWorkflow() {
+        return workflow;
+    }
+
+    public void setWorkflow(String workflow) {
+        this.workflow = workflow;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
 
 }

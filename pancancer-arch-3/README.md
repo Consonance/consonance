@@ -49,9 +49,14 @@ Install with Homebrew
 
     boconnor@odm-boconnor ~$ brew install postgresql
 
+Now launch it:
+
+    boconnor@odm-boconnor ~$ postgres -D /usr/local/var/postgres
+
 Now create a user:
 
-    boconnor@odm-boconnor ~$ createuser -P -s -e queue
+    # using 'queue' as the password by default
+    boconnor@odm-boconnor ~$ createuser -P -s -e queue_user
     Enter password for new role:
     Enter it again:
     CREATE ROLE queue PASSWORD 'md5f8ceabb22d9297bd28382151f35a2252' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;
@@ -62,11 +67,20 @@ Now create a DB:
 
 Setup a schema for the DB:
 
-    boconnor@odm-boconnor pancancer-arch-3$ psql -h 127.0.0.1 -U queue -W queue_status < sql/schema.sql
+    boconnor@odm-boconnor pancancer-arch-3$ psql -h 127.0.0.1 -U queue_user -W queue_status < sql/schema.sql
 
 Connect to the DB if you need to:
 
-    boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue -W queue_status
+    boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue_user -W queue_status
+
+Delete the contents if you want to reset:
+
+    > delete from job; delete from provision;
+
+Drop the DB if you need to clear it out:
+
+    boconnor@odm-boconnor pancancer-arch-3$ dropdb queue_status
+    boconnor@odm-boconnor ~$ createdb queue_status
 
 ## Testing
 
@@ -94,7 +108,7 @@ VMs that can be terminated.
 
 ### Container Provisioner
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
+    # java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
 
 Now with threads:
 
@@ -131,6 +145,7 @@ To cleanup and delete all queues:
 
 ### Soon
 
+* BUG: the worker thread never exits!  And this causes problems marking the work as complete!
 * finalize the message format between the layers, serializers
 * figure out impl class strategy and make an impl for the the ContainerProvisioner that just launches threads for workers
     * worker threads
@@ -140,7 +155,10 @@ To cleanup and delete all queues:
 * lifecycle of jobs
     * enqueue, monitor, launch VMs, status, etc
     * see diagram
-
+* need to add
+    * error checking
+    * improve logging
+    * cleanup of messaging and DB handles
 
 ### Future
 

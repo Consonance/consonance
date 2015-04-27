@@ -16,6 +16,7 @@ public class Provision {
     long cores;
     long memGb;
     long storageGb;
+    String state;
     List<String> ansiblePlaybooks;
     Utilities u = new Utilities();
     String uuid = UUID.randomUUID().toString().toLowerCase();
@@ -69,4 +70,51 @@ public class Provision {
 
     }
 
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public long getStorageGb() {
+        return storageGb;
+    }
+
+    public void setStorageGb(long storageGb) {
+        this.storageGb = storageGb;
+    }
+
+    public List<String> getAnsiblePlaybooks() {
+        return ansiblePlaybooks;
+    }
+
+    public void setAnsiblePlaybooks(List<String> ansiblePlaybooks) {
+        this.ansiblePlaybooks = ansiblePlaybooks;
+    }
+
+    public long getMemGb() {
+        return memGb;
+    }
+
+    public void setMemGb(long memGb) {
+        this.memGb = memGb;
+    }
+
+    public long getCores() {
+        return cores;
+    }
+
+    public void setCores(long cores) {
+        this.cores = cores;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
 }

@@ -41,9 +41,11 @@ CREATE SEQUENCE job_id_seq
 CREATE TABLE job (
     job_id integer DEFAULT nextval('job_id_seq'::regclass) NOT NULL,
     status text,
-    provision_uuid text,
-    cores integer,
-    mem_gb integer,
-    storage_gb integer,
+    job_uuid text,
+    workflow text,
+    workflow_version text,
+    job_hash text,
+    ini text,
     timestamp timestamp default current_timestamp
 );
+

@@ -36,7 +36,23 @@ import org.json.simple.parser.ParseException;
  * @author boconnor
  */
 public class Utilities extends Thread {
-  
+
+  // constants
+  public final static String PENDING = "pending";
+  public final static String RUNNING = "running";
+  public final static String SUCCESS = "success";
+  public final static String FAILED = "failed";
+  public final static String LOST = "lost";
+  public final static String TERMINATED = "terminated";
+  public final static String PROVISIONING = "provisioning";
+  public final static String QUEUED = "queued";
+
+  // message types
+  public final static String VM_MESSAGE_TYPE = "vm-message-type";
+  public final static String JOB_MESSAGE_TYPE = "job-message-type";
+
+
+
   private String outputFile = null;
   private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
 
