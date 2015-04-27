@@ -185,7 +185,9 @@ class CoordinatorOrders {
 
         JSONObject settings = u.parseConfig(this.configFile);
         PostgreSQL db = new PostgreSQL(settings);
-        db.createJob(new Job().fromJSON(message));
+        Job newJob = new Job().fromJSON(message);
+        newJob.setState(Utilities.PENDING);
+        db.createJob(newJob);
 
         System.out.println(" + MESSAGE SENT!\n" + message + "\n");
 

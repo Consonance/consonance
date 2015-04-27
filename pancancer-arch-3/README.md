@@ -145,7 +145,7 @@ To cleanup and delete all queues:
 
 ### Soon
 
-* BUG: the worker thread never exits!  And this causes problems marking the work as complete!
+* BUG: if you slam the queue with new job messages the system gets confused and certain jobs never finish!... I think this is because a job will be submitted but there is not available worker?  Need to code review with Denis and see if I can figure this out...
 * finalize the message format between the layers, serializers
 * figure out impl class strategy and make an impl for the the ContainerProvisioner that just launches threads for workers
     * worker threads

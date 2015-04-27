@@ -75,7 +75,7 @@ public class Worker extends Thread {
 
 
             // TODO: need threads that each read from orders and another that reads results
-            while (true) {
+            while (max > 0) {
 
                 System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE");
 
@@ -111,6 +111,9 @@ public class Worker extends Thread {
                     // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own thread, harvesting STDERR/STDOUT periodically
 
 
+                    // FIXME: this is the source of the bug... this thread never exists and as a consequence it uses the
+                    // same VMUUID for all jobs... which mismatches what's in the DB and hence the update in the DB never happens
+
                     s = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "job is finished");
                     result = s.toJSON();
 
@@ -124,12 +127,11 @@ public class Worker extends Thread {
 
             }
 
-            // FIXME: only System.exit() will terminate this thread... hangs forever!
-            //System.out.println("HERE!");
-            //Thread.currentThread().interrupt();
-            //System.exit(0);
+            jobChannel.close();
+            resultsChannel.close();
 
-            //return;
+            return;
+
 
         } catch (Exception ex) {
             System.err.println(ex.toString()); ex.printStackTrace();
