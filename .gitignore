@@ -18,3 +18,8 @@ pancancer-arch-3/PanCancerArch3.iml
 pancancer-arch-3/dependency-reduced-pom.xml
 pancancer-arch-3/pancancer_arch_3.json
 pancancer-arch-3/target
+
+# Ignore Eclipse files
+*.classpath
+*.project
+*.settings
