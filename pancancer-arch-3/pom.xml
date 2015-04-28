@@ -4,9 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>PanCancerArch3</groupId>
-    <artifactId>PanCancerArch3</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <artifactId>pancancer-arch-3</artifactId>
+
+    <parent>
+        <version>1.0.0-SNAPSHOT</version>
+        <groupId>io.cancer.collaboratory</groupId>
+        <artifactId>sandbox</artifactId>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -60,9 +65,9 @@
             <version>9.4-1201-jdbc41</version>
         </dependency>
         <dependency>
-        	<groupId>PanCancerArch3</groupId>
-        	<artifactId>pancancer-common</artifactId>
-        	<version>1.0.0-SNAPSHOT</version>
+            <groupId>PanCancerArch3</groupId>
+            <artifactId>pancancer-common</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
