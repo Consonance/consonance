@@ -94,7 +94,7 @@ This consumes the jobs and prepares messages for the VM and Job Queues.
 
 It then monitors the results queue to see when jobs fail or finish.
 
-Finally, for failed or finished workflows, it informats the VM about finished
+Finally, for failed or finished workflows, it informs the Container provisioner about finished
 VMs that can be terminated.
 
     java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
