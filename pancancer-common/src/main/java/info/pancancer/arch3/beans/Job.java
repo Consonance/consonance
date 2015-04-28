@@ -1,25 +1,26 @@
 package info.pancancer.arch3.beans;
 
-import info.pancancer.arch3.utils.Utilities;
-import org.json.simple.JSONObject;
-
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Created by boconnor on 2015-04-22.
  */
 public class Job {
-
-
     private String state;
-    private Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
     private String workflowVersion;
     private String jobHash;
-    private Map<String, String> ini;
+    private Map<String, String> ini = new HashMap<String, String>();
 
     public Job(String workflow, String workflowVersion, String jobHash, Map<String, String>  ini) {
         this.workflow = workflow;
@@ -33,42 +34,30 @@ public class Job {
     }
 
     public String toJSON () {
-
-        StringBuffer j = new StringBuffer();
-        j.append("{" +
-        "\"message_type\": \"job\",\n" +
-        "\"job_hash\": \""+jobHash+"\",\n" +
-        "\"job_uuid\": \""+uuid+"\",\n" +
-        "\"workflow_name\": \""+workflow+"\",\n" +
-        "\"workflow_version\" : \""+workflowVersion+"\",\n" +
-        "\"arguments\" : {\n");
-
-        boolean first = true;
-        for (String key : ini.keySet()) {
-            if (first) { first = false; } else { j.append(",\n"); }
-            j.append("\""+key+"\": \""+ini.get(key)+"\"");
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
         }
-        j.append("\n}\n");
-        j.append("}\n");
-        return(j.toString());
     }
 
     public Job fromJSON(String json) {
-
-        JSONObject obj = u.parseJob(json);
-        workflow = (String) obj.get("workflow_name");
-        workflowVersion = (String) obj.get("workflow_version");
-        jobHash = (String) obj.get("job_hash");
-        uuid = (String) obj.get("job_uuid");
-        JSONObject provision = (JSONObject) obj.get("arguments");
-        ini = new HashMap<String, String>();
-        for (Object key : provision.keySet()) {
-            ini.put((String)key, (String)provision.get(key));
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.readValue(json, Job.class);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
         }
-        return(this);
-
     }
 
+    @JsonProperty("job_uuid")
     public String getUuid() {
         return uuid;
     }
@@ -77,10 +66,12 @@ public class Job {
         this.uuid = uuid;
     }
 
+    @JsonProperty("arguments")
     public Map<String, String> getIni() {
         return ini;
     }
 
+    @JsonIgnore
     public String getIniStr() {
         StringBuffer sb = new StringBuffer();
         for (String key : this.ini.keySet()) {
@@ -93,6 +84,7 @@ public class Job {
         this.ini = ini;
     }
 
+    @JsonProperty("job_has")
     public String getJobHash() {
         return jobHash;
     }
@@ -101,6 +93,7 @@ public class Job {
         this.jobHash = jobHash;
     }
 
+    @JsonProperty("workflow_version")
     public String getWorkflowVersion() {
         return workflowVersion;
     }
@@ -109,6 +102,7 @@ public class Job {
         this.workflowVersion = workflowVersion;
     }
 
+    @JsonProperty("workflow_name")
     public String getWorkflow() {
         return workflow;
     }
@@ -117,6 +111,8 @@ public class Job {
         this.workflow = workflow;
     }
 
+    //Not sure what this was for, ignore it for now.
+    @JsonIgnore
     public String getState() {
         return state;
     }
