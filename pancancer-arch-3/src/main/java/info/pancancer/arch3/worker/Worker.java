@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -94,34 +95,23 @@ public class Worker extends Thread {
 
                 if (message != null) {
 
-
-
                     System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
 
                     Job job = new Job().fromJSON(message);
 
                     // TODO: this will obviously get much more complicated when integrated with Docker
                     // launch VM
-                    Status s = new Status(vmUuid, job.getUuid(), u.RUNNING, u.JOB_MESSAGE_TYPE, "job is starting");
-                    String result = s.toJSON();
 
                     System.out.println(" WORKER LAUNCHING JOB");
 
-                    launchJob(result);
-
+                    launchJob(job.getUuid());
 
                     // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own thread, harvesting STDERR/STDOUT periodically
 
 
-                    // FIXME: this is the source of the bug... this thread never exists and as a consequence it uses the
-                    // same VMUUID for all jobs... which mismatches what's in the DB and hence the update in the DB never happens
-
-                    s = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "job is finished");
-                    result = s.toJSON();
-
                     System.out.println(" WORKER FINISHING JOB");
 
-                    finishJob(result);
+                    finishJob(job.getUuid());
 
                 } else {
                     System.out.println(" [x] Job request came back NULL! ");
@@ -134,6 +124,9 @@ public class Worker extends Thread {
             }
 
             System.out.println(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
+
+            // turns out this is needed when multiple threads are reading from the same
+            // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
             jobChannel.close();
 
             return;
@@ -155,19 +148,45 @@ public class Worker extends Thread {
     }
 
     // TOOD: obviously, this will need to launch something using Youxia in the future
-    private void launchJob(String message) {
+    private void launchJob(String uuid) {
         try {
-            resultsChannel.basicPublish(queueName+"_results", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
-            //resultsChannel.basicPublish("results", "", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+
+            Random random = new Random();
+            int min = 4;
+            int max = 31;
+            int randomNumber = random.nextInt(max - min) + min;
+
+            while(randomNumber > 0) {
+
+                randomNumber--;
+
+                Status s = new Status(vmUuid, uuid, u.RUNNING, u.JOB_MESSAGE_TYPE, "stderr "+randomNumber, "stdout "+randomNumber, "job is running");
+                String result = s.toJSON();
+
+                resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, result.getBytes());
+
+                try {
+                    // pause
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    System.err.println(ex.toString());
+                }
+
+            }
+
         } catch (IOException e) {
             log.error(e.toString());
         }
     }
 
-    private void finishJob(String message) {
+    private void finishJob(String uuid) {
         try {
-            resultsChannel.basicPublish(queueName + "_results", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
-            //resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+
+            Status s = new Status(vmUuid, uuid, u.SUCCESS, u.JOB_MESSAGE_TYPE, "stderr finished", "stdout finished", "job is finished");
+            String result = s.toJSON();
+
+            resultsChannel.basicPublish(queueName + "_results", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, result.getBytes());
+
         } catch (IOException e) {
             log.error(e.toString());
         }

@@ -158,6 +158,7 @@ To cleanup and delete all queues:
     * error checking
     * improve logging
     * cleanup of messaging and DB handles
+    * reporting tool that shows a summary of the DB contents including Donor/Project
 
 ### Future
 
