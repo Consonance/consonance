@@ -75,7 +75,7 @@ public class Job {
     public String getIniStr() {
         StringBuffer sb = new StringBuffer();
         for (String key : this.ini.keySet()) {
-            sb.append(key+"="+this.ini.get(key));
+            sb.append(key+"="+this.ini.get(key)).append("\n");
         }
         return(sb.toString());
     }

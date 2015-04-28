@@ -1,5 +1,8 @@
 package info.pancancer.arch3.test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
@@ -66,6 +69,11 @@ public class TestWorker {
         j.setWorkflow("testWorkflow");
         j.setJobHash("asdlk2390aso12jvrej");
         j.setUuid("1234567890");
+        Map<String,String> iniMap = new HashMap<String,String>(3);
+        iniMap.put("param1", "value1");
+        iniMap.put("param2", "value2");
+        iniMap.put("param3", "help I'm trapped in an INI file");
+        j.setIni(iniMap);
         byte[] body = j.toJSON().getBytes();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);

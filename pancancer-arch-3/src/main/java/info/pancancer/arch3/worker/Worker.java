@@ -1,17 +1,27 @@
 package info.pancancer.arch3.worker;
 
 import com.rabbitmq.client.*;
+
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FilePermission;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -55,6 +65,7 @@ public class Worker extends Thread {
 
     }
 
+    @Override
     public void run () {
 
         int max = 1;
@@ -65,8 +76,8 @@ public class Worker extends Thread {
             System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
 
             // read from
-            jobChannel = u.setupQueue(settings, queueName + "_jobs");
 
+            jobChannel = u.setupQueue(settings, queueName + "_jobs");
             // write to
             resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
 
@@ -77,7 +88,7 @@ public class Worker extends Thread {
             // TODO: need threads that each read from orders and another that reads results
             while (max > 0) {
 
-                System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE");
+                System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE WITH NAME: "+queueName+"_jobs");
 
                 // loop once
                 // TODO: this will be configurable so it could process multiple jobs before exiting
@@ -98,17 +109,29 @@ public class Worker extends Thread {
 
                     Job job = new Job().fromJSON(message);
 
+                    System.out.println("INI is: "+job.getIniStr());
+                    
+                    Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
+                    perms.add(PosixFilePermission.OWNER_READ);
+                    perms.add(PosixFilePermission.OWNER_WRITE);
+                    perms.add(PosixFilePermission.OWNER_EXECUTE);
+                    perms.add(PosixFilePermission.GROUP_READ);
+                    perms.add(PosixFilePermission.GROUP_WRITE);
+                    perms.add(PosixFilePermission.GROUP_EXECUTE);
+                    perms.add(PosixFilePermission.OTHERS_READ);
+                    perms.add(PosixFilePermission.OTHERS_WRITE);
+                    perms.add(PosixFilePermission.OTHERS_EXECUTE);
+                    FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms );
+                    Path pathToINI = java.nio.file.Files.createTempFile("seqware_", ".ini", attrs);
+                    System.out.println("INI file: "+pathToINI.toString());
                     // TODO: this will obviously get much more complicated when integrated with Docker
                     // launch VM
                     Status s = new Status(vmUuid, job.getUuid(), u.RUNNING, u.JOB_MESSAGE_TYPE, "job is starting");
                     String result = s.toJSON();
 
                     System.out.println(" WORKER LAUNCHING JOB");
-
-                    launchJob(result);
-
-
                     // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own thread, harvesting STDERR/STDOUT periodically
+                    launchJob(result);
 
 
                     // FIXME: this is the source of the bug... this thread never exists and as a consequence it uses the
@@ -136,18 +159,6 @@ public class Worker extends Thread {
         } catch (Exception ex) {
             System.err.println(ex.toString()); ex.printStackTrace();
         }
-
-
-
-        /* catch (IOException ex) {
-            System.out.println(ex.toString()); ex.printStackTrace();
-        } catch (InterruptedException ex) {
-            log.error(ex.toString());
-        } catch (ShutdownSignalException ex) {
-            log.error(ex.toString());
-        } catch (ConsumerCancelledException ex) {
-            log.error(ex.toString());
-        } */
     }
 
     // TOOD: obviously, this will need to launch something using Youxia in the future
@@ -155,6 +166,7 @@ public class Worker extends Thread {
         try {
             resultsChannel.basicPublish(queueName+"_results", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
             //resultsChannel.basicPublish("results", "", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            
         } catch (IOException e) {
             log.error(e.toString());
         }
