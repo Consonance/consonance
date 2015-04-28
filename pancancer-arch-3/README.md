@@ -138,14 +138,20 @@ To cleanup and delete all queues:
 
 ### Soon
 
-* BUG: if you slam the queue with new job messages the system gets confused and certain jobs never finish!... I think this is because a job will be submitted but there is not available worker?  Need to code review with Denis and see if I can figure this out...
-* finalize the message format between the layers, serializers
-* figure out impl class strategy and make an impl for the the ContainerProvisioner that just launches threads for workers
+* implement heartbeat
+    * stderr/stdout
+* try to model complex/non-standard events in the standalone daemons
+    * job fails, 20% of the time
+    * vm disappears... need to update the DB then re-enqueue the VM/Job request
+    * longer-running jobs... longer than 10s
+* Solomon wants a "workflow_path" added to the order
+* figure out impl/extends class strategy for the various components so they can be  swapped out with different implementations -- TODO, Solomon?
     * worker threads
     * workers that fail, are successful, etc
     * flesh out worker to run docker and provide heartbeat, resources, etc
-* pick a storage mechanism for state used by the VMProvisioner and Coordinator
-* lifecycle of jobs
+* finalize the message format between the layers, serializers -- DONE
+* pick a storage mechanism for state used by the VMProvisioner and Coordinator -- DONE
+* lifecycle of jobs -- DONE
     * enqueue, monitor, launch VMs, status, etc
     * see diagram
 * need to add
