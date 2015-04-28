@@ -38,23 +38,27 @@ public class JobGenerator extends Base {
     private int currIterations = 0;
     private int overallIterationsMax = 0;
     private int overallRuntimeMaxHours = 0;
+    private int totalJobs = 1;
 
 
     public static void main(String [] args)
     {
         OptionParser parser = new OptionParser();
         parser.accepts("config").withOptionalArg().ofType(String.class);
+        parser.accepts("total-jobs").withOptionalArg().ofType(Integer.class);
         OptionSet options = parser.parse(args);
 
         String configFile = null;
         if (options.has("config")) { configFile = (String)options.valueOf("config"); }
+        int totalJobs = 1;
+        if (options.has("total-jobs")) { totalJobs = (Integer)options.valueOf("total-jobs"); }
 
-        JobGenerator jg = new JobGenerator(configFile);
+        JobGenerator jg = new JobGenerator(configFile, totalJobs);
 
         jg.log.info("MASTER FINISHED, EXITING!");
     }
 
-    public JobGenerator(String configFile) {
+    public JobGenerator(String configFile, int totalJobs) {
 
 
         // UTILS OBJECT
@@ -68,6 +72,9 @@ public class JobGenerator extends Base {
         Runtime.getRuntime().addShutdownHook(u);
         resultsArr = u.getResultsArr();
 
+        // Params
+        this.totalJobs = totalJobs;
+
         // CONFIG
         queueName = (String) settings.get("rabbitMQQueueName");
         System.out.println("QUEUE NAME: "+queueName);
@@ -76,10 +83,9 @@ public class JobGenerator extends Base {
         this.jchannel = u.setupQueue(settings, queueName + "_orders");
 
         // LOOP, ADDING JOBS EVERY FEW MINUTES
-        boolean moreJobs = true;
-        while (moreJobs) {
+        while (totalJobs > 0) {
 
-            moreJobs = false;
+            totalJobs--;
 
             // keep track of the iterations
             currIterations++;
@@ -94,12 +100,12 @@ public class JobGenerator extends Base {
                 enqueueNewJobs(newJobs);
             } else {
                 //System.out.println("CAN'T FIND NEW STATE TO TRY, LIKELY CONVERGED");
-                moreJobs = false;
+                totalJobs = 0;
             }
 
             // decide to exit
-            if (exceededTimeOrJobs() || !moreJobs) {
-                moreJobs = false;
+            if (exceededTimeOrJobs()) {
+                totalJobs = 0;
                 //System.out.println("TIME OR JOBS EXCEEDED, EXITING");
             } else {
                 try {

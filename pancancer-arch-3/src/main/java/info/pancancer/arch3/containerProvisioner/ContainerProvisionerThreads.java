@@ -117,12 +117,12 @@ class ProcessVMOrders {
                     // puts it into the DB so I can count it in another thread
                     db.createProvision(p);
 
-                    try {
+                    /*try {
                         // pause
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
                         //log.error(ex.toString());
-                    }
+                    }*/
 
                 }
 
@@ -188,13 +188,13 @@ class ProvisionVMs {
                 // TODO: need threads that each read from orders and another that reads results
                 while (true) {
 
-                    System.out.println("CHECKING RUNNING VMs");
+                    //System.out.println("CHECKING RUNNING VMs");
 
                     // read from DB
                     int numberRunningContainers = db.getProvisionCount(Utilities.RUNNING);
                     int numberPendingContainers = db.getProvisionCount(Utilities.PENDING);
 
-                    System.out.println("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
+                    //System.out.println("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
 
                     // if this is true need to launch another container
                     if (numberRunningContainers < maxWorkers && numberPendingContainers > 0) {
@@ -210,12 +210,12 @@ class ProvisionVMs {
 
                     }
 
-                    try {
+                    /*try {
                         // pause
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
                         //log.error(ex.toString());
-                    }
+                    }*/
 
                 }
 
@@ -306,13 +306,19 @@ class CleanupVMs {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
                     }
+                    // deal with running, failed, pending, provisioning
+                    else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED)
+                            || status.getState().equals(u.PENDING) || status.getState().equals(u.PROVISIONING))
+                            && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                        db.updateProvision(status.getVmUuid(), status.getJobUuid(), status.getState());
+                    }
 
-                    try {
+                    /*try {
                         // pause
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
                         System.err.println(ex.toString());
-                    }
+                    }*/
 
                 }
 

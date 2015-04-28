@@ -17,10 +17,12 @@ CREATE TABLE provision (
     provision_id integer DEFAULT nextval('provision_id_seq'::regclass) NOT NULL,
     status text,
     provision_uuid text,
+    job_uuid text,
     cores integer,
     mem_gb integer,
     storage_gb integer,
-    timestamp timestamp default current_timestamp
+    update_timestamp timestamp default current_timestamp,
+    create_timestamp timestamp default current_timestamp
 );
 
 --
@@ -42,10 +44,12 @@ CREATE TABLE job (
     job_id integer DEFAULT nextval('job_id_seq'::regclass) NOT NULL,
     status text,
     job_uuid text,
+    provision_uuid text,
     workflow text,
     workflow_version text,
     job_hash text,
     ini text,
-    timestamp timestamp default current_timestamp
+    update_timestamp timestamp default current_timestamp,
+    create_timestamp timestamp default current_timestamp
 );
 

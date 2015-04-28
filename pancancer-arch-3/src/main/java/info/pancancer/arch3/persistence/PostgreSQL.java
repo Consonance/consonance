@@ -81,7 +81,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = '"+Utilities.RUNNING+"' where provision_uuid = '"+uuid+"'";
+            String sql = "update provision set status = '"+Utilities.RUNNING+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 
@@ -95,7 +95,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = '"+ Utilities.SUCCESS+"' where provision_uuid = '"+uuid+"'";
+            String sql = "update provision set status = '"+ Utilities.SUCCESS+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 
@@ -109,7 +109,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update job set status = '"+ Utilities.SUCCESS+"' where job_uuid = '"+uuid+"'";
+            String sql = "update job set status = '"+ Utilities.SUCCESS+"', update_timestamp = NOW() where job_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 
@@ -118,12 +118,26 @@ public class PostgreSQL extends Base {
         }
     }
 
-    public void updateJob(String uuid, String status) {
+    public void updateJob(String uuid, String vmUuid, String status) {
         try {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update job set status = '"+ status +"' where job_uuid = '"+uuid+"'";
+            String sql = "update job set status = '"+ status +"', provision_uuid = '"+vmUuid+"', update_timestamp = NOW() where job_uuid = '"+uuid+"'";
+            stmt.execute(sql);
+            stmt.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateProvision(String uuid, String jobUuid, String status) {
+        try {
+
+            Statement stmt = conn.createStatement();
+
+            String sql = "update provision set status = '"+ status +"', job_uuid = '"+jobUuid+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 

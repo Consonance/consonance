@@ -40,11 +40,11 @@ And at that point the service is running.
 
 Install with Homebrew
 
-    boconnor@odm-boconnor ~$ brew install postgresql
+    brew install postgresql
 
 Now launch it:
 
-    boconnor@odm-boconnor ~$ postgres -D /usr/local/var/postgres
+    postgres -D /usr/local/var/postgres
 
 Now create a user:
 
@@ -56,24 +56,24 @@ Now create a user:
 
 Now create a DB:
 
-    boconnor@odm-boconnor ~$ createdb queue_status
+    createdb queue_status
 
 Setup a schema for the DB:
 
-    boconnor@odm-boconnor pancancer-arch-3$ psql -h 127.0.0.1 -U queue_user -W queue_status < sql/schema.sql
+    psql -h 127.0.0.1 -U queue_user -W queue_status < sql/schema.sql
 
 Connect to the DB if you need to:
 
-    boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue_user -W queue_status
+    psql -h 127.0.0.1 -U queue_user -W queue_status
 
 Delete the contents if you want to reset:
 
-    > delete from job; delete from provision;
+    delete from job; delete from provision;
 
 Drop the DB if you need to clear it out:
 
-    boconnor@odm-boconnor pancancer-arch-3$ dropdb queue_status
-    boconnor@odm-boconnor ~$ createdb queue_status
+    dropdb queue_status
+    createdb queue_status
 
 ## Testing
 
@@ -86,7 +86,7 @@ pure Java running example will be used for integration and other tests.
 
 This generates job orders on an infinite loop.
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5
 
 ### Coordinator
 
@@ -101,9 +101,7 @@ VMs that can be terminated.
 
 ### Container Provisioner
 
-    # java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
-
-Now with threads:
+This will spin up (fake) containers that will launch Workers.
 
     java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
 
@@ -113,19 +111,15 @@ Now with threads:
 
 ### Checking Results
 
-Temp object for helping with debugging.
+Log into the DB and do:
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.CoordinatorResult --config conf/config.json
+    queue_status=# select * from provision; select job_id, status, job_uuid, provision_uuid, job_hash from job;
 
 ## Cleanup
 
 To cleanup and delete all queues:
 
-    for i in `/usr/local/sbin/rabbitmqadmin list queues name | grep -v name | awk '{print $2}'`; \
-      do echo $i; \
-      /usr/local/sbin/rabbitmqadmin delete queue name="$i"; \
-      done;
-    /usr/local/sbin/rabbitmqadmin list queues name
+    bash scripts/cleanup.sh
 
 ## Diagrams
 

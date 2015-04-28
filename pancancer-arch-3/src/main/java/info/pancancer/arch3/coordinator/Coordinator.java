@@ -262,20 +262,20 @@ class CleanupJobs {
           if (status.getState().equals(u.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
             // this is where it reaps, the job status message also contains the UUID for the VM
             db.finishJob(status.getJobUuid());
-          } else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED))
+          } else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED)  || status.getState().equals(u.PENDING))
                   && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
             // this is where it reaps, the job status message also contains the UUID for the VM
-            db.updateJob(status.getJobUuid(), status.getState());
+            db.updateJob(status.getJobUuid(), status.getVmUuid(), status.getState());
           }
 
           // TODO: deal with other situations here like
 
-          try {
+          /*try {
             // pause
             Thread.sleep(5000);
           } catch (InterruptedException ex) {
             //log.error(ex.toString());
-          }
+          }*/
 
         }
 
