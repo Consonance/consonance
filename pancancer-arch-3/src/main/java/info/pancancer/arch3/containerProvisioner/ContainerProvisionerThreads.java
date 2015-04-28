@@ -199,13 +199,15 @@ class ProvisionVMs {
                     // if this is true need to launch another container
                     if (numberRunningContainers < maxWorkers && numberPendingContainers > 0) {
 
-                        System.out.println("  RUNNING CONTAINERS < "+maxWorkers+" SO WILL LAUNCH VM");
+                        System.out.println("  RUNNING CONTAINERS < " + maxWorkers + " SO WILL LAUNCH VM");
 
                         // TODO: this will obviously get much more complicated when integrated with Youxia launch VM
                         String uuid = db.getPendingProvisionUUID();
-                        launchVM(uuid);
                         // this just updates one that's pending
                         db.updatePendingProvision(uuid);
+                        // now launch the VM... doing this after the update above to prevent race condition if the worker signals finished before it's marked as pending
+                        launchVM(uuid);
+
                     }
 
                     try {
@@ -228,6 +230,8 @@ class ProvisionVMs {
         private void launchVM(String uuid) {
 
            new Worker(configFile, uuid).start();
+
+            System.out.println("\n\n\nI LAUNCHED A WORKER THREAD FOR VM "+uuid+" AND IT'S RELEASED!!!\n\n");
 
         }
 

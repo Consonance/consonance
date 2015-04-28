@@ -70,6 +70,7 @@ public class PostgreSQL extends Base {
 
         } catch (SQLException e) {
             e.printStackTrace();
+            log.error(e.toString());
         }
 
         return(uuid);
@@ -80,7 +81,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = '"+Utilities.RUNNING+"' where provision_id in (select provision_id from provision where status = '"+Utilities.PENDING+"' and provision_uuid = '"+uuid+"')";
+            String sql = "update provision set status = '"+Utilities.RUNNING+"' where provision_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 

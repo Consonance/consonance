@@ -71,13 +71,14 @@ public class Worker extends Thread {
             resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
 
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-            jobChannel.basicConsume(queueName+"_jobs", true, consumer);
-
+            jobChannel.basicConsume(queueName+"_jobs", false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
             while (max > 0) {
 
-                System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE");
+                System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
+
+                max--;
 
                 // loop once
                 // TODO: this will be configurable so it could process multiple jobs before exiting
@@ -87,14 +88,15 @@ public class Worker extends Thread {
                 //System.out.println("THERE ARE CURRENTLY "+messages+" JOBS QUEUED!");
 
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+                System.out.println(vmUuid + "  received " + delivery.getEnvelope().toString());
                 //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 String message = new String(delivery.getBody());
 
                 if (message != null) {
 
-                    max--;
 
-                    System.out.println(" [x] Received JOBS REQUEST '" + message + "'");
+
+                    System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
 
                     Job job = new Job().fromJSON(message);
 
@@ -123,20 +125,22 @@ public class Worker extends Thread {
 
                 } else {
                     System.out.println(" [x] Job request came back NULL! ");
+
                 }
+
+                System.out.println(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
+                jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 
             }
 
+            System.out.println(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
             jobChannel.close();
-            resultsChannel.close();
 
             return;
-
 
         } catch (Exception ex) {
             System.err.println(ex.toString()); ex.printStackTrace();
         }
-
 
 
         /* catch (IOException ex) {

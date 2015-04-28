@@ -110,7 +110,7 @@ class CoordinatorOrders {
         // read from
 
         QueueingConsumer consumer = new QueueingConsumer(orderChannel);
-        orderChannel.basicConsume(queueName + "_orders", true, consumer);
+        orderChannel.basicConsume(queueName + "_orders", false, consumer);
 
         // TODO: need threads that each read from orders and another that reads results
         while (true) {
@@ -125,7 +125,8 @@ class CoordinatorOrders {
 
           String result = requestVm(order.getProvision().toJSON());
           String result2 = requestJob(order.getJob().toJSON());
-
+          System.out.println("acknowledging " + delivery.getEnvelope().toString());
+          orderChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
         }
 
       } catch (IOException ex) {
