@@ -86,7 +86,7 @@ pure Java running example will be used for integration and other tests.
 
 This generates job orders on an infinite loop.
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json
 
 ### Coordinator
 
@@ -97,25 +97,25 @@ It then monitors the results queue to see when jobs fail or finish.
 Finally, for failed or finished workflows, it informs the Container provisioner about finished
 VMs that can be terminated.
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
 
 ### Container Provisioner
 
-    # java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
+    # java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
 
 Now with threads:
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
 
 ### Worker
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
 
 ### Checking Results
 
 Temp object for helping with debugging.
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.CoordinatorResult --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.CoordinatorResult --config conf/config.json
 
 ## Cleanup
 

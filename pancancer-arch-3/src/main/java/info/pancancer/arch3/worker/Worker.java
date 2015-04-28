@@ -152,8 +152,8 @@ public class Worker extends Thread {
         try {
 
             Random random = new Random();
-            int min = 4;
-            int max = 31;
+            int min = ((Long) settings.get("min_random_time")).intValue();
+            int max = ((Long) settings.get("max_random_time")).intValue();
             int randomNumber = random.nextInt(max - min) + min;
 
             while(randomNumber > 0) {
@@ -182,7 +182,13 @@ public class Worker extends Thread {
     private void finishJob(String uuid) {
         try {
 
+            Random random = new Random();
+            int randomNumber = random.nextInt(100);
+
             Status s = new Status(vmUuid, uuid, u.SUCCESS, u.JOB_MESSAGE_TYPE, "stderr finished", "stdout finished", "job is finished");
+            if (randomNumber < 10) {
+                s = new Status(vmUuid, uuid, u.FAILED, u.JOB_MESSAGE_TYPE, "stderr failed", "stdout failed", "job is failed");
+            }
             String result = s.toJSON();
 
             resultsChannel.basicPublish(queueName + "_results", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, result.getBytes());

@@ -14,5 +14,7 @@
   "report" : "pancancer_arch_3.report.log",
   "time_until_vm_lost_minutes" : 120,
   "time_until_workflow_lost_minutes" : 120,
-  "max_running_containers" : 5
+  "max_running_containers" : 5,
+  "max_random_time" : 10,
+  "min_random_time" : 2
 }
