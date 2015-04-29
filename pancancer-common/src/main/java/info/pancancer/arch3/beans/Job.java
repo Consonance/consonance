@@ -8,6 +8,7 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -50,6 +51,11 @@ public class Job {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
             return mapper.readValue(json, Job.class);
+        } catch (JsonParseException e) {
+            //TODO: improve logging for JSON parse errors.
+            System.out.println("JSON parsing error: "+e.getMessage());
+            e.printStackTrace();
+            return null;
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
