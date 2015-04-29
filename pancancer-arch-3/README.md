@@ -117,9 +117,11 @@ Log into the DB and do:
 
 ## Cleanup
 
-To cleanup and delete all queues:
+To cleanup and delete all queues and DB tables:
 
     bash scripts/cleanup.sh
+
+You can use this in your testing to reset the system but keep in mind the danger of using this in production systems where you want to save your DB.  Backup accordingly!
 
 ## Diagrams
 
