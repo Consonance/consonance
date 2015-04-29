@@ -1,0 +1,6 @@
+{
+	"rabbitMQQueueName":"seqware",
+	"rabbitMQHost":"localhost",
+	"rabbitMQUser":"guest",
+	"rabbitMQPass":"guest"
+}

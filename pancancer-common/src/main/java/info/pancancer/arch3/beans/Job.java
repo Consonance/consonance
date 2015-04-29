@@ -19,6 +19,7 @@ public class Job {
     private String state;
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
+    private String workflowPath;
     private String workflowVersion;
     private String jobHash;
     private Map<String, String> ini = new HashMap<String, String>();
@@ -125,6 +126,15 @@ public class Job {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    @JsonProperty("workflow_path")
+    public String getWorkflowPath() {
+        return workflowPath;
+    }
+
+    public void setWorkflowPath(String workflowPath) {
+        this.workflowPath = workflowPath;
     }
 
 }

@@ -44,6 +44,9 @@ public class TestWorker {
     Channel mockChannel;
 
     @Mock
+    com.rabbitmq.client.Connection mockConnection;    
+    
+    @Mock
     QueueingConsumer mockConsumer;
 
     @Mock
@@ -64,16 +67,23 @@ public class TestWorker {
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
 
+        Mockito.doNothing().when(mockConnection).close();
+
+        Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
+        
         Mockito.when(mockUtil.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
         Mockito.when(mockUtil.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
+        
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("rabbitMQQueueName", "seqware");
         Mockito.when(mockUtil.parseConfig(anyString())).thenReturn(jsonObj);
         
         Job j = new Job();
-        j.setWorkflow("Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
+        j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
+        j.setWorkflow("HelloWorld");
+        j.setWorkflowVersion("1.0-SNAPSHOT");
         j.setJobHash("asdlk2390aso12jvrej");
         j.setUuid("1234567890");
         Map<String,String> iniMap = new HashMap<String,String>(3);

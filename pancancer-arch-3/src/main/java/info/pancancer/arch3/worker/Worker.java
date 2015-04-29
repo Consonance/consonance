@@ -4,14 +4,18 @@ import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorCompletionService;
@@ -23,6 +27,7 @@ import joptsimple.OptionSet;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -66,17 +71,11 @@ public class Worker implements Runnable {
         }
 
         // TODO: can't run on the command line anymore!
-/*        Worker w = new Worker(configFile, uuid);
-        ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-        ExecutorCompletionService<Object> execService = new ExecutorCompletionService<Object>(pool);
-        Object result = new Object();
-        execService.submit(w, result);
-        while(execService.poll()!=null)
-        {
-           //working... 
-        }
-        pool.shutdownNow();
-*/      
+        /*
+         * Worker w = new Worker(configFile, uuid); ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+         * ExecutorCompletionService<Object> execService = new ExecutorCompletionService<Object>(pool); Object result = new Object();
+         * execService.submit(w, result); while(execService.poll()!=null) { //working... } pool.shutdownNow();
+         */
         Worker w = new Worker(configFile, uuid);
         w.run();
         System.out.println("Exiting.");
@@ -126,7 +125,7 @@ public class Worker implements Runnable {
                 String message;
                 message = new String(delivery.getBody());
 
-                if ("".equals(message) || message.length()>0) {
+                if ("".equals(message) || message.length() > 0) {
 
                     max--;
 
@@ -164,7 +163,7 @@ public class Worker implements Runnable {
             System.err.println(ex.toString());
             ex.printStackTrace();
         }
-//        this.notify();
+        // this.notify();
     }
 
     private Path writeINIFile(Job job) throws IOException {
@@ -192,29 +191,48 @@ public class Worker implements Runnable {
     // TODO: obviously, this will need to launch something using Youxia in the future
     private void launchJob(String message, Job job) {
         String cmdResponse = null;
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        /*LogOutputStream outputStream = new LogOutputStream() {
+            private final List<String> lines = new LinkedList<String>();
+            @Override protected void processLine(String line, int level) {
+                lines.add(line);
+            }   
+            public List<String> getLines() {
+                return lines;
+            }
+            
+            public String toString()
+            {
+                StringBuffer buff = new StringBuffer();
+                for (String l : this.lines)
+                {
+                    buff.append(l);
+                }
+                return buff.toString();
+            }
+        };*/
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
 
         try {
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes());
-            // resultsChannel.basicPublish("results", "", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
 
             // Now we need to launch seqware in docker.
             DefaultExecutor executor = new DefaultExecutor();
 
             CommandLine cli = new CommandLine("docker");
-            cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v",
-                    "/home/" + System.getProperty("user.name") + "/workflows/" + job.getWorkflow() + ":/workflow", "-v",
-                    pathToINI + ":/ini", "-i", "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow",
+            cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", job.getWorkflowPath() + ":/workflow", "-v",
+                    pathToINI + ":/ini", /*"-v","/datastore/:/datastore/",*/ "-i", "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow",
                     "--ini", "/ini", "--no-metadata" });
             System.out.println("Executing command: " + cli.toString());
 
+
             executor.setStreamHandler(streamHandler);
             executor.execute(cli);
-            cmdResponse = outputStream.toString(CHARSET_ENCODING);
-            System.out.println("Docker execution result: " + cmdResponse);
+            outputStream.flush();
+            //cmdResponse = outputStream.getLines();//outputStream.toString(CHARSET_ENCODING);
+            System.out.println("Docker execution result: " + outputStream.toString());
             outputStream.close();
 
         } catch (IOException e) {

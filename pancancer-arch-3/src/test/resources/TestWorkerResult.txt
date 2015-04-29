@@ -2,7 +2,9 @@
  WORKER IS PREPARING TO PULL JOB FROM QUEUE WITH NAME: seqware_jobs
  [x] Received JOBS REQUEST '{
   "job_uuid" : "1234567890",
-  "workflow_name" : "Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0",
+  "workflow_name" : "HelloWorld",
+  "workflow_path" : "/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0",
+  "workflow_version" : "1.0-SNAPSHOT",
   "job_hash" : "asdlk2390aso12jvrej",
   "arguments" : {
     "param1" : "value1",
@@ -16,6 +18,6 @@ param2=value2
 param3=help I'm trapped in an INI file
 
 INI file: /tmp/seqware_5097202839327727870.ini
-Executing command: [docker, run, --rm, -h, master, -t, -v, /home/sshorser/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow, -v, /tmp/seqware_5097202839327727870.ini:/ini, -i, seqware/seqware_whitestar_pancancer, seqware, bundle, launch, --dir, /workflow, --ini, /ini, --no-metadata]
+Executing command: [docker, run, --rm, -h, master, -t, -v, /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow, -v, /tmp/seqware_5097202839327727870.ini:/ini, -i, seqware/seqware_whitestar_pancancer, seqware, bundle, launch, --dir, /workflow, --ini, /ini, --no-metadata]
 Docker execution result: 
  WORKER FINISHING JOB
