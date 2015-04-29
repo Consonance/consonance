@@ -30,6 +30,10 @@ You will also need `/usr/local/sbin/rabbitmqadmin` installed, see https://www.ra
 
     wget -O - -q http://localhost:15672/cli/rabbitmqadmin > /usr/local/sbin/rabbitmqadmin
 
+Finally, for multi-host setups you need to create and user a user:
+
+    sudo rabbitmqctl add_user queue_user queue
+
 For Postgres see:  https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04
 
 ### Log4J + Logstash
