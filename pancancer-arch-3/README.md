@@ -33,6 +33,7 @@ You will also need `/usr/local/sbin/rabbitmqadmin` installed, see https://www.ra
 Finally, for multi-host setups you need to create and user a user:
 
     sudo rabbitmqctl add_user queue_user queue
+    sudo rabbitmqctl set_permissions queue_user ".*" ".*" ".*"
 
 For Postgres see:  https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04
 
