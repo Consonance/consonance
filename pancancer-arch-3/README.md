@@ -20,6 +20,20 @@ on your development host directly.
 I'm focused on development on a Mac using HomeBrew, you will need to setup
 the dependencies using whatever system is appropriate for your environment.
 
+### Ubuntu
+
+For RabbitMQ see: https://www.rabbitmq.com/install-debian.html
+
+You need to setup the management plugin: https://www.rabbitmq.com/management.html
+
+You will also need `/usr/local/sbin/rabbitmqadmin` installed, see https://www.rabbitmq.com/management-cli.html
+
+    wget -O - -q http://localhost:15672/cli/rabbitmqadmin > /usr/local/sbin/rabbitmqadmin
+
+For Postgres see: 
+
+
+
 ### Log4J + Logstash
 
 I'm trying to follow this guide for using Log4J so I can easily incorprate with LogStash in the future: [guide](https://blog.dylants.com/2013/08/27/java-logging-creating-indexing-monitoring/).
