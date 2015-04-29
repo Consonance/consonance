@@ -30,9 +30,12 @@ You will also need `/usr/local/sbin/rabbitmqadmin` installed, see https://www.ra
 
     wget -O - -q http://localhost:15672/cli/rabbitmqadmin > /usr/local/sbin/rabbitmqadmin
 
-For Postgres see: 
+Finally, for multi-host setups you need to create and user a user:
 
+    sudo rabbitmqctl add_user queue_user queue
+    sudo rabbitmqctl set_permissions queue_user ".*" ".*" ".*"
 
+For Postgres see:  https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04
 
 ### Log4J + Logstash
 
@@ -147,6 +150,9 @@ Now that you have INI files, the next step is to run this command line tool.  It
     
     # for example:
     java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir ini --workflow-name DEWrapper --workflow-version 1.0.0 --workflow-path /workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0
+    # alternatively for hello world
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir /home/ubuntu/gitroot/central-decider-client/ini --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflow/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0
+    
 
 ### Coordinator
 
@@ -167,7 +173,11 @@ This will spin up (fake) containers that will launch Workers.
 
 ### Worker
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
+The ContainerProvisioner above is actually pulling jobs using embedded worker threads (this will not be the case for production, instead the above will just launch VMs).  The below can be started on another VM and will compete for jobs from the job queue.  If you run on a different box than the above components make sure the conf/config.json is updated to point to the correct `rabbitMQHost`.
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 50f20496-c221-4c25-b09b-839511e76df4
+
+You can generate a UUID here: https://www.guidgenerator.com/online-guid-generator.aspx
 
 ### Checking Results
 
