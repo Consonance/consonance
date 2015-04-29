@@ -59,13 +59,15 @@ public class JobGenerator extends Base {
 
         // UTILS OBJECT
         Utilities u = new Utilities();
+        JobGeneratorShutdownHandler shutdownHandler = new JobGeneratorShutdownHandler();
         settings = u.parseConfig(configFile);
         if (outputFile == null) { outputFile = (String) settings.get("results"); }
-        u.setupOutputFile(outputFile, settings);
+        //u.setupOutputFile(outputFile, settings);
+        shutdownHandler.setupOutputFile(outputFile, settings);
         overallRuntimeMaxHours = ((Number) settings.get("overallRuntimeMaxHours")).intValue();
         overallIterationsMax = ((Number) settings.get("overallIterationsMax")).intValue();
         // Utilities will handle persisting data to disk on exit
-        Runtime.getRuntime().addShutdownHook(u);
+        Runtime.getRuntime().addShutdownHook(shutdownHandler);
         resultsArr = u.getResultsArr();
 
         // CONFIG
