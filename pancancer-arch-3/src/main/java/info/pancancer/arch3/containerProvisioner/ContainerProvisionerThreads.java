@@ -227,7 +227,7 @@ class ProvisionVMs {
         // TOOD: obviously, this will need to launch something using Youxia in the future
         private void launchVM(String uuid) {
 
-           new Worker(configFile, uuid).start();
+           new Worker(configFile, uuid).run();
 
         }
 
