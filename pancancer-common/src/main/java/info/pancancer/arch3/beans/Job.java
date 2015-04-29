@@ -18,12 +18,14 @@ public class Job {
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
     private String workflowVersion;
+    private String workflowPath;
     private String jobHash;
     private Map<String, String> ini;
 
-    public Job(String workflow, String workflowVersion, String jobHash, Map<String, String>  ini) {
+    public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String>  ini) {
         this.workflow = workflow;
         this.workflowVersion = workflowVersion;
+        this.workflowPath = workflowPath;
         this.jobHash = jobHash;
         this.ini = ini;
     }
@@ -41,6 +43,7 @@ public class Job {
         "\"job_uuid\": \""+uuid+"\",\n" +
         "\"workflow_name\": \""+workflow+"\",\n" +
         "\"workflow_version\" : \""+workflowVersion+"\",\n" +
+        "\"workflow_path\" : \""+workflowPath+"\",\n" +
         "\"arguments\" : {\n");
 
         boolean first = true;
@@ -58,6 +61,7 @@ public class Job {
         JSONObject obj = u.parseJob(json);
         workflow = (String) obj.get("workflow_name");
         workflowVersion = (String) obj.get("workflow_version");
+        workflowPath = (String) obj.get("workflow_path");
         jobHash = (String) obj.get("job_hash");
         uuid = (String) obj.get("job_uuid");
         JSONObject provision = (JSONObject) obj.get("arguments");
@@ -125,4 +129,11 @@ public class Job {
         this.state = state;
     }
 
+    public String getWorkflowPath() {
+        return workflowPath;
+    }
+
+    public void setWorkflowPath(String workflowPath) {
+        this.workflowPath = workflowPath;
+    }
 }

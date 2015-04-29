@@ -167,7 +167,7 @@ public class JobGenerator extends Base {
         ArrayList<String> a = new ArrayList<String>();
         a.add("ansible_playbook_path");
 
-        Order newOrder = new Order("DEWrapperWorkflow", "1.0.0", hashStr, hm, cores, memGb, storageGb, a);
+        Order newOrder = new Order("DEWrapperWorkflow", "1.0.0", "/path/to/workflow", hashStr, hm, cores, memGb, storageGb, a);
 
         return(newOrder);
 

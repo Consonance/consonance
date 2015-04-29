@@ -21,10 +21,10 @@ public class Order {
         super();
     }
 
-    public Order (String workflow, String workflowVersion, String jobHash, Map<String, String> ini,
+    public Order (String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini,
                   int cores, int memGb, int storageGb, List<String> ansiblePlaybooks) {
 
-        this.job = new Job(workflow, workflowVersion, jobHash, ini);
+        this.job = new Job(workflow, workflowVersion, workflowPath, jobHash, ini);
         this.provision = new Provision(cores, memGb, storageGb, ansiblePlaybooks);
     }
 
