@@ -27,27 +27,32 @@ public class Worker extends Thread {
     private String queueName = null;
     private Utilities u = new Utilities();
     private String vmUuid = null;
+    private int maxRuns = 1;
 
     public static void main(String[] argv) throws Exception {
 
         OptionParser parser = new OptionParser();
         parser.accepts("config").withOptionalArg().ofType(String.class);
         parser.accepts("uuid").withOptionalArg().ofType(String.class);
+        parser.accepts("max-runs").withOptionalArg().ofType(Integer.class);
         OptionSet options = parser.parse(argv);
 
         String configFile = null;
         String uuid = null;
+        int maxRuns = 1;
         if (options.has("config")) { configFile = (String)options.valueOf("config"); }
         if (options.has("uuid")) { uuid = (String)options.valueOf("uuid"); }
+        if (options.has("max-runs")) { maxRuns = (Integer)options.valueOf("max-runs"); } // < 0 is infinite
 
         // TODO: can't run on the command line anymore!
-        Worker w = new Worker(configFile, uuid);
+        Worker w = new Worker(configFile, uuid, maxRuns);
         w.start();
 
     }
 
-    public Worker(String configFile, String vmUuid) {
+    public Worker(String configFile, String vmUuid, int maxRuns) {
 
+        this.maxRuns = maxRuns;
         settings = u.parseConfig(configFile);
         queueName = (String) settings.get("rabbitMQQueueName");
         this.vmUuid = vmUuid;
@@ -58,7 +63,7 @@ public class Worker extends Thread {
 
     public void run () {
 
-        int max = 1;
+        int max = maxRuns;
 
         try {
 
@@ -75,7 +80,7 @@ public class Worker extends Thread {
             jobChannel.basicConsume(queueName+"_jobs", false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (max > 0) {
+            while (max > 0 || maxRuns < 0) {
 
                 System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
 
