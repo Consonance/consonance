@@ -179,6 +179,9 @@ public class Worker extends Thread {
     // TOOD: obviously, this will need to launch something using Youxia in the future
     private void launchJob(String message, Job job) {
         String cmdResponse = null;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+
         try {
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
@@ -188,11 +191,9 @@ public class Worker extends Thread {
             // Now we need to launch seqware in docker.
             DefaultExecutor executor = new DefaultExecutor();
             
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
 
             CommandLine cli = new CommandLine("docker");
-            cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", "~/workflows/" + job.getWorkflow() + ":/workflow",
+            cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", "/home/"+System.getProperty("user.name")+"/workflows/" + job.getWorkflow() + ":/workflow",
                     "-v", pathToINI + ":/ini", "-i", "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow",
                     "--ini", "/ini", "--no-metadata" });
             System.out.println("Executing command: " + cli.toString());
@@ -200,11 +201,14 @@ public class Worker extends Thread {
             executor.setStreamHandler(streamHandler);
             executor.execute(cli);
             cmdResponse = outputStream.toString(CHARSET_ENCODING);
-
+            System.out.println("Docker execution result: "+cmdResponse);
         } catch (IOException e) {
-            if (cmdResponse!=null)
-                cmdResponse.toString();
-            
+//            if (cmdResponse!=null)
+//                cmdResponse.toString();
+            if (outputStream!=null)
+            {
+                log.error("Error from Docker: "+outputStream.toString());
+            }
             e.printStackTrace();
             log.error(e.toString());
         }
