@@ -168,7 +168,7 @@ This will spin up (fake) containers that will launch Workers.
 
 ### Worker
 
-The ContainerProvisioner above is actually pulling jobs using embedded worker threads (this will not be the case for production, instead the above will just launch VMs).  The below can be started on another VM and will compete for jobs from the job queue.
+The ContainerProvisioner above is actually pulling jobs using embedded worker threads (this will not be the case for production, instead the above will just launch VMs).  The below can be started on another VM and will compete for jobs from the job queue.  If you run on a different box than the above components make sure the conf/config.json is updated to point to the correct `rabbitMQHost`.
 
     java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 50f20496-c221-4c25-b09b-839511e76df4
 
