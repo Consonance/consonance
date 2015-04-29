@@ -84,7 +84,7 @@ public class Job {
         this.ini = ini;
     }
 
-    @JsonProperty("job_has")
+    @JsonProperty("job_hash")
     public String getJobHash() {
         return jobHash;
     }

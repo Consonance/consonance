@@ -1,24 +1,29 @@
 package info.pancancer.arch3.test;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
@@ -27,8 +32,6 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
-
-import static org.mockito.Matchers.*;
 
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class })
 @RunWith(PowerMockRunner.class)
@@ -49,9 +52,13 @@ public class TestWorker {
     @Mock
     BasicProperties mockProperties;
 
+    private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    private PrintStream originalOutStream = new PrintStream(System.out);
+    
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        System.setOut(new PrintStream(outStream));
     }
 
     @Test
@@ -87,5 +94,15 @@ public class TestWorker {
         
         //Whitebox.setInternalState(testWorker,"u",mockUtil);
         testWorker.run();
+        String testResults = this.outStream.toString();
+        String knownResults = new String(Files.readAllBytes(Paths.get("src/test/resources/TestWorkerResult.txt")));
+        System.setOut(originalOutStream);
+        System.out.println(testResults);
+       
+        //Because we are generating temp files with unique names, simply asserting that the two strings match will not work.
+        //The text containing the temp file name must be cleaned before we can assert that the code worked.
+        knownResults = knownResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
+        testResults = testResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
+        assertEquals(knownResults,testResults);
     }
 }
