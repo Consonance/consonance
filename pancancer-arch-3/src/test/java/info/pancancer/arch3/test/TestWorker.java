@@ -73,7 +73,7 @@ public class TestWorker {
         Mockito.when(mockUtil.parseConfig(anyString())).thenReturn(jsonObj);
         
         Job j = new Job();
-        j.setWorkflow("testWorkflow");
+        j.setWorkflow("Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
         j.setJobHash("asdlk2390aso12jvrej");
         j.setUuid("1234567890");
         Map<String,String> iniMap = new HashMap<String,String>(3);
