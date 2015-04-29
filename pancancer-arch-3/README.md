@@ -145,6 +145,9 @@ Now that you have INI files, the next step is to run this command line tool.  It
     
     # for example:
     java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir ini --workflow-name DEWrapper --workflow-version 1.0.0 --workflow-path /workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0
+    # alternatively for hello world
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir /home/ubuntu/gitroot/central-decider-client/ini --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflow/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0
+    
 
 ### Coordinator
 
@@ -164,6 +167,8 @@ This will spin up (fake) containers that will launch Workers.
     java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
 
 ### Worker
+
+LEFT OFF WITH: need to test standalone, multiple workers
 
     java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
 
