@@ -75,7 +75,7 @@ Drop the DB if you need to clear it out:
     dropdb queue_status
     createdb queue_status
 
-## Testing
+## Testing Locally
 
 The following will let you test on a local box. This simulates a multiple machine/VM
 setup on a single box just using Java and RabbitMQ.  Eventually, this will just
@@ -84,7 +84,7 @@ pure Java running example will be used for integration and other tests.
 
 ### Job Generator
 
-This generates job orders on an infinite loop.
+This generates job orders, 5 in this case. If you leave off the `--total-jobs` option it will submit jobs on an infinite loop.
 
     java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5
 
@@ -114,6 +114,54 @@ This will spin up (fake) containers that will launch Workers.
 Log into the DB and do:
 
     queue_status=# select * from provision; select job_id, status, job_uuid, provision_uuid, job_hash from job;
+
+## Testing on AWS
+
+WORK IN PROGRESS
+
+In this test I will create a single node for running this framework and associated daemons and a single worker node that actually runs the worker thread and performs some docker workflow run.
+
+### Job Generator
+
+This generates actual job orders using INI files provided by Adam's centralized decider and some command line options.
+
+The first step is to use Adam's command line tool to generate one or more INI files.  See https://github.com/ICGC-TCGA-PanCancer/central-decider-client for details on how to use this.  It's not difficult but you need to follow these steps to have INI files for the next step below.
+
+Now that you have INI files, the next step is to run this command line tool.  It will parse the INI files and generate a job with them and other information it takes from the command line.  It then submits the job "order" to the order message queue.
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir <directories_with_ini_files> --workflow-name <workflow_name> --workflow-version <workflow_version> --workflow-path <workflow_path> 
+    
+    # for example:
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir ini --workflow-name DEWrapper --workflow-version 1.0.0 --workflow-path /workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0
+
+### Coordinator
+
+This consumes the jobs and prepares messages for the VM and Job Queues.
+
+It then monitors the results queue to see when jobs fail or finish.
+
+Finally, for failed or finished workflows, it informs the Container provisioner about finished
+VMs that can be terminated.
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
+
+### Container Provisioner
+
+This will spin up (fake) containers that will launch Workers.
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
+
+### Worker
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
+
+### Checking Results
+
+Log into the DB and do:
+
+    queue_status=# select * from provision; select job_id, status, job_uuid, provision_uuid, job_hash from job;
+
+
 
 ## Cleanup
 
