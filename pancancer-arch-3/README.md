@@ -170,7 +170,9 @@ This will spin up (fake) containers that will launch Workers.
 
 LEFT OFF WITH: need to test standalone, multiple workers
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 50f20496-c221-4c25-b09b-839511e76df4
+
+You can generate a UUID here: https://www.guidgenerator.com/online-guid-generator.aspx
 
 ### Checking Results
 
