@@ -242,18 +242,20 @@ public class Worker implements Runnable {
             heartbeat.setSecondsDelay(Double.parseDouble((String)settings.get("heartbeatRate")));
             heartbeat.setMessageBody(heartbeatStatus.toJSON());
             
-            ExecutorService exService = Executors.newSingleThreadExecutor();
-            exService.execute(heartbeat);
-            
-            executor.setStreamHandler(streamHandler);
-            
-            executor.execute(cli);
             long presleepMillis = 1000 * Long.parseLong((String)settings.get("preworkerSleep"));
             if (presleepMillis>0)
             {
                 System.out.println("Sleeping before executing workflow for "+presleepMillis+" ms.");
                 Thread.sleep(presleepMillis);
             }
+            
+            ExecutorService exService = Executors.newSingleThreadExecutor();
+            exService.execute(heartbeat);
+            
+            executor.setStreamHandler(streamHandler);
+            
+            executor.execute(cli);
+            
             workflowOutput = new String(outputStream.toByteArray());
             System.out.println("Docker execution result: " + workflowOutput);
             long postsleepMillis = 1000 * Long.parseLong((String)settings.get("postworkerSleep"));

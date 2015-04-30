@@ -41,25 +41,25 @@ import com.rabbitmq.client.ShutdownSignalException;
 public class TestWorker {
 
     @Mock
-    Utilities mockUtil;
+    private Utilities mockUtil;
 
     @Mock
-    Channel mockChannel;
+    private Channel mockChannel;
 
     @Mock
-    com.rabbitmq.client.Connection mockConnection;    
+    private com.rabbitmq.client.Connection mockConnection;    
     
     @Mock
-    QueueingConsumer mockConsumer;
+    private QueueingConsumer mockConsumer;
 
     @Mock
-    Envelope mockEnvelope;
+    private Envelope mockEnvelope;
 
     @Mock
-    BasicProperties mockProperties;
+    private BasicProperties mockProperties;
     
     @Mock
-    DefaultExecutor mockExecutor;
+    private DefaultExecutor mockExecutor;
 
     private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
     private PrintStream originalOutStream = new PrintStream(System.out);
@@ -69,11 +69,13 @@ public class TestWorker {
         MockitoAnnotations.initMocks(this);
         System.setOut(new PrintStream(outStream));
     }
-    @Ignore
+
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
 
-        Mockito.doNothing().when(mockExecutor).execute(any(CommandLine.class));
+        Mockito.when(mockExecutor.execute(any(CommandLine.class))).thenReturn(0);
+
+        PowerMockito.whenNew(DefaultExecutor.class).withNoArguments().thenReturn(mockExecutor);
         
         Mockito.doNothing().when(mockConnection).close();
 
@@ -87,8 +89,8 @@ public class TestWorker {
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("rabbitMQQueueName", "seqware");
         jsonObj.put("heartbeatRate","2.5");
-        jsonObj.put("preworkerSleep","0");
-        jsonObj.put("postworkerSleep","0");
+        jsonObj.put("preworkerSleep","1");
+        jsonObj.put("postworkerSleep","1");
         Mockito.when(mockUtil.parseConfig(anyString())).thenReturn(jsonObj);
         
         Job j = new Job();

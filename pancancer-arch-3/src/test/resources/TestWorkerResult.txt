@@ -19,7 +19,10 @@ param3=help I'm trapped in an INI file
 
 INI file: /tmp/seqware_5097202839327727870.ini
 Executing command: [docker run --rm -h master -t -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]
-starting heartbeat thread
+Sleeping before executing workflow for 1000 ms.
+starting heartbeat thread, will send heartbeat message ever 2.5 seconds.
 Docker execution result: 
+Sleeping after exeuting workflow for 1000 ms.
 Heartbeat shutting down.
  WORKER FINISHING JOB
+vm123456 acknowledges mockEnvelope

@@ -4,7 +4,7 @@
 	"rabbitMQUser":"guest",
 	"rabbitMQPass":"guest",
 	"heartbeatRate":"2.5",
-	"preworkerSleep":"5",
-	"postworkerSleep":"5",
+	"preworkerSleep":"1",
+	"postworkerSleep":"1",
 	"max-runs":"1"
 }
