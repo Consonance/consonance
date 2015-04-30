@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -349,10 +350,10 @@ class FlagJobs {
           long secBeforeLost = (Long)settings.get("max_seconds_before_lost");
 
           for (Job job : jobs) {
-            Timestamp createTs = job.getCreateTs();
+            Timestamp nowTs = new Timestamp(new Date().getTime());
             Timestamp updateTs = job.getUpdateTs();
 
-            long diff = updateTs.getTime() - createTs.getTime();
+            long diff = nowTs.getTime() - updateTs.getTime();
             long diffSec = diff / 1000;
 
             log.error("DIFF SEC: "+diffSec+" MAX: "+secBeforeLost);
