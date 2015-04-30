@@ -4,30 +4,36 @@ import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -70,12 +76,6 @@ public class Worker implements Runnable {
             uuid = (String) options.valueOf("uuid");
         }
 
-        // TODO: can't run on the command line anymore!
-        /*
-         * Worker w = new Worker(configFile, uuid); ExecutorService pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-         * ExecutorCompletionService<Object> execService = new ExecutorCompletionService<Object>(pool); Object result = new Object();
-         * execService.submit(w, result); while(execService.poll()!=null) { //working... } pool.shutdownNow();
-         */
         Worker w = new Worker(configFile, uuid);
         w.run();
         System.out.println("Exiting.");
@@ -210,7 +210,7 @@ public class Worker implements Runnable {
                 return buff.toString();
             }
         };*/
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
 
         try {
@@ -223,18 +223,41 @@ public class Worker implements Runnable {
 
             CommandLine cli = new CommandLine("docker");
             cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", job.getWorkflowPath() + ":/workflow", "-v",
-                    pathToINI + ":/ini", /*"-v","/datastore/:/datastore/",*/ "-i", "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow",
-                    "--ini", "/ini", "--no-metadata" });
-            System.out.println("Executing command: " + cli.toString());
+                    pathToINI + ":/ini","-v","/datastore:/datastore", "-i", "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow",
+                    "--ini", "/ini", "--no-metadata"});
+            System.out.println("Executing command: " + cli.toString().replace(",", ""));
 
-
+            Status heartbeatStatus = new Status();
+            heartbeatStatus.setJobUuid(job.getUuid());
+            String networkID = getFirstNonLoopbackAddress().toString();
+            
+            heartbeatStatus.setMessage("job is running; IP address: "+networkID);
+            heartbeatStatus.setState(u.RUNNING);
+            heartbeatStatus.setType(u.JOB_MESSAGE_TYPE);
+            heartbeatStatus.setVmUuid(vmUuid);
+            
+            WorkerHeartbeat heartbeat = new WorkerHeartbeat();
+            heartbeat.setQueueName("seqware");
+            heartbeat.setReportingChannel(resultsChannel);
+            heartbeat.setSecondsDelay(0.7);
+            heartbeat.setMessageBody(heartbeatStatus.toJSON());
+            //heartbeat.start();
+            
+            
+            ExecutorService exService = Executors.newSingleThreadExecutor();
+            exService.execute(heartbeat);
+            
             executor.setStreamHandler(streamHandler);
             executor.execute(cli);
-            outputStream.flush();
+            Thread.sleep(5000);
+            //heartbeat.stop=true;
+            //heartbeat.interrupt();
+            //heartbeat.join();
             //cmdResponse = outputStream.getLines();//outputStream.toString(CHARSET_ENCODING);
-            System.out.println("Docker execution result: " + outputStream.toString());
+            System.out.println("Docker execution result: " + new String(outputStream.toByteArray()));
+            exService.shutdownNow();
+            outputStream.flush();
             outputStream.close();
-
         } catch (IOException e) {
             // if (cmdResponse!=null)
             // cmdResponse.toString();
@@ -243,10 +266,28 @@ public class Worker implements Runnable {
             }
             e.printStackTrace();
             log.error(e.toString());
-        }
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } 
 
     }
-
+    private static InetAddress getFirstNonLoopbackAddress() throws SocketException {
+//        Enumeration en = NetworkInterface.getNetworkInterfaces();
+//        while (en.hasMoreElements()) {
+//            NetworkInterface i = (NetworkInterface) en.nextElement();
+        for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            //for (Enumeration en2 = i.getInetAddresses(); en2.hasMoreElements();)
+            for (InetAddress addr : Collections.list(i.getInetAddresses()))
+            {
+                //InetAddress addr = (InetAddress) en2.nextElement();
+                if (!addr.isLoopbackAddress()) {
+                        return addr;
+                }
+            }
+        }
+        return null;
+    }
     private void finishJob(String message) {
         try {
             resultsChannel.basicPublish("", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
