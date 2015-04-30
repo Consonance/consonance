@@ -105,7 +105,7 @@ public class JobGeneratorDEWorkflow extends Base {
 
             try {
                 // pause
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (InterruptedException ex) {
                 log.error(ex.toString());
             }
