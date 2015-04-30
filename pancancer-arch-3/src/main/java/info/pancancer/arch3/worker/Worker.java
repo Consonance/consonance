@@ -216,7 +216,7 @@ public class Worker implements Runnable {
 
         try {
             Path pathToINI = writeINIFile(job);
-            resultsChannel.basicPublish("", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
 
             // Now we need to launch seqware in docker.
             DefaultExecutor executor = new DefaultExecutor();
@@ -237,7 +237,7 @@ public class Worker implements Runnable {
             heartbeatStatus.setVmUuid(vmUuid);
             
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
-            heartbeat.setQueueName("seqware");
+            heartbeat.setQueueName(this.queueName);
             heartbeat.setReportingChannel(resultsChannel);
             heartbeat.setSecondsDelay(Double.parseDouble((String)settings.get("heartbeatRate")));
             heartbeat.setMessageBody(heartbeatStatus.toJSON());
@@ -299,7 +299,7 @@ public class Worker implements Runnable {
     }
     private void finishJob(String message) {
         try {
-            resultsChannel.basicPublish("", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            resultsChannel.basicPublish(queueName+"_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
         } catch (IOException e) {
             log.error(e.toString());
         }

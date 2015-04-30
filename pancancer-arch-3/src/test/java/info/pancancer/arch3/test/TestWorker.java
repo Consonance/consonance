@@ -14,6 +14,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -55,6 +57,9 @@ public class TestWorker {
 
     @Mock
     BasicProperties mockProperties;
+    
+    @Mock
+    DefaultExecutor mockExecutor;
 
     private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
     private PrintStream originalOutStream = new PrintStream(System.out);
@@ -64,11 +69,12 @@ public class TestWorker {
         MockitoAnnotations.initMocks(this);
         System.setOut(new PrintStream(outStream));
     }
-
     @Ignore
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
 
+        Mockito.doNothing().when(mockExecutor).execute(any(CommandLine.class));
+        
         Mockito.doNothing().when(mockConnection).close();
 
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
@@ -80,6 +86,9 @@ public class TestWorker {
         
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("rabbitMQQueueName", "seqware");
+        jsonObj.put("heartbeatRate","2.5");
+        jsonObj.put("preworkerSleep","0");
+        jsonObj.put("postworkerSleep","0");
         Mockito.when(mockUtil.parseConfig(anyString())).thenReturn(jsonObj);
         
         Job j = new Job();
