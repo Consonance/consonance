@@ -322,6 +322,7 @@ class FlagJobs {
   private class Inner extends Thread {
 
     private String configFile = null;
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     Inner(String config) {
       super(config);
@@ -354,8 +355,12 @@ class FlagJobs {
             long diff = updateTs.getTime() - createTs.getTime();
             long diffSec = diff / 1000;
 
+            log.error("DIFF SEC: "+diffSec+" MAX: "+secBeforeLost);
+
             // if this is true need to mark the job as lost!
             if (diffSec > secBeforeLost) {
+              // it must be lost
+              log.error("JOB "+job.getUuid()+" NOT SEEN IN "+diffSec+" > "+secBeforeLost+" MARKING AS LOST!");
               db.updateJob(job.getUuid(), job.getVmUuid(), u.LOST);
             }
 
