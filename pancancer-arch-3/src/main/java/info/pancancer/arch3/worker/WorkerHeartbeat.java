@@ -20,6 +20,7 @@ public class WorkerHeartbeat implements Runnable {
         while (!Thread.currentThread().interrupted()) {
             byte[] body = this.getMessageBody().getBytes();
             try {
+                System.out.println("Sending heartbeat message to "+queueName+"_results, with body: "+this.getMessageBody());
                 reportingChannel.basicPublish(queueName+"_results", queueName + "_results", null, body);
                 Thread.sleep((long) (secondsDelay * 1000));
             } catch (IOException e) {

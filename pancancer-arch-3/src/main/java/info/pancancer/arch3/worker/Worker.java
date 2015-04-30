@@ -7,6 +7,8 @@ import info.pancancer.arch3.utils.Utilities;
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -108,7 +110,7 @@ public class Worker implements Runnable {
             String consumerTag = jobChannel.basicConsume(queueName + "_jobs", false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (max > 0 || maxRuns <0 ) {
+            while (max > 0 || maxRuns < 0) {
 
                 System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE WITH NAME: " + queueName + "_jobs");
 
@@ -128,7 +130,7 @@ public class Worker implements Runnable {
 
                     max--;
 
-                    System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ "+vmUuid);
+                    System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
 
                     Job job = new Job().fromJSON(message);
 
@@ -145,7 +147,8 @@ public class Worker implements Runnable {
                     // FIXME: this is the source of the bug... this thread never exists and as a consequence it uses the
                     // same VMUUID for all jobs... which mismatches what's in the DB and hence the update in the DB never happens
 
-                    status = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "job is finished, Workflow result is:\n\n"+workflowOutput);
+                    status = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "job is finished, Workflow result is:\n\n"
+                            + workflowOutput);
                     statusJSON = status.toJSON();
 
                     System.out.println(" WORKER FINISHING JOB");
@@ -192,76 +195,65 @@ public class Worker implements Runnable {
     private String launchJob(String message, Job job) {
         String workflowOutput = "";
         String cmdResponse = null;
-        /*LogOutputStream outputStream = new LogOutputStream() {
-            private final List<String> lines = new LinkedList<String>();
-            @Override protected void processLine(String line, int level) {
-                lines.add(line);
-            }   
-            public List<String> getLines() {
-                return lines;
-            }
-            
-            public String toString()
-            {
-                StringBuffer buff = new StringBuffer();
-                for (String l : this.lines)
-                {
-                    buff.append(l);
-                }
-                return buff.toString();
-            }
-        };*/
+        /*
+         * LogOutputStream outputStream = new LogOutputStream() { private final List<String> lines = new LinkedList<String>();
+         * 
+         * @Override protected void processLine(String line, int level) { lines.add(line); } public List<String> getLines() { return lines;
+         * }
+         * 
+         * public String toString() { StringBuffer buff = new StringBuffer(); for (String l : this.lines) { buff.append(l); } return
+         * buff.toString(); } };
+         */
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
 
         try {
             Path pathToINI = writeINIFile(job);
-            resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    message.getBytes());
 
             // Now we need to launch seqware in docker.
             DefaultExecutor executor = new DefaultExecutor();
 
             CommandLine cli = new CommandLine("docker");
             cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", job.getWorkflowPath() + ":/workflow", "-v",
-                    pathToINI + ":/ini","-v","/datastore:/datastore", /*"-i",*/ "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow",
-                    "--ini", "/ini", "--no-metadata"});
+                    pathToINI + ":/ini", "-v", "/datastore:/datastore", /* "-i", */"seqware/seqware_whitestar_pancancer", "seqware",
+                    "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
             System.out.println("Executing command: " + cli.toString().replace(",", ""));
 
             Status heartbeatStatus = new Status();
             heartbeatStatus.setJobUuid(job.getUuid());
             String networkID = getFirstNonLoopbackAddress().toString();
-            
-            heartbeatStatus.setMessage("job is running; IP address: "+networkID);
+
+            heartbeatStatus.setMessage("job is running; IP address: " + networkID);
             heartbeatStatus.setState(u.RUNNING);
             heartbeatStatus.setType(u.JOB_MESSAGE_TYPE);
             heartbeatStatus.setVmUuid(vmUuid);
-            
+
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.queueName);
             heartbeat.setReportingChannel(resultsChannel);
-            heartbeat.setSecondsDelay(Double.parseDouble((String)settings.get("heartbeatRate")));
+            heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get("heartbeatRate")));
             heartbeat.setMessageBody(heartbeatStatus.toJSON());
-            
-            long presleepMillis = 1000 * Long.parseLong((String)settings.get("preworkerSleep"));
-            if (presleepMillis>0)
-            {
-                System.out.println("Sleeping before executing workflow for "+presleepMillis+" ms.");
+
+            long presleepMillis = 1000 * Long.parseLong((String) settings.get("preworkerSleep"));
+            if (presleepMillis > 0) {
+                System.out.println("Sleeping before executing workflow for " + presleepMillis + " ms.");
                 Thread.sleep(presleepMillis);
             }
-            
+
             ExecutorService exService = Executors.newSingleThreadExecutor();
             exService.execute(heartbeat);
-            
+
             executor.setStreamHandler(streamHandler);
-            
+
             executor.execute(cli);
-            
+
             workflowOutput = new String(outputStream.toByteArray());
             System.out.println("Docker execution result: " + workflowOutput);
-            long postsleepMillis = 1000 * Long.parseLong((String)settings.get("postworkerSleep"));
-            if (postsleepMillis>0)
-            {
-                System.out.println("Sleeping after exeuting workflow for "+postsleepMillis+ " ms.");
+            long postsleepMillis = 1000 * Long.parseLong((String) settings.get("postworkerSleep"));
+            if (postsleepMillis > 0) {
+                System.out.println("Sleeping after exeuting workflow for " + postsleepMillis + " ms.");
                 Thread.sleep(postsleepMillis);
             }
             exService.shutdownNow();
@@ -280,28 +272,35 @@ public class Worker implements Runnable {
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } 
+        }
         return workflowOutput;
     }
+
     private static InetAddress getFirstNonLoopbackAddress() throws SocketException {
-//        Enumeration en = NetworkInterface.getNetworkInterfaces();
-//        while (en.hasMoreElements()) {
-//            NetworkInterface i = (NetworkInterface) en.nextElement();
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-            //for (Enumeration en2 = i.getInetAddresses(); en2.hasMoreElements();)
-            for (InetAddress addr : Collections.list(i.getInetAddresses()))
-            {
-                //InetAddress addr = (InetAddress) en2.nextElement();
+            for (InetAddress addr : Collections.list(i.getInetAddresses())) {
                 if (!addr.isLoopbackAddress()) {
+                    //Prefer IP v4
+                    if (addr instanceof Inet4Address) {
                         return addr;
+                    }
+                }
+            }
+            // If we got here it means we never found an IP v4 address, so we'll have to return the IPv6 address.
+            for (InetAddress addr : Collections.list(i.getInetAddresses())) {
+                // InetAddress addr = (InetAddress) en2.nextElement();
+                if (!addr.isLoopbackAddress()) {
+                    return addr;
                 }
             }
         }
         return null;
     }
+
     private void finishJob(String message) {
         try {
-            resultsChannel.basicPublish(queueName+"_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    message.getBytes());
         } catch (IOException e) {
             log.error(e.toString());
         }
