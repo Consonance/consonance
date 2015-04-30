@@ -252,6 +252,8 @@ public class PostgreSQL extends Base {
                 // timestamp
                 Timestamp createTs = rs.getTimestamp("create_timestamp");
                 Timestamp updateTs = rs.getTimestamp("update_timestamp");
+                j.setCreateTs(createTs);
+                j.setUpdateTs(updateTs);
 
                 jobs.add(j);
 
