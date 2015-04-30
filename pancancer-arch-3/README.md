@@ -234,14 +234,18 @@ A code example on the command-line.
 
 ### Soon
 
+* need to detect lost jobs and handle them appropriately
 * need an option to prevent jobs from being re-queued if their hash is in the DB
+* in particular, what happens when a host crashes?  Does the job get re-enqueued automatically?
+* ---
+* better error checking
+* improve logging
+* cleanup of queue and DB handles
+* reporting tool that shows a summary of the DB contents including Donor/Project
 * implement heartbeat
-    * stderr/stdout
-* try to model complex/non-standard events in the standalone daemons
-    * job fails, 20% of the time
-    * vm disappears... need to update the DB then re-enqueue the VM/Job request
-    * longer-running jobs... longer than 10s
-* Solomon wants a "workflow_path" added to the order
+    * stderr/stdout in each heartbeat, a configurable number of tailed lines
+* test multiple types of failures and code appropriately 
+* Solomon wants a "workflow_path" added to the order -- DONE
 * figure out impl/extends class strategy for the various components so they can be  swapped out with different implementations -- TODO, Solomon?
     * worker threads
     * workers that fail, are successful, etc
@@ -251,11 +255,7 @@ A code example on the command-line.
 * lifecycle of jobs -- DONE
     * enqueue, monitor, launch VMs, status, etc
     * see diagram
-* need to add
-    * error checking
-    * improve logging
-    * cleanup of messaging and DB handles
-    * reporting tool that shows a summary of the DB contents including Donor/Project
+
 
 ### Future
 
