@@ -20,6 +20,24 @@ on your development host directly.
 I'm focused on development on a Mac using HomeBrew, you will need to setup
 the dependencies using whatever system is appropriate for your environment.
 
+### Ubuntu
+
+For RabbitMQ see: https://www.rabbitmq.com/install-debian.html
+
+You need to setup the management plugin: https://www.rabbitmq.com/management.html
+
+You will also need `/usr/local/sbin/rabbitmqadmin` installed, see https://www.rabbitmq.com/management-cli.html
+
+    wget -O - -q http://localhost:15672/cli/rabbitmqadmin > /usr/local/sbin/rabbitmqadmin
+
+Finally, for multi-host setups you need to create and user a user:
+
+    sudo rabbitmqctl add_user queue_user queue
+    sudo rabbitmqctl set_permissions queue_user ".*" ".*" ".*"
+    sudo rabbitmqctl set_user_tags queue_user administrator
+
+For Postgres see:  https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04
+
 ### Log4J + Logstash
 
 I'm trying to follow this guide for using Log4J so I can easily incorprate with LogStash in the future: [guide](https://blog.dylants.com/2013/08/27/java-logging-creating-indexing-monitoring/).
@@ -40,11 +58,11 @@ And at that point the service is running.
 
 Install with Homebrew
 
-    boconnor@odm-boconnor ~$ brew install postgresql
+    brew install postgresql
 
 Now launch it:
 
-    boconnor@odm-boconnor ~$ postgres -D /usr/local/var/postgres
+    postgres -D /usr/local/var/postgres
 
 Now create a user:
 
@@ -56,26 +74,26 @@ Now create a user:
 
 Now create a DB:
 
-    boconnor@odm-boconnor ~$ createdb queue_status
+    createdb queue_status
 
 Setup a schema for the DB:
 
-    boconnor@odm-boconnor pancancer-arch-3$ psql -h 127.0.0.1 -U queue_user -W queue_status < sql/schema.sql
+    psql -h 127.0.0.1 -U queue_user -W queue_status < sql/schema.sql
 
 Connect to the DB if you need to:
 
-    boconnor@odm-boconnor ~$ psql -h 127.0.0.1 -U queue_user -W queue_status
+    psql -h 127.0.0.1 -U queue_user -W queue_status
 
 Delete the contents if you want to reset:
 
-    > delete from job; delete from provision;
+    delete from job; delete from provision;
 
 Drop the DB if you need to clear it out:
 
-    boconnor@odm-boconnor pancancer-arch-3$ dropdb queue_status
-    boconnor@odm-boconnor ~$ createdb queue_status
+    dropdb queue_status
+    createdb queue_status
 
-## Testing
+## Testing Locally
 
 The following will let you test on a local box. This simulates a multiple machine/VM
 setup on a single box just using Java and RabbitMQ.  Eventually, this will just
@@ -84,9 +102,9 @@ pure Java running example will be used for integration and other tests.
 
 ### Job Generator
 
-This generates job orders on an infinite loop.
+This generates job orders, 5 in this case. If you leave off the `--total-jobs` option it will submit jobs on an infinite loop.
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5
 
 ### Coordinator
 
@@ -97,35 +115,86 @@ It then monitors the results queue to see when jobs fail or finish.
 Finally, for failed or finished workflows, it informs the Container provisioner about finished
 VMs that can be terminated.
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
 
 ### Container Provisioner
 
-    # java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisioner --config conf/config.json
+This will spin up (fake) containers that will launch Workers.
 
-Now with threads:
-
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
 
 ### Worker
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
 
 ### Checking Results
 
-Temp object for helping with debugging.
+Log into the DB and do:
 
-    java -cp target/PanCancerArch3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.CoordinatorResult --config conf/config.json
+    queue_status=# select * from provision; select job_id, status, job_uuid, provision_uuid, job_hash from job;
+
+## Testing on AWS
+
+WORK IN PROGRESS
+
+In this test I will create a single node for running this framework and associated daemons and a single worker node that actually runs the worker thread and performs some docker workflow run.
+
+### Job Generator
+
+This generates actual job orders using INI files provided by Adam's centralized decider and some command line options.
+
+The first step is to use Adam's command line tool to generate one or more INI files.  See https://github.com/ICGC-TCGA-PanCancer/central-decider-client for details on how to use this.  It's not difficult but you need to follow these steps to have INI files for the next step below.
+
+Now that you have INI files, the next step is to run this command line tool.  It will parse the INI files and generate a job with them and other information it takes from the command line.  It then submits the job "order" to the order message queue.
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir <directories_with_ini_files> --workflow-name <workflow_name> --workflow-version <workflow_version> --workflow-path <workflow_path> 
+    
+    # for example:
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir ini --workflow-name DEWrapper --workflow-version 1.0.0 --workflow-path /workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0
+    # alternatively for hello world
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir /home/ubuntu/gitroot/central-decider-client/ini --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflow/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0
+    
+
+### Coordinator
+
+This consumes the jobs and prepares messages for the VM and Job Queues.
+
+It then monitors the results queue to see when jobs fail or finish.
+
+Finally, for failed or finished workflows, it informs the Container provisioner about finished
+VMs that can be terminated.
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
+
+### Container Provisioner
+
+This will spin up (fake) containers that will launch Workers.
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
+
+### Worker
+
+The ContainerProvisioner above is actually pulling jobs using embedded worker threads (this will not be the case for production, instead the above will just launch VMs).  The below can be started on another VM and will compete for jobs from the job queue.  If you run on a different box than the above components make sure the conf/config.json is updated to point to the correct `rabbitMQHost`.
+
+    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 50f20496-c221-4c25-b09b-839511e76df4
+
+You can generate a UUID here: https://www.guidgenerator.com/online-guid-generator.aspx
+
+### Checking Results
+
+Log into the DB and do:
+
+    queue_status=# select * from provision; select job_id, status, job_uuid, provision_uuid, job_hash from job;
+
+
 
 ## Cleanup
 
-To cleanup and delete all queues:
+To cleanup and delete all queues and DB tables:
 
-    for i in `/usr/local/sbin/rabbitmqadmin list queues name | grep -v name | awk '{print $2}'`; \
-      do echo $i; \
-      /usr/local/sbin/rabbitmqadmin delete queue name="$i"; \
-      done;
-    /usr/local/sbin/rabbitmqadmin list queues name
+    bash scripts/cleanup.sh
+
+You can use this in your testing to reset the system but keep in mind the danger of using this in production systems where you want to save your DB.  Backup accordingly!
 
 ## Diagrams
 
@@ -134,24 +203,54 @@ To cleanup and delete all queues:
 ![Alt text](img/flow.png)
 ![Alt text](img/state.png)
 
+## FAQ
+
+### Calling Docker within Docker
+
+When running SeqWare in a docker container, there are tricky aspects to running workflows which contain docker steps within them. One issue that we ran into is this, when exposing a client inside a nested docker container to the docker daemon on the hosting VM (or server), volume mounts are resolved from the host. They are not resolved from the first docker container. 
+
+A code example on the command-line. 
+
+    user@host:~/testing/arena$ docker run --rm -h master -it -v /var/run/docker.sock:/var/run/docker.sock seqware/seqware_whitestar_pancancer /bin/bash
+    seqware@master:~/pancancer-bag$ pwd                                   (this is within the first container) 
+    /home/seqware/pancancer-bag
+    seqware@master:~/pancancer-bag$ docker run -i -t  -v `pwd`/shared_workspace/inputs:/workflow_data -v `pwd`/test:/root/test seqware/pancancer_upload_download /bin/bash
+    root@6182a4bcab9d:/# ls /root/test                                    (this is within the second container)
+    root@6182a4bcab9d:/# touch /root/test/oogly                           (this creates the file, not in the first container, but on the host filesystem)                                (this exits the first container)
+    root@6182a4bcab9d:/# exit
+    exit
+    seqware@master:~/pancancer-bag$ ls test                            
+    ls: cannot access test: No such file or directory
+    seqware@master:~/pancancer-bag$ exit                                  (this exits the second container)
+    exit
+    user@host:~/testing/arena$ ls /home/seqware/pancancer-bag/test        (this is where the file ended up on the host)
+    oogly
+
 ## TODO
 
 ### Soon
 
-* BUG: if you slam the queue with new job messages the system gets confused and certain jobs never finish!... I think this is because a job will be submitted but there is not available worker?  Need to code review with Denis and see if I can figure this out...
-* finalize the message format between the layers, serializers
-* figure out impl class strategy and make an impl for the the ContainerProvisioner that just launches threads for workers
+* implement heartbeat
+    * stderr/stdout
+* try to model complex/non-standard events in the standalone daemons
+    * job fails, 20% of the time
+    * vm disappears... need to update the DB then re-enqueue the VM/Job request
+    * longer-running jobs... longer than 10s
+* Solomon wants a "workflow_path" added to the order
+* figure out impl/extends class strategy for the various components so they can be  swapped out with different implementations -- TODO, Solomon?
     * worker threads
     * workers that fail, are successful, etc
     * flesh out worker to run docker and provide heartbeat, resources, etc
-* pick a storage mechanism for state used by the VMProvisioner and Coordinator
-* lifecycle of jobs
+* finalize the message format between the layers, serializers -- DONE
+* pick a storage mechanism for state used by the VMProvisioner and Coordinator -- DONE
+* lifecycle of jobs -- DONE
     * enqueue, monitor, launch VMs, status, etc
     * see diagram
 * need to add
     * error checking
     * improve logging
     * cleanup of messaging and DB handles
+    * reporting tool that shows a summary of the DB contents including Donor/Project
 
 ### Future
 

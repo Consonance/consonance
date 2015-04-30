@@ -8,6 +8,9 @@ import info.pancancer.arch3.utils.Utilities;
 import org.json.simple.JSONObject;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -70,6 +73,7 @@ public class PostgreSQL extends Base {
 
         } catch (SQLException e) {
             e.printStackTrace();
+            log.error(e.toString());
         }
 
         return(uuid);
@@ -80,7 +84,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = '"+Utilities.RUNNING+"' where provision_id in (select provision_id from provision where status = '"+Utilities.PENDING+"' and provision_uuid = '"+uuid+"')";
+            String sql = "update provision set status = '"+Utilities.RUNNING+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 
@@ -94,7 +98,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = '"+ Utilities.SUCCESS+"' where provision_uuid = '"+uuid+"'";
+            String sql = "update provision set status = '"+ Utilities.SUCCESS+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 
@@ -108,7 +112,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update job set status = '"+ Utilities.SUCCESS+"' where job_uuid = '"+uuid+"'";
+            String sql = "update job set status = '"+ Utilities.SUCCESS+"', update_timestamp = NOW() where job_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 
@@ -117,12 +121,26 @@ public class PostgreSQL extends Base {
         }
     }
 
-    public void updateJob(String uuid, String status) {
+    public void updateJob(String uuid, String vmUuid, String status) {
         try {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update job set status = '"+ status +"' where job_uuid = '"+uuid+"'";
+            String sql = "update job set status = '"+ status +"', provision_uuid = '"+vmUuid+"', update_timestamp = NOW() where job_uuid = '"+uuid+"'";
+            stmt.execute(sql);
+            stmt.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateProvision(String uuid, String jobUuid, String status) {
+        try {
+
+            Statement stmt = conn.createStatement();
+
+            String sql = "update provision set status = '"+ status +"', job_uuid = '"+jobUuid+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
             stmt.execute(sql);
             stmt.close();
 
@@ -199,6 +217,51 @@ public class PostgreSQL extends Base {
         }
 
         return(j.getUuid());
+    }
+
+    public List<Job> getJobs(String status) {
+
+        ArrayList<Job> jobs = new ArrayList<Job>();
+
+        try {
+
+            Statement stmt = conn.createStatement();
+            Utilities u = new Utilities();
+
+            String sql = "select * from job";
+            if (status != null && !"".equals(status)) { sql = "select * from job where status = '"+status+"'"; }
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+
+                Job j = new Job();
+                j.setState(rs.getString("status"));
+                j.setUuid(rs.getString("job_uuid"));
+                j.setWorkflow(rs.getString("workflow"));
+                j.setWorkflowVersion(rs.getString("workflow_version"));
+                j.setJobHash(rs.getString("job_hash"));
+                JSONObject iniJson = u.parseJSONStr(rs.getString("ini"));
+                HashMap<String, String> ini = new HashMap<String, String>();
+                for (Object key : iniJson.keySet()) {
+                    ini.put((String)key, (String)iniJson.get(key));
+                }
+                j.setIni(ini);
+
+                // timestamp
+                Timestamp createTs = rs.getTimestamp("create_timestamp");
+                Timestamp updateTs = rs.getTimestamp("update_timestamp");
+
+                jobs.add(j);
+
+            }
+            rs.close();
+            stmt.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            log.error(e.toString());
+        }
+
+        return(jobs);
     }
 
 }

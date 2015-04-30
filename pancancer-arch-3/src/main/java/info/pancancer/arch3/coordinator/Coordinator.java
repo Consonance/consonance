@@ -53,10 +53,13 @@ public class Coordinator extends Base {
     }
 
     // processes orders and turns them into requests for VMs/Containers (handled by ContainerProvisioner) and Jobs (handled by Worker)
-    CoordinatorOrders c = new CoordinatorOrders(configFile);
+    CoordinatorOrders t1 = new CoordinatorOrders(configFile);
 
-    // this cleans up Jobs, currently this is just a DB update but in the future it's a Youxia call
-    CleanupJobs t3 = new CleanupJobs(configFile);
+    // this cleans up Jobs
+    CleanupJobs t2 = new CleanupJobs(configFile);
+
+    // this marks jobs as lost, resubmits them, etc
+    FlagJobs t3 = new FlagJobs(configFile);
 
   }
 
@@ -110,7 +113,7 @@ class CoordinatorOrders {
         // read from
 
         QueueingConsumer consumer = new QueueingConsumer(orderChannel);
-        orderChannel.basicConsume(queueName + "_orders", true, consumer);
+        orderChannel.basicConsume(queueName + "_orders", false, consumer);
 
         // TODO: need threads that each read from orders and another that reads results
         while (true) {
@@ -125,7 +128,8 @@ class CoordinatorOrders {
 
           String result = requestVm(order.getProvision().toJSON());
           String result2 = requestJob(order.getJob().toJSON());
-
+          System.out.println("acknowledging " + delivery.getEnvelope().toString());
+          orderChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
         }
 
       } catch (IOException ex) {
@@ -260,21 +264,22 @@ class CleanupJobs {
           // this is acutally finishing the VM and not the work
           if (status.getState().equals(u.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
             // this is where it reaps, the job status message also contains the UUID for the VM
+            System.out.println("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
             db.finishJob(status.getJobUuid());
-          } else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED))
+          } else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED)  || status.getState().equals(u.PENDING))
                   && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
             // this is where it reaps, the job status message also contains the UUID for the VM
-            db.updateJob(status.getJobUuid(), status.getState());
+            db.updateJob(status.getJobUuid(), status.getVmUuid(), status.getState());
           }
 
           // TODO: deal with other situations here like
 
-          try {
+          /*try {
             // pause
             Thread.sleep(5000);
           } catch (InterruptedException ex) {
             //log.error(ex.toString());
-          }
+          }*/
 
         }
 
@@ -295,4 +300,73 @@ class CleanupJobs {
   public CleanupJobs(String configFile) {
     inner = new Inner(configFile);
   }
+}
+
+/**
+ * This dequeues the VM requests and stages them in the DB as pending so I can
+ * keep a count of what's running/pending/finished.
+ */
+class FlagJobs {
+
+  private JSONObject settings = null;
+  private Channel resultsChannel = null;
+  private Channel vmChannel = null;
+  private String queueName = null;
+  private Utilities u = new Utilities();
+  private QueueingConsumer resultsConsumer = null;
+
+  private Inner inner;
+
+  private class Inner extends Thread {
+
+    private String configFile = null;
+
+    Inner(String config) {
+      super(config);
+      configFile = config;
+      start();
+    }
+
+    public void run() {
+      try {
+
+        settings = u.parseConfig(configFile);
+
+        // writes to DB as well
+        PostgreSQL db = new PostgreSQL(settings);
+
+
+        // TODO: need threads that each read from orders and another that reads results
+        while (true) {
+
+          // checks the jobs in the database and sees if any have become "lost"
+
+
+          try {
+            // pause
+            Thread.sleep(5000);
+          } catch (InterruptedException ex) {
+            //log.error(ex.toString());
+          }
+
+        }
+
+      } catch (Exception ex) {
+        System.out.println(ex.toString());
+        ex.printStackTrace();
+      } /* catch (InterruptedException ex) {
+        //log.error(ex.toString());
+      } catch (ShutdownSignalException ex) {
+        //log.error(ex.toString());
+      } catch (ConsumerCancelledException ex) {
+        //log.error(ex.toString());
+      } */
+    }
+
+  }
+
+  public FlagJobs(String configFile) {
+    inner = new Inner(configFile);
+  }
+
 }

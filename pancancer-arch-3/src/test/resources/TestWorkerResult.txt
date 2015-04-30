@@ -1,5 +1,6 @@
  WORKER VM UUID: 'vm123456'
- WORKER IS PREPARING TO PULL JOB FROM QUEUE WITH NAME: seqware_jobs
+ WORKER IS PREPARING TO PULL JOB FROM QUEUE vm123456
+vm123456  received mockEnvelope
  [x] Received JOBS REQUEST '{
   "job_uuid" : "1234567890",
   "workflow_name" : "HelloWorld",
@@ -21,6 +22,15 @@ INI file: /tmp/seqware_5097202839327727870.ini
 Executing command: [docker run --rm -h master -t -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]
 Sleeping before executing workflow for 1000 ms.
 starting heartbeat thread, will send heartbeat message ever 2.5 seconds.
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "running",
+"stderr": "null",
+"stdout": "null",
+"message": "job is running; IP address: /172.17.42.1"
+}
+
 Docker execution result: 
 Sleeping after exeuting workflow for 1000 ms.
 Heartbeat shutting down.

@@ -1,5 +1,7 @@
 package info.pancancer.arch3.worker;
 
+import com.rabbitmq.client.*;
+import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
@@ -60,7 +62,6 @@ public class Worker implements Runnable {
         parser.accepts("config").withOptionalArg().ofType(String.class);
         parser.accepts("uuid").withOptionalArg().ofType(String.class);
         parser.accepts("max-runs").withOptionalArg().ofType(Integer.class);
-
         OptionSet options = parser.parse(argv);
 
         String configFile = null;
@@ -83,11 +84,10 @@ public class Worker implements Runnable {
 
     public Worker(String configFile, String vmUuid, int maxRuns) {
 
-        this.maxRuns = maxRuns;
         settings = u.parseConfig(configFile);
         queueName = (String) settings.get("rabbitMQQueueName");
         this.vmUuid = vmUuid;
-
+        this.maxRuns = maxRuns;
     }
 
     @Override
@@ -101,8 +101,8 @@ public class Worker implements Runnable {
             System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
 
             // read from
-
             jobChannel = u.setupQueue(settings, queueName + "_jobs");
+
             // write to
             resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
 
@@ -110,25 +110,27 @@ public class Worker implements Runnable {
             String consumerTag = jobChannel.basicConsume(queueName + "_jobs", false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (max > 0 || maxRuns < 0) {
+            while (max > 0 || maxRuns <= 0) {
 
-                System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE WITH NAME: " + queueName + "_jobs");
+                System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
+
+                max--;
 
                 // loop once
                 // TODO: this will be configurable so it could process multiple jobs before exiting
 
                 // get the job order
-                // int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
-                // System.out.println("THERE ARE CURRENTLY "+messages+" JOBS QUEUED!");
+                //int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
+                //System.out.println("THERE ARE CURRENTLY "+messages+" JOBS QUEUED!");
 
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-                // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                String message;
-                message = new String(delivery.getBody());
+                System.out.println(vmUuid + "  received " + delivery.getEnvelope().toString());
+                //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                String message = new String(delivery.getBody());
 
-                if ("".equals(message) || message.length() > 0) {
+                if (message != null) {
 
-                    max--;
+                    //max--;
 
                     System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
 
@@ -136,7 +138,7 @@ public class Worker implements Runnable {
 
                     // TODO: this will obviously get much more complicated when integrated with Docker
                     // launch VM
-                    Status status = new Status(vmUuid, job.getUuid(), u.RUNNING, u.JOB_MESSAGE_TYPE, "job is starting");
+                    Status status = new Status(vmUuid, job.getUuid(), u.RUNNING, u.JOB_MESSAGE_TYPE, "", "", "job is starting");
                     String statusJSON = status.toJSON();
 
                     System.out.println(" WORKER LAUNCHING JOB");
@@ -147,8 +149,7 @@ public class Worker implements Runnable {
                     // FIXME: this is the source of the bug... this thread never exists and as a consequence it uses the
                     // same VMUUID for all jobs... which mismatches what's in the DB and hence the update in the DB never happens
 
-                    status = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "job is finished, Workflow result is:\n\n"
-                            + workflowOutput);
+                    status = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "", workflowOutput, "job is finished");
                     statusJSON = status.toJSON();
 
                     System.out.println(" WORKER FINISHING JOB");

@@ -1,6 +1,9 @@
 package info.pancancer.arch3.beans;
 
+import info.pancancer.arch3.utils.Utilities;
+
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -19,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class Job {
     private String state;
+    private Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
     private String workflowPath;
@@ -26,10 +30,13 @@ public class Job {
     private String jobHash;
     private String messageType;
     private Map<String, String> ini = new HashMap<String, String>();
+    private Timestamp createTs;
+    private Timestamp updateTs;
 
-    public Job(String workflow, String workflowVersion, String jobHash, Map<String, String>  ini) {
+    public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String>  ini) {
         this.workflow = workflow;
         this.workflowVersion = workflowVersion;
+        this.workflowPath = workflowPath;
         this.jobHash = jobHash;
         this.ini = ini;
     }
@@ -149,4 +156,21 @@ public class Job {
         this.messageType = messageType;
     }
 
+    @JsonProperty("create_ts")
+    public Timestamp getCreateTs() {
+        return createTs;
+    }
+
+    public void setCreateTs(Timestamp createTs) {
+        this.createTs = createTs;
+    }
+
+    @JsonProperty("update_ts")
+    public Timestamp getUpdateTs() {
+        return updateTs;
+    }
+
+    public void setUpdateTs(Timestamp updateTs) {
+        this.updateTs = updateTs;
+    }
 }
