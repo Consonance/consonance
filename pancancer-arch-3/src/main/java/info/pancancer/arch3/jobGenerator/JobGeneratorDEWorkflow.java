@@ -57,9 +57,9 @@ public class JobGeneratorDEWorkflow extends Base {
         String workflowPath = "/workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0";
         if (options.has("config")) { configFile = (String)options.valueOf("config"); }
         if (options.has("ini-dir")) { iniDir = (String)options.valueOf("ini-dir"); }
-        if (options.has("total-jobs")) { workflowName = (String)options.valueOf("workflow-name"); }
-        if (options.has("total-jobs")) { workflowVersion = (String)options.valueOf("workflow-version"); }
-        if (options.has("total-jobs")) { workflowPath = (String)options.valueOf("workflow-path"); }
+        if (options.has("workflow-name")) { workflowName = (String)options.valueOf("workflow-name"); }
+        if (options.has("workflow-version")) { workflowVersion = (String)options.valueOf("workflow-version"); }
+        if (options.has("workflow-path")) { workflowPath = (String)options.valueOf("workflow-path"); }
 
         JobGeneratorDEWorkflow jg = new JobGeneratorDEWorkflow(configFile, iniDir, workflowName, workflowVersion, workflowPath);
 
