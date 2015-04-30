@@ -34,6 +34,7 @@ Finally, for multi-host setups you need to create and user a user:
 
     sudo rabbitmqctl add_user queue_user queue
     sudo rabbitmqctl set_permissions queue_user ".*" ".*" ".*"
+    sudo rabbitmqctl set_user_tags queue_user administrator
 
 For Postgres see:  https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04
 
