@@ -14,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.List;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -340,7 +342,24 @@ class FlagJobs {
         while (true) {
 
           // checks the jobs in the database and sees if any have become "lost"
+          List<Job> jobs = db.getJobs(u.RUNNING);
 
+          // how long before we call something lost?
+          int secBeforeLost = (Integer)settings.get("max_seconds_before_lost");
+
+          for (Job job : jobs) {
+            Timestamp createTs = job.getCreateTs();
+            Timestamp updateTs = job.getUpdateTs();
+
+            long diff = updateTs.getTime() - createTs.getTime();
+            long diffSec = diff / 1000;
+
+            // if this is true need to mark the job as lost!
+            if (diffSec > secBeforeLost) {
+              db.updateJob(job.getUuid(), job.getVmUuid(), u.LOST);
+            }
+
+          }
 
           try {
             // pause

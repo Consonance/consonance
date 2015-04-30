@@ -17,6 +17,7 @@ public class Job {
     private String state;
     private Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
+    private String vmUuid;
     private String workflow;
     private String workflowVersion;
     private String workflowPath;
@@ -44,6 +45,7 @@ public class Job {
         "\"message_type\": \"job\",\n" +
         "\"job_hash\": \""+jobHash+"\",\n" +
         "\"job_uuid\": \""+uuid+"\",\n" +
+        "\"provision_uuid\": \""+vmUuid+"\",\n" +
         "\"workflow_name\": \""+workflow+"\",\n" +
         "\"workflow_version\" : \""+workflowVersion+"\",\n" +
         "\"workflow_path\" : \""+workflowPath+"\",\n" +
@@ -69,6 +71,7 @@ public class Job {
         workflowPath = (String) obj.get("workflow_path");
         jobHash = (String) obj.get("job_hash");
         uuid = (String) obj.get("job_uuid");
+        vmUuid = (String) obj.get("provision_uuid");
         if (obj.get("create_timestamp") != null && !"null".equals((String)obj.get("create_timestamp"))) { createTs = Timestamp.valueOf ((String)obj.get("create_timestamp")); }
         if (obj.get("update_timestamp") != null && !"null".equals((String)obj.get("update_timestamp"))) { updateTs = Timestamp.valueOf ((String)obj.get("update_timestamp")); }
         JSONObject provision = (JSONObject) obj.get("arguments");
@@ -158,5 +161,13 @@ public class Job {
 
     public void setUpdateTs(Timestamp updateTs) {
         this.updateTs = updateTs;
+    }
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public void setVmUuid(String vmUuid) {
+        this.vmUuid = vmUuid;
     }
 }
