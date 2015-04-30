@@ -106,6 +106,8 @@ class CoordinatorOrders {
 
         settings = u.parseConfig(configFile);
 
+        PostgreSQL db = new PostgreSQL(settings);
+
         queueName = (String) settings.get("rabbitMQQueueName");
         // read from
         orderChannel = u.setupQueue(settings, queueName + "_orders");
@@ -129,8 +131,17 @@ class CoordinatorOrders {
           // run the job
           Order order = new Order().fromJSON(message);
 
-          String result = requestVm(order.getProvision().toJSON());
-          String result2 = requestJob(order.getJob().toJSON());
+          boolean checkPreviousRuns = true;
+          String checkSetting = (String)settings.get("check_previous_job_hash");
+          if ("false".equalsIgnoreCase(checkSetting)) { checkPreviousRuns = false; }
+
+          if ((checkPreviousRuns && !db.previouslyRun(order.getJob().getJobHash())) || !checkPreviousRuns) {
+
+            String result = requestVm(order.getProvision().toJSON());
+            String result2 = requestJob(order.getJob().toJSON());
+
+          }
+
           System.out.println("acknowledging " + delivery.getEnvelope().toString());
           orderChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
         }

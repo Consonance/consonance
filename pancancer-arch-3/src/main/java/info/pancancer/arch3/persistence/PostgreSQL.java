@@ -269,4 +269,20 @@ public class PostgreSQL extends Base {
         return(jobs);
     }
 
+    public boolean previouslyRun(String hash) {
+
+        boolean seen = false;
+
+        try {
+            Statement stmt = conn.createStatement();
+            String sql = "select * from job where job_hash = '"+hash+"'";
+            ResultSet rs = stmt.executeQuery(sql);
+            return(rs.next());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return(seen);
+    }
+
 }
