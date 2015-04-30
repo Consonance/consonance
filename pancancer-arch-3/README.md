@@ -234,6 +234,7 @@ A code example on the command-line.
 
 ### Soon
 
+* need an option to prevent jobs from being re-queued if their hash is in the DB
 * implement heartbeat
     * stderr/stdout
 * try to model complex/non-standard events in the standalone daemons
