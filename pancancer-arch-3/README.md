@@ -259,9 +259,9 @@ A code example on the command-line.
 
 ### Future
 
-* utilities for clearing the status persistence storage and the message queues if you need to "start over"
+* utilities for clearing the status persistence storage and the message queues if you need to "start over" -- DONE
 * really great logging/reporting that's human readable
-* ability to turn off the VMProvisioner in case a human makes the worker nodes
+* ability to turn off the VMProvisioner in case a human makes the worker nodes -- DONE
 * log files loaded into the ELK stack for visualization
 * Docker container for the system, integration with Architecture Setup 3.0
 * need job queues with different names based on the workflow and version they target, this will make it easier to run multiple workflow types at the same time
