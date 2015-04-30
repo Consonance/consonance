@@ -42,7 +42,7 @@ public class Worker extends Thread {
         int maxRuns = 1;
         if (options.has("config")) { configFile = (String)options.valueOf("config"); }
         if (options.has("uuid")) { uuid = (String)options.valueOf("uuid"); }
-        if (options.has("max-runs")) { maxRuns = (Integer)options.valueOf("max-runs"); } // < 0 is infinite
+        if (options.has("max-runs")) { maxRuns = (Integer)options.valueOf("max-runs"); } // <= 0 is infinite
 
         // TODO: can't run on the command line anymore!
         Worker w = new Worker(configFile, uuid, maxRuns);
@@ -80,7 +80,7 @@ public class Worker extends Thread {
             jobChannel.basicConsume(queueName+"_jobs", false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (max > 0 || maxRuns < 0) {
+            while (max > 0 || maxRuns <= 0) {
 
                 System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
 

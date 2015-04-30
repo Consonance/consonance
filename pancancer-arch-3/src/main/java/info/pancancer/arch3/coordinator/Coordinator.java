@@ -53,10 +53,13 @@ public class Coordinator extends Base {
     }
 
     // processes orders and turns them into requests for VMs/Containers (handled by ContainerProvisioner) and Jobs (handled by Worker)
-    CoordinatorOrders c = new CoordinatorOrders(configFile);
+    CoordinatorOrders t1 = new CoordinatorOrders(configFile);
 
-    // this cleans up Jobs, currently this is just a DB update but in the future it's a Youxia call
-    CleanupJobs t3 = new CleanupJobs(configFile);
+    // this cleans up Jobs
+    CleanupJobs t2 = new CleanupJobs(configFile);
+
+    // this marks jobs as lost, resubmits them, etc
+    FlagJobs t3 = new FlagJobs(configFile);
 
   }
 
@@ -296,4 +299,73 @@ class CleanupJobs {
   public CleanupJobs(String configFile) {
     inner = new Inner(configFile);
   }
+}
+
+/**
+ * This dequeues the VM requests and stages them in the DB as pending so I can
+ * keep a count of what's running/pending/finished.
+ */
+class FlagJobs {
+
+  private JSONObject settings = null;
+  private Channel resultsChannel = null;
+  private Channel vmChannel = null;
+  private String queueName = null;
+  private Utilities u = new Utilities();
+  private QueueingConsumer resultsConsumer = null;
+
+  private Inner inner;
+
+  private class Inner extends Thread {
+
+    private String configFile = null;
+
+    Inner(String config) {
+      super(config);
+      configFile = config;
+      start();
+    }
+
+    public void run() {
+      try {
+
+        settings = u.parseConfig(configFile);
+
+        // writes to DB as well
+        PostgreSQL db = new PostgreSQL(settings);
+
+
+        // TODO: need threads that each read from orders and another that reads results
+        while (true) {
+
+          // checks the jobs in the database and sees if any have become "lost"
+
+
+          try {
+            // pause
+            Thread.sleep(5000);
+          } catch (InterruptedException ex) {
+            //log.error(ex.toString());
+          }
+
+        }
+
+      } catch (Exception ex) {
+        System.out.println(ex.toString());
+        ex.printStackTrace();
+      } /* catch (InterruptedException ex) {
+        //log.error(ex.toString());
+      } catch (ShutdownSignalException ex) {
+        //log.error(ex.toString());
+      } catch (ConsumerCancelledException ex) {
+        //log.error(ex.toString());
+      } */
+    }
+
+  }
+
+  public FlagJobs(String configFile) {
+    inner = new Inner(configFile);
+  }
+
 }

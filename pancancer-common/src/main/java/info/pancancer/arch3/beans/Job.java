@@ -3,6 +3,7 @@ package info.pancancer.arch3.beans;
 import info.pancancer.arch3.utils.Utilities;
 import org.json.simple.JSONObject;
 
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -21,6 +22,8 @@ public class Job {
     private String workflowPath;
     private String jobHash;
     private Map<String, String> ini;
+    private Timestamp createTs;
+    private Timestamp updateTs;
 
     public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String>  ini) {
         this.workflow = workflow;
@@ -44,6 +47,8 @@ public class Job {
         "\"workflow_name\": \""+workflow+"\",\n" +
         "\"workflow_version\" : \""+workflowVersion+"\",\n" +
         "\"workflow_path\" : \""+workflowPath+"\",\n" +
+        "\"create_timestamp\" : \""+createTs+"\",\n" +
+        "\"update_timestamp\" : \""+updateTs+"\",\n" +
         "\"arguments\" : {\n");
 
         boolean first = true;
@@ -64,6 +69,8 @@ public class Job {
         workflowPath = (String) obj.get("workflow_path");
         jobHash = (String) obj.get("job_hash");
         uuid = (String) obj.get("job_uuid");
+        createTs = Timestamp.valueOf ((String)obj.get("create_timestamp"));
+        updateTs = Timestamp.valueOf ((String)obj.get("update_timestamp"));
         JSONObject provision = (JSONObject) obj.get("arguments");
         ini = new HashMap<String, String>();
         for (Object key : provision.keySet()) {
@@ -135,5 +142,21 @@ public class Job {
 
     public void setWorkflowPath(String workflowPath) {
         this.workflowPath = workflowPath;
+    }
+
+    public Timestamp getCreateTs() {
+        return createTs;
+    }
+
+    public void setCreateTs(Timestamp createTs) {
+        this.createTs = createTs;
+    }
+
+    public Timestamp getUpdateTs() {
+        return updateTs;
+    }
+
+    public void setUpdateTs(Timestamp updateTs) {
+        this.updateTs = updateTs;
     }
 }
