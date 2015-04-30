@@ -378,13 +378,7 @@ class FlagJobs {
       } catch (Exception ex) {
         System.out.println(ex.toString());
         ex.printStackTrace();
-      } /* catch (InterruptedException ex) {
-        //log.error(ex.toString());
-      } catch (ShutdownSignalException ex) {
-        //log.error(ex.toString());
-      } catch (ConsumerCancelledException ex) {
-        //log.error(ex.toString());
-      } */
+      }
     }
 
   }

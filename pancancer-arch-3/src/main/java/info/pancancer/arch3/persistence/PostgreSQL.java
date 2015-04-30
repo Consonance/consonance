@@ -201,6 +201,9 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
+            // prepare INI JSON
+            JSONObject jsonIni = new JSONObject(j.getIni());
+
             String sql = "INSERT INTO job " +
                     "(status, job_uuid, workflow, workflow_version, job_hash, ini) " +
                     "VALUES ('"+j.getState()+"'," +
@@ -208,7 +211,7 @@ public class PostgreSQL extends Base {
                     " '"+j.getWorkflow()+"'," +
                     " '"+j.getWorkflowVersion()+"'," +
                     " '"+ j.getJobHash() + "', " +
-                    " '"+ j.getIni() + "'" +
+                    " '"+ jsonIni.toJSONString() + "'" +
                     " )";
             stmt.executeUpdate(sql);
 
