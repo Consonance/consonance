@@ -202,6 +202,29 @@ You can use this in your testing to reset the system but keep in mind the danger
 ![Alt text](img/flow.png)
 ![Alt text](img/state.png)
 
+## FAQ
+
+### Calling Docker within Docker
+
+When running SeqWare in a docker container, there are tricky aspects to running workflows which contain docker steps within them. One issue that we ran into is this, when exposing a client inside a nested docker container to the docker daemon on the hosting VM (or server), volume mounts are resolved from the host. They are not resolved from the first docker container. 
+
+A code example on the command-line. 
+
+user@host:~/testing/arena$ docker run --rm -h master -it -v /var/run/docker.sock:/var/run/docker.sock seqware/seqware_whitestar_pancancer /bin/bash
+seqware@master:~/pancancer-bag$ pwd                                   (this is within the first container) 
+/home/seqware/pancancer-bag
+seqware@master:~/pancancer-bag$ docker run -i -t  -v `pwd`/shared_workspace/inputs:/workflow_data -v `pwd`/test:/root/test seqware/pancancer_upload_download /bin/bash
+root@6182a4bcab9d:/# ls /root/test                                    (this is within the second container)
+root@6182a4bcab9d:/# touch /root/test/oogly                           (this creates the file, not in the first container, but on the host filesystem)                                (this exits the first container)
+root@6182a4bcab9d:/# exit
+exit
+seqware@master:~/pancancer-bag$ ls test                            
+ls: cannot access test: No such file or directory
+seqware@master:~/pancancer-bag$ exit                                  (this exits the second container)
+exit
+user@host:~/testing/arena$ ls /home/seqware/pancancer-bag/test        (this is where the file ended up on the host)
+oogly
+
 ## TODO
 
 ### Soon
