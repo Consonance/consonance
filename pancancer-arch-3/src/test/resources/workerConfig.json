@@ -2,5 +2,9 @@
 	"rabbitMQQueueName":"seqware",
 	"rabbitMQHost":"localhost",
 	"rabbitMQUser":"guest",
-	"rabbitMQPass":"guest"
+	"rabbitMQPass":"guest",
+	"heartbeatRate":"2.5",
+	"preworkerSleep":"5",
+	"postworkerSleep":"5",
+	"max-runs":"1"
 }

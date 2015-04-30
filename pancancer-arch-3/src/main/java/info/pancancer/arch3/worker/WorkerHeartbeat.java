@@ -16,19 +16,16 @@ public class WorkerHeartbeat implements Runnable {
     @Override
     public void run() {
         //while (!Thread.currentThread().isInterrupted()) {
-        System.out.println("starting heartbeat thread");
+        System.out.println("starting heartbeat thread, will send heartbeat message ever "+secondsDelay + " seconds.");
         while (!Thread.currentThread().interrupted()) {
             byte[] body = this.getMessageBody().getBytes();
             try {
                 reportingChannel.basicPublish("", queueName + "_results", null, body);
                 Thread.sleep((long) (secondsDelay * 1000));
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                // TODO Auto-generated catch block
-                //e.printStackTrace();
                 System.out.println("Heartbeat shutting down.");
             }
         }

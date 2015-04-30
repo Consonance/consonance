@@ -14,20 +14,11 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -59,30 +50,38 @@ public class Worker implements Runnable {
     private String queueName = null;
     private Utilities u = new Utilities();
     private String vmUuid = null;
+    private int maxRuns = 1;
 
     public static void main(String[] argv) throws Exception {
 
         OptionParser parser = new OptionParser();
         parser.accepts("config").withOptionalArg().ofType(String.class);
         parser.accepts("uuid").withOptionalArg().ofType(String.class);
+        parser.accepts("max-runs").withOptionalArg().ofType(Integer.class);
+
         OptionSet options = parser.parse(argv);
 
         String configFile = null;
         String uuid = null;
+        int maxRuns = 1;
         if (options.has("config")) {
             configFile = (String) options.valueOf("config");
         }
         if (options.has("uuid")) {
             uuid = (String) options.valueOf("uuid");
         }
+        if (options.has("max-runs")) {
+            uuid = (String) options.valueOf("max-runs");
+        }
 
-        Worker w = new Worker(configFile, uuid);
+        Worker w = new Worker(configFile, uuid, maxRuns);
         w.run();
         System.out.println("Exiting.");
     }
 
-    public Worker(String configFile, String vmUuid) {
+    public Worker(String configFile, String vmUuid, int maxRuns) {
 
+        this.maxRuns = maxRuns;
         settings = u.parseConfig(configFile);
         queueName = (String) settings.get("rabbitMQQueueName");
         this.vmUuid = vmUuid;
@@ -92,7 +91,7 @@ public class Worker implements Runnable {
     @Override
     public void run() {
 
-        int max = 1;
+        int max = maxRuns;
 
         try {
 
@@ -106,10 +105,10 @@ public class Worker implements Runnable {
             resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
 
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-            String consumerTag = jobChannel.basicConsume(queueName + "_jobs", true, consumer);
+            String consumerTag = jobChannel.basicConsume(queueName + "_jobs", false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (max > 0) {
+            while (max > 0 || maxRuns <0 ) {
 
                 System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE WITH NAME: " + queueName + "_jobs");
 
@@ -129,7 +128,7 @@ public class Worker implements Runnable {
 
                     max--;
 
-                    System.out.println(" [x] Received JOBS REQUEST '" + message + "'");
+                    System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ "+vmUuid);
 
                     Job job = new Job().fromJSON(message);
 
@@ -141,12 +140,12 @@ public class Worker implements Runnable {
                     System.out.println(" WORKER LAUNCHING JOB");
                     // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own
                     // thread, harvesting STDERR/STDOUT periodically
-                    launchJob(statusJSON, job);
+                    String workflowOutput = launchJob(statusJSON, job);
 
                     // FIXME: this is the source of the bug... this thread never exists and as a consequence it uses the
                     // same VMUUID for all jobs... which mismatches what's in the DB and hence the update in the DB never happens
 
-                    status = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "job is finished");
+                    status = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "job is finished, Workflow result is:\n\n"+workflowOutput);
                     statusJSON = status.toJSON();
 
                     System.out.println(" WORKER FINISHING JOB");
@@ -155,7 +154,8 @@ public class Worker implements Runnable {
                 } else {
                     System.out.println(" [x] Job request came back NULL! ");
                 }
-
+                System.out.println(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
+                jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
             }
             jobChannel.getConnection().close();
             resultsChannel.getConnection().close();
@@ -189,7 +189,8 @@ public class Worker implements Runnable {
     }
 
     // TODO: obviously, this will need to launch something using Youxia in the future
-    private void launchJob(String message, Job job) {
+    private String launchJob(String message, Job job) {
+        String workflowOutput = "";
         String cmdResponse = null;
         /*LogOutputStream outputStream = new LogOutputStream() {
             private final List<String> lines = new LinkedList<String>();
@@ -215,15 +216,14 @@ public class Worker implements Runnable {
 
         try {
             Path pathToINI = writeINIFile(job);
-            resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
-                    message.getBytes());
+            resultsChannel.basicPublish("", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
 
             // Now we need to launch seqware in docker.
             DefaultExecutor executor = new DefaultExecutor();
 
             CommandLine cli = new CommandLine("docker");
             cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", job.getWorkflowPath() + ":/workflow", "-v",
-                    pathToINI + ":/ini","-v","/datastore:/datastore", "-i", "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow",
+                    pathToINI + ":/ini","-v","/datastore:/datastore", /*"-i",*/ "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow",
                     "--ini", "/ini", "--no-metadata"});
             System.out.println("Executing command: " + cli.toString().replace(",", ""));
 
@@ -239,22 +239,29 @@ public class Worker implements Runnable {
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName("seqware");
             heartbeat.setReportingChannel(resultsChannel);
-            heartbeat.setSecondsDelay(0.7);
+            heartbeat.setSecondsDelay(Double.parseDouble((String)settings.get("heartbeatRate")));
             heartbeat.setMessageBody(heartbeatStatus.toJSON());
-            //heartbeat.start();
-            
             
             ExecutorService exService = Executors.newSingleThreadExecutor();
             exService.execute(heartbeat);
             
             executor.setStreamHandler(streamHandler);
+            
             executor.execute(cli);
-            Thread.sleep(5000);
-            //heartbeat.stop=true;
-            //heartbeat.interrupt();
-            //heartbeat.join();
-            //cmdResponse = outputStream.getLines();//outputStream.toString(CHARSET_ENCODING);
-            System.out.println("Docker execution result: " + new String(outputStream.toByteArray()));
+            long presleepMillis = 1000 * Long.parseLong((String)settings.get("preworkerSleep"));
+            if (presleepMillis>0)
+            {
+                System.out.println("Sleeping before executing workflow for "+presleepMillis+" ms.");
+                Thread.sleep(presleepMillis);
+            }
+            workflowOutput = new String(outputStream.toByteArray());
+            System.out.println("Docker execution result: " + workflowOutput);
+            long postsleepMillis = 1000 * Long.parseLong((String)settings.get("postworkerSleep"));
+            if (postsleepMillis>0)
+            {
+                System.out.println("Sleeping after exeuting workflow for "+postsleepMillis+ " ms.");
+                Thread.sleep(postsleepMillis);
+            }
             exService.shutdownNow();
             outputStream.flush();
             outputStream.close();
@@ -262,15 +269,17 @@ public class Worker implements Runnable {
             // if (cmdResponse!=null)
             // cmdResponse.toString();
             if (outputStream != null) {
-                log.error("Error from Docker: " + outputStream.toString());
+                workflowOutput = new String(outputStream.toByteArray());
+                log.error("Error from Docker: " + workflowOutput);
             }
             e.printStackTrace();
             log.error(e.toString());
+            return workflowOutput;
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } 
-
+        return workflowOutput;
     }
     private static InetAddress getFirstNonLoopbackAddress() throws SocketException {
 //        Enumeration en = NetworkInterface.getNetworkInterfaces();
