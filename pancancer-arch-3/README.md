@@ -54,6 +54,10 @@ Basically you do:
 
 And at that point the service is running.
 
+You can view a web GUI at:
+
+    http://localhost:15672
+
 ### PostgreSQL
 
 Install with Homebrew
