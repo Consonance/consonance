@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Created by boconnor on 2015-04-22.
  */
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class Job {
     private String state;
     private String uuid = UUID.randomUUID().toString().toLowerCase();
@@ -22,6 +24,7 @@ public class Job {
     private String workflowPath;
     private String workflowVersion;
     private String jobHash;
+    private String messageType;
     private Map<String, String> ini = new HashMap<String, String>();
 
     public Job(String workflow, String workflowVersion, String jobHash, Map<String, String>  ini) {
@@ -135,6 +138,15 @@ public class Job {
 
     public void setWorkflowPath(String workflowPath) {
         this.workflowPath = workflowPath;
+    }
+
+    @JsonProperty("message_type")
+    public String getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
     }
 
 }
