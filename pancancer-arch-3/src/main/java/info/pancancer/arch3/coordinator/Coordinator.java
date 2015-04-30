@@ -346,7 +346,7 @@ class FlagJobs {
           List<Job> jobs = db.getJobs(u.RUNNING);
 
           // how long before we call something lost?
-          int secBeforeLost = (Integer)settings.get("max_seconds_before_lost");
+          long secBeforeLost = (Long)settings.get("max_seconds_before_lost");
 
           for (Job job : jobs) {
             Timestamp createTs = job.getCreateTs();
