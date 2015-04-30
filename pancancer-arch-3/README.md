@@ -235,9 +235,9 @@ A code example on the command-line.
 ### Soon
 
 * test failure propogation... I had DEWrapper fail but the DB was updated with success!
-* need to detect lost jobs and handle them appropriately
+* need to detect lost jobs and handle them appropriately -- DONE
 * need an option to prevent jobs from being re-queued if their hash is in the DB
-* in particular, what happens when a host crashes?  Does the job get re-enqueued automatically?
+* in particular, what happens when a host crashes?  Does the job get re-enqueued automatically? -- DONE, yes, a crashed host is automatically re-enqueued if the wrapper process is terminated. However, just network timeout I'm not sure.  Mostly failures seem to re-enqueue so another worker will pick up and eventually change the status from lost to running again.
 * ---
 * better error checking
 * improve logging
