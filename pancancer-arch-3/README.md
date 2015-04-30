@@ -234,6 +234,7 @@ A code example on the command-line.
 
 ### Soon
 
+* test failure propogation... I had DEWrapper fail but the DB was updated with success!
 * need to detect lost jobs and handle them appropriately
 * need an option to prevent jobs from being re-queued if their hash is in the DB
 * in particular, what happens when a host crashes?  Does the job get re-enqueued automatically?
