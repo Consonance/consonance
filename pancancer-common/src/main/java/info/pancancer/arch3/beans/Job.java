@@ -69,8 +69,8 @@ public class Job {
         workflowPath = (String) obj.get("workflow_path");
         jobHash = (String) obj.get("job_hash");
         uuid = (String) obj.get("job_uuid");
-        createTs = Timestamp.valueOf ((String)obj.get("create_timestamp"));
-        updateTs = Timestamp.valueOf ((String)obj.get("update_timestamp"));
+        if (obj.get("create_timestamp") != null && !"null".equals((String)obj.get("create_timestamp"))) { createTs = Timestamp.valueOf ((String)obj.get("create_timestamp")); }
+        if (obj.get("update_timestamp") != null && !"null".equals((String)obj.get("update_timestamp"))) { updateTs = Timestamp.valueOf ((String)obj.get("update_timestamp")); }
         JSONObject provision = (JSONObject) obj.get("arguments");
         ini = new HashMap<String, String>();
         for (Object key : provision.keySet()) {

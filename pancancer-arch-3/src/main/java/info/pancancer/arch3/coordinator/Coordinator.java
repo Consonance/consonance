@@ -264,6 +264,7 @@ class CleanupJobs {
           // this is acutally finishing the VM and not the work
           if (status.getState().equals(u.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
             // this is where it reaps, the job status message also contains the UUID for the VM
+            System.out.println("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
             db.finishJob(status.getJobUuid());
           } else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED)  || status.getState().equals(u.PENDING))
                   && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
