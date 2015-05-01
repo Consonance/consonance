@@ -1,4 +1,6 @@
 sudo: false                                                                                                                                                               
 language: java                                                                                                                                                            
 jdk:                                                                                                                                                                      
-  - oraclejdk7                                                                                                                                                            
+  - oraclejdk7                                                                                                                                                           
+after_success:
+  - coveralls 
