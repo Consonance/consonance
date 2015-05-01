@@ -140,6 +140,10 @@ class CoordinatorOrders {
             String result = requestVm(order.getProvision().toJSON());
             String result2 = requestJob(order.getJob().toJSON());
 
+          } else {
+
+            System.out.println("\n\nSKIPPING JOB WITH HASH "+order.getJob().getJobHash()+" PREVIOUSLY SUBMITTED/FAILED/RUNNING/SUCCESSFUL\n");
+
           }
 
           System.out.println("acknowledging " + delivery.getEnvelope().toString());
