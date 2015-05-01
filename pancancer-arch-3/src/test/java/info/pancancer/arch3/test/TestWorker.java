@@ -4,8 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
+import info.pancancer.arch3.worker.WorkerHeartbeat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -24,6 +26,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -35,6 +39,7 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
+
 
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class })
 @RunWith(PowerMockRunner.class)
@@ -84,7 +89,6 @@ public class TestWorker {
         Mockito.when(mockUtil.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
         Mockito.when(mockUtil.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
-
         
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("rabbitMQQueueName", "seqware");
@@ -131,6 +135,7 @@ public class TestWorker {
         knownResults = knownResults.replaceAll("bundle_manager\\d+", "bundle_manager_LONG_NUMERIC_SEQUENCE");
         knownResults = knownResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
         knownResults = knownResults.replaceAll("\r", "");
+        knownResults = knownResults.replaceAll("IP address: /?\\d{0,3}\\.\\d{0,3}\\.\\d{0,3}\\.\\d{0,3}", "IP Address: 0.0.0.0");
         
         testResults = testResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
         testResults = testResults.replaceAll("oozie-[a-z0-9\\-]+", "JOB_ID");
@@ -138,7 +143,7 @@ public class TestWorker {
         testResults = testResults.replaceAll("bundle_manager\\d+", "bundle_manager_LONG_NUMERIC_SEQUENCE");
         testResults = testResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
         testResults = testResults.replaceAll("\r", "");
-        
+        testResults = testResults.replaceAll("IP address: /?\\d{0,3}\\.\\d{0,3}\\.\\d{0,3}\\.\\d{0,3}", "IP Address: 0.0.0.0");
         assertEquals(knownResults,testResults);
     }
 }

@@ -26,7 +26,7 @@ Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
 "state": "running",
 "stderr": "null",
 "stdout": "null",
-"message": "job is running; IP address: /172.17.42.1"
+"message": "job is running; IP address: 0.0.0.0"
 }
 
 Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/sshorser/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]
@@ -37,7 +37,7 @@ Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
 "state": "running",
 "stderr": "null",
 "stdout": "null",
-"message": "job is running; IP address: /172.17.42.1"
+"message": "job is running; IP address: 0.0.0.0"
 }
 
 Sleeping after exeuting workflow for 1000 ms.
