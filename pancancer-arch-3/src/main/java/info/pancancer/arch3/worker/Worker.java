@@ -213,17 +213,12 @@ public class Worker implements Runnable {
     private String launchJob(String message, Job job) {
         String workflowOutput = "";
 
-//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
         WorkflowRunner workflowRunner = new WorkflowRunner();
         try {
             
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes());
-
-            // Now we need to launch seqware in docker.
-//            DefaultExecutor executor = new DefaultExecutor();
 
             CommandLine cli = new CommandLine("docker");
             cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t"
@@ -234,7 +229,6 @@ public class Worker implements Runnable {
                                 "-v","/home/"+this.userName+"/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem",
                     "seqware/seqware_whitestar_pancancer",
                         "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
-//            System.out.println("Executing command: " + cli.toString().replace(",", ""));
 
             Status heartbeatStatus = new Status();
             heartbeatStatus.setJobUuid(job.getUuid());
@@ -259,32 +253,16 @@ public class Worker implements Runnable {
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
             
-//            if (presleepMillis > 0) {
-//                System.out.println("Sleeping before executing workflow for " + presleepMillis + " ms.");
-//                Thread.sleep(presleepMillis);
-//            }
-
             ExecutorService exService = Executors.newFixedThreadPool(2);
             exService.execute(heartbeat);
+            //This short little sleep is only here so that when I run unit tests, the output will be consistent between all executions:
+            //FIRST the heartbeat startup output, THEN the workflow runner output.
+            Thread.sleep(50);
             Future<String> workflowResult = exService.submit(workflowRunner);
-//            executor.setStreamHandler(streamHandler);
-
-//            executor.execute(cli);
-
-            //workflowOutput = new String(outputStream.toByteArray());
             workflowOutput = workflowResult.get();
             System.out.println("Docker execution result: " + workflowOutput);
-//            long postsleepMillis = 1000 * Long.parseLong((String) settings.get("postworkerSleep"));
-//            if (postsleepMillis > 0) {
-//                System.out.println("Sleeping after exeuting workflow for " + postsleepMillis + " ms.");
-//                Thread.sleep(postsleepMillis);
-//            }
             exService.shutdownNow();
-//            outputStream.flush();
-//            outputStream.close();
         } catch (IOException e) {
-            // if (cmdResponse!=null)
-            // cmdResponse.toString();
             if (workflowRunner.getStdErr() != null) {
                 log.error("Error from Docker (stderr): " + workflowOutput);
             }

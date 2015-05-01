@@ -19,8 +19,6 @@ param2=value2
 param3=help I'm trapped in an INI file
 
 INI file: /tmp/seqware_5097202839327727870.ini
-Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/sshorser/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]
-Sleeping before executing workflow for 1000 ms.
 starting heartbeat thread, will send heartbeat message ever 2.5 seconds.
 Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
 "jobUuid": "1234567890",
@@ -31,8 +29,43 @@ Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
 "message": "job is running; IP address: /172.17.42.1"
 }
 
-Docker execution result: 
+Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/sshorser/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]
+Sleeping before executing workflow for 1000 ms.
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "running",
+"stderr": "null",
+"stdout": "null",
+"message": "job is running; IP address: /172.17.42.1"
+}
+
 Sleeping after exeuting workflow for 1000 ms.
+Docker execution result: Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager6690056806842040305out]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/scheduler1726344824869185984out, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[2015/05/01 16:02:11] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/oozie-3d8ee202-b1a8-4a8e-8adf-7ab5405a4e98
+[2015/05/01 16:02:11] | Running command: bash /datastore/oozie-3d8ee202-b1a8-4a8e-8adf-7ab5405a4e98/generated-scripts/s10_start_0-runner.sh
+[2015/05/01 16:02:11] | Running command: bash /datastore/oozie-3d8ee202-b1a8-4a8e-8adf-7ab5405a4e98/generated-scripts/s10_pfi_file_in_0_1-runner.sh
+[2015/05/01 16:02:12] | Running command: bash /datastore/oozie-3d8ee202-b1a8-4a8e-8adf-7ab5405a4e98/generated-scripts/s10_bash_mkdir_2-runner.sh
+[2015/05/01 16:02:12] | Running command: bash /datastore/oozie-3d8ee202-b1a8-4a8e-8adf-7ab5405a4e98/generated-scripts/s10_bash_cp_3-runner.sh
+[2015/05/01 16:02:12] | Running command: bash /datastore/oozie-3d8ee202-b1a8-4a8e-8adf-7ab5405a4e98/generated-scripts/s10_bash_cp_4-runner.sh
+[2015/05/01 16:02:12] | Running command: bash /datastore/oozie-3d8ee202-b1a8-4a8e-8adf-7ab5405a4e98/generated-scripts/s10_pfo_5-runner.sh
+[2015/05/01 16:02:12] | Setting workflow-run status to complete for: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowWatcher, --, --workflow-run-accession, 10]
+Workflow run 10 is now completed
+[--plugin, net.sourceforge.seqware.pipeline.plugins.WorkflowStatusChecker, --, --workflow-run-accession, 10]
+
 Heartbeat shutting down.
  WORKER FINISHING JOB
 vm123456 acknowledges mockEnvelope

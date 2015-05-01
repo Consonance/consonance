@@ -123,10 +123,22 @@ public class TestWorker {
         System.setOut(originalOutStream);
         System.out.println(testResults);
        
-        //Because we are generating temp files with unique names, simply asserting that the two strings match will not work.
+        //Because we are generating temp files with unique names and numeric sequence, simply asserting that the two strings match will not work.
         //The text containing the temp file name must be cleaned before we can assert that the code worked.
         knownResults = knownResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
+        knownResults = knownResults.replaceAll("oozie-[a-z0-9\\-]+", "JOB_ID");
+        knownResults = knownResults.replaceAll("\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}", "0000/00/00 00:00:00");
+        knownResults = knownResults.replaceAll("bundle_manager\\d+", "bundle_manager_LONG_NUMERIC_SEQUENCE");
+        knownResults = knownResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
+        knownResults = knownResults.replaceAll("\r", "");
+        
         testResults = testResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
+        testResults = testResults.replaceAll("oozie-[a-z0-9\\-]+", "JOB_ID");
+        testResults = testResults.replaceAll("\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}", "0000/00/00 00:00:00");
+        testResults = testResults.replaceAll("bundle_manager\\d+", "bundle_manager_LONG_NUMERIC_SEQUENCE");
+        testResults = testResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
+        testResults = testResults.replaceAll("\r", "");
+        
         assertEquals(knownResults,testResults);
     }
 }
