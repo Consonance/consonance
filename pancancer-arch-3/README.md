@@ -20,7 +20,7 @@ on your development host directly.
 I'm focused on development on a Mac using HomeBrew, you will need to setup
 the dependencies using whatever system is appropriate for your environment.
 
-### Ubuntu
+### Ubuntu 14.04
 
 For RabbitMQ see: https://www.rabbitmq.com/install-debian.html
 
