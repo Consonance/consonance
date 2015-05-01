@@ -91,6 +91,7 @@ public class TestWorker {
         jsonObj.put("heartbeatRate","2.5");
         jsonObj.put("preworkerSleep","1");
         jsonObj.put("postworkerSleep","1");
+        jsonObj.put("hostUserName", System.getProperty("user.name"));
         Mockito.when(mockUtil.parseConfig(anyString())).thenReturn(jsonObj);
         
         Job j = new Job();

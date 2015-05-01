@@ -15,6 +15,8 @@ public class IniFile {
     private Pattern  _keyValue = Pattern.compile( "\\s*([^=]*)=(.*)" );
     private Map<String,Map<String,String>> _entries  = new HashMap<>();
 
+    //TODO: Maybe add functionality to write this object to a new file? 
+    
     public IniFile( String path ) throws IOException {
         load( path );
     }

@@ -1,9 +1,11 @@
 package info.pancancer.arch3.worker;
 
 import com.rabbitmq.client.*;
+
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.utils.IniFile;
 import info.pancancer.arch3.utils.Utilities;
 
 import java.io.ByteArrayOutputStream;
@@ -21,8 +23,10 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -52,9 +56,12 @@ public class Worker implements Runnable {
     private Channel jobChannel = null;
     private Connection connection = null;
     private String queueName = null;
+    private String jobQueueName;
+    private String resultsQueueName;
     private Utilities u = new Utilities();
     private String vmUuid = null;
     private int maxRuns = 1;
+    private String userName;
 
     public static void main(String[] argv) throws Exception {
 
@@ -85,7 +92,14 @@ public class Worker implements Runnable {
     public Worker(String configFile, String vmUuid, int maxRuns) {
 
         settings = u.parseConfig(configFile);
-        queueName = (String) settings.get("rabbitMQQueueName");
+        this.queueName = (String) settings.get("rabbitMQQueueName");
+        if (this.queueName==null)
+        {
+            throw new NullPointerException("Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
+        }
+        this.jobQueueName = this.queueName+"_jobs";
+        this.resultsQueueName = this.queueName+"_results";
+        this.userName = (String) settings.get("hostUserName"); 
         this.vmUuid = vmUuid;
         this.maxRuns = maxRuns;
     }
@@ -101,13 +115,16 @@ public class Worker implements Runnable {
             System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
 
             // read from
-            jobChannel = u.setupQueue(settings, queueName + "_jobs");
+            jobChannel = u.setupQueue(settings, this.jobQueueName);
 
             // write to
-            resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
+            //TODO: Add some sort of "local debug" mode so that developers working on their local
+            //workstation can declare the queue if it doesn't exist. Normally, the results queue is 
+            //created by the Coordinator.
+            resultsChannel = u.setupMultiQueue(settings, this.resultsQueueName);
 
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-            String consumerTag = jobChannel.basicConsume(queueName + "_jobs", false, consumer);
+            String consumerTag = jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
             while (max > 0 || maxRuns <= 0) {
@@ -195,32 +212,29 @@ public class Worker implements Runnable {
     // TODO: obviously, this will need to launch something using Youxia in the future
     private String launchJob(String message, Job job) {
         String workflowOutput = "";
-        String cmdResponse = null;
-        /*
-         * LogOutputStream outputStream = new LogOutputStream() { private final List<String> lines = new LinkedList<String>();
-         * 
-         * @Override protected void processLine(String line, int level) { lines.add(line); } public List<String> getLines() { return lines;
-         * }
-         * 
-         * public String toString() { StringBuffer buff = new StringBuffer(); for (String l : this.lines) { buff.append(l); } return
-         * buff.toString(); } };
-         */
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
 
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+        WorkflowRunner workflowRunner = new WorkflowRunner();
         try {
+            
             Path pathToINI = writeINIFile(job);
-            resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
+            resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes());
 
             // Now we need to launch seqware in docker.
-            DefaultExecutor executor = new DefaultExecutor();
+//            DefaultExecutor executor = new DefaultExecutor();
 
             CommandLine cli = new CommandLine("docker");
-            cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", job.getWorkflowPath() + ":/workflow", "-v",
-                    pathToINI + ":/ini", "-v", "/datastore:/datastore", /* "-i", */"seqware/seqware_whitestar_pancancer", "seqware",
-                    "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
-            System.out.println("Executing command: " + cli.toString().replace(",", ""));
+            cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t"
+                                ,"-v", "/var/run/docker.sock:/var/run/docker.sock",
+                                "-v", job.getWorkflowPath() + ":/workflow",
+                                "-v",pathToINI + ":/ini",
+                                "-v", "/datastore:/datastore",
+                                "-v","/home/"+this.userName+"/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem",
+                    "seqware/seqware_whitestar_pancancer",
+                        "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
+//            System.out.println("Executing command: " + cli.toString().replace(",", ""));
 
             Status heartbeatStatus = new Status();
             heartbeatStatus.setJobUuid(job.getUuid());
@@ -232,45 +246,63 @@ public class Worker implements Runnable {
             heartbeatStatus.setVmUuid(vmUuid);
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
-            heartbeat.setQueueName(this.queueName);
+            heartbeat.setQueueName(this.resultsQueueName);
             heartbeat.setReportingChannel(resultsChannel);
             heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get("heartbeatRate")));
             heartbeat.setMessageBody(heartbeatStatus.toJSON());
 
             long presleepMillis = 1000 * Long.parseLong((String) settings.get("preworkerSleep"));
-            if (presleepMillis > 0) {
-                System.out.println("Sleeping before executing workflow for " + presleepMillis + " ms.");
-                Thread.sleep(presleepMillis);
-            }
-
-            ExecutorService exService = Executors.newSingleThreadExecutor();
-            exService.execute(heartbeat);
-
-            executor.setStreamHandler(streamHandler);
-
-            executor.execute(cli);
-
-            workflowOutput = new String(outputStream.toByteArray());
-            System.out.println("Docker execution result: " + workflowOutput);
             long postsleepMillis = 1000 * Long.parseLong((String) settings.get("postworkerSleep"));
-            if (postsleepMillis > 0) {
-                System.out.println("Sleeping after exeuting workflow for " + postsleepMillis + " ms.");
-                Thread.sleep(postsleepMillis);
-            }
+            
+            
+            workflowRunner.setCli(cli);
+            workflowRunner.setPreworkDelay(presleepMillis);
+            workflowRunner.setPostworkDelay(postsleepMillis);
+            
+//            if (presleepMillis > 0) {
+//                System.out.println("Sleeping before executing workflow for " + presleepMillis + " ms.");
+//                Thread.sleep(presleepMillis);
+//            }
+
+            ExecutorService exService = Executors.newFixedThreadPool(2);
+            exService.execute(heartbeat);
+            Future<String> workflowResult = exService.submit(workflowRunner);
+//            executor.setStreamHandler(streamHandler);
+
+//            executor.execute(cli);
+
+            //workflowOutput = new String(outputStream.toByteArray());
+            workflowOutput = workflowResult.get();
+            System.out.println("Docker execution result: " + workflowOutput);
+//            long postsleepMillis = 1000 * Long.parseLong((String) settings.get("postworkerSleep"));
+//            if (postsleepMillis > 0) {
+//                System.out.println("Sleeping after exeuting workflow for " + postsleepMillis + " ms.");
+//                Thread.sleep(postsleepMillis);
+//            }
             exService.shutdownNow();
-            outputStream.flush();
-            outputStream.close();
+//            outputStream.flush();
+//            outputStream.close();
         } catch (IOException e) {
             // if (cmdResponse!=null)
             // cmdResponse.toString();
-            if (outputStream != null) {
-                workflowOutput = new String(outputStream.toByteArray());
-                log.error("Error from Docker: " + workflowOutput);
+            if (workflowRunner.getStdErr() != null) {
+                log.error("Error from Docker (stderr): " + workflowOutput);
             }
-            e.printStackTrace();
+            else if (workflowRunner.getStdOut() != null) {
+                //maybe the message is in stdout?
+                log.error("Error from Docker (stdout): " + workflowOutput);
+            }
+            else
+            {
+                log.error("Docker experienced an error but did not return any output, error is: "+e.getMessage());
+            }
+            e.printStackTrace(); 
             log.error(e.toString());
             return workflowOutput;
         } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ExecutionException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -300,7 +332,7 @@ public class Worker implements Runnable {
 
     private void finishJob(String message) {
         try {
-            resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
+            resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes());
         } catch (IOException e) {
             log.error(e.toString());
