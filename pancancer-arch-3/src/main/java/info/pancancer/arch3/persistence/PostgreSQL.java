@@ -2,16 +2,19 @@ package info.pancancer.arch3.persistence;
 
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
-import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.utils.Utilities;
-import org.json.simple.JSONObject;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import org.json.simple.JSONObject;
 
 /**
  * Created by boconnor on 2015-04-22.
@@ -30,14 +33,14 @@ public class PostgreSQL extends Base {
 
             Class.forName("org.postgresql.Driver");
 
-            String url = "jdbc:postgresql://"+host+"/"+db;
+            String url = "jdbc:postgresql://" + host + "/" + db;
             Properties props = new Properties();
-            props.setProperty("user",user);
-            props.setProperty("password",pass);
-            //props.setProperty("ssl","true");
+            props.setProperty("user", user);
+            props.setProperty("password", pass);
+            // props.setProperty("ssl","true");
             conn = DriverManager.getConnection(url, props);
 
-            log.debug("test "+conn);
+            log.debug("test " + conn);
 
         } catch (SQLException e) {
             log.error(e.toString());
@@ -47,7 +50,7 @@ public class PostgreSQL extends Base {
 
     }
 
-    public void close () {
+    public void close() {
         try {
             conn.close();
         } catch (SQLException e) {
@@ -76,7 +79,7 @@ public class PostgreSQL extends Base {
             log.error(e.toString());
         }
 
-        return(uuid);
+        return (uuid);
     }
 
     public void updatePendingProvision(String uuid) {
@@ -84,7 +87,8 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = '"+Utilities.RUNNING+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
+            String sql = "update provision set status = '" + Utilities.RUNNING + "', update_timestamp = NOW() where provision_uuid = '"
+                    + uuid + "'";
             stmt.execute(sql);
             stmt.close();
 
@@ -98,7 +102,8 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = '"+ Utilities.SUCCESS+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
+            String sql = "update provision set status = '" + Utilities.SUCCESS + "', update_timestamp = NOW() where provision_uuid = '"
+                    + uuid + "'";
             stmt.execute(sql);
             stmt.close();
 
@@ -112,7 +117,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update job set status = '"+ Utilities.SUCCESS+"', update_timestamp = NOW() where job_uuid = '"+uuid+"'";
+            String sql = "update job set status = '" + Utilities.SUCCESS + "', update_timestamp = NOW() where job_uuid = '" + uuid + "'";
             stmt.execute(sql);
             stmt.close();
 
@@ -126,7 +131,8 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update job set status = '"+ status +"', provision_uuid = '"+vmUuid+"', update_timestamp = NOW() where job_uuid = '"+uuid+"'";
+            String sql = "update job set status = '" + status + "', provision_uuid = '" + vmUuid
+                    + "', update_timestamp = NOW() where job_uuid = '" + uuid + "'";
             stmt.execute(sql);
             stmt.close();
 
@@ -140,7 +146,8 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "update provision set status = '"+ status +"', job_uuid = '"+jobUuid+"', update_timestamp = NOW() where provision_uuid = '"+uuid+"'";
+            String sql = "update provision set status = '" + status + "', job_uuid = '" + jobUuid
+                    + "', update_timestamp = NOW() where provision_uuid = '" + uuid + "'";
             stmt.execute(sql);
             stmt.close();
 
@@ -157,7 +164,7 @@ public class PostgreSQL extends Base {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "select count(*) from provision where status = '"+status+"'";
+            String sql = "select count(*) from provision where status = '" + status + "'";
             ResultSet rs = stmt.executeQuery(sql);
             if (rs.next()) {
                 count = rs.getInt(1);
@@ -169,34 +176,29 @@ public class PostgreSQL extends Base {
             e.printStackTrace();
         }
 
-        return(count);
+        return (count);
     }
 
-    public String createProvision (Provision p) {
+    public String createProvision(Provision p) {
 
         try {
 
             Statement stmt = conn.createStatement();
 
-            String sql = "INSERT INTO provision " +
-                    "(status, provision_uuid, cores, mem_gb, storage_gb) " +
-                    "VALUES ('"+p.getState()+"'," +
-                    " '"+p.getUuid()+"'," +
-                    " "+p.getCores()+"," +
-                    " "+p.getMemGb()+"," +
-                    " "+p.getStorageGb() +
-                    " )";
+            String sql = "INSERT INTO provision " + "(status, provision_uuid, cores, mem_gb, storage_gb) " + "VALUES ('" + p.getState()
+                    + "'," + " '" + p.getUuid() + "'," + " " + p.getCores() + "," + " " + p.getMemGb() + "," + " " + p.getStorageGb()
+                    + " )";
             stmt.executeUpdate(sql);
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return(p.getUuid());
+        return (p.getUuid());
 
     }
 
-    public String createJob (Job j) {
+    public String createJob(Job j) {
         try {
 
             Statement stmt = conn.createStatement();
@@ -204,27 +206,21 @@ public class PostgreSQL extends Base {
             // prepare INI JSON
             JSONObject jsonIni = new JSONObject(j.getIni());
 
-            String sql = "INSERT INTO job " +
-                    "(status, job_uuid, workflow, workflow_version, job_hash, ini) " +
-                    "VALUES ('"+j.getState()+"'," +
-                    " '"+j.getUuid()+"'," +
-                    " '"+j.getWorkflow()+"'," +
-                    " '"+j.getWorkflowVersion()+"'," +
-                    " '"+ j.getJobHash() + "', " +
-                    " '"+ jsonIni.toJSONString() + "'" +
-                    " )";
+            String sql = "INSERT INTO job " + "(status, job_uuid, workflow, workflow_version, job_hash, ini) " + "VALUES ('" + j.getState()
+                    + "'," + " '" + j.getUuid() + "'," + " '" + j.getWorkflow() + "'," + " '" + j.getWorkflowVersion() + "'," + " '"
+                    + j.getJobHash() + "', " + " '" + jsonIni.toJSONString() + "'" + " )";
             stmt.executeUpdate(sql);
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return(j.getUuid());
+        return (j.getUuid());
     }
 
     public List<Job> getJobs(String status) {
 
-        ArrayList<Job> jobs = new ArrayList<Job>();
+        ArrayList<Job> jobs = new ArrayList<>();
 
         try {
 
@@ -232,7 +228,9 @@ public class PostgreSQL extends Base {
             Utilities u = new Utilities();
 
             String sql = "select * from job";
-            if (status != null && !"".equals(status)) { sql = "select * from job where status = '"+status+"'"; }
+            if (status != null && !"".equals(status)) {
+                sql = "select * from job where status = '" + status + "'";
+            }
             ResultSet rs = stmt.executeQuery(sql);
             while (rs.next()) {
 
@@ -245,7 +243,7 @@ public class PostgreSQL extends Base {
                 JSONObject iniJson = u.parseJSONStr(rs.getString("ini"));
                 HashMap<String, String> ini = new HashMap<String, String>();
                 for (Object key : iniJson.keySet()) {
-                    ini.put((String)key, (String)iniJson.get(key));
+                    ini.put((String) key, (String) iniJson.get(key));
                 }
                 j.setIni(ini);
 
@@ -266,7 +264,7 @@ public class PostgreSQL extends Base {
             log.error(e.toString());
         }
 
-        return(jobs);
+        return (jobs);
     }
 
     public boolean previouslyRun(String hash) {
@@ -275,14 +273,14 @@ public class PostgreSQL extends Base {
 
         try {
             Statement stmt = conn.createStatement();
-            String sql = "select * from job where job_hash = '"+hash+"'";
+            String sql = "select * from job where job_hash = '" + hash + "'";
             ResultSet rs = stmt.executeQuery(sql);
-            return(rs.next());
+            return (rs.next());
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return(seen);
+        return (seen);
     }
 
 }

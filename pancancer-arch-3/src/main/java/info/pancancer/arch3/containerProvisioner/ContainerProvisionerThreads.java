@@ -5,17 +5,15 @@ import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
-import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
+import java.io.IOException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
-
-import java.io.IOException;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -57,21 +55,19 @@ public class ContainerProvisionerThreads extends Base {
 
     }
 
-
 }
 
 /**
- * This dequeues the VM requests and stages them in the DB as pending so I can
- * keep a count of what's running/pending/finished.
+ * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
  */
 class ProcessVMOrders {
 
     private JSONObject settings = null;
     private Channel vmChannel = null;
     private String queueName = null;
-    private Utilities u = new Utilities();
+    private final Utilities u = new Utilities();
 
-    private Inner inner;
+    private final Inner inner;
 
     private class Inner extends Thread {
 
@@ -83,6 +79,7 @@ class ProcessVMOrders {
             start();
         }
 
+        @Override
         public void run() {
             try {
 
@@ -105,7 +102,7 @@ class ProcessVMOrders {
                     System.out.println("CHECKING FOR NEW VM ORDER!");
 
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-                    //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                    // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody());
                     System.out.println(" [x] Received New VM Request '" + message + "'");
 
@@ -117,25 +114,21 @@ class ProcessVMOrders {
                     // puts it into the DB so I can count it in another thread
                     db.createProvision(p);
 
-                    /*try {
-                        // pause
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ex) {
-                        //log.error(ex.toString());
-                    }*/
+                    /*
+                     * try { // pause Thread.sleep(5000); } catch (InterruptedException ex) { //log.error(ex.toString()); }
+                     */
 
                 }
 
             } catch (IOException ex) {
                 System.out.println(ex.toString());
                 ex.printStackTrace();
-            } catch (InterruptedException ex) {
-                //log.error(ex.toString());
-            } catch (ShutdownSignalException ex) {
-                //log.error(ex.toString());
-            } catch (ConsumerCancelledException ex) {
-                //log.error(ex.toString());
+            } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
+                // log.error(ex.toString());
             }
+            // log.error(ex.toString());
+            // log.error(ex.toString());
+
         }
 
     }
@@ -145,17 +138,15 @@ class ProcessVMOrders {
     }
 }
 
-
 /**
- * This examines the provision table in the DB to identify the number of running VMs. It then
- * figures out if the number running is < the max number.  If so it picks the oldest pending,
- * switches to running, and launches a worker thread.
+ * This examines the provision table in the DB to identify the number of running VMs. It then figures out if the number running is < the max
+ * number. If so it picks the oldest pending, switches to running, and launches a worker thread.
  */
 class ProvisionVMs {
 
     private JSONObject settings = null;
-    private Channel resultsChannel = null;
-    private Channel vmChannel = null;
+    private final Channel resultsChannel = null;
+    private final Channel vmChannel = null;
     private String queueName = null;
     private Utilities u = new Utilities();
     private long maxWorkers = 0;
@@ -172,6 +163,7 @@ class ProvisionVMs {
             start();
         }
 
+        @Override
         public void run() {
             try {
 
@@ -188,13 +180,13 @@ class ProvisionVMs {
                 // TODO: need threads that each read from orders and another that reads results
                 while (true) {
 
-                    //System.out.println("CHECKING RUNNING VMs");
+                    // System.out.println("CHECKING RUNNING VMs");
 
                     // read from DB
                     int numberRunningContainers = db.getProvisionCount(Utilities.RUNNING);
                     int numberPendingContainers = db.getProvisionCount(Utilities.PENDING);
 
-                    //System.out.println("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
+                    // System.out.println("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
 
                     // if this is true need to launch another container
                     if (numberRunningContainers < maxWorkers && numberPendingContainers > 0) {
@@ -205,33 +197,31 @@ class ProvisionVMs {
                         String uuid = db.getPendingProvisionUUID();
                         // this just updates one that's pending
                         db.updatePendingProvision(uuid);
-                        // now launch the VM... doing this after the update above to prevent race condition if the worker signals finished before it's marked as pending
+                        // now launch the VM... doing this after the update above to prevent race condition if the worker signals finished
+                        // before it's marked as pending
                         launchVM(uuid);
 
                     }
 
-                    /*try {
-                        // pause
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ex) {
-                        //log.error(ex.toString());
-                    }*/
+                    /*
+                     * try { // pause Thread.sleep(5000); } catch (InterruptedException ex) { //log.error(ex.toString()); }
+                     */
 
                 }
 
             } catch (ShutdownSignalException ex) {
-                //log.error(ex.toString());
+                // log.error(ex.toString());
             } catch (ConsumerCancelledException ex) {
-                //log.error(ex.toString());
+                // log.error(ex.toString());
             }
         }
 
         // TOOD: obviously, this will need to launch something using Youxia in the future
         private void launchVM(String uuid) {
 
-           new Worker(configFile, uuid, 1).start();
+            new Worker(configFile, uuid, 1).start();
 
-            System.out.println("\n\n\nI LAUNCHED A WORKER THREAD FOR VM "+uuid+" AND IT'S RELEASED!!!\n\n");
+            System.out.println("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
 
         }
 
@@ -242,16 +232,14 @@ class ProvisionVMs {
     }
 }
 
-
 /**
- * This dequeues the VM requests and stages them in the DB as pending so I can
- * keep a count of what's running/pending/finished.
+ * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
  */
 class CleanupVMs {
 
     private JSONObject settings = null;
     private Channel resultsChannel = null;
-    private Channel vmChannel = null;
+    private final Channel vmChannel = null;
     private String queueName = null;
     private Utilities u = new Utilities();
     private QueueingConsumer resultsConsumer = null;
@@ -276,16 +264,16 @@ class CleanupVMs {
                 queueName = (String) settings.get("rabbitMQQueueName");
 
                 // read from
-                resultsChannel = u.setupMultiQueue(settings, queueName+"_results");
-                // this declares a queue exchange where multiple consumers get the same message: https://www.rabbitmq.com/tutorials/tutorial-three-java.html
+                resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
+                // this declares a queue exchange where multiple consumers get the same message:
+                // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
                 String resultsQueue = resultsChannel.queueDeclare().getQueue();
-                resultsChannel.queueBind(resultsQueue, queueName+"_results", "");
+                resultsChannel.queueBind(resultsQueue, queueName + "_results", "");
                 resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
-
 
                 // TODO: need threads that each read from orders and another that reads results
                 while (true) {
@@ -293,7 +281,7 @@ class CleanupVMs {
                     System.out.println("CHECKING FOR VMs TO REAP!");
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
-                    //jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                    // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody());
                     System.out.println(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
 
@@ -302,34 +290,27 @@ class CleanupVMs {
 
                     // now update that DB record to be exited
                     // this is acutally finishing the VM and not the work
-                    if (status.getState().equals(u.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                    if (status.getState().equals(Utilities.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
                     }
                     // deal with running, failed, pending, provisioning
-                    else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED)
-                            || status.getState().equals(u.PENDING) || status.getState().equals(u.PROVISIONING))
+                    else if ((status.getState().equals(Utilities.RUNNING) || status.getState().equals(Utilities.FAILED)
+                            || status.getState().equals(Utilities.PENDING) || status.getState().equals(Utilities.PROVISIONING))
                             && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         db.updateProvision(status.getVmUuid(), status.getJobUuid(), status.getState());
                     }
 
-                    /*try {
-                        // pause
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ex) {
-                        System.err.println(ex.toString());
-                    }*/
+                    /*
+                     * try { // pause Thread.sleep(5000); } catch (InterruptedException ex) { System.err.println(ex.toString()); }
+                     */
 
                 }
 
             } catch (IOException ex) {
                 System.out.println(ex.toString());
                 ex.printStackTrace();
-            } catch (InterruptedException ex) {
-                System.err.println(ex.toString());
-            } catch (ShutdownSignalException ex) {
-                System.err.println(ex.toString());
-            } catch (ConsumerCancelledException ex) {
+            } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 System.err.println(ex.toString());
             }
         }
@@ -340,10 +321,3 @@ class CleanupVMs {
         inner = new Inner(configFile);
     }
 }
-
-
-
-
-
-
-

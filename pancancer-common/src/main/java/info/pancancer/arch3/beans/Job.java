@@ -1,21 +1,19 @@
 package info.pancancer.arch3.beans;
 
 import info.pancancer.arch3.utils.Utilities;
-import org.json.simple.JSONObject;
-
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.json.simple.JSONObject;
 
 /**
- * Created by boconnor on 2015-04-22.
+ * This is the bean object that represents a job (a workflow.ini) that needs to be run. Created by boconnor on 2015-04-22.
  */
 public class Job {
 
-
     private String state;
-    private Utilities u = new Utilities();
+    private final Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String vmUuid;
     private String workflow;
@@ -26,7 +24,7 @@ public class Job {
     private Timestamp createTs;
     private Timestamp updateTs;
 
-    public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String>  ini) {
+    public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini) {
         this.workflow = workflow;
         this.workflowVersion = workflowVersion;
         this.workflowPath = workflowPath;
@@ -38,29 +36,27 @@ public class Job {
         super();
     }
 
-    public String toJSON () {
+    public String toJSON() {
 
-        StringBuffer j = new StringBuffer();
-        j.append("{" +
-        "\"message_type\": \"job\",\n" +
-        "\"job_hash\": \""+jobHash+"\",\n" +
-        "\"job_uuid\": \""+uuid+"\",\n" +
-        "\"provision_uuid\": \""+vmUuid+"\",\n" +
-        "\"workflow_name\": \""+workflow+"\",\n" +
-        "\"workflow_version\" : \""+workflowVersion+"\",\n" +
-        "\"workflow_path\" : \""+workflowPath+"\",\n" +
-        "\"create_timestamp\" : \""+createTs+"\",\n" +
-        "\"update_timestamp\" : \""+updateTs+"\",\n" +
-        "\"arguments\" : {\n");
+        StringBuilder j = new StringBuilder();
+        j.append("{" + "\"message_type\": \"job\",\n" + "\"job_hash\": \"").append(jobHash).append("\",\n" + "\"job_uuid\": \"")
+                .append(uuid).append("\",\n" + "\"provision_uuid\": \"").append(vmUuid).append("\",\n" + "\"workflow_name\": \"")
+                .append(workflow).append("\",\n" + "\"workflow_version\" : \"").append(workflowVersion)
+                .append("\",\n" + "\"workflow_path\" : \"").append(workflowPath).append("\",\n" + "\"create_timestamp\" : \"")
+                .append(createTs).append("\",\n" + "\"update_timestamp\" : \"").append(updateTs).append("\",\n" + "\"arguments\" : {\n");
 
         boolean first = true;
         for (String key : ini.keySet()) {
-            if (first) { first = false; } else { j.append(",\n"); }
-            j.append("\""+key+"\": \""+ini.get(key)+"\"");
+            if (first) {
+                first = false;
+            } else {
+                j.append(",\n");
+            }
+            j.append("\"").append(key).append("\": \"").append(ini.get(key)).append("\"");
         }
         j.append("\n}\n");
         j.append("}\n");
-        return(j.toString());
+        return (j.toString());
     }
 
     public Job fromJSON(String json) {
@@ -72,14 +68,18 @@ public class Job {
         jobHash = (String) obj.get("job_hash");
         uuid = (String) obj.get("job_uuid");
         vmUuid = (String) obj.get("provision_uuid");
-        if (obj.get("create_timestamp") != null && !"null".equals((String)obj.get("create_timestamp"))) { createTs = Timestamp.valueOf ((String)obj.get("create_timestamp")); }
-        if (obj.get("update_timestamp") != null && !"null".equals((String)obj.get("update_timestamp"))) { updateTs = Timestamp.valueOf ((String)obj.get("update_timestamp")); }
-        JSONObject provision = (JSONObject) obj.get("arguments");
-        ini = new HashMap<String, String>();
-        for (Object key : provision.keySet()) {
-            ini.put((String)key, (String)provision.get(key));
+        if (obj.get("create_timestamp") != null && !"null".equals((String) obj.get("create_timestamp"))) {
+            createTs = Timestamp.valueOf((String) obj.get("create_timestamp"));
         }
-        return(this);
+        if (obj.get("update_timestamp") != null && !"null".equals((String) obj.get("update_timestamp"))) {
+            updateTs = Timestamp.valueOf((String) obj.get("update_timestamp"));
+        }
+        JSONObject provision = (JSONObject) obj.get("arguments");
+        ini = new HashMap<>();
+        for (Object key : provision.keySet()) {
+            ini.put((String) key, (String) provision.get(key));
+        }
+        return (this);
 
     }
 
@@ -96,11 +96,11 @@ public class Job {
     }
 
     public String getIniStr() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String key : this.ini.keySet()) {
-            sb.append(key+"="+this.ini.get(key));
+            sb.append(key).append("=").append(this.ini.get(key));
         }
-        return(sb.toString());
+        return (sb.toString());
     }
 
     public void setIni(Map<String, String> ini) {

@@ -3,16 +3,12 @@ package info.pancancer.arch3.beans;
 import info.pancancer.arch3.utils.Utilities;
 import org.json.simple.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 /**
- * Created by boconnor on 2015-04-22.
+ * This represents a Status which is a message sent to the Results/Status queue. Created by boconnor on 2015-04-22.
  */
 public class Status {
 
-    private Utilities u = new Utilities();
+    private final Utilities u = new Utilities();
     private String type = null;
     private String state = null;
     private String vmUuid = null;
@@ -35,19 +31,14 @@ public class Status {
         super();
     }
 
-    public String toJSON () {
+    public String toJSON() {
 
-        StringBuffer j = new StringBuffer();
-        j.append("{" +
-                "\"vmUuid\": \""+vmUuid+"\",\n" +
-                "\"jobUuid\": \""+jobUuid+"\",\n" +
-                "\"type\": \""+type+"\",\n" +
-                "\"state\": \""+state+"\",\n" +
-                "\"stderr\": \""+stderr+"\",\n" +
-                "\"stdout\": \""+stdout+"\",\n" +
-                "\"message\": \""+message+"\"\n" +
-                "}\n");
-        return(j.toString());
+        StringBuilder j = new StringBuilder();
+        j.append("{" + "\"vmUuid\": \"").append(vmUuid).append("\",\n" + "\"jobUuid\": \"").append(jobUuid)
+                .append("\",\n" + "\"type\": \"").append(type).append("\",\n" + "\"state\": \"").append(state)
+                .append("\",\n" + "\"stderr\": \"").append(stderr).append("\",\n" + "\"stdout\": \"").append(stdout)
+                .append("\",\n" + "\"message\": \"").append(message).append("\"\n" + "}\n");
+        return (j.toString());
     }
 
     public Status fromJSON(String json) {
@@ -61,7 +52,7 @@ public class Status {
         stderr = (String) obj.get("stderr");
         stdout = (String) obj.get("stdout");
 
-        return(this);
+        return (this);
 
     }
 

@@ -8,17 +8,15 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.utils.IniFile;
 import info.pancancer.arch3.utils.Utilities;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import org.apache.tools.ant.DirectoryScanner;
-import org.json.simple.JSONObject;
-
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import org.apache.tools.ant.DirectoryScanner;
+import org.json.simple.JSONObject;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -39,8 +37,7 @@ public class JobGeneratorDEWorkflow extends Base {
     private int overallIterationsMax = 0;
     private int overallRuntimeMaxHours = 0;
 
-    public static void main(String [] args)
-    {
+    public static void main(String[] args) {
         OptionParser parser = new OptionParser();
         parser.accepts("config").withOptionalArg().ofType(String.class);
         parser.accepts("ini-dir").withOptionalArg().ofType(String.class);
@@ -55,11 +52,21 @@ public class JobGeneratorDEWorkflow extends Base {
         String workflowName = "DEWrapper";
         String workflowVersion = "1.0.0";
         String workflowPath = "/workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0";
-        if (options.has("config")) { configFile = (String)options.valueOf("config"); }
-        if (options.has("ini-dir")) { iniDir = (String)options.valueOf("ini-dir"); }
-        if (options.has("workflow-name")) { workflowName = (String)options.valueOf("workflow-name"); }
-        if (options.has("workflow-version")) { workflowVersion = (String)options.valueOf("workflow-version"); }
-        if (options.has("workflow-path")) { workflowPath = (String)options.valueOf("workflow-path"); }
+        if (options.has("config")) {
+            configFile = (String) options.valueOf("config");
+        }
+        if (options.has("ini-dir")) {
+            iniDir = (String) options.valueOf("ini-dir");
+        }
+        if (options.has("workflow-name")) {
+            workflowName = (String) options.valueOf("workflow-name");
+        }
+        if (options.has("workflow-version")) {
+            workflowVersion = (String) options.valueOf("workflow-version");
+        }
+        if (options.has("workflow-path")) {
+            workflowPath = (String) options.valueOf("workflow-path");
+        }
 
         JobGeneratorDEWorkflow jg = new JobGeneratorDEWorkflow(configFile, iniDir, workflowName, workflowVersion, workflowPath);
 
@@ -68,21 +75,20 @@ public class JobGeneratorDEWorkflow extends Base {
 
     public JobGeneratorDEWorkflow(String configFile, String iniDir, String workflowName, String workflowVersion, String workflowPath) {
 
-
         // UTILS OBJECT
         Utilities u = new Utilities();
         settings = u.parseConfig(configFile);
 
         // CONFIG
         queueName = (String) settings.get("rabbitMQQueueName");
-        System.out.println("QUEUE NAME: "+queueName);
+        System.out.println("QUEUE NAME: " + queueName);
 
         // SETUP QUEUE
         this.jchannel = u.setupQueue(settings, queueName + "_orders");
 
         // read an array of files
         DirectoryScanner scanner = new DirectoryScanner();
-        scanner.setIncludes(new String[]{"**/*.ini"});
+        scanner.setIncludes(new String[] { "**/*.ini" });
         scanner.setBasedir(iniDir);
         scanner.setCaseSensitive(false);
         scanner.scan();
@@ -97,11 +103,10 @@ public class JobGeneratorDEWorkflow extends Base {
             System.out.println("\nGENERATING NEW JOBS\n");
             // TODO: this is fake, in a real program this is being read from JSONL file or web service
             // check to see if new results are available and/or if the work queue is empty
-            Order o = generateNewJob(iniDir+"/"+file, workflowName, workflowVersion, workflowPath, u);
+            Order o = generateNewJob(iniDir + "/" + file, workflowName, workflowVersion, workflowPath, u);
 
             // enqueue new job
             enqueueNewJobs(o.toJSON());
-
 
             try {
                 // pause
@@ -120,7 +125,6 @@ public class JobGeneratorDEWorkflow extends Base {
             log.error(ex.toString());
         }
 
-
     }
 
     // PRIVATE
@@ -136,22 +140,23 @@ public class JobGeneratorDEWorkflow extends Base {
         HashMap<String, String> hm = parseIniFile(file);
 
         for (String key : hm.keySet()) {
-            System.out.println("KEY: "+key+" VALUE: "+hm.get(key));
+            System.out.println("KEY: " + key + " VALUE: " + hm.get(key));
         }
 
         // if this is the donor then use it for the hashStr
-        if (hm.containsKey("donor_id") && hm.containsKey("project_code")) { hashStr = hm.get("project_code") + "::" + hm.get("donor_id"); }
+        if (hm.containsKey("donor_id") && hm.containsKey("project_code")) {
+            hashStr = hm.get("project_code") + "::" + hm.get("donor_id");
+        }
 
         int cores = 8;
         int memGb = 128;
         int storageGb = 1024;
-        ArrayList<String> a = new ArrayList<String>();
+        ArrayList<String> a = new ArrayList<>();
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order(workflowName, workflowVersion, workflowPath, hashStr, hm, cores, memGb, storageGb, a);
 
-        return(newOrder);
-
+        return newOrder;
 
     }
 
@@ -167,20 +172,20 @@ public class JobGeneratorDEWorkflow extends Base {
             log.error(e.toString());
         }
 
-        return (iniHash);
+        return iniHash;
     }
 
     private boolean exceededTimeOrJobs() {
 
         // FIXME: hardcoded for testing
-        return(false);
+        return false;
 
     }
 
     private void enqueueNewJobs(String job) {
 
         try {
-            System.out.println("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel+" \n");
+            System.out.println("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
 
             this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN, job.getBytes());
         } catch (IOException ex) {
