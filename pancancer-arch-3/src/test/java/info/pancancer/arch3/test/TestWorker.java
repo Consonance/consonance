@@ -4,10 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import info.pancancer.arch3.beans.Job;
-import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
-import info.pancancer.arch3.worker.WorkerHeartbeat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -17,17 +15,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.json.simple.JSONObject;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -78,7 +74,7 @@ public class TestWorker {
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
 
-        Mockito.when(mockExecutor.execute(any(CommandLine.class))).thenReturn(0);
+        Mockito.doNothing().when(mockExecutor).execute(any(CommandLine.class),any(DefaultExecuteResultHandler.class));
 
         PowerMockito.whenNew(DefaultExecutor.class).withNoArguments().thenReturn(mockExecutor);
         

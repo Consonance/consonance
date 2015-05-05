@@ -262,6 +262,7 @@ public class Worker implements Runnable {
             workflowOutput = workflowResult.get();
             System.out.println("Docker execution result: " + workflowOutput);
             exService.shutdownNow();
+            Thread.sleep(50);
         } catch (IOException e) {
             if (workflowRunner.getStdErr() != null) {
                 log.error("Error from Docker (stderr): " + workflowOutput);
