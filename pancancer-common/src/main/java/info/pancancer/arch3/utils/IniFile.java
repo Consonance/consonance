@@ -17,9 +17,9 @@ import java.util.regex.Pattern;
  */
 public class IniFile {
 
-    private final Pattern _section = Pattern.compile("\\s*\\[([^]]*)\\]\\s*");
-    private final Pattern _keyValue = Pattern.compile("\\s*([^=]*)=(.*)");
-    private final Map<String, Map<String, String>> _entries = new HashMap<>();
+    private final Pattern section = Pattern.compile("\\s*\\[([^]]*)\\]\\s*");
+    private final Pattern keyValue = Pattern.compile("\\s*([^=]*)=(.*)");
+    private final Map<String, Map<String, String>> entries = new HashMap<>();
 
     public IniFile(String path) throws IOException {
         load(path);
@@ -30,17 +30,18 @@ public class IniFile {
             String line;
             String section = "no-section";
             while ((line = br.readLine()) != null) {
-                Matcher m = _section.matcher(line);
+                Matcher m = this.section.matcher(line);
                 if (m.matches()) {
                     section = m.group(1).trim();
                 } else if (section != null) {
-                    m = _keyValue.matcher(line);
+                    m = keyValue.matcher(line);
                     if (m.matches()) {
                         String key = m.group(1).trim();
                         String value = m.group(2).trim();
-                        Map<String, String> kv = _entries.get(section);
+                        Map<String, String> kv = entries.get(section);
                         if (kv == null) {
-                            _entries.put(section, kv = new HashMap<>());
+                            kv = new HashMap<>();
+                            entries.put(section, kv);
                         }
                         kv.put(key, value);
                     }
@@ -50,7 +51,7 @@ public class IniFile {
     }
 
     public String getString(String section, String key, String defaultvalue) {
-        Map<String, String> kv = _entries.get(section);
+        Map<String, String> kv = entries.get(section);
         if (kv == null) {
             return defaultvalue;
         }
@@ -58,7 +59,7 @@ public class IniFile {
     }
 
     public int getInt(String section, String key, int defaultvalue) {
-        Map<String, String> kv = _entries.get(section);
+        Map<String, String> kv = entries.get(section);
         if (kv == null) {
             return defaultvalue;
         }
@@ -66,7 +67,7 @@ public class IniFile {
     }
 
     public float getFloat(String section, String key, float defaultvalue) {
-        Map<String, String> kv = _entries.get(section);
+        Map<String, String> kv = entries.get(section);
         if (kv == null) {
             return defaultvalue;
         }
@@ -74,7 +75,7 @@ public class IniFile {
     }
 
     public double getDouble(String section, String key, double defaultvalue) {
-        Map<String, String> kv = _entries.get(section);
+        Map<String, String> kv = entries.get(section);
         if (kv == null) {
             return defaultvalue;
         }
@@ -82,6 +83,6 @@ public class IniFile {
     }
 
     public Map<String, Map<String, String>> getEntries() {
-        return _entries;
+        return entries;
     }
 }

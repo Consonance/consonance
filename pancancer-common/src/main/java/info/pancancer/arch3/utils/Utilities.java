@@ -67,7 +67,7 @@ public class Utilities extends Thread {
         try {
             data = (JSONObject) parser.parse(jsonStr);
         } catch (ParseException ex) {
-            // Logger.getLogger(this.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
         }
 
         return data;
@@ -109,7 +109,7 @@ public class Utilities extends Thread {
                 URL url = new URL("http://169.254.169.254/latest/user-data");
                 urlConn = url.openConnection();
                 if (urlConn != null) {
-                    urlConn.setReadTimeout(60 * 1000);
+                    urlConn.setReadTimeout(MILLISECONDS_IN_A_MINUTE);
                 }
                 if (urlConn != null && urlConn.getInputStream() != null) {
                     in = new InputStreamReader(urlConn.getInputStream(), StandardCharsets.UTF_8);
@@ -295,7 +295,7 @@ public class Utilities extends Thread {
                     URL url = new URL("http://169.254.169.254/latest/user-data");
                     urlConn = url.openConnection();
                     if (urlConn != null) {
-                        urlConn.setReadTimeout(60 * 1000);
+                        urlConn.setReadTimeout(MILLISECONDS_IN_A_MINUTE);
                     }
                     if (urlConn != null && urlConn.getInputStream() != null) {
                         in = new InputStreamReader(urlConn.getInputStream(), Charset.defaultCharset());
@@ -326,6 +326,8 @@ public class Utilities extends Thread {
         return (false);
     }
 
+    private static final int MILLISECONDS_IN_A_MINUTE = 60 * 1000;
+
     public String digest(String plaintext) {
         String result = null;
         MessageDigest m = null;
@@ -335,7 +337,8 @@ public class Utilities extends Thread {
             m.update(plaintext.getBytes(StandardCharsets.UTF_8));
             byte[] digest = m.digest();
             BigInteger bigInt = new BigInteger(1, digest);
-            result = bigInt.toString(16);
+            final int radix = 16;
+            result = bigInt.toString(radix);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }

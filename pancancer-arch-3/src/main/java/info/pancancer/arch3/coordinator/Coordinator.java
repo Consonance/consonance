@@ -163,7 +163,7 @@ class CoordinatorOrders {
 
             } catch (IOException ex) {
                 System.out.println(ex.toString());
-                ex.printStackTrace();
+                throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 log.error(ex.toString());
             }
@@ -186,7 +186,7 @@ class CoordinatorOrders {
                 System.out.println(" + MESSAGE SENT!\n" + message + "\n");
 
             } catch (IOException ex) {
-                log.error(ex.toString());
+                throw new RuntimeException(ex);
             }
 
             return null;
@@ -222,7 +222,7 @@ class CoordinatorOrders {
                 System.out.println(" + MESSAGE SENT!\n" + message + "\n");
 
             } catch (IOException ex) {
-                log.error(ex.toString());
+                throw new RuntimeException(ex);
             }
             return result.toString();
         }
@@ -306,10 +306,9 @@ class CleanupJobs {
                 }
 
             } catch (IOException ex) {
-                System.out.println(ex.toString());
-                ex.printStackTrace();
+                throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
-                // log.error(ex.toString());
+                throw new RuntimeException(ex);
             }
             // log.error(ex.toString());
             // log.error(ex.toString());
@@ -371,7 +370,7 @@ class FlagJobs {
                         Timestamp updateTs = job.getUpdateTs();
 
                         long diff = nowTs.getTime() - updateTs.getTime();
-                        long diffSec = diff / 1000;
+                        long diffSec = diff / Base.ONE_SECOND_IN_MILLISECONDS;
 
                         log.error("DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
 
@@ -386,16 +385,16 @@ class FlagJobs {
 
                     try {
                         // pause
-                        Thread.sleep(5000);
+                        Thread.sleep(Base.FIVE_SECOND_IN_MILLISECONDS);
                     } catch (InterruptedException ex) {
-                        // log.error(ex.toString());
+                        throw new RuntimeException(ex);
                     }
 
                 }
 
             } catch (Exception ex) {
                 System.out.println(ex.toString());
-                ex.printStackTrace();
+                throw new RuntimeException(ex);
             }
         }
 

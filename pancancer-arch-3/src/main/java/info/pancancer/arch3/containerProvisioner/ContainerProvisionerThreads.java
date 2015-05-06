@@ -126,10 +126,9 @@ class ProcessVMOrders {
                 }
 
             } catch (IOException ex) {
-                System.out.println(ex.toString());
-                ex.printStackTrace();
+                throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
-                // log.error(ex.toString());
+                throw new RuntimeException(ex);
             }
             // log.error(ex.toString());
             // log.error(ex.toString());
@@ -215,9 +214,9 @@ class ProvisionVMs {
                 }
 
             } catch (ShutdownSignalException ex) {
-                // log.error(ex.toString());
+                throw new RuntimeException(ex);
             } catch (ConsumerCancelledException ex) {
-                // log.error(ex.toString());
+                throw new RuntimeException(ex);
             }
         }
 
@@ -299,11 +298,10 @@ class CleanupVMs {
                     if (status.getState().equals(Utilities.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
-                    }
-                    // deal with running, failed, pending, provisioning
-                    else if ((status.getState().equals(Utilities.RUNNING) || status.getState().equals(Utilities.FAILED)
+                    } else if ((status.getState().equals(Utilities.RUNNING) || status.getState().equals(Utilities.FAILED)
                             || status.getState().equals(Utilities.PENDING) || status.getState().equals(Utilities.PROVISIONING))
                             && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                        // deal with running, failed, pending, provisioning
                         db.updateProvision(status.getVmUuid(), status.getJobUuid(), status.getState());
                     }
 
@@ -314,10 +312,9 @@ class CleanupVMs {
                 }
 
             } catch (IOException ex) {
-                System.out.println(ex.toString());
-                ex.printStackTrace();
+                throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
-                System.err.println(ex.toString());
+                throw new RuntimeException(ex);
             }
         }
 

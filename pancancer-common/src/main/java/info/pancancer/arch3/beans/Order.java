@@ -1,8 +1,6 @@
 package info.pancancer.arch3.beans;
 
 import info.pancancer.arch3.utils.Utilities;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import org.json.simple.JSONObject;
 
@@ -12,19 +10,12 @@ import org.json.simple.JSONObject;
 public class Order {
 
     Utilities u = new Utilities();
-    Job job = null;
-    Provision provision = null;
+    private Job job = null;
+    private Provision provision = null;
     String orderUUID = UUID.randomUUID().toString().toLowerCase();
 
     public Order() {
         super();
-    }
-
-    public Order(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini, int cores,
-            int memGb, int storageGb, List<String> ansiblePlaybooks) {
-
-        this.job = new Job(workflow, workflowVersion, workflowPath, jobHash, ini);
-        this.provision = new Provision(cores, memGb, storageGb, ansiblePlaybooks);
     }
 
     public String toJSON() {
@@ -50,6 +41,22 @@ public class Order {
 
     public Job getJob() {
         return job;
+    }
+
+    /**
+     * @param job
+     *            the job to set
+     */
+    public void setJob(Job job) {
+        this.job = job;
+    }
+
+    /**
+     * @param provision
+     *            the provision to set
+     */
+    public void setProvision(Provision provision) {
+        this.provision = provision;
     }
 
 }

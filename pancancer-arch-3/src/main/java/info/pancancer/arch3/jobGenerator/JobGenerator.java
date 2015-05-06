@@ -5,7 +5,9 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
+import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -111,7 +113,7 @@ public class JobGenerator extends Base {
             } else {
                 try {
                     // pause
-                    Thread.sleep(5000);
+                    Thread.sleep(Base.ONE_SECOND_IN_MILLISECONDS);
                 } catch (InterruptedException ex) {
                     log.error(ex.toString());
                 }
@@ -120,7 +122,7 @@ public class JobGenerator extends Base {
 
         try {
 
-            jchannel.getConnection().close(5000);
+            jchannel.getConnection().close(Base.FIVE_SECOND_IN_MILLISECONDS);
 
         } catch (IOException ex) {
             log.error(ex.toString());
@@ -163,15 +165,17 @@ public class JobGenerator extends Base {
         hm.put("param1", "bar");
         hm.put("param2", "foo");
 
-        int cores = 8;
-        int memGb = 128;
-        int storageGb = 1024;
+        int cores = Base.DEFAULT_NUM_CORES;
+        int memGb = Base.DEFAULT_MEMORY;
+        int storageGb = Base.DEFAULT_DISKSPACE;
         ArrayList<String> a = new ArrayList<>();
         a.add("ansible_playbook_path");
 
-        Order newOrder = new Order("DEWrapperWorkflow", "1.0.0", "/path/to/workflow", hashStr, hm, cores, memGb, storageGb, a);
+        Order newOrder = new Order();
+        newOrder.setJob(new Job("DEWrapperWorkflow", "1.0.0", "/path/to/workflow", hashStr, hm));
+        newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
 
-        return (newOrder);
+        return newOrder;
 
     }
 

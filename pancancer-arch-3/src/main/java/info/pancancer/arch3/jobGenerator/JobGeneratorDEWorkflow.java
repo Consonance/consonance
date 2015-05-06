@@ -5,7 +5,9 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
+import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.utils.IniFile;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
@@ -111,7 +113,7 @@ public class JobGeneratorDEWorkflow extends Base {
 
             try {
                 // pause
-                Thread.sleep(1000);
+                Thread.sleep(ONE_SECOND_IN_MILLISECONDS);
             } catch (InterruptedException ex) {
                 log.error(ex.toString());
             }
@@ -120,7 +122,7 @@ public class JobGeneratorDEWorkflow extends Base {
 
         try {
 
-            jchannel.getConnection().close(5000);
+            jchannel.getConnection().close(FIVE_SECOND_IN_MILLISECONDS);
 
         } catch (IOException ex) {
             log.error(ex.toString());
@@ -149,13 +151,15 @@ public class JobGeneratorDEWorkflow extends Base {
             hashStr = hm.get("project_code") + "::" + hm.get("donor_id");
         }
 
-        int cores = 8;
-        int memGb = 128;
-        int storageGb = 1024;
+        int cores = DEFAULT_NUM_CORES;
+        int memGb = DEFAULT_MEMORY;
+        int storageGb = DEFAULT_DISKSPACE;
         ArrayList<String> a = new ArrayList<>();
         a.add("ansible_playbook_path");
 
-        Order newOrder = new Order(workflowName, workflowVersion, workflowPath, hashStr, hm, cores, memGb, storageGb, a);
+        Order newOrder = new Order();
+        newOrder.setJob(new Job(workflowName, workflowVersion, workflowPath, hashStr, hm));
+        newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
 
         return newOrder;
 

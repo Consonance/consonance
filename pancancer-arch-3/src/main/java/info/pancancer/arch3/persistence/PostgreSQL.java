@@ -141,9 +141,9 @@ public class PostgreSQL extends Base {
 
         List<Job> jobs = new ArrayList<>();
         Map<Object, Map<String, Object>> map;
-        if (status != null && !"".equals(status))
+        if (status != null && !"".equals(status)) {
             map = this.runSelectStatement("select * from job where status = ?", new KeyedHandler<>("job_uuid"), status);
-        else {
+        } else {
             map = this.runSelectStatement("select * from job", new KeyedHandler<>("job_uuid"));
         }
 

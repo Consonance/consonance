@@ -74,18 +74,17 @@ public class ContainerProvisioner extends Base {
 
                 try {
                     // pause
-                    Thread.sleep(5000);
+                    Thread.sleep(Base.FIVE_SECOND_IN_MILLISECONDS);
                 } catch (InterruptedException ex) {
-                    log.error(ex.toString());
+                    throw new RuntimeException(ex);
                 }
 
             }
 
         } catch (IOException ex) {
-            System.out.println(ex.toString());
-            ex.printStackTrace();
+            throw new RuntimeException(ex);
         } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
-            log.error(ex.toString());
+            throw new RuntimeException(ex);
         }
     }
 
@@ -101,7 +100,7 @@ public class ContainerProvisioner extends Base {
              */
 
         } catch (IOException e) {
-            log.error(e.toString());
+            throw new RuntimeException(e);
         }
     }
 

@@ -8,7 +8,12 @@ import org.slf4j.LoggerFactory;
  */
 public class Base {
 
-  protected final Logger log = LoggerFactory.getLogger(getClass());
+    public static final int FIVE_SECOND_IN_MILLISECONDS = 5000;
+    public static final int ONE_SECOND_IN_MILLISECONDS = 1000;
+    public static final int DEFAULT_DISKSPACE = 1024;
+    public static final int DEFAULT_MEMORY = 128;
+    public static final int DEFAULT_NUM_CORES = 8;
+
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
 }
-

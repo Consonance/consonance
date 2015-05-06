@@ -171,8 +171,8 @@ public class CoordinatorResult extends Base {
         System.out.println("ATTEMPTING TO READ RESULTS!");
 
         try {
-
-            int tries = 10;
+            final int defaultTries = 10;
+            int tries = defaultTries;
             while (tries > 0) {
                 tries--;
                 QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
