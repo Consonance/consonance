@@ -8,6 +8,7 @@ import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -102,7 +103,7 @@ public class Worker extends Thread {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 System.out.println(vmUuid + "  received " + delivery.getEnvelope().toString());
                 // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                String message = new String(delivery.getBody());
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
 
                 if (message != null) {
 
@@ -165,12 +166,12 @@ public class Worker extends Thread {
 
                 randomNumber--;
 
-                Status s = new Status(vmUuid, uuid, u.RUNNING, u.JOB_MESSAGE_TYPE, "stderr " + randomNumber, "stdout " + randomNumber,
-                        "job is running");
+                Status s = new Status(vmUuid, uuid, Utilities.RUNNING, Utilities.JOB_MESSAGE_TYPE, "stderr " + randomNumber, "stdout "
+                        + randomNumber, "job is running");
                 String result = s.toJSON();
 
                 resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
-                        result.getBytes());
+                        result.getBytes(StandardCharsets.UTF_8));
 
                 try {
                     // pause
@@ -201,7 +202,7 @@ public class Worker extends Thread {
             String result = s.toJSON();
 
             resultsChannel.basicPublish(queueName + "_results", queueName + "_results", MessageProperties.PERSISTENT_TEXT_PLAIN,
-                    result.getBytes());
+                    result.getBytes(StandardCharsets.UTF_8));
 
         } catch (IOException e) {
             log.error(e.toString());

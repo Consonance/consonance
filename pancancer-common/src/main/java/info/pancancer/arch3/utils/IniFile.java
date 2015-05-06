@@ -1,8 +1,10 @@
 package info.pancancer.arch3.utils;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -24,7 +26,7 @@ public class IniFile {
     }
 
     public final void load(String path) throws IOException {
-        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8))) {
             String line;
             String section = "no-section";
             while ((line = br.readLine()) != null) {

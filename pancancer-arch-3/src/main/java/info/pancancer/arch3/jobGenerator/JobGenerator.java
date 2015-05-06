@@ -8,6 +8,7 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -191,7 +192,8 @@ public class JobGenerator extends Base {
             try {
                 System.out.println("\nSENDING JOB:\n '" + msg + "'\n" + this.jchannel + " \n");
 
-                this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN, msg.getBytes());
+                this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                        msg.getBytes(StandardCharsets.UTF_8));
             } catch (IOException ex) {
                 log.error(ex.toString());
             }

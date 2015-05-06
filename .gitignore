@@ -24,3 +24,4 @@ pancancer-arch-3/target
 *.project
 *.settings
 /pancancer-common/target/
+/target/

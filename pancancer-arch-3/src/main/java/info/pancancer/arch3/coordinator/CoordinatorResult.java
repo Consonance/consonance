@@ -9,6 +9,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
@@ -45,7 +46,8 @@ public class CoordinatorResult extends Base {
         if (options.has("config")) {
             configFile = (String) options.valueOf("config");
         }
-        CoordinatorResult c = new CoordinatorResult(configFile);
+        /** CoordinatorResult c = */
+        new CoordinatorResult(configFile);
 
     }
 
@@ -106,7 +108,8 @@ public class CoordinatorResult extends Base {
             int messages = vmChannel.queueDeclarePassive(queueName + "_vms").getMessageCount();
             System.out.println("VM QUEUE SIZE: " + messages);
 
-            vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    message.getBytes(StandardCharsets.UTF_8));
 
             System.out.println(" + RESULTS SENT ! " + queueName + "_vms");
 
@@ -152,7 +155,8 @@ public class CoordinatorResult extends Base {
             int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
             System.out.println("JOB QUEUE SIZE: " + messages);
 
-            jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    message.getBytes(StandardCharsets.UTF_8));
 
             System.out.println("  + RESULTS SENT!");
 
@@ -176,7 +180,7 @@ public class CoordinatorResult extends Base {
                     tries = 0;
                     System.out.println("Came back null!!!");
                 } else {
-                    String message = new String(delivery.getBody());
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] Received RESULT '" + message + "'");
                 }
             }

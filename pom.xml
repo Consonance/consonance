@@ -18,7 +18,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-	<github.url>scm:git:git@github.com:CancerCollaboratory/sandbox.git</github.url>
+        <github.url>scm:git:git@github.com:CancerCollaboratory/sandbox.git</github.url>
     </properties>
 
     <scm>
@@ -38,7 +38,19 @@
 
 
     <dependencyManagement>
-	    <!-- need to unify shared dependency versions -->
+        <!-- need to unify shared dependency versions -->
+        <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.10</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.5</version>
+            </dependency>
+        </dependencies>
     </dependencyManagement>
 
     <repositories>
@@ -104,7 +116,7 @@
 
     <build>
         <pluginManagement>
-             <plugins>
+            <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -115,7 +127,6 @@
                         <showDeprecation>true</showDeprecation>
                     </configuration>
                 </plugin>
-		<!-- activate this after hand-off 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
@@ -155,6 +166,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
                     <version>3.3</version>
                 </plugin>
@@ -181,11 +197,9 @@
                         <autoVersionSubmodules>true</autoVersionSubmodules>
                     </configuration>
                 </plugin>
-	        -->
             </plugins>
         </pluginManagement>
 
-		<!-- enforce this after hand-over 
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -204,8 +218,7 @@
                                     <message>No Snapshots Allowed!</message>
                                     <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
                                     <excludes>
-                                        <exclude>io.cloudbindle:*</exclude>
-                                        <exclude>com.github.seqware:*</exclude>
+                                        <exclude>io.cancer.collaboratory:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
@@ -284,11 +297,11 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <xmlOutput>true</xmlOutput>
                     <threshold>High</threshold>
                 </configuration>
             </plugin>
         </plugins>
-        -->
     </build>
 
     <profiles>

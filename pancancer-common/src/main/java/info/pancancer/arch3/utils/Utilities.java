@@ -6,16 +6,18 @@ import com.rabbitmq.client.ConnectionFactory;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -33,18 +35,18 @@ import org.json.simple.parser.ParseException;
 public class Utilities extends Thread {
 
     // constants
-    public final static String PENDING = "pending";
-    public final static String RUNNING = "running";
-    public final static String SUCCESS = "success";
-    public final static String FAILED = "failed";
-    public final static String LOST = "lost";
-    public final static String TERMINATED = "terminated";
-    public final static String PROVISIONING = "provisioning";
-    public final static String QUEUED = "queued";
+    public static final String PENDING = "pending";
+    public static final String RUNNING = "running";
+    public static final String SUCCESS = "success";
+    public static final String FAILED = "failed";
+    public static final String LOST = "lost";
+    public static final String TERMINATED = "terminated";
+    public static final String PROVISIONING = "provisioning";
+    public static final String QUEUED = "queued";
 
     // message types
-    public final static String VM_MESSAGE_TYPE = "vm-message-type";
-    public final static String JOB_MESSAGE_TYPE = "job-message-type";
+    public static final String VM_MESSAGE_TYPE = "vm-message-type";
+    public static final String JOB_MESSAGE_TYPE = "job-message-type";
 
     private String outputFile = null;
     private ArrayList<JSONObject> resultsArr = new ArrayList<>();
@@ -82,7 +84,7 @@ public class Utilities extends Thread {
         File masterConfig = new File("/etc/genetic-algorithm/config.json");
         if (configFile != null && configFileObj.exists()) {
             System.out.println("USING CONFIG FROM SPECIFIED FILE!");
-            try (BufferedReader br = new BufferedReader(new FileReader(configFile))) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8))) {
                 StringBuilder sb = new StringBuilder();
                 String line = br.readLine();
 
@@ -110,7 +112,7 @@ public class Utilities extends Thread {
                     urlConn.setReadTimeout(60 * 1000);
                 }
                 if (urlConn != null && urlConn.getInputStream() != null) {
-                    in = new InputStreamReader(urlConn.getInputStream(), Charset.defaultCharset());
+                    in = new InputStreamReader(urlConn.getInputStream(), StandardCharsets.UTF_8);
                     BufferedReader bufferedReader = new BufferedReader(in);
                     if (bufferedReader != null) {
                         int cp;
@@ -129,7 +131,8 @@ public class Utilities extends Thread {
 
         } else if (masterConfig.exists()) {
             System.out.println("USING CONFIG FROM /etc");
-            try (BufferedReader br = new BufferedReader(new FileReader("/etc/genetic-algorithm/config.json"))) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("/etc/genetic-algorithm/config.json"),
+                    StandardCharsets.UTF_8))) {
                 StringBuilder sb = new StringBuilder();
                 String line = br.readLine();
 
@@ -214,7 +217,7 @@ public class Utilities extends Thread {
             JSONObject obj = new JSONObject();
             obj.put("results", resultsArr);
 
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(this.outputFile))) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8))) {
                 obj.writeJSONString(bw);
                 System.out.println("WRITING RESULTS TO " + this.outputFile);
             } catch (IOException ex) {
@@ -232,7 +235,7 @@ public class Utilities extends Thread {
             File existing = new File(this.outputFile);
             if (existing.exists()) {
                 String json;
-                try (BufferedReader br = new BufferedReader(new FileReader(outputFile))) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(outputFile), StandardCharsets.UTF_8))) {
                     StringBuilder sb = new StringBuilder();
                     String line = br.readLine();
                     while (line != null) {
@@ -329,7 +332,7 @@ public class Utilities extends Thread {
         try {
             m = MessageDigest.getInstance("MD5");
             m.reset();
-            m.update(plaintext.getBytes());
+            m.update(plaintext.getBytes(StandardCharsets.UTF_8));
             byte[] digest = m.digest();
             BigInteger bigInt = new BigInteger(1, digest);
             result = bigInt.toString(16);

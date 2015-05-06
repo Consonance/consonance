@@ -13,6 +13,7 @@ import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
@@ -59,13 +60,16 @@ public class Coordinator extends Base {
         }
 
         // processes orders and turns them into requests for VMs/Containers (handled by ContainerProvisioner) and Jobs (handled by Worker)
-        CoordinatorOrders t1 = new CoordinatorOrders(configFile);
+        /** CoordinatorOrders t1 = */
+        new CoordinatorOrders(configFile);
 
         // this cleans up Jobs
-        CleanupJobs t2 = new CleanupJobs(configFile);
+        /** CleanupJobs t2 = */
+        new CleanupJobs(configFile);
 
         // this marks jobs as lost, resubmits them, etc
-        FlagJobs t3 = new FlagJobs(configFile);
+        /** FlagJobs t3 = */
+        new FlagJobs(configFile);
 
     }
 
@@ -129,7 +133,7 @@ class CoordinatorOrders {
 
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                    String message = new String(delivery.getBody());
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] RECEIVED ORDER:\n'" + message + "'\n");
 
                     // run the job
@@ -143,8 +147,8 @@ class CoordinatorOrders {
 
                     if ((checkPreviousRuns && !db.previouslyRun(order.getJob().getJobHash())) || !checkPreviousRuns) {
 
-                        String result = requestVm(order.getProvision().toJSON());
-                        String result2 = requestJob(order.getJob().toJSON());
+                        requestVm(order.getProvision().toJSON());
+                        requestJob(order.getJob().toJSON());
 
                     } else {
 
@@ -176,7 +180,8 @@ class CoordinatorOrders {
                 int messages = vmChannel.queueDeclarePassive(queueName + "_vms").getMessageCount();
                 System.out.println("  + VM QUEUE SIZE: " + messages);
 
-                vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+                vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                        message.getBytes(StandardCharsets.UTF_8));
 
                 System.out.println(" + MESSAGE SENT!\n" + message + "\n");
 
@@ -205,7 +210,8 @@ class CoordinatorOrders {
                 int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
                 System.out.println("  + JOB QUEUE SIZE: " + messages);
 
-                jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+                jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                        message.getBytes(StandardCharsets.UTF_8));
 
                 JSONObject settings = u.parseConfig(this.configFile);
                 PostgreSQL db = new PostgreSQL(settings);
@@ -273,7 +279,7 @@ class CleanupJobs {
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                    String message = new String(delivery.getBody());
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
 
                     // now parse it as JSONObj
@@ -281,13 +287,12 @@ class CleanupJobs {
 
                     // now update that DB record to be exited
                     // this is acutally finishing the VM and not the work
-                    if (status.getState().equals(u.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                    if (status.getState().equals(Utilities.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         System.out.println("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
                         db.finishJob(status.getJobUuid());
-                    } else if ((status.getState().equals(u.RUNNING) || status.getState().equals(u.FAILED) || status.getState().equals(
-                            u.PENDING))
-                            && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                    } else if ((status.getState().equals(Utilities.RUNNING) || status.getState().equals(Utilities.FAILED) || status
+                            .getState().equals(Utilities.PENDING)) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.updateJob(status.getJobUuid(), status.getVmUuid(), status.getState());
                     }

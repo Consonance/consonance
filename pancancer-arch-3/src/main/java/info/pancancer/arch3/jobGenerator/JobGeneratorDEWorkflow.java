@@ -9,6 +9,7 @@ import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.utils.IniFile;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -162,7 +163,7 @@ public class JobGeneratorDEWorkflow extends Base {
 
     private HashMap<String, String> parseIniFile(String iniFile) {
 
-        HashMap<String, String> iniHash = new HashMap<String, String>();
+        HashMap<String, String> iniHash = new HashMap<>();
 
         try {
             IniFile ini = new IniFile(iniFile);
@@ -187,7 +188,8 @@ public class JobGeneratorDEWorkflow extends Base {
         try {
             System.out.println("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
 
-            this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN, job.getBytes());
+            this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    job.getBytes(StandardCharsets.UTF_8));
         } catch (IOException ex) {
             log.error(ex.toString());
         }

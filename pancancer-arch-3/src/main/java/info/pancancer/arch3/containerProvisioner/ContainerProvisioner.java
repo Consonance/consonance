@@ -7,6 +7,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
@@ -32,7 +33,8 @@ public class ContainerProvisioner extends Base {
         if (options.has("config")) {
             configFile = (String) options.valueOf("config");
         }
-        ContainerProvisioner c = new ContainerProvisioner(configFile);
+        /** ContainerProvisioner c = */
+        new ContainerProvisioner(configFile);
 
     }
 
@@ -58,7 +60,7 @@ public class ContainerProvisioner extends Base {
 
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                String message = new String(delivery.getBody());
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                 System.out.println(" [x] Received VM request '" + message + "'");
 
                 /*
@@ -91,7 +93,7 @@ public class ContainerProvisioner extends Base {
     private void launchVM(String message) {
         try {
             // resultsChannel.basicPublish("", queueName+"_results", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
-            resultsChannel.basicPublish(queueName + "_results", "", null, message.getBytes());
+            resultsChannel.basicPublish(queueName + "_results", "", null, message.getBytes(StandardCharsets.UTF_8));
 
             /*
              * As a temporary test this code will launch a worker thread which will run for one job then exit. This will allow us to

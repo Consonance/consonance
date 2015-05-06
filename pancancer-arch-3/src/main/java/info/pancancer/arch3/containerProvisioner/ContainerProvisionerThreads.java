@@ -11,6 +11,7 @@ import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
@@ -37,16 +38,20 @@ public class ContainerProvisionerThreads extends Base {
             configFile = (String) options.valueOf("config");
         }
         // this isn't really used...
-        ContainerProvisionerThreads c = new ContainerProvisionerThreads(configFile);
+        /** ContainerProvisionerThreads c = */
+        new ContainerProvisionerThreads(configFile);
 
         // the thread that handles reading the queue and writing to the DB
-        ProcessVMOrders t1 = new ProcessVMOrders(configFile);
+        /** ProcessVMOrders t1 = */
+        new ProcessVMOrders(configFile);
 
         // this actually launches worker daemons
-        ProvisionVMs t2 = new ProvisionVMs(configFile);
+        /** ProvisionVMs t2 = */
+        new ProvisionVMs(configFile);
 
         // this cleans up VMs, currently this is just a DB update but in the future it's a Youxia call
-        CleanupVMs t3 = new CleanupVMs(configFile);
+        /** CleanupVMs t3 = */
+        new CleanupVMs(configFile);
     }
 
     private ContainerProvisionerThreads(String configFile) {
@@ -103,7 +108,7 @@ class ProcessVMOrders {
 
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                    String message = new String(delivery.getBody());
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] Received New VM Request '" + message + "'");
 
                     // now parse it as a VM order
@@ -256,6 +261,7 @@ class CleanupVMs {
             start();
         }
 
+        @Override
         public void run() {
             try {
 
@@ -282,7 +288,7 @@ class CleanupVMs {
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                    String message = new String(delivery.getBody());
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
 
                     // now parse it as JSONObj
