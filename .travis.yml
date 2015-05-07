@@ -6,7 +6,7 @@ language: java
 jdk: 
   - oraclejdk7
 after_success:
-  - coveralls 
+  - mvn clean cobertura:cobertura coveralls:report
 
 before_script: 
   - psql -c "create user queue_user with password 'queue' createdb;" -U postgres
