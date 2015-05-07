@@ -2,7 +2,9 @@ package info.pancancer.arch3.persistence;
 
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.utils.Utilities;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -54,7 +56,7 @@ public class PostgreSQL extends Base {
     }
 
     public String getPendingProvisionUUID() {
-        return runSelectStatement("select provision_uuid from provision where status = 'pending' limit 1", new ScalarHandler<String>());
+        return runSelectStatement("select provision_uuid from provision where status = 'PENDING' limit 1", new ScalarHandler<String>());
     }
 
     public void clearDatabase() {
@@ -99,35 +101,37 @@ public class PostgreSQL extends Base {
     }
 
     public void updatePendingProvision(String uuid) {
-        runUpdateStatement("update provision set status = ?, update_timestamp = NOW() where provision_uuid = ?", Utilities.RUNNING, uuid);
+        runUpdateStatement("update provision set status = ?, update_timestamp = NOW() where provision_uuid = ?",
+                ProvisionState.RUNNING.toString(), uuid);
     }
 
     public void finishContainer(String uuid) {
-        runUpdateStatement("update provision set status = ? , update_timestamp = NOW() where provision_uuid = ? ", Utilities.SUCCESS, uuid);
+        runUpdateStatement("update provision set status = ? , update_timestamp = NOW() where provision_uuid = ? ",
+                ProvisionState.SUCCESS.toString(), uuid);
     }
 
     public void finishJob(String uuid) {
-        runUpdateStatement("update job set status = ? , update_timestamp = NOW() where job_uuid = ?", Utilities.SUCCESS, uuid);
+        runUpdateStatement("update job set status = ? , update_timestamp = NOW() where job_uuid = ?", JobState.SUCCESS.toString(), uuid);
     }
 
-    public void updateJob(String uuid, String vmUuid, String status) {
-        runUpdateStatement("update job set status = ?, provision_uuid = ?, update_timestamp = NOW() where job_uuid = ?", status, vmUuid,
-                uuid);
+    public void updateJob(String uuid, String vmUuid, JobState status) {
+        runUpdateStatement("update job set status = ?, provision_uuid = ?, update_timestamp = NOW() where job_uuid = ?", status.toString(),
+                vmUuid, uuid);
     }
 
-    public void updateProvision(String uuid, String jobUuid, String status) {
-        runUpdateStatement("update provision set status = ? , job_uuid = ? , update_timestamp = NOW() where provision_uuid = ?", status,
-                jobUuid, uuid);
+    public void updateProvision(String uuid, String jobUuid, ProvisionState status) {
+        runUpdateStatement("update provision set status = ? , job_uuid = ? , update_timestamp = NOW() where provision_uuid = ?",
+                status.toString(), jobUuid, uuid);
     }
 
-    public long getProvisionCount(String status) {
-        return this.runSelectStatement("select count(*) from provision where status = ?", new ScalarHandler<Long>(), status);
+    public long getProvisionCount(ProvisionState status) {
+        return this.runSelectStatement("select count(*) from provision where status = ?", new ScalarHandler<Long>(), status.toString());
     }
 
     public String createProvision(Provision p) {
         Map<Object, Map<String, Object>> map = this.runInsertStatement(
                 "INSERT INTO provision (status, provision_uuid, cores, mem_gb, storage_gb) VALUES (?,?,?,?,?)", new KeyedHandler<>(
-                        "provision_uuid"), p.getState(), p.getUuid(), p.getCores(), p.getMemGb(), p.getStorageGb());
+                        "provision_uuid"), p.getState().toString(), p.getUuid(), p.getCores(), p.getMemGb(), p.getStorageGb());
         return (String) map.entrySet().iterator().next().getKey();
     }
 
@@ -135,17 +139,17 @@ public class PostgreSQL extends Base {
         JSONObject jsonIni = new JSONObject(j.getIni());
         Map<Object, Map<String, Object>> map = this.runInsertStatement(
                 "INSERT INTO job (status, job_uuid, workflow, workflow_version, job_hash, ini) VALUES (?,?,?,?,?,?)", new KeyedHandler<>(
-                        "job_uuid"), j.getState(), j.getUuid(), j.getWorkflow(), j.getWorkflowVersion(), j.getJobHash(), jsonIni
+                        "job_uuid"), j.getState().toString(), j.getUuid(), j.getWorkflow(), j.getWorkflowVersion(), j.getJobHash(), jsonIni
                         .toJSONString());
         return (String) map.entrySet().iterator().next().getKey();
     }
 
-    public List<Job> getJobs(String status) {
+    public List<Job> getJobs(JobState status) {
 
         List<Job> jobs = new ArrayList<>();
         Map<Object, Map<String, Object>> map;
-        if (status != null && !"".equals(status)) {
-            map = this.runSelectStatement("select * from job where status = ?", new KeyedHandler<>("job_uuid"), status);
+        if (status != null) {
+            map = this.runSelectStatement("select * from job where status = ?", new KeyedHandler<>("job_uuid"), status.toString());
         } else {
             map = this.runSelectStatement("select * from job", new KeyedHandler<>("job_uuid"));
         }
@@ -155,7 +159,7 @@ public class PostgreSQL extends Base {
         for (Entry<Object, Map<String, Object>> entry : map.entrySet()) {
 
             Job j = new Job();
-            j.setState((String) entry.getValue().get("status"));
+            j.setState(Enum.valueOf(JobState.class, (String) entry.getValue().get("status")));
             j.setUuid((String) entry.getValue().get("job_uuid"));
             j.setWorkflow((String) entry.getValue().get("workflow"));
             j.setWorkflowVersion((String) entry.getValue().get("workflow_version"));

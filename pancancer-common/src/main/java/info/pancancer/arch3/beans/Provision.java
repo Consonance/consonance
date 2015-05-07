@@ -15,7 +15,7 @@ public class Provision {
     long cores;
     long memGb;
     long storageGb;
-    String state;
+    ProvisionState state = ProvisionState.START;
     List<String> ansiblePlaybooks;
     Utilities u = new Utilities();
     String uuid = UUID.randomUUID().toString().toLowerCase();
@@ -108,11 +108,11 @@ public class Provision {
         this.cores = cores;
     }
 
-    public String getState() {
+    public ProvisionState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(ProvisionState state) {
         this.state = state;
     }
 }

@@ -15,7 +15,7 @@ before_script:
 script: mvn -B clean install -DskipITs=false
 
 after_success:
-  - mvn clean -DskipITs=false cobertura:cobertura coveralls:report
+  - mvn -B clean install -DskipITs=false cobertura:cobertura coveralls:report
 
 addons:
   postgresql: "9.3"

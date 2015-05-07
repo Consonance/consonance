@@ -6,7 +6,9 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
@@ -114,7 +116,7 @@ class ProcessVMOrders {
                     // now parse it as a VM order
                     Provision p = new Provision();
                     p.fromJSON(message);
-                    p.setState(Utilities.PENDING);
+                    p.setState(ProvisionState.PENDING);
 
                     // puts it into the DB so I can count it in another thread
                     db.createProvision(p);
@@ -187,8 +189,8 @@ class ProvisionVMs {
                     // System.out.println("CHECKING RUNNING VMs");
 
                     // read from DB
-                    long numberRunningContainers = db.getProvisionCount(Utilities.RUNNING);
-                    long numberPendingContainers = db.getProvisionCount(Utilities.PENDING);
+                    long numberRunningContainers = db.getProvisionCount(ProvisionState.RUNNING);
+                    long numberPendingContainers = db.getProvisionCount(ProvisionState.PENDING);
 
                     // System.out.println("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
 
@@ -295,14 +297,16 @@ class CleanupVMs {
 
                     // now update that DB record to be exited
                     // this is acutally finishing the VM and not the work
-                    if (status.getState().equals(Utilities.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                    if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
-                    } else if ((status.getState().equals(Utilities.RUNNING) || status.getState().equals(Utilities.FAILED)
-                            || status.getState().equals(Utilities.PENDING) || status.getState().equals(Utilities.PROVISIONING))
+                    } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
+                            || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING)
                             && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // deal with running, failed, pending, provisioning
-                        db.updateProvision(status.getVmUuid(), status.getJobUuid(), status.getState());
+                        // convert from provision state to statestate
+                        ProvisionState provisionState = ProvisionState.valueOf(status.getState().toString());
+                        db.updateProvision(status.getVmUuid(), status.getJobUuid(), provisionState);
                     }
 
                     /*

@@ -18,7 +18,9 @@ package info.pancancer.arch3.persistence;
 
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +60,7 @@ public class PostgreSQLIT {
     @Test
     public void testGetPendingProvisionUUID() {
         Provision p = createProvision();
-        p.setState(Utilities.PENDING);
+        p.setState(ProvisionState.PENDING);
         String uuid = postgres.createProvision(p);
         String result = postgres.getPendingProvisionUUID();
         assertEquals(uuid, result);
@@ -70,12 +72,12 @@ public class PostgreSQLIT {
     @Test
     public void testUpdatePendingProvision() {
         Provision p = createProvision();
-        p.setState(Utilities.PENDING);
+        p.setState(ProvisionState.PENDING);
         String uuid = postgres.createProvision(p);
-        long result = postgres.getProvisionCount(Utilities.RUNNING);
+        long result = postgres.getProvisionCount(ProvisionState.RUNNING);
         Assert.assertTrue("could not count provisions " + result, result == 0);
         postgres.updatePendingProvision(uuid);
-        result = postgres.getProvisionCount(Utilities.RUNNING);
+        result = postgres.getProvisionCount(ProvisionState.RUNNING);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
 
@@ -85,12 +87,12 @@ public class PostgreSQLIT {
     @Test
     public void testFinishContainer() {
         Provision p = createProvision();
-        p.setState(Utilities.PENDING);
+        p.setState(ProvisionState.PENDING);
         String uuid = postgres.createProvision(p);
-        long result = postgres.getProvisionCount(Utilities.FAILED);
+        long result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not count provisions " + result, result == 0);
         postgres.finishContainer(uuid);
-        result = postgres.getProvisionCount(Utilities.SUCCESS);
+        result = postgres.getProvisionCount(ProvisionState.SUCCESS);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
 
@@ -103,15 +105,15 @@ public class PostgreSQLIT {
         postgres.createJob(createJob());
         // create one job with a defined state
         Job createJob = createJob();
-        createJob.setState(Utilities.PENDING);
+        createJob.setState(JobState.PENDING);
         String uuid = postgres.createJob(createJob);
         // get everything
         List<Job> jobs = postgres.getJobs(null);
         Assert.assertTrue("found jobs, incorrect number" + jobs.size(), jobs.size() == 3);
-        List<Job> jobs2 = postgres.getJobs(Utilities.SUCCESS);
+        List<Job> jobs2 = postgres.getJobs(JobState.SUCCESS);
         Assert.assertTrue("found jobs, incorrect number" + jobs2.size(), jobs2.isEmpty());
         postgres.finishJob(uuid);
-        List<Job> jobs3 = postgres.getJobs(Utilities.SUCCESS);
+        List<Job> jobs3 = postgres.getJobs(JobState.SUCCESS);
         Assert.assertTrue("found jobs, incorrect number" + jobs3.size(), jobs3.size() == 1);
     }
 
@@ -124,15 +126,15 @@ public class PostgreSQLIT {
         postgres.createJob(createJob());
         // create one job with a defined state
         Job createJob = createJob();
-        createJob.setState(Utilities.PENDING);
+        createJob.setState(JobState.PENDING);
         String uuid = postgres.createJob(createJob);
         // get everything
         List<Job> jobs = postgres.getJobs(null);
         Assert.assertTrue("found jobs, incorrect number" + jobs.size(), jobs.size() == 3);
-        List<Job> jobs2 = postgres.getJobs(Utilities.PENDING);
+        List<Job> jobs2 = postgres.getJobs(JobState.PENDING);
         Assert.assertTrue("found jobs, incorrect number" + jobs2.size(), jobs2.size() == 1);
-        postgres.updateJob(uuid, "none", Utilities.FAILED);
-        List<Job> jobs3 = postgres.getJobs(Utilities.PENDING);
+        postgres.updateJob(uuid, "none", JobState.FAILED);
+        List<Job> jobs3 = postgres.getJobs(JobState.PENDING);
         Assert.assertTrue("found jobs, incorrect number" + jobs3.size(), jobs3.isEmpty());
     }
 
@@ -142,12 +144,12 @@ public class PostgreSQLIT {
     @Test
     public void testUpdateProvision() {
         Provision p = createProvision();
-        p.setState(Utilities.PENDING);
+        p.setState(ProvisionState.PENDING);
         String uuid = postgres.createProvision(p);
-        long result = postgres.getProvisionCount(Utilities.FAILED);
+        long result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not count provisions " + result, result == 0);
-        postgres.updateProvision(uuid, "job_uuid", Utilities.FAILED);
-        result = postgres.getProvisionCount(Utilities.FAILED);
+        postgres.updateProvision(uuid, "job_uuid", ProvisionState.FAILED);
+        result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
 
@@ -157,9 +159,9 @@ public class PostgreSQLIT {
     @Test
     public void testGetProvisionCount() {
         Provision p = createProvision();
-        p.setState(Utilities.PENDING);
+        p.setState(ProvisionState.PENDING);
         postgres.createProvision(p);
-        long result = postgres.getProvisionCount(Utilities.PENDING);
+        long result = postgres.getProvisionCount(ProvisionState.PENDING);
         Assert.assertTrue("could not count provisions " + result, result == 1);
     }
 
@@ -212,12 +214,12 @@ public class PostgreSQLIT {
         postgres.createJob(createJob());
         // create one job with a defined state
         Job createJob = createJob();
-        createJob.setState(Utilities.PENDING);
+        createJob.setState(JobState.PENDING);
         postgres.createJob(createJob);
         // get everything
         List<Job> jobs = postgres.getJobs(null);
         Assert.assertTrue("found jobs, incorrect number" + jobs.size(), jobs.size() == 3);
-        List<Job> jobs2 = postgres.getJobs(Utilities.PENDING);
+        List<Job> jobs2 = postgres.getJobs(JobState.PENDING);
         Assert.assertTrue("found jobs, incorrect number" + jobs2.size(), jobs2.size() == 1);
 
     }
@@ -228,7 +230,7 @@ public class PostgreSQLIT {
     @Test
     public void testPreviouslyRun() {
         Job createJob = createJob();
-        createJob.setState(Utilities.PENDING);
+        createJob.setState(JobState.PENDING);
         createJob.setJobHash("test_hash");
         postgres.createJob(createJob);
         boolean result = postgres.previouslyRun("test_hash");
