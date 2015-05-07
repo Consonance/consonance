@@ -7,6 +7,7 @@ import com.rabbitmq.client.QueueingConsumer;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -167,7 +168,7 @@ public class Worker extends Thread {
 
                 randomNumber--;
 
-                Status s = new Status(vmUuid, uuid, Utilities.RUNNING, Utilities.JOB_MESSAGE_TYPE, "stderr " + randomNumber, "stdout "
+                Status s = new Status(vmUuid, uuid, StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE, "stderr " + randomNumber, "stdout "
                         + randomNumber, "job is running");
                 String result = s.toJSON();
 
@@ -195,11 +196,11 @@ public class Worker extends Thread {
             final int upperBound = 100;
             int randomNumber = random.nextInt(upperBound);
 
-            Status s = new Status(vmUuid, uuid, Utilities.SUCCESS, Utilities.JOB_MESSAGE_TYPE, "stderr finished", "stdout finished",
+            Status s = new Status(vmUuid, uuid, StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, "stderr finished", "stdout finished",
                     "job is finished");
             final int testThreshold = 10;
             if (randomNumber < testThreshold) {
-                s = new Status(vmUuid, uuid, Utilities.FAILED, Utilities.JOB_MESSAGE_TYPE, "stderr failed", "stdout failed",
+                s = new Status(vmUuid, uuid, StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE, "stderr failed", "stdout failed",
                         "job is failed");
             }
             String result = s.toJSON();

@@ -8,8 +8,10 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
@@ -216,7 +218,7 @@ class CoordinatorOrders {
                 JSONObject settings = u.parseConfig(this.configFile);
                 PostgreSQL db = new PostgreSQL(settings);
                 Job newJob = new Job().fromJSON(message);
-                newJob.setState(Utilities.PENDING);
+                newJob.setState(JobState.PENDING);
                 db.createJob(newJob);
 
                 System.out.println(" + MESSAGE SENT!\n" + message + "\n");
@@ -287,14 +289,16 @@ class CleanupJobs {
 
                     // now update that DB record to be exited
                     // this is acutally finishing the VM and not the work
-                    if (status.getState().equals(Utilities.SUCCESS) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                    if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         System.out.println("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
                         db.finishJob(status.getJobUuid());
-                    } else if ((status.getState().equals(Utilities.RUNNING) || status.getState().equals(Utilities.FAILED) || status
-                            .getState().equals(Utilities.PENDING)) && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                    } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED || status.getState() == StatusState.PENDING)
+                            && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
-                        db.updateJob(status.getJobUuid(), status.getVmUuid(), status.getState());
+                        // convert from StatusState to JobState
+                        JobState valueOf = JobState.valueOf(status.getState().toString());
+                        db.updateJob(status.getJobUuid(), status.getVmUuid(), valueOf);
                     }
 
                     // TODO: deal with other situations here like
@@ -360,7 +364,7 @@ class FlagJobs {
                 while (true) {
 
                     // checks the jobs in the database and sees if any have become "lost"
-                    List<Job> jobs = db.getJobs(Utilities.RUNNING);
+                    List<Job> jobs = db.getJobs(JobState.RUNNING);
 
                     // how long before we call something lost?
                     long secBeforeLost = (Long) settings.get("max_seconds_before_lost");
@@ -378,7 +382,7 @@ class FlagJobs {
                         if (diffSec > secBeforeLost) {
                             // it must be lost
                             log.error("JOB " + job.getUuid() + " NOT SEEN IN " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
-                            db.updateJob(job.getUuid(), job.getVmUuid(), Utilities.LOST);
+                            db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
                         }
 
                     }

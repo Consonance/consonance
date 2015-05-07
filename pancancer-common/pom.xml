@@ -27,7 +27,13 @@
             <artifactId>amqp-client</artifactId>
             <version>3.3.5</version>
         </dependency>
+        <dependency>
+            <groupId>net.sourceforge.cobertura</groupId>
+            <artifactId>cobertura</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
+    
     <build>
         <plugins>
             <plugin>

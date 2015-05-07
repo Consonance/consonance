@@ -12,7 +12,7 @@ import org.json.simple.JSONObject;
  */
 public class Job {
 
-    private String state;
+    private JobState state = JobState.START;
     private final Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String vmUuid;
@@ -131,11 +131,11 @@ public class Job {
         this.workflow = workflow;
     }
 
-    public String getState() {
+    public JobState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(JobState state) {
         this.state = state;
     }
 

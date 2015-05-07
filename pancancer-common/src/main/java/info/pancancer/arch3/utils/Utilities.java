@@ -34,16 +34,6 @@ import org.json.simple.parser.ParseException;
  */
 public class Utilities extends Thread {
 
-    // constants
-    public static final String PENDING = "pending";
-    public static final String RUNNING = "running";
-    public static final String SUCCESS = "success";
-    public static final String FAILED = "failed";
-    public static final String LOST = "lost";
-    public static final String TERMINATED = "terminated";
-    public static final String PROVISIONING = "provisioning";
-    public static final String QUEUED = "queued";
-
     // message types
     public static final String VM_MESSAGE_TYPE = "vm-message-type";
     public static final String JOB_MESSAGE_TYPE = "job-message-type";

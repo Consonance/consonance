@@ -10,14 +10,14 @@ public class Status {
 
     private final Utilities u = new Utilities();
     private String type = null;
-    private String state = null;
+    private StatusState state = null;
     private String vmUuid = null;
     private String jobUuid = null;
     private String message = null;
     private String stderr = null;
     private String stdout = null;
 
-    public Status(String vmUuid, String jobUuid, String state, String type, String stderr, String stdout, String message) {
+    public Status(String vmUuid, String jobUuid, StatusState state, String type, String stderr, String stdout, String message) {
         this.vmUuid = vmUuid;
         this.jobUuid = jobUuid;
         this.state = state;
@@ -46,7 +46,7 @@ public class Status {
         JSONObject obj = u.parseJob(json);
         jobUuid = (String) obj.get("jobUuid");
         vmUuid = (String) obj.get("vmUuid");
-        state = (String) obj.get("state");
+        state = StatusState.valueOf((String) obj.get("state"));
         message = (String) obj.get("message");
         type = (String) obj.get("type");
         stderr = (String) obj.get("stderr");
@@ -64,11 +64,11 @@ public class Status {
         this.type = type;
     }
 
-    public String getState() {
+    public StatusState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(StatusState state) {
         this.state = state;
     }
 
