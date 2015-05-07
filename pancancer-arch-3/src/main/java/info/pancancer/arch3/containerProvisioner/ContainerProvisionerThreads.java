@@ -187,8 +187,8 @@ class ProvisionVMs {
                     // System.out.println("CHECKING RUNNING VMs");
 
                     // read from DB
-                    int numberRunningContainers = db.getProvisionCount(Utilities.RUNNING);
-                    int numberPendingContainers = db.getProvisionCount(Utilities.PENDING);
+                    long numberRunningContainers = db.getProvisionCount(Utilities.RUNNING);
+                    long numberPendingContainers = db.getProvisionCount(Utilities.PENDING);
 
                     // System.out.println("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
 

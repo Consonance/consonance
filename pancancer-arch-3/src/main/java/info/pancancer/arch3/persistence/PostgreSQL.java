@@ -54,8 +54,11 @@ public class PostgreSQL extends Base {
     }
 
     public String getPendingProvisionUUID() {
-        return runSelectStatement("select provision_uuid from provision where status = 'pending' limit 1", new ScalarHandler<String>(),
-                false);
+        return runSelectStatement("select provision_uuid from provision where status = 'pending' limit 1", new ScalarHandler<String>());
+    }
+
+    public void clearDatabase() {
+        this.runUpdateStatement("delete from provision; delete from job;");
     }
 
     private <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
@@ -117,8 +120,8 @@ public class PostgreSQL extends Base {
                 jobUuid, uuid);
     }
 
-    public int getProvisionCount(String status) {
-        return this.runSelectStatement("select count(*) from provision where status = ?", new ScalarHandler<Integer>(), false, status);
+    public long getProvisionCount(String status) {
+        return this.runSelectStatement("select count(*) from provision where status = ?", new ScalarHandler<Long>(), status);
     }
 
     public String createProvision(Provision p) {

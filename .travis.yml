@@ -5,8 +5,6 @@ sudo: false
 language: java
 jdk: 
   - oraclejdk7
-after_success:
-  - mvn clean cobertura:cobertura coveralls:report
 
 before_script: 
   - psql -c "create user queue_user with password 'queue' createdb;" -U postgres
@@ -14,8 +12,10 @@ before_script:
   - psql -c 'create database queue_status with owner = queue_user;' -U postgres
   - export PGPASSWORD='queue'; psql -h 127.0.0.1 -U queue_user  queue_status -f  pancancer-arch-3/sql/schema.sql
 
-
 script: mvn -B clean install -DskipITs=false
+
+after_success:
+  - mvn clean -DskipITs=false cobertura:cobertura coveralls:report
 
 addons:
   postgresql: "9.3"
