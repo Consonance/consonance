@@ -19,7 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:CancerCollaboratory/sandbox.git</github.url>
-	<skipITs>true</skipITs>
+        <skipITs>true</skipITs>
     </properties>
 
     <scm>
@@ -312,19 +312,9 @@
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <version>2.6</version>
                 <configuration>
-                    <formats>
-                        <format>xml</format>
-                    </formats>
+                    <format>xml</format>
                     <aggregate>true</aggregate>
                 </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>cobertura</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
