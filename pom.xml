@@ -41,7 +41,22 @@
     <dependencyManagement>
         <!-- need to unify shared dependency versions -->
         <dependencies>
-            <dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>2.5.3</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-annotations</artifactId>
+				<version>2.5.0</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>2.5.3</version>
+			</dependency>
+			<dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
@@ -333,7 +348,10 @@
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <version>2.7</version>
                 <configuration>
-                    <format>xml</format>
+                    <formats>
+                    	<format>xml</format>
+                    	<format>html</format>
+                    </formats>
                     <aggregate>true</aggregate>
                 </configuration>
             </plugin>
