@@ -168,7 +168,7 @@ public class Utilities extends Thread {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println(ex.toString());
         }
-        return (channel);
+        return channel;
 
     }
 
@@ -244,7 +244,7 @@ public class Utilities extends Thread {
         }
     }
 
-    public JSONObject parseResult(String previous) {
+    private JSONObject parseResult(String previous) {
         JSONObject obj = parseJSONStr(previous);
         resultsArr.add(obj);
         return (obj);
