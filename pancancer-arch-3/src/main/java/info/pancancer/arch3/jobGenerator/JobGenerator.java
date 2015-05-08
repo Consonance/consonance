@@ -1,14 +1,11 @@
 package info.pancancer.arch3.jobGenerator;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.utils.Utilities;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -16,11 +13,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
 
-import info.pancancer.arch3.beans.Order;
-import org.json.simple.JSONObject;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+
 import org.json.simple.JSONObject;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 
 /**
  * Created by boconnor on 15-04-18.

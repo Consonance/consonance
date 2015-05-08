@@ -1,11 +1,6 @@
 package info.pancancer.arch3.containerProvisioner;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
-import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
@@ -13,13 +8,19 @@ import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import org.json.simple.JSONObject;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
+import org.json.simple.JSONObject;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Created by boconnor on 15-04-18.

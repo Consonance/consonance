@@ -18,7 +18,6 @@ public class JobGeneratorShutdownHandler extends Thread {
     private String outputFile = null;
     private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
 
-    
     /**
      * This is here to exclusively do cleanup after a cntl+c e.g. persist to disk
      */
@@ -37,7 +36,7 @@ public class JobGeneratorShutdownHandler extends Thread {
             }
         }
     }
-    
+
     public void setupOutputFile(String outputFile, JSONObject settings) {
         this.outputFile = outputFile;
         if (this.outputFile == null) {
@@ -57,13 +56,13 @@ public class JobGeneratorShutdownHandler extends Thread {
                 }
                 String json = sb.toString();
                 br.close();
-                Utilities u= new Utilities();
+                Utilities u = new Utilities();
                 JSONObject parsed = u.parseJSONStr(json);
                 resultsArr = (ArrayList<JSONObject>) parsed.get("results");
 
             }
         } catch (Exception ex) {
-            // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(JobGeneratorShutdownHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

@@ -1,5 +1,7 @@
 package info.pancancer.arch3.worker;
 
+import info.pancancer.arch3.Base;
+
 import java.io.IOException;
 
 import com.rabbitmq.client.Channel;
@@ -22,7 +24,7 @@ public class WorkerHeartbeat implements Runnable {
             try {
                 System.out.println("Sending heartbeat message to "+queueName+", with body: "+this.getMessageBody());
                 reportingChannel.basicPublish(queueName, queueName , null, body);
-                Thread.sleep((long) (secondsDelay * 1000));
+                Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {

@@ -9,7 +9,6 @@ import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 
-
 public class WorkflowRunner implements Callable<String> {
 
     private long preworkDelay;
@@ -18,9 +17,8 @@ public class WorkflowRunner implements Callable<String> {
 
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
-    
-    public String getStdOut()
-    {
+
+    public String getStdOut() {
         try {
             this.outputStream.flush();
         } catch (IOException e) {
@@ -29,9 +27,8 @@ public class WorkflowRunner implements Callable<String> {
         }
         return new String(outputStream.toByteArray());
     }
-    
-    public String getStdErr()
-    {
+
+    public String getStdErr() {
         try {
             this.errorStream.flush();
         } catch (IOException e) {
@@ -40,23 +37,20 @@ public class WorkflowRunner implements Callable<String> {
         }
         return new String(errorStream.toByteArray());
     }
-    
+
     @Override
     public String call() throws Exception {
-        PumpStreamHandler streamHandler = new PumpStreamHandler(this.outputStream,this.errorStream);
+        PumpStreamHandler streamHandler = new PumpStreamHandler(this.outputStream, this.errorStream);
         String workflowOutput = "";
-        
+
         DefaultExecutor executor = new DefaultExecutor();
 
-        /*CommandLine cli = new CommandLine("docker");
-        cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t"
-                            ,"-v", "/var/run/docker.sock:/var/run/docker.sock",
-                            "-v", job.getWorkflowPath() + ":/workflow",
-                            "-v",pathToINI + ":/ini",
-                            "-v", "/datastore:/datastore",
-                            "-v","/home/"+this.userName+"/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem",
-                "seqware/seqware_whitestar_pancancer",
-                    "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });*/
+        /*
+         * CommandLine cli = new CommandLine("docker"); cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t" ,"-v",
+         * "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v",pathToINI + ":/ini", "-v",
+         * "/datastore:/datastore", "-v","/home/"+this.userName+"/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem",
+         * "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
+         */
         System.out.println("Executing command: " + this.cli.toString().replace(",", ""));
 
         if (this.preworkDelay > 0) {
@@ -65,19 +59,19 @@ public class WorkflowRunner implements Callable<String> {
         }
         DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
         executor.setStreamHandler(streamHandler);
-        executor.execute(cli,resultHandler);
+        executor.execute(cli, resultHandler);
         // Use the result handler for non-blocking call, so this way we should be able to get updates of
         // stdout and stderr while the command is running.
         resultHandler.waitFor();
         workflowOutput = new String(outputStream.toByteArray());
-        //System.out.println("Docker execution result: " + workflowOutput);
+        // System.out.println("Docker execution result: " + workflowOutput);
         if (this.postworkDelay > 0) {
             System.out.println("Sleeping after exeuting workflow for " + this.postworkDelay + " ms.");
             Thread.sleep(this.postworkDelay);
         }
-        
+
         this.outputStream.close();
-        
+
         this.errorStream.close();
 
         return workflowOutput;

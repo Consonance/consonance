@@ -19,13 +19,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Created by boconnor on 2015-04-22.
  */
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Job {
 
     private JobState state = JobState.START;
     private final Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
+    private String vmUuid;
     private String workflowVersion;
     private String workflowPath;
     private String jobHash;
@@ -34,7 +35,7 @@ public class Job {
     private Timestamp createTs;
     private Timestamp updateTs;
 
-    public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String>  ini) {
+    public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini) {
         this.workflow = workflow;
         this.workflowVersion = workflowVersion;
         this.workflowPath = workflowPath;
@@ -46,7 +47,7 @@ public class Job {
         super();
     }
 
-    public String toJSON () {
+    public String toJSON() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
@@ -56,9 +57,6 @@ public class Job {
             e.printStackTrace();
             return null;
         }
-        j.append("\n}\n");
-        j.append("}\n");
-        return(j.toString());
     }
 
     public Job fromJSON(String json) {
@@ -67,8 +65,8 @@ public class Job {
         try {
             return mapper.readValue(json, Job.class);
         } catch (JsonParseException e) {
-            //TODO: improve logging for JSON parse errors.
-            System.out.println("JSON parsing error: "+e.getMessage());
+            // TODO: improve logging for JSON parse errors.
+            System.out.println("JSON parsing error: " + e.getMessage());
             e.printStackTrace();
             return null;
         } catch (IOException e) {
@@ -76,7 +74,6 @@ public class Job {
             e.printStackTrace();
             return null;
         }
-        return(this);
 
     }
 
@@ -98,9 +95,9 @@ public class Job {
     public String getIniStr() {
         StringBuffer sb = new StringBuffer();
         for (String key : this.ini.keySet()) {
-            sb.append(key+"="+this.ini.get(key)).append("\n");
+            sb.append(key + "=" + this.ini.get(key)).append("\n");
         }
-        return(sb.toString());
+        return (sb.toString());
     }
 
     public void setIni(Map<String, String> ini) {
@@ -134,13 +131,13 @@ public class Job {
         this.workflow = workflow;
     }
 
-    //Not sure what this was for, ignore it for now.
+    // Not sure what this was for, ignore it for now.
     @JsonIgnore
-    public String getState() {
+    public JobState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(JobState state) {
         this.state = state;
     }
 
@@ -178,5 +175,14 @@ public class Job {
 
     public void setUpdateTs(Timestamp updateTs) {
         this.updateTs = updateTs;
+    }
+
+    @JsonProperty("vmuuid")
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public void setVmUuid(String vmUuid) {
+        this.vmUuid = vmUuid;
     }
 }
