@@ -14,7 +14,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
@@ -45,8 +44,6 @@ import com.rabbitmq.client.QueueingConsumer;
  */
 public class Worker implements Runnable {
 
-    // private static final String CHARSET_ENCODING = "UTF-8";
-    private static final CharsetEncoder ENCODER = StandardCharsets.UTF_8.newEncoder();
     // private static final int THREAD_POOL_SIZE = 1;
     protected final Logger log = LoggerFactory.getLogger(getClass());
     private JSONObject settings = null;
@@ -144,7 +141,7 @@ public class Worker implements Runnable {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 System.out.println(vmUuid + "  received " + delivery.getEnvelope().toString());
                 // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                String message = new String(delivery.getBody(),ENCODER.charset());
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
 
                 if (message != null) {
 
@@ -204,12 +201,13 @@ public class Worker implements Runnable {
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
         Path pathToINI = java.nio.file.Files.createTempFile("seqware_", ".ini", attrs);
         System.out.println("INI file: " + pathToINI.toString());
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), ENCODER));
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8));
         bw.write(job.getIniStr());
+        bw.flush();
         bw.close();
-        //FileWriter writer = new FileWriter(pathToINI.toFile());
-        //writer.write(job.getIniStr());
-        //writer.close();
+        // FileWriter writer = new FileWriter(pathToINI.toFile());
+        // writer.write(job.getIniStr());
+        // writer.close();
         return pathToINI;
     }
 
@@ -222,7 +220,7 @@ public class Worker implements Runnable {
 
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-                    message.getBytes(ENCODER.charset()));
+                    message.getBytes(StandardCharsets.UTF_8));
 
             CommandLine cli = new CommandLine("docker");
             cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-v",
@@ -310,7 +308,7 @@ public class Worker implements Runnable {
     private void finishJob(String message) {
         try {
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-                    message.getBytes(ENCODER.charset()));
+                    message.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             log.error(e.toString());
         }

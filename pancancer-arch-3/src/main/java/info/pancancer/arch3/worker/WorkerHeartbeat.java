@@ -3,14 +3,12 @@ package info.pancancer.arch3.worker;
 import info.pancancer.arch3.Base;
 
 import java.io.IOException;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 
 import com.rabbitmq.client.Channel;
 
 public class WorkerHeartbeat implements Runnable {
 
-    private static final CharsetEncoder ENCODER = StandardCharsets.UTF_8.newEncoder();
     private Channel reportingChannel;
     private String queueName;
     private double secondsDelay = 2.0;
@@ -20,13 +18,13 @@ public class WorkerHeartbeat implements Runnable {
 
     @Override
     public void run() {
-        //while (!Thread.currentThread().isInterrupted()) {
-        System.out.println("starting heartbeat thread, will send heartbeat message ever "+secondsDelay + " seconds.");
+        // while (!Thread.currentThread().isInterrupted()) {
+        System.out.println("starting heartbeat thread, will send heartbeat message ever " + secondsDelay + " seconds.");
         while (!Thread.currentThread().interrupted()) {
-            byte[] body = this.getMessageBody().getBytes(ENCODER.charset());
+            byte[] body = this.getMessageBody().getBytes(StandardCharsets.UTF_8);
             try {
-                System.out.println("Sending heartbeat message to "+queueName+", with body: "+this.getMessageBody());
-                reportingChannel.basicPublish(queueName, queueName , null, body);
+                System.out.println("Sending heartbeat message to " + queueName + ", with body: " + this.getMessageBody());
+                reportingChannel.basicPublish(queueName, queueName, null, body);
                 Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
             } catch (IOException e) {
                 e.printStackTrace();
@@ -68,6 +66,5 @@ public class WorkerHeartbeat implements Runnable {
     public void setMessageBody(String messageBody) {
         this.messageBody = messageBody;
     }
-
 
 }

@@ -32,7 +32,7 @@ public class JobGeneratorShutdownHandler extends Thread {
             JSONObject obj = new JSONObject();
             obj.put("results", resultsArr);
             try {
-                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), ENCODER));
+                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8));
                 obj.writeJSONString(bw);
                 bw.close();
                 System.out.println("WRITING RESULTS TO " + this.outputFile);
@@ -50,7 +50,7 @@ public class JobGeneratorShutdownHandler extends Thread {
         try {
             File existing = new File(this.outputFile);
             if (existing.exists()) {
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(outputFile), ENCODER.charset()));
+                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(outputFile), StandardCharsets.UTF_8));
                 StringBuilder sb = new StringBuilder();
                 String line = br.readLine();
 
