@@ -5,9 +5,13 @@ import info.pancancer.arch3.utils.Utilities;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,6 +21,7 @@ import org.json.simple.JSONObject;
 public class JobGeneratorShutdownHandler extends Thread {
     private String outputFile = null;
     private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
+    private static final CharsetEncoder ENCODER = StandardCharsets.UTF_8.newEncoder();
 
     /**
      * This is here to exclusively do cleanup after a cntl+c e.g. persist to disk
@@ -27,7 +32,7 @@ public class JobGeneratorShutdownHandler extends Thread {
             JSONObject obj = new JSONObject();
             obj.put("results", resultsArr);
             try {
-                BufferedWriter bw = new BufferedWriter(new FileWriter(this.outputFile));
+                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), ENCODER));
                 obj.writeJSONString(bw);
                 bw.close();
                 System.out.println("WRITING RESULTS TO " + this.outputFile);
@@ -45,7 +50,7 @@ public class JobGeneratorShutdownHandler extends Thread {
         try {
             File existing = new File(this.outputFile);
             if (existing.exists()) {
-                BufferedReader br = new BufferedReader(new FileReader(outputFile));
+                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(outputFile), ENCODER.charset()));
                 StringBuilder sb = new StringBuilder();
                 String line = br.readLine();
 

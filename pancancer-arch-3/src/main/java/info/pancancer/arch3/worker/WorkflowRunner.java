@@ -2,6 +2,8 @@ package info.pancancer.arch3.worker;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.exec.CommandLine;
@@ -15,6 +17,7 @@ public class WorkflowRunner implements Callable<String> {
     private long postworkDelay;
     private CommandLine cli;
 
+    private static final CharsetEncoder ENCODER = StandardCharsets.UTF_8.newEncoder();
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
 
@@ -25,7 +28,7 @@ public class WorkflowRunner implements Callable<String> {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return new String(outputStream.toByteArray());
+        return new String(outputStream.toByteArray(),ENCODER.charset());
     }
 
     public String getStdErr() {
@@ -35,7 +38,7 @@ public class WorkflowRunner implements Callable<String> {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return new String(errorStream.toByteArray());
+        return new String(errorStream.toByteArray(),ENCODER.charset());
     }
 
     @Override
@@ -63,7 +66,7 @@ public class WorkflowRunner implements Callable<String> {
         // Use the result handler for non-blocking call, so this way we should be able to get updates of
         // stdout and stderr while the command is running.
         resultHandler.waitFor();
-        workflowOutput = new String(outputStream.toByteArray());
+        workflowOutput = new String(outputStream.toByteArray(),ENCODER.charset());
         // System.out.println("Docker execution result: " + workflowOutput);
         if (this.postworkDelay > 0) {
             System.out.println("Sleeping after exeuting workflow for " + this.postworkDelay + " ms.");
