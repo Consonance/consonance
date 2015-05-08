@@ -9,6 +9,8 @@ import info.pancancer.arch3.worker.Worker;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -74,6 +76,7 @@ public class TestWorker {
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
 
+       
         Mockito.doNothing().when(mockExecutor).execute(any(CommandLine.class),any(DefaultExecuteResultHandler.class));
 
         PowerMockito.whenNew(DefaultExecutor.class).withNoArguments().thenReturn(mockExecutor);
@@ -131,7 +134,7 @@ public class TestWorker {
         knownResults = knownResults.replaceAll("bundle_manager\\d+", "bundle_manager_LONG_NUMERIC_SEQUENCE");
         knownResults = knownResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
         knownResults = knownResults.replaceAll("\r", "");
-        knownResults = knownResults.replaceAll("IP address: /?\\d{0,3}\\.\\d{0,3}\\.\\d{0,3}\\.\\d{0,3}", "IP Address: 0.0.0.0");
+        knownResults = knownResults.replaceAll("IP address: /[^\"]*", "IP address: 0.0.0.0");
         
         testResults = testResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
         testResults = testResults.replaceAll("oozie-[a-z0-9\\-]+", "JOB_ID");
@@ -139,7 +142,7 @@ public class TestWorker {
         testResults = testResults.replaceAll("bundle_manager\\d+", "bundle_manager_LONG_NUMERIC_SEQUENCE");
         testResults = testResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
         testResults = testResults.replaceAll("\r", "");
-        testResults = testResults.replaceAll("IP address: /?\\d{0,3}\\.\\d{0,3}\\.\\d{0,3}\\.\\d{0,3}", "IP Address: 0.0.0.0");
+        testResults = testResults.replaceAll("IP address: /[^\"]*", "IP address: 0.0.0.0");
         assertEquals(knownResults,testResults);
     }
 }
