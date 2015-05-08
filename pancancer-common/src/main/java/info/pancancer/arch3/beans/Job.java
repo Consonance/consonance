@@ -1,26 +1,37 @@
 package info.pancancer.arch3.beans;
 
 import info.pancancer.arch3.utils.Utilities;
+
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.json.simple.JSONObject;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * This is the bean object that represents a job (a workflow.ini) that needs to be run. Created by boconnor on 2015-04-22.
+ * Created by boconnor on 2015-04-22.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Job {
 
     private JobState state = JobState.START;
     private final Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
-    private String vmUuid;
     private String workflow;
+    private String vmUuid;
     private String workflowVersion;
     private String workflowPath;
     private String jobHash;
-    private Map<String, String> ini;
+    private String messageType;
+    private Map<String, String> ini = new HashMap<String, String>();
     private Timestamp createTs;
     private Timestamp updateTs;
 
@@ -37,52 +48,36 @@ public class Job {
     }
 
     public String toJSON() {
-
-        StringBuilder j = new StringBuilder();
-        j.append("{" + "\"message_type\": \"job\",\n" + "\"job_hash\": \"").append(jobHash).append("\",\n" + "\"job_uuid\": \"")
-                .append(uuid).append("\",\n" + "\"provision_uuid\": \"").append(vmUuid).append("\",\n" + "\"workflow_name\": \"")
-                .append(workflow).append("\",\n" + "\"workflow_version\" : \"").append(workflowVersion)
-                .append("\",\n" + "\"workflow_path\" : \"").append(workflowPath).append("\",\n" + "\"create_timestamp\" : \"")
-                .append(createTs).append("\",\n" + "\"update_timestamp\" : \"").append(updateTs).append("\",\n" + "\"arguments\" : {\n");
-
-        boolean first = true;
-        for (String key : ini.keySet()) {
-            if (first) {
-                first = false;
-            } else {
-                j.append(",\n");
-            }
-            j.append("\"").append(key).append("\": \"").append(ini.get(key)).append("\"");
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
         }
-        j.append("\n}\n");
-        j.append("}\n");
-        return (j.toString());
     }
 
     public Job fromJSON(String json) {
-
-        JSONObject obj = u.parseJob(json);
-        workflow = (String) obj.get("workflow_name");
-        workflowVersion = (String) obj.get("workflow_version");
-        workflowPath = (String) obj.get("workflow_path");
-        jobHash = (String) obj.get("job_hash");
-        uuid = (String) obj.get("job_uuid");
-        vmUuid = (String) obj.get("provision_uuid");
-        if (obj.get("create_timestamp") != null && !"null".equals((String) obj.get("create_timestamp"))) {
-            createTs = Timestamp.valueOf((String) obj.get("create_timestamp"));
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.readValue(json, Job.class);
+        } catch (JsonParseException e) {
+            // TODO: improve logging for JSON parse errors.
+            System.out.println("JSON parsing error: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
         }
-        if (obj.get("update_timestamp") != null && !"null".equals((String) obj.get("update_timestamp"))) {
-            updateTs = Timestamp.valueOf((String) obj.get("update_timestamp"));
-        }
-        JSONObject provision = (JSONObject) obj.get("arguments");
-        ini = new HashMap<>();
-        for (Object key : provision.keySet()) {
-            ini.put((String) key, (String) provision.get(key));
-        }
-        return (this);
 
     }
 
+    @JsonProperty("job_uuid")
     public String getUuid() {
         return uuid;
     }
@@ -91,14 +86,16 @@ public class Job {
         this.uuid = uuid;
     }
 
+    @JsonProperty("arguments")
     public Map<String, String> getIni() {
         return ini;
     }
 
+    @JsonIgnore
     public String getIniStr() {
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         for (String key : this.ini.keySet()) {
-            sb.append(key).append("=").append(this.ini.get(key));
+            sb.append(key + "=" + this.ini.get(key)).append("\n");
         }
         return (sb.toString());
     }
@@ -107,6 +104,7 @@ public class Job {
         this.ini = ini;
     }
 
+    @JsonProperty("job_hash")
     public String getJobHash() {
         return jobHash;
     }
@@ -115,6 +113,7 @@ public class Job {
         this.jobHash = jobHash;
     }
 
+    @JsonProperty("workflow_version")
     public String getWorkflowVersion() {
         return workflowVersion;
     }
@@ -123,6 +122,7 @@ public class Job {
         this.workflowVersion = workflowVersion;
     }
 
+    @JsonProperty("workflow_name")
     public String getWorkflow() {
         return workflow;
     }
@@ -131,6 +131,8 @@ public class Job {
         this.workflow = workflow;
     }
 
+    // Not sure what this was for, ignore it for now.
+    @JsonIgnore
     public JobState getState() {
         return state;
     }
@@ -139,6 +141,7 @@ public class Job {
         this.state = state;
     }
 
+    @JsonProperty("workflow_path")
     public String getWorkflowPath() {
         return workflowPath;
     }
@@ -147,6 +150,16 @@ public class Job {
         this.workflowPath = workflowPath;
     }
 
+    @JsonProperty("message_type")
+    public String getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
+    }
+
+    @JsonProperty("create_ts")
     public Timestamp getCreateTs() {
         return createTs;
     }
@@ -155,6 +168,7 @@ public class Job {
         this.createTs = createTs;
     }
 
+    @JsonProperty("update_ts")
     public Timestamp getUpdateTs() {
         return updateTs;
     }
@@ -163,6 +177,7 @@ public class Job {
         this.updateTs = updateTs;
     }
 
+    @JsonProperty("vmuuid")
     public String getVmUuid() {
         return vmUuid;
     }

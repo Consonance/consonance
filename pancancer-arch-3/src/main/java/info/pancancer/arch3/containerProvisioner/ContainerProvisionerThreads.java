@@ -1,9 +1,5 @@
 package info.pancancer.arch3.containerProvisioner;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
@@ -12,11 +8,19 @@ import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+
 import org.json.simple.JSONObject;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -61,6 +65,7 @@ public class ContainerProvisionerThreads extends Base {
         settings = u.parseConfig(configFile);
 
     }
+
 
 }
 
@@ -132,9 +137,6 @@ class ProcessVMOrders {
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             }
-            // log.error(ex.toString());
-            // log.error(ex.toString());
-
         }
 
     }
@@ -143,6 +145,7 @@ class ProcessVMOrders {
         inner = new Inner(configFile);
     }
 }
+
 
 /**
  * This examines the provision table in the DB to identify the number of running VMs. It then figures out if the number running is < the max
@@ -225,7 +228,7 @@ class ProvisionVMs {
         // TOOD: obviously, this will need to launch something using Youxia in the future
         private void launchVM(String uuid) {
 
-            new Worker(configFile, uuid, 1).start();
+           new Worker(configFile, uuid, 1).run();
 
             System.out.println("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
 
@@ -237,6 +240,7 @@ class ProvisionVMs {
         inner = new Inner(configFile);
     }
 }
+
 
 /**
  * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
@@ -281,6 +285,7 @@ class CleanupVMs {
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
+
 
                 // TODO: need threads that each read from orders and another that reads results
                 while (true) {
@@ -328,3 +333,10 @@ class CleanupVMs {
         inner = new Inner(configFile);
     }
 }
+
+
+
+
+
+
+
