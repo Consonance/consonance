@@ -20,7 +20,7 @@ on your development host directly.
 I'm focused on development on a Mac using HomeBrew, you will need to setup
 the dependencies using whatever system is appropriate for your environment.
 
-### Ubuntu
+### Ubuntu 14.04
 
 For RabbitMQ see: https://www.rabbitmq.com/install-debian.html
 
@@ -53,6 +53,10 @@ Basically you do:
     /usr/local/sbin/rabbitmq-server
 
 And at that point the service is running.
+
+You can view a web GUI at:
+
+    http://localhost:15672
 
 ### PostgreSQL
 
@@ -230,13 +234,20 @@ A code example on the command-line.
 
 ### Soon
 
+* test failure propogation... I had DEWrapper fail but the DB was updated with success!
+* need to detect lost jobs and handle them appropriately -- DONE
+* need an option to prevent jobs from being re-queued if their hash is in the DB -- DONE, now in config file
+* in particular, what happens when a host crashes?  Does the job get re-enqueued automatically? -- DONE
+    * yes, a crashed host is automatically re-enqueued if the wrapper process is terminated. However, just network timeout I'm not sure.  Mostly failures seem to re-enqueue so another worker will pick up and eventually change the status from lost to running again.
+* ---
+* better error checking
+* improve logging
+* cleanup of queue and DB handles
+* reporting tool that shows a summary of the DB contents including Donor/Project
 * implement heartbeat
-    * stderr/stdout
-* try to model complex/non-standard events in the standalone daemons
-    * job fails, 20% of the time
-    * vm disappears... need to update the DB then re-enqueue the VM/Job request
-    * longer-running jobs... longer than 10s
-* Solomon wants a "workflow_path" added to the order
+    * stderr/stdout in each heartbeat, a configurable number of tailed lines
+* test multiple types of failures and code appropriately 
+* Solomon wants a "workflow_path" added to the order -- DONE
 * figure out impl/extends class strategy for the various components so they can be  swapped out with different implementations -- TODO, Solomon?
     * worker threads
     * workers that fail, are successful, etc
@@ -246,17 +257,13 @@ A code example on the command-line.
 * lifecycle of jobs -- DONE
     * enqueue, monitor, launch VMs, status, etc
     * see diagram
-* need to add
-    * error checking
-    * improve logging
-    * cleanup of messaging and DB handles
-    * reporting tool that shows a summary of the DB contents including Donor/Project
+
 
 ### Future
 
-* utilities for clearing the status persistence storage and the message queues if you need to "start over"
+* utilities for clearing the status persistence storage and the message queues if you need to "start over" -- DONE
 * really great logging/reporting that's human readable
-* ability to turn off the VMProvisioner in case a human makes the worker nodes
+* ability to turn off the VMProvisioner in case a human makes the worker nodes -- DONE
 * log files loaded into the ELK stack for visualization
 * Docker container for the system, integration with Architecture Setup 3.0
 * need job queues with different names based on the workflow and version they target, this will make it easier to run multiple workflow types at the same time

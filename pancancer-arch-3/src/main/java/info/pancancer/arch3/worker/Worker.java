@@ -1,7 +1,6 @@
 package info.pancancer.arch3.worker;
 
 import com.rabbitmq.client.*;
-
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
@@ -84,6 +83,7 @@ public class Worker implements Runnable {
             uuid = (String) options.valueOf("max-runs");
         }
 
+        // TODO: can't run on the command line anymore!
         Worker w = new Worker(configFile, uuid, maxRuns);
         w.run();
         System.out.println("Exiting.");
@@ -91,6 +91,7 @@ public class Worker implements Runnable {
 
     public Worker(String configFile, String vmUuid, int maxRuns) {
 
+        this.maxRuns = maxRuns;
         settings = u.parseConfig(configFile);
         this.queueName = (String) settings.get("rabbitMQQueueName");
         if (this.queueName==null)
@@ -147,8 +148,6 @@ public class Worker implements Runnable {
 
                 if (message != null) {
 
-                    //max--;
-
                     System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
 
                     Job job = new Job().fromJSON(message);
@@ -163,8 +162,7 @@ public class Worker implements Runnable {
                     // thread, harvesting STDERR/STDOUT periodically
                     String workflowOutput = launchJob(statusJSON, job);
 
-                    // FIXME: this is the source of the bug... this thread never exists and as a consequence it uses the
-                    // same VMUUID for all jobs... which mismatches what's in the DB and hence the update in the DB never happens
+                    launchJob(job.getUuid());
 
                     status = new Status(vmUuid, job.getUuid(), u.SUCCESS, u.JOB_MESSAGE_TYPE, "", workflowOutput, "job is finished");
                     statusJSON = status.toJSON();
@@ -174,18 +172,24 @@ public class Worker implements Runnable {
                     finishJob(statusJSON);
                 } else {
                     System.out.println(" [x] Job request came back NULL! ");
+
                 }
+
                 System.out.println(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
                 jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+
             }
+
+            System.out.println(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
+
+            // turns out this is needed when multiple threads are reading from the same
+            // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
             jobChannel.getConnection().close();
             resultsChannel.getConnection().close();
         } catch (Exception ex) {
             System.err.println(ex.toString());
             ex.printStackTrace();
         }
-        // this.notify();
-    }
 
     private Path writeINIFile(Job job) throws IOException {
         System.out.println("INI is: " + job.getIniStr());
@@ -297,6 +301,7 @@ public class Worker implements Runnable {
                         return addr;
                     }
                 }
+
             }
             // If we got here it means we never found an IP v4 address, so we'll have to return the IPv6 address.
             for (InetAddress addr : Collections.list(i.getInetAddresses())) {

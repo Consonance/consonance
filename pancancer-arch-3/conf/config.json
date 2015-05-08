@@ -17,5 +17,6 @@
   "max_running_containers" : 5,
   "max_random_time" : 10,
   "min_random_time" : 2,
-  "max_seconds_before_lost" : 1
+  "check_previous_job_hash" : "true",
+  "max_seconds_before_lost" : 10
 }

@@ -3,25 +3,21 @@ package info.pancancer.arch3.beans;
 import info.pancancer.arch3.utils.Utilities;
 import org.json.simple.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 /**
- * Created by boconnor on 2015-04-22.
+ * This represents a Status which is a message sent to the Results/Status queue. Created by boconnor on 2015-04-22.
  */
 public class Status {
 
-    private Utilities u = new Utilities();
+    private final Utilities u = new Utilities();
     private String type = null;
-    private String state = null;
+    private StatusState state = null;
     private String vmUuid = null;
     private String jobUuid = null;
     private String message = null;
     private String stderr = null;
     private String stdout = null;
 
-    public Status(String vmUuid, String jobUuid, String state, String type, String stderr, String stdout, String message) {
+    public Status(String vmUuid, String jobUuid, StatusState state, String type, String stderr, String stdout, String message) {
         this.vmUuid = vmUuid;
         this.jobUuid = jobUuid;
         this.state = state;
@@ -35,19 +31,14 @@ public class Status {
         super();
     }
 
-    public String toJSON () {
+    public String toJSON() {
 
-        StringBuffer j = new StringBuffer();
-        j.append("{" +
-                "\"vmUuid\": \""+vmUuid+"\",\n" +
-                "\"jobUuid\": \""+jobUuid+"\",\n" +
-                "\"type\": \""+type+"\",\n" +
-                "\"state\": \""+state+"\",\n" +
-                "\"stderr\": \""+stderr+"\",\n" +
-                "\"stdout\": \""+stdout+"\",\n" +
-                "\"message\": \""+message+"\"\n" +
-                "}\n");
-        return(j.toString());
+        StringBuilder j = new StringBuilder();
+        j.append("{" + "\"vmUuid\": \"").append(vmUuid).append("\",\n" + "\"jobUuid\": \"").append(jobUuid)
+                .append("\",\n" + "\"type\": \"").append(type).append("\",\n" + "\"state\": \"").append(state)
+                .append("\",\n" + "\"stderr\": \"").append(stderr).append("\",\n" + "\"stdout\": \"").append(stdout)
+                .append("\",\n" + "\"message\": \"").append(message).append("\"\n" + "}\n");
+        return (j.toString());
     }
 
     public Status fromJSON(String json) {
@@ -55,13 +46,13 @@ public class Status {
         JSONObject obj = u.parseJob(json);
         jobUuid = (String) obj.get("jobUuid");
         vmUuid = (String) obj.get("vmUuid");
-        state = (String) obj.get("state");
+        state = StatusState.valueOf((String) obj.get("state"));
         message = (String) obj.get("message");
         type = (String) obj.get("type");
         stderr = (String) obj.get("stderr");
         stdout = (String) obj.get("stdout");
 
-        return(this);
+        return (this);
 
     }
 
@@ -73,11 +64,11 @@ public class Status {
         this.type = type;
     }
 
-    public String getState() {
+    public StatusState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(StatusState state) {
         this.state = state;
     }
 

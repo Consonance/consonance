@@ -1,4 +1,24 @@
-sudo: false                                                                                                                                                               
-language: java                                                                                                                                                            
-jdk:                                                                                                                                                                      
-  - oraclejdk7                                                                                                                                                            
+notifications:
+  slack: oicr:S9k4EowgQv9AnbCfEZHSzCsg
+
+sudo: false
+language: java
+jdk: 
+  - oraclejdk7
+
+before_script: 
+  - psql -c "create user queue_user with password 'queue' createdb;" -U postgres
+  - psql -c "ALTER USER queue_user WITH superuser;" -U postgres
+  - psql -c 'create database queue_status with owner = queue_user;' -U postgres
+  - export PGPASSWORD='queue'; psql -h 127.0.0.1 -U queue_user  queue_status -f  pancancer-arch-3/sql/schema.sql
+
+script: mvn -B clean install -DskipITs=false
+
+after_success:
+  - mvn -B clean install -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
+
+addons:
+  postgresql: "9.3"
+
+services:
+  - rabbitmq

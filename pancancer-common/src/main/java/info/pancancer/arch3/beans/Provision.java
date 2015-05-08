@@ -1,22 +1,21 @@
 package info.pancancer.arch3.beans;
 
 import info.pancancer.arch3.utils.Utilities;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 /**
- * Created by boconnor on 2015-04-22.
+ * This represents a message sent to the Container/VM queue. Created by boconnor on 2015-04-22.
  */
 public class Provision {
 
     long cores;
     long memGb;
     long storageGb;
-    String state;
+    ProvisionState state = ProvisionState.START;
     List<String> ansiblePlaybooks;
     Utilities u = new Utilities();
     String uuid = UUID.randomUUID().toString().toLowerCase();
@@ -32,23 +31,22 @@ public class Provision {
         super();
     }
 
+    public String toJSON() {
 
-    public String toJSON () {
+        StringBuilder j = new StringBuilder();
 
-        StringBuffer j = new StringBuffer();
-
-        j.append("{" +
-            "   \"message_type\": \"provision\",\n" +
-                "\"provision_uuid\": \""+uuid+"\",\n" +
-            "   \"cores\": "+cores+",\n" +
-            "    \"mem_gb\": "+memGb+",\n" +
-            "    \"storage_gb\": "+storageGb+",\n" +
-            "    \"bindle_profiles_to_run\": [");
+        j.append("{" + "   \"message_type\": \"provision\",\n" + "\"provision_uuid\": \"").append(uuid).append("\",\n" + "   \"cores\": ")
+                .append(cores).append(",\n" + "    \"mem_gb\": ").append(memGb).append(",\n" + "    \"storage_gb\": ").append(storageGb)
+                .append(",\n" + "    \"bindle_profiles_to_run\": [");
 
         boolean first = true;
         for (String playbook : ansiblePlaybooks) {
-            if (first) { first = false; } else { j.append(",\n"); }
-            j.append("\""+playbook+"\"");
+            if (first) {
+                first = false;
+            } else {
+                j.append(",\n");
+            }
+            j.append("\"").append(playbook).append("\"");
         }
         j.append("\n]\n}\n");
         return (j.toString());
@@ -62,11 +60,11 @@ public class Provision {
         storageGb = (Long) obj.get("storage_gb");
         uuid = (String) obj.get("provision_uuid");
         JSONArray playbooks = (JSONArray) obj.get("bindle_profiles_to_run");
-        ansiblePlaybooks = new ArrayList<String>();
+        ansiblePlaybooks = new ArrayList<>();
         for (Object key : playbooks) {
-            ansiblePlaybooks.add((String)key);
+            ansiblePlaybooks.add((String) key);
         }
-        return(this);
+        return (this);
 
     }
 
@@ -110,11 +108,11 @@ public class Provision {
         this.cores = cores;
     }
 
-    public String getState() {
+    public ProvisionState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(ProvisionState state) {
         this.state = state;
     }
 }

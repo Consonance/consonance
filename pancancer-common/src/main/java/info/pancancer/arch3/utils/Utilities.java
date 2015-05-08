@@ -1,21 +1,18 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package info.pancancer.arch3.utils;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
@@ -23,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -35,36 +33,20 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 /**
+ * A kitchen sink of utility methods, in a thread for some reason.
  *
  * @author boconnor
  */
 public class Utilities /*extends Thread*/ {
 
-    // constants
-    public final static String PENDING = "pending";
-    public final static String RUNNING = "running";
-    public final static String SUCCESS = "success";
-    public final static String FAILED = "failed";
-    public final static String LOST = "lost";
-    public final static String TERMINATED = "terminated";
-    public final static String PROVISIONING = "provisioning";
-    public final static String QUEUED = "queued";
-
     // message types
-    public final static String VM_MESSAGE_TYPE = "vm-message-type";
-    public final static String JOB_MESSAGE_TYPE = "job-message-type";
+    public static final String VM_MESSAGE_TYPE = "vm-message-type";
+    public static final String JOB_MESSAGE_TYPE = "job-message-type";
 
-    private String outputFile = null;
-    private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
+  // message types
+  public final static String VM_MESSAGE_TYPE = "vm-message-type";
+  public final static String JOB_MESSAGE_TYPE = "job-message-type";
 
-    // TODO: this will need to be moved into the Util and Worker classes
-    /*
-     * String cmd = (String) obj.get("command"); System.out.println("JOB: "+cmd);
-     * 
-     * Process p = new ProcessBuilder(cmd.split("\\s+")).start(); BufferedReader reader = new BufferedReader(new
-     * InputStreamReader((p.getInputStream()))); String currLine; while((currLine = reader.readLine()) != null) { result.append(currLine +
-     * "\n"); }
-     */
 
     public JSONObject parseJSONStr(String jsonStr) {
         JSONObject data = null;
@@ -73,10 +55,10 @@ public class Utilities /*extends Thread*/ {
         try {
             data = (JSONObject) parser.parse(jsonStr);
         } catch (ParseException ex) {
-            // Logger.getLogger(this.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
         }
 
-        return (data);
+        return data;
     }
 
     public JSONObject parseConfig(String configFile) {
@@ -90,8 +72,7 @@ public class Utilities /*extends Thread*/ {
         File masterConfig = new File("/etc/genetic-algorithm/config.json");
         if (configFile != null && configFileObj.exists()) {
             System.out.println("USING CONFIG FROM SPECIFIED FILE!");
-            try {
-                BufferedReader br = new BufferedReader(new FileReader(configFile));
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8))) {
                 StringBuilder sb = new StringBuilder();
                 String line = br.readLine();
 
@@ -101,9 +82,8 @@ public class Utilities /*extends Thread*/ {
                     line = br.readLine();
                 }
                 json = sb.toString();
-
-                br.close();
             } catch (Exception ex) {
+                throw new RuntimeException(ex);
                 // Logger.getLogger(this.class.getName()).log(Level.SEVERE, null, ex);
             }
 
@@ -117,10 +97,10 @@ public class Utilities /*extends Thread*/ {
                 URL url = new URL("http://169.254.169.254/latest/user-data");
                 urlConn = url.openConnection();
                 if (urlConn != null) {
-                    urlConn.setReadTimeout(60 * 1000);
+                    urlConn.setReadTimeout(MILLISECONDS_IN_A_MINUTE);
                 }
                 if (urlConn != null && urlConn.getInputStream() != null) {
-                    in = new InputStreamReader(urlConn.getInputStream(), Charset.defaultCharset());
+                    in = new InputStreamReader(urlConn.getInputStream(), StandardCharsets.UTF_8);
                     BufferedReader bufferedReader = new BufferedReader(in);
                     if (bufferedReader != null) {
                         int cp;
@@ -139,8 +119,8 @@ public class Utilities /*extends Thread*/ {
 
         } else if (masterConfig.exists()) {
             System.out.println("USING CONFIG FROM /etc");
-            try {
-                BufferedReader br = new BufferedReader(new FileReader("/etc/genetic-algorithm/config.json"));
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("/etc/genetic-algorithm/config.json"),
+                    StandardCharsets.UTF_8))) {
                 StringBuilder sb = new StringBuilder();
                 String line = br.readLine();
 
@@ -150,17 +130,15 @@ public class Utilities /*extends Thread*/ {
                     line = br.readLine();
                 }
                 json = sb.toString();
-
-                br.close();
             } catch (Exception ex) {
-                // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
+                throw new RuntimeException(ex);
             }
 
         } else {
             return null;
         }
 
-        return (parseJSONStr(json));
+        return parseJSONStr(json);
 
     }
 
@@ -171,18 +149,19 @@ public class Utilities /*extends Thread*/ {
         String pass = (String) settings.get("rabbitMQPass");
 
         Channel channel = null;
-        ConnectionFactory factory = new ConnectionFactory();
-        Connection connection = null;
+
         try {
 
+            ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(server);
             factory.setUsername(user);
             factory.setPassword(pass);
-            connection = factory.newConnection();
+            Connection connection = factory.newConnection();
             channel = connection.createChannel();
             channel.basicQos(1);
             channel.queueDeclare(queue, true, false, false, null);
             // channel.queueDeclarePassive(queue);
+
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println(ex.toString());
@@ -198,25 +177,27 @@ public class Utilities /*extends Thread*/ {
         String pass = (String) settings.get("rabbitMQPass");
 
         Channel channel = null;
-        ConnectionFactory factory = new ConnectionFactory();
-        Connection connection = null;
+
         try {
 
-            
+            ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(server);
             factory.setUsername(user);
             factory.setPassword(pass);
-            connection = factory.newConnection();
+            Connection connection = factory.newConnection();
             channel = connection.createChannel();
             channel.exchangeDeclare(queue, "fanout");
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println(ex.toString());
-        } 
+        }
         return (channel);
 
     }
+
+  }
+  
 
 //    /**
 //     * This is here to exclusively do cleanup after a cntl+c e.g. persist to disk
@@ -265,6 +246,8 @@ public class Utilities /*extends Thread*/ {
 //        }
 //    }
 
+
+
     public JSONObject parseResult(String previous) {
         JSONObject obj = parseJSONStr(previous);
         resultsArr.add(obj);
@@ -306,7 +289,7 @@ public class Utilities /*extends Thread*/ {
                     URL url = new URL("http://169.254.169.254/latest/user-data");
                     urlConn = url.openConnection();
                     if (urlConn != null) {
-                        urlConn.setReadTimeout(60 * 1000);
+                        urlConn.setReadTimeout(MILLISECONDS_IN_A_MINUTE);
                     }
                     if (urlConn != null && urlConn.getInputStream() != null) {
                         in = new InputStreamReader(urlConn.getInputStream(), Charset.defaultCharset());
@@ -336,6 +319,10 @@ public class Utilities /*extends Thread*/ {
         }
         return (false);
     }
+    return(false);
+  }
+
+    private static final int MILLISECONDS_IN_A_MINUTE = 60 * 1000;
 
     public String digest(String plaintext) {
         String result = null;
@@ -343,13 +330,16 @@ public class Utilities /*extends Thread*/ {
         try {
             m = MessageDigest.getInstance("MD5");
             m.reset();
-            m.update(plaintext.getBytes());
+            m.update(plaintext.getBytes(StandardCharsets.UTF_8));
             byte[] digest = m.digest();
             BigInteger bigInt = new BigInteger(1, digest);
-            result = bigInt.toString(16);
+            final int radix = 16;
+            result = bigInt.toString(radix);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        return (result);
+        return result;
     }
+    return(result);
+  }
 }

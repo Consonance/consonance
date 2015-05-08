@@ -21,12 +21,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class Job {
-    private String state;
-    private Utilities u = new Utilities();
+
+    private JobState state = JobState.START;
+    private final Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
-    private String workflowPath;
     private String workflowVersion;
+    private String workflowPath;
     private String jobHash;
     private String messageType;
     private Map<String, String> ini = new HashMap<String, String>();
@@ -55,6 +56,9 @@ public class Job {
             e.printStackTrace();
             return null;
         }
+        j.append("\n}\n");
+        j.append("}\n");
+        return(j.toString());
     }
 
     public Job fromJSON(String json) {
@@ -72,6 +76,8 @@ public class Job {
             e.printStackTrace();
             return null;
         }
+        return(this);
+
     }
 
     @JsonProperty("job_uuid")

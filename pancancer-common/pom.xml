@@ -32,7 +32,13 @@
 			<artifactId>jackson-databind</artifactId>
 			<version>2.5.3</version>
 		</dependency>
+        <dependency>
+            <groupId>net.sourceforge.cobertura</groupId>
+            <artifactId>cobertura</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
+    
     <build>
         <plugins>
             <plugin>
