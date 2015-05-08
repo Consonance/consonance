@@ -1,23 +1,27 @@
 package info.pancancer.arch3.jobGenerator;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.utils.Utilities;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
+
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+
 import org.json.simple.JSONObject;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -62,17 +66,19 @@ public class JobGenerator extends Base {
 
     public JobGenerator(String configFile, int totalJobs) {
 
+
         // UTILS OBJECT
         Utilities u = new Utilities();
+        JobGeneratorShutdownHandler shutdownHandler = new JobGeneratorShutdownHandler();
         settings = u.parseConfig(configFile);
         if (outputFile == null) {
             outputFile = (String) settings.get("results");
         }
-        u.setupOutputFile(outputFile, settings);
+        shutdownHandler.setupOutputFile(outputFile, settings);
         overallRuntimeMaxHours = ((Number) settings.get("overallRuntimeMaxHours")).intValue();
         overallIterationsMax = ((Number) settings.get("overallIterationsMax")).intValue();
         // Utilities will handle persisting data to disk on exit
-        Runtime.getRuntime().addShutdownHook(u);
+        Runtime.getRuntime().addShutdownHook(shutdownHandler);
         resultsArr = u.getResultsArr();
 
         // Params
@@ -128,12 +134,13 @@ public class JobGenerator extends Base {
             log.error(ex.toString());
         }
 
+
     }
 
     // PRIVATE
 
     private String[] generateNewJobs(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
-        ArrayList<String> jobs = new ArrayList<>();
+        ArrayList<String> jobs = new ArrayList<String>();
         try {
             int messages = jchannel.queueDeclarePassive(queueName + "_orders").getMessageCount();
             System.out.println("JOB QUEUE SIZE: " + messages);
@@ -161,14 +168,14 @@ public class JobGenerator extends Base {
         String hashStr = u.digest(uuid);
 
         // TODO: this will come from a web service or file
-        HashMap<String, String> hm = new HashMap<>();
+        HashMap<String, String> hm = new HashMap<String, String>();
         hm.put("param1", "bar");
         hm.put("param2", "foo");
 
         int cores = Base.DEFAULT_NUM_CORES;
         int memGb = Base.DEFAULT_MEMORY;
         int storageGb = Base.DEFAULT_DISKSPACE;
-        ArrayList<String> a = new ArrayList<>();
+        ArrayList<String> a = new ArrayList<String>();
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order();

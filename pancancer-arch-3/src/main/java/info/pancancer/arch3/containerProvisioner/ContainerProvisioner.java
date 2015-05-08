@@ -8,7 +8,6 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import joptsimple.OptionException;
 import org.json.simple.JSONObject;
 
 /**
@@ -26,7 +25,7 @@ public class ContainerProvisioner extends Base {
         new ContainerProvisioner(argv);
     }
 
-    private ContainerProvisioner(String[] argv) throws OptionException, IOException {
+    private ContainerProvisioner(String[] argv) throws IOException {
         super();
         parseOptions(argv);
 
