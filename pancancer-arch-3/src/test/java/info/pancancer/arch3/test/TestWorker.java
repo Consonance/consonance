@@ -9,8 +9,6 @@ import info.pancancer.arch3.worker.Worker;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -70,6 +68,7 @@ public class TestWorker {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        PowerMockito.mockStatic(Utilities.class);
         System.setOut(new PrintStream(outStream));
     }
 
@@ -85,9 +84,9 @@ public class TestWorker {
 
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
         
-        Mockito.when(mockUtil.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
-        Mockito.when(mockUtil.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
         
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("rabbitMQQueueName", "seqware");
@@ -95,7 +94,7 @@ public class TestWorker {
         jsonObj.put("preworkerSleep","1");
         jsonObj.put("postworkerSleep","1");
         jsonObj.put("hostUserName", System.getProperty("user.name"));
-        Mockito.when(mockUtil.parseConfig(anyString())).thenReturn(jsonObj);
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
         
         Job j = new Job();
         j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
@@ -115,7 +114,7 @@ public class TestWorker {
         //PowerMockito.whenNew(QueueingConsumer.class).withAnyArguments().thenReturn(mockConsumer);
         PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
 
-        PowerMockito.whenNew(Utilities.class).withNoArguments().thenReturn(mockUtil);
+        //PowerMockito.whenNew(Utilities.class).withNoArguments().thenReturn(mockUtil);
 
         Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456",1);
         

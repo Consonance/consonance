@@ -37,10 +37,9 @@ public class Utilities /* extends Thread */{
     public static final String VM_MESSAGE_TYPE = "vm-message-type";
     public static final String JOB_MESSAGE_TYPE = "job-message-type";
 
-    private String outputFile = null;
     private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
 
-    public JSONObject parseJSONStr(String jsonStr) {
+    public static JSONObject parseJSONStr(String jsonStr) {
         JSONObject data = null;
 
         JSONParser parser = new JSONParser();
@@ -53,7 +52,7 @@ public class Utilities /* extends Thread */{
         return data;
     }
 
-    public JSONObject parseConfig(String configFile) {
+    public static JSONObject parseConfig(String configFile) {
         String json = null;
 
         // local file specified on command line tried first
@@ -134,7 +133,7 @@ public class Utilities /* extends Thread */{
 
     }
 
-    public Channel setupQueue(JSONObject settings, String queue) {
+    public static Channel setupQueue(JSONObject settings, String queue) {
 
         String server = (String) settings.get("rabbitMQHost");
         String user = (String) settings.get("rabbitMQUser");
@@ -162,7 +161,7 @@ public class Utilities /* extends Thread */{
 
     }
 
-    public Channel setupMultiQueue(JSONObject settings, String queue) {
+    public static Channel setupMultiQueue(JSONObject settings, String queue) {
 
         String server = (String) settings.get("rabbitMQHost");
         String user = (String) settings.get("rabbitMQUser");
@@ -215,7 +214,7 @@ public class Utilities /* extends Thread */{
         return min + (int) (Math.random() * ((1 + max) - min));
     }
 
-    private boolean canDownloadConfig() {
+    private static boolean canDownloadConfig() {
 
         try {
             URL u = new URL("http://169.254.169.254/latest/user-data");

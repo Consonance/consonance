@@ -10,6 +10,14 @@ import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 
+/**
+ * This class will make a command-line call to run a workflow. <br/>
+ * The actual command to execute should be specified using setCommandLine. <br/>
+ * It is also possible to specify a brief delay before and after the command is executed, using setPreworkDelay and setPostworkDelay.
+ * 
+ * @author sshorser
+ *
+ */
 public class WorkflowRunner implements Callable<String> {
 
     private long preworkDelay;
@@ -19,21 +27,29 @@ public class WorkflowRunner implements Callable<String> {
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
 
+    /**
+     * Get the stdout of the running command.
+     * 
+     * @return
+     */
     public String getStdOut() {
         try {
             this.outputStream.flush();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
     }
 
+    /**
+     * Get the stderr of the running command.
+     * 
+     * @return
+     */
     public String getStdErr() {
         try {
             this.errorStream.flush();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return new String(errorStream.toByteArray(), StandardCharsets.UTF_8);
@@ -65,7 +81,6 @@ public class WorkflowRunner implements Callable<String> {
         // stdout and stderr while the command is running.
         resultHandler.waitFor();
         workflowOutput = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
-        // System.out.println("Docker execution result: " + workflowOutput);
         if (this.postworkDelay > 0) {
             System.out.println("Sleeping after exeuting workflow for " + this.postworkDelay + " ms.");
             Thread.sleep(this.postworkDelay);

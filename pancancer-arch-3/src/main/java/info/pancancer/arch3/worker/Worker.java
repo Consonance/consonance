@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -40,20 +41,20 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 
 /**
+ * This class represents a Worker, in the Architecture 3 design. A Worker can receive job messages from a queue and execute a seqware
+ * workflow based on the contents of the job message.
+ * 
  * Created by boconnor on 15-04-18.
  */
 public class Worker implements Runnable {
 
-    // private static final int THREAD_POOL_SIZE = 1;
     protected final Logger log = LoggerFactory.getLogger(getClass());
     private JSONObject settings = null;
     private Channel resultsChannel = null;
     private Channel jobChannel = null;
-    // private Connection connection = null;
     private String queueName = null;
     private String jobQueueName;
     private String resultsQueueName;
-    private Utilities u = new Utilities();
     private String vmUuid = null;
     private int maxRuns = 1;
     private String userName;
@@ -86,10 +87,20 @@ public class Worker implements Runnable {
         System.out.println("Exiting.");
     }
 
+    /**
+     * Create a new Worker.
+     * 
+     * @param configFile
+     *            - The name of the configuration file to read.
+     * @param vmUuid
+     *            - The UUID of the VM on which this worker is running.
+     * @param maxRuns
+     *            - The maximum number of workflows this Worker should execute.
+     */
     public Worker(String configFile, String vmUuid, int maxRuns) {
 
         this.maxRuns = maxRuns;
-        settings = u.parseConfig(configFile);
+        settings = Utilities.parseConfig(configFile);
         this.queueName = (String) settings.get("rabbitMQQueueName");
         if (this.queueName == null) {
             throw new NullPointerException(
@@ -113,13 +124,13 @@ public class Worker implements Runnable {
             System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
 
             // read from
-            jobChannel = u.setupQueue(settings, this.jobQueueName);
+            jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
 
             // write to
             // TODO: Add some sort of "local debug" mode so that developers working on their local
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
-            resultsChannel = u.setupMultiQueue(settings, this.resultsQueueName);
+            resultsChannel = Utilities.setupMultiQueue(settings, this.resultsQueueName);
 
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
             String consumerTag = jobChannel.basicConsume(this.jobQueueName, false, consumer);
@@ -143,7 +154,7 @@ public class Worker implements Runnable {
                 // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
 
-                if (message != null) {
+                if (message != null && message.trim().length() > 0) {
 
                     System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
 
@@ -151,7 +162,8 @@ public class Worker implements Runnable {
 
                     // TODO: this will obviously get much more complicated when integrated with Docker
                     // launch VM
-                    Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, u.JOB_MESSAGE_TYPE, "", "", "job is starting");
+                    Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE, "", "",
+                            "job is starting");
                     String statusJSON = status.toJSON();
 
                     System.out.println(" WORKER LAUNCHING JOB");
@@ -161,7 +173,7 @@ public class Worker implements Runnable {
 
                     launchJob(job.getUuid(), job);
 
-                    status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, u.JOB_MESSAGE_TYPE, "", workflowOutput,
+                    status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, "", workflowOutput,
                             "job is finished");
                     statusJSON = status.toJSON();
 
@@ -169,7 +181,7 @@ public class Worker implements Runnable {
 
                     finishJob(statusJSON);
                 } else {
-                    System.out.println(" [x] Job request came back NULL! ");
+                    System.out.println(" [x] Job request came back null/empty! ");
                 }
                 System.out.println(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
                 jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
@@ -185,19 +197,21 @@ public class Worker implements Runnable {
         }
     }
 
+    /**
+     * Write the content of the job object to an INI file which will be used by the workflow.
+     * 
+     * @param job
+     *            - the job object which must contain a HashMap, which will be used to write an INI file.
+     * @return A Path object pointing to the new file will be returned.
+     * @throws IOException
+     */
     private Path writeINIFile(Job job) throws IOException {
         System.out.println("INI is: " + job.getIniStr());
 
         Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
-        perms.add(PosixFilePermission.OWNER_READ);
-        perms.add(PosixFilePermission.OWNER_WRITE);
-        perms.add(PosixFilePermission.OWNER_EXECUTE);
-        perms.add(PosixFilePermission.GROUP_READ);
-        perms.add(PosixFilePermission.GROUP_WRITE);
-        perms.add(PosixFilePermission.GROUP_EXECUTE);
-        perms.add(PosixFilePermission.OTHERS_READ);
-        perms.add(PosixFilePermission.OTHERS_WRITE);
-        perms.add(PosixFilePermission.OTHERS_EXECUTE);
+        perms.addAll(Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE,
+                PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE, PosixFilePermission.OTHERS_READ,
+                PosixFilePermission.OTHERS_WRITE));
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
         Path pathToINI = java.nio.file.Files.createTempFile("seqware_", ".ini", attrs);
         System.out.println("INI file: " + pathToINI.toString());
@@ -205,13 +219,19 @@ public class Worker implements Runnable {
         bw.write(job.getIniStr());
         bw.flush();
         bw.close();
-        // FileWriter writer = new FileWriter(pathToINI.toFile());
-        // writer.write(job.getIniStr());
-        // writer.close();
         return pathToINI;
     }
 
     // TODO: obviously, this will need to launch something using Youxia in the future
+    /**
+     * This function will execute a workflow, based on the content of the Job object that is passed in.
+     * 
+     * @param message
+     *            - The message that will be published on the queue when the worker starts running the job.
+     * @param job
+     *            - The job contains information about what workflow to execute, and how.
+     * @return The complete stdout and stderr from the workflow execution will be returned.
+     */
     private String launchJob(String message, Job job) {
         String workflowOutput = "";
 
@@ -234,7 +254,7 @@ public class Worker implements Runnable {
 
             heartbeatStatus.setMessage("job is running; IP address: " + networkID);
             heartbeatStatus.setState(StatusState.RUNNING);
-            heartbeatStatus.setType(u.JOB_MESSAGE_TYPE);
+            heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
             heartbeatStatus.setVmUuid(vmUuid);
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
@@ -283,6 +303,12 @@ public class Worker implements Runnable {
         return workflowOutput;
     }
 
+    /**
+     * Get the IP address of this machine, preference is given to returning an IPv4 address, if there is one.
+     * 
+     * @return An InetAddress object.
+     * @throws SocketException
+     */
     private static InetAddress getFirstNonLoopbackAddress() throws SocketException {
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
             for (InetAddress addr : Collections.list(i.getInetAddresses())) {
@@ -305,6 +331,12 @@ public class Worker implements Runnable {
         return null;
     }
 
+    /**
+     * Publish a message stating that the job is finished.
+     * 
+     * @param message
+     *            - The actual message to publish.
+     */
     private void finishJob(String message) {
         try {
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,

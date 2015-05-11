@@ -7,6 +7,12 @@ import java.nio.charset.StandardCharsets;
 
 import com.rabbitmq.client.Channel;
 
+/**
+ * This class will send a "heartbeat" message. How often it is sent can be configured via setSecondsDelay. The default delay is 2 seconds.
+ * The destination queue for the messages, and the body of the messages can also be configured via setter methods.
+ * @author sshorser
+ *
+ */
 public class WorkerHeartbeat implements Runnable {
 
     private Channel reportingChannel;
@@ -14,7 +20,7 @@ public class WorkerHeartbeat implements Runnable {
     private double secondsDelay = 2.0;
     private String messageBody;
 
-    public volatile boolean stop = false;
+    //public volatile boolean stop = false;
 
     @Override
     public void run() {
