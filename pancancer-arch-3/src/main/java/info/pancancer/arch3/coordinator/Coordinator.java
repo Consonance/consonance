@@ -1,7 +1,6 @@
 package info.pancancer.arch3.coordinator;
 
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -43,12 +42,13 @@ import org.slf4j.LoggerFactory;
 public class Coordinator extends Base {
 
     private JSONObject settings = null;
-    private Channel jobChannel = null;
-    private Channel vmChannel = null;
-    private Channel orderChannel = null;
-    private Connection connection = null;
-    private String queueName = null;
-    private Utilities u = new Utilities();
+
+    // private Channel jobChannel = null;
+    // private Channel vmChannel = null;
+    // private Channel orderChannel = null;
+    // private Connection connection = null;
+    // private String queueName = null;
+    // private Utilities u = new Utilities();
 
     public static void main(String[] argv) throws Exception {
 
@@ -76,7 +76,7 @@ public class Coordinator extends Base {
     }
 
     public Coordinator(String configFile) {
-        settings = u.parseConfig(configFile);
+        settings = Utilities.parseConfig(configFile);
     }
 
 }
@@ -87,9 +87,9 @@ class CoordinatorOrders {
     private Channel jobChannel = null;
     private Channel vmChannel = null;
     private Channel orderChannel = null;
-    private Connection connection = null;
+    // private Connection connection = null;
     private String queueName = null;
-    private Utilities u = new Utilities();
+    // private Utilities u = new Utilities();
 
     private Inner inner;
 
@@ -113,18 +113,19 @@ class CoordinatorOrders {
 
             try {
 
-                settings = u.parseConfig(configFile);
+                settings = Utilities.parseConfig(configFile);
 
                 PostgreSQL db = new PostgreSQL(settings);
 
                 queueName = (String) settings.get("rabbitMQQueueName");
                 // read from
-                orderChannel = u.setupQueue(settings, queueName + "_orders");
+                orderChannel = Utilities.setupQueue(settings, queueName + "_orders");
                 // write to
-                jobChannel = u.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand with full
-                                                                          // info
+                jobChannel = Utilities.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand
+                                                                                  // with full
+                // info
                 // write to
-                vmChannel = u.setupQueue(settings, queueName + "_vms");
+                vmChannel = Utilities.setupQueue(settings, queueName + "_vms");
                 // read from
 
                 QueueingConsumer consumer = new QueueingConsumer(orderChannel);
@@ -215,7 +216,7 @@ class CoordinatorOrders {
                 jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
 
-                JSONObject settings = u.parseConfig(this.configFile);
+                JSONObject settings = Utilities.parseConfig(this.configFile);
                 PostgreSQL db = new PostgreSQL(settings);
                 Job newJob = new Job().fromJSON(message);
                 newJob.setState(JobState.PENDING);
@@ -240,9 +241,9 @@ class CleanupJobs {
 
     private JSONObject settings = null;
     private Channel resultsChannel = null;
-    private Channel vmChannel = null;
+    // private Channel vmChannel = null;
     private String queueName = null;
-    private Utilities u = new Utilities();
+    // private Utilities u = new Utilities();
     private QueueingConsumer resultsConsumer = null;
 
     private Inner inner;
@@ -260,12 +261,12 @@ class CleanupJobs {
         public void run() {
             try {
 
-                settings = u.parseConfig(configFile);
+                settings = Utilities.parseConfig(configFile);
 
                 queueName = (String) settings.get("rabbitMQQueueName");
 
                 // read from
-                resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
+                resultsChannel = Utilities.setupMultiQueue(settings, queueName + "_results");
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
                 String resultsQueue = resultsChannel.queueDeclare().getQueue();
@@ -332,11 +333,11 @@ class CleanupJobs {
 class FlagJobs {
 
     private JSONObject settings = null;
-    private Channel resultsChannel = null;
-    private Channel vmChannel = null;
-    private String queueName = null;
+    // private Channel resultsChannel = null;
+    // private Channel vmChannel = null;
+    // private String queueName = null;
     private Utilities u = new Utilities();
-    private QueueingConsumer resultsConsumer = null;
+    // private QueueingConsumer resultsConsumer = null;
 
     private Inner inner;
 
@@ -355,7 +356,7 @@ class FlagJobs {
         public void run() {
             try {
 
-                settings = u.parseConfig(configFile);
+                settings = Utilities.parseConfig(configFile);
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);

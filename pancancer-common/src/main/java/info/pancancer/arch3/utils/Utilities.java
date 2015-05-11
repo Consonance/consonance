@@ -33,6 +33,7 @@ import com.rabbitmq.client.ConnectionFactory;
  */
 public class Utilities /* extends Thread */{
 
+    //TODO: These really should be refactored out to an enum
     // message types
     public static final String VM_MESSAGE_TYPE = "vm-message-type";
     public static final String JOB_MESSAGE_TYPE = "job-message-type";

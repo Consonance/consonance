@@ -248,20 +248,24 @@ public class Worker implements Runnable {
                     "/home/" + this.userName + "/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem", "seqware/seqware_whitestar_pancancer",
                     "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
 
-            Status heartbeatStatus = new Status();
-            heartbeatStatus.setJobUuid(job.getUuid());
-            String networkID = getFirstNonLoopbackAddress().toString();
-
-            heartbeatStatus.setMessage("job is running; IP address: " + networkID);
-            heartbeatStatus.setState(StatusState.RUNNING);
-            heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
-            heartbeatStatus.setVmUuid(vmUuid);
+//            Status heartbeatStatus = new Status();
+//            heartbeatStatus.setJobUuid(job.getUuid());
+//            String networkID = getFirstNonLoopbackAddress().toString();
+//
+//            heartbeatStatus.setMessage("job is running; IP address: " + networkID);
+//            heartbeatStatus.setState(StatusState.RUNNING);
+//            heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
+//            heartbeatStatus.setVmUuid(vmUuid);
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
             heartbeat.setReportingChannel(resultsChannel);
             heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get("heartbeatRate")));
-            heartbeat.setMessageBody(heartbeatStatus.toJSON());
+            heartbeat.setJobUuid(job.getUuid());
+            heartbeat.setVmUuid(this.vmUuid);
+            heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString());
+            heartbeat.setStatusSource(workflowRunner);
+            //heartbeat.setMessageBody(heartbeatStatus.toJSON());
 
             long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get("preworkerSleep"));
             long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get("postworkerSleep"));

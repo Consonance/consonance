@@ -1,14 +1,15 @@
 package info.pancancer.arch3.worker;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class will make a command-line call to run a workflow. <br/>
@@ -20,12 +21,42 @@ import org.apache.commons.exec.PumpStreamHandler;
  */
 public class WorkflowRunner implements Callable<String> {
 
+    public class CollectingLogOutputStream extends LogOutputStream {
+        private final List<String> lines = new LinkedList<String>();
+
+        @Override
+        protected void processLine(String line, int level) {
+            lines.add(line);
+        }
+
+        public String getAllLinesAsString() {
+
+            return StringUtils.join(this.lines, "\n");
+        }
+
+        public List<String> getLines() {
+            return lines;
+        }
+
+        public List<String> getLastNLines(int n) {
+            int start, end;
+
+            end = this.lines.size() - 1;
+            start = Math.max(0, this.lines.size() - n);
+
+            return this.lines.subList(start, end);
+        }
+    }
+
     private long preworkDelay;
     private long postworkDelay;
     private CommandLine cli;
 
-    private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+    // private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    // private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+
+    private CollectingLogOutputStream outputStream = new CollectingLogOutputStream();
+    private CollectingLogOutputStream errorStream = new CollectingLogOutputStream();
 
     /**
      * Get the stdout of the running command.
@@ -33,12 +64,8 @@ public class WorkflowRunner implements Callable<String> {
      * @return
      */
     public String getStdOut() {
-        try {
-            this.outputStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
+        this.outputStream.flush();
+        return outputStream.getAllLinesAsString();
     }
 
     /**
@@ -47,12 +74,8 @@ public class WorkflowRunner implements Callable<String> {
      * @return
      */
     public String getStdErr() {
-        try {
-            this.errorStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return new String(errorStream.toByteArray(), StandardCharsets.UTF_8);
+        this.errorStream.flush();
+        return errorStream.getAllLinesAsString();
     }
 
     @Override
@@ -80,7 +103,7 @@ public class WorkflowRunner implements Callable<String> {
         // Use the result handler for non-blocking call, so this way we should be able to get updates of
         // stdout and stderr while the command is running.
         resultHandler.waitFor();
-        workflowOutput = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
+        workflowOutput = outputStream.getAllLinesAsString();
         if (this.postworkDelay > 0) {
             System.out.println("Sleeping after exeuting workflow for " + this.postworkDelay + " ms.");
             Thread.sleep(this.postworkDelay);

@@ -36,7 +36,6 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 
-
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorker {
@@ -111,14 +110,10 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
 
-        //PowerMockito.whenNew(QueueingConsumer.class).withAnyArguments().thenReturn(mockConsumer);
         PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
-
-        //PowerMockito.whenNew(Utilities.class).withNoArguments().thenReturn(mockUtil);
 
         Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456",1);
         
-        //Whitebox.setInternalState(testWorker,"u",mockUtil);
         testWorker.run();
         String testResults = this.outStream.toString();
         String knownResults = new String(Files.readAllBytes(Paths.get("src/test/resources/TestWorkerResult.txt")));
@@ -143,6 +138,6 @@ public class TestWorker {
         testResults = testResults.replaceAll("\r", "");
         testResults = testResults.replaceAll("IP address: /[^\"]*", "IP address: 0.0.0.0");
         //Need to resolve problem of JSON structures having randomly different order or this test won't pass.
-        //assertEquals(knownResults,testResults);
+        assertEquals(knownResults,testResults);
     }
 }
