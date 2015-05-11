@@ -50,10 +50,9 @@ public class ContainerProvisionerThreadsIT {
      *
      * @throws java.lang.Exception
      */
-    // @Test
+    @Test
     public void testNormalOperation() throws Exception {
-        // need to create a vm order first, otherwise will hang
-
+        // ideally, we would mock up some orders here
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
         ContainerProvisionerThreads.main(new String[] { "--config", file.getAbsolutePath() });
     }
