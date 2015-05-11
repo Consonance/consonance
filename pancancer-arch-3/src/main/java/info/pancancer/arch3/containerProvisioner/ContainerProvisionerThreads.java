@@ -14,12 +14,21 @@ import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.json.simple.JSONObject;
 
 /**
  * Created by boconnor on 15-04-18.
  */
 public class ContainerProvisionerThreads extends Base {
+
+    private static final int DEFAULT_THREADS = 3;
 
     public static void main(String[] argv) throws Exception {
         ContainerProvisionerThreads containerProvisionerThreads = new ContainerProvisionerThreads(argv);
@@ -32,21 +41,30 @@ public class ContainerProvisionerThreads extends Base {
     }
 
     public void startThreads() throws InterruptedException {
+        ExecutorService pool = Executors.newFixedThreadPool(DEFAULT_THREADS);
         ProcessVMOrders processVMOrders = new ProcessVMOrders(this.configFile, this.options.has(this.endlessSpec));
         ProvisionVMs provisionVMs = new ProvisionVMs(this.configFile, this.options.has(this.endlessSpec));
         CleanupVMs cleanupVMs = new CleanupVMs(this.configFile, this.options.has(this.endlessSpec));
-        processVMOrders.start();
-        provisionVMs.start();
-        cleanupVMs.start();
-        processVMOrders.join();
-        provisionVMs.join();
-        cleanupVMs.join();
+        List<Future<?>> futures = new ArrayList<>();
+        futures.add(pool.submit(processVMOrders));
+        futures.add(pool.submit(provisionVMs));
+        futures.add(pool.submit(cleanupVMs));
+        try {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (InterruptedException | ExecutionException ex) {
+            log.error(ex.toString());
+            throw new RuntimeException(ex);
+        } finally {
+            pool.shutdown();
+        }
     }
 
     /**
      * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
      */
-    private static class ProcessVMOrders extends Thread {
+    private static class ProcessVMOrders implements Callable<Void> {
 
         private JSONObject settings = null;
         private Channel vmChannel = null;
@@ -56,13 +74,12 @@ public class ContainerProvisionerThreads extends Base {
         private final String config;
 
         public ProcessVMOrders(String config, boolean endless) {
-            super("ProcessingVMOrders");
             this.endless = endless;
             this.config = config;
         }
 
         @Override
-        public void run() {
+        public Void call() throws IOException {
             try {
 
                 settings = u.parseConfig(config);
@@ -102,20 +119,23 @@ public class ContainerProvisionerThreads extends Base {
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
+            } finally {
+                vmChannel.close();
+                vmChannel.getConnection().close();
             }
+            return null;
         }
-
     }
 
     /**
      * This examines the provision table in the DB to identify the number of running VMs. It then figures out if the number running is < the
      * max number. If so it picks the oldest pending, switches to running, and launches a worker thread.
      */
-    private static class ProvisionVMs extends Thread {
+    private static class ProvisionVMs implements Callable<Void> {
 
         private JSONObject settings = null;
-        private final Channel resultsChannel = null;
-        private final Channel vmChannel = null;
+        // private final Channel resultsChannel = null;
+        // private final Channel vmChannel = null;
         private String queueName = null;
         private final Utilities u = new Utilities();
         private long maxWorkers = 0;
@@ -123,13 +143,12 @@ public class ContainerProvisionerThreads extends Base {
         private final boolean endless;
 
         public ProvisionVMs(String configFile, boolean endless) {
-            super("ProvisionVMs");
             this.configFile = configFile;
             this.endless = endless;
         }
 
         @Override
-        public void run() {
+        public Void call() throws IOException {
             try {
 
                 settings = u.parseConfig(configFile);
@@ -173,6 +192,11 @@ public class ContainerProvisionerThreads extends Base {
             } catch (ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             }
+            /**
+             * finally { if (resultsChannel != null) { resultsChannel.close(); resultsChannel.getConnection().close(); vmChannel.close();
+             * vmChannel.getConnection().close(); } }
+             */
+            return null;
         }
 
         // TOOD: obviously, this will need to launch something using Youxia in the future
@@ -189,7 +213,7 @@ public class ContainerProvisionerThreads extends Base {
     /**
      * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
      */
-    private static class CleanupVMs extends Thread {
+    private static class CleanupVMs implements Callable<Void> {
 
         private JSONObject settings = null;
         private Channel resultsChannel = null;
@@ -200,13 +224,12 @@ public class ContainerProvisionerThreads extends Base {
         private final boolean endless;
 
         public CleanupVMs(String configFile, boolean endless) {
-            super("CleanupVMs");
             this.configFile = configFile;
             this.endless = endless;
         }
 
         @Override
-        public void run() {
+        public Void call() throws IOException {
             try {
 
                 settings = u.parseConfig(configFile);
@@ -260,9 +283,12 @@ public class ContainerProvisionerThreads extends Base {
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
+            } finally {
+                resultsChannel.close();
+                resultsChannel.getConnection().close();
             }
+            return null;
         }
 
     }
-
 }
