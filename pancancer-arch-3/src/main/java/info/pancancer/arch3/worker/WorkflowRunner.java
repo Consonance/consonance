@@ -36,7 +36,7 @@ public class WorkflowRunner implements Callable<String> {
         }
 
         public String getAllLinesAsString() {
-            Lock lock = new ReentrantLock(); 
+            Lock lock = new ReentrantLock();
             lock.lock();
             String allTheLines = StringUtils.join(this.lines, "\n");
             lock.unlock();
@@ -50,11 +50,10 @@ public class WorkflowRunner implements Callable<String> {
             int start, end;
             end = this.lines.size();
             start = Math.max(0, this.lines.size() - n);
-            if (end>start && start>=0)
-            {
+            if (end > start && start >= 0) {
                 nlines = this.lines.subList(start, end);
-                lock.unlock();
             }
+            lock.unlock();
             return nlines;
         }
     }
@@ -81,15 +80,16 @@ public class WorkflowRunner implements Callable<String> {
         lock.unlock();
         return s;
     }
-    
+
     /**
      * Get the last *n* lines of output.
-     * @param n - the number of lines to get.
+     * 
+     * @param n
+     *            - the number of lines to get.
      * @return A string with *n* lines.
      */
-    public String getStdOut(int n)
-    {
-        return StringUtils.join(this.outputStream.getLastNLines(n),"\n");
+    public String getStdOut(int n) {
+        return StringUtils.join(this.outputStream.getLastNLines(n), "\n");
     }
 
     /**
