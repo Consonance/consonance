@@ -7,7 +7,6 @@ import info.pancancer.arch3.utils.Utilities;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -25,7 +24,6 @@ public class WorkerHeartbeat implements Runnable {
     private Channel reportingChannel;
     private String queueName;
     private double secondsDelay = 2.0;
-    private String messageBody;
     private WorkflowRunner statusSource;
     private String networkID;
     private String vmUuid;
@@ -43,7 +41,7 @@ public class WorkerHeartbeat implements Runnable {
                 heartbeatStatus.setMessage("job is running; IP address: " + networkID);
                 heartbeatStatus.setState(StatusState.RUNNING);
                 heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
-                heartbeatStatus.setVmUuid(vmUuid);
+                heartbeatStatus.setVmUuid(this.vmUuid);
 
                 //String stdOut = this.statusSource.getStdOut();
                 Lock lock = new ReentrantLock();
@@ -53,9 +51,9 @@ public class WorkerHeartbeat implements Runnable {
                 lock.unlock();
                 heartbeatStatus.setStdout(stdOut);
                 heartbeatStatus.setStderr(stdErr);
-
-                System.out.println("Sending heartbeat message to " + queueName + ", with body: " + heartbeatStatus.toJSON());
-                reportingChannel.basicPublish(queueName, queueName, null, heartbeatStatus.toJSON().getBytes(StandardCharsets.UTF_8));
+                String heartBeatMessage = heartbeatStatus.toJSON();
+                System.out.println("Sending heartbeat message to " + queueName + ", with body: " + heartBeatMessage);
+                reportingChannel.basicPublish(queueName, queueName, null, heartBeatMessage.getBytes(StandardCharsets.UTF_8));
                 Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
             } catch (IOException e) {
                 e.printStackTrace();
