@@ -1,27 +1,19 @@
 package info.pancancer.arch3.jobGenerator;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.MessageProperties;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.utils.Utilities;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
-
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-
+import joptsimple.ArgumentAcceptingOptionSpec;
 import org.json.simple.JSONObject;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -34,38 +26,24 @@ public class JobGenerator extends Base {
     private String outputFile = null;
     private JSONObject settings = null;
     private Channel jchannel = null;
-    private Connection connection = null;
     private String queueName = null;
     private ArrayList<JSONObject> resultsArr = null;
-    private QueueingConsumer rconsumer = null;
-    private Date start = new Date();
-    private int currIterations = 0;
-    private int overallIterationsMax = 0;
-    private int overallRuntimeMaxHours = 0;
     private int totalJobs = 1;
+    private final ArgumentAcceptingOptionSpec<Integer> totalJobSpec;
 
-    public static void main(String[] args) {
-        OptionParser parser = new OptionParser();
-        parser.accepts("config").withOptionalArg().ofType(String.class);
-        parser.accepts("total-jobs").withOptionalArg().ofType(Integer.class);
-        OptionSet options = parser.parse(args);
-
-        String configFile = null;
-        if (options.has("config")) {
-            configFile = (String) options.valueOf("config");
-        }
-        int totalJobs = 1;
-        if (options.has("total-jobs")) {
-            totalJobs = (Integer) options.valueOf("total-jobs");
-        }
-
-        JobGenerator jg = new JobGenerator(configFile, totalJobs);
-
+    public static void main(String[] argv) throws IOException {
+        JobGenerator jg = new JobGenerator(argv);
         jg.log.info("MASTER FINISHED, EXITING!");
     }
 
-    public JobGenerator(String configFile, int totalJobs) {
+    private JobGenerator(String[] argv) throws IOException {
+        super();
+        this.totalJobSpec = super.parser.accepts("total-jobs").withOptionalArg().ofType(Integer.class);
+        parseOptions(argv);
 
+        if (options.has(totalJobSpec)) {
+            totalJobs = options.valueOf(totalJobSpec);
+        }
 
         // UTILS OBJECT
         Utilities u = new Utilities();
@@ -75,14 +53,9 @@ public class JobGenerator extends Base {
             outputFile = (String) settings.get("results");
         }
         shutdownHandler.setupOutputFile(outputFile, settings);
-        overallRuntimeMaxHours = ((Number) settings.get("overallRuntimeMaxHours")).intValue();
-        overallIterationsMax = ((Number) settings.get("overallIterationsMax")).intValue();
         // Utilities will handle persisting data to disk on exit
         Runtime.getRuntime().addShutdownHook(shutdownHandler);
         resultsArr = u.getResultsArr();
-
-        // Params
-        this.totalJobs = totalJobs;
 
         // CONFIG
         queueName = (String) settings.get("rabbitMQQueueName");
@@ -95,9 +68,6 @@ public class JobGenerator extends Base {
         while (totalJobs > 0) {
 
             totalJobs--;
-
-            // keep track of the iterations
-            currIterations++;
 
             System.out.println("\nGENERATING NEW JOBS\n");
             // TODO: this is fake, in a real program this is being read from JSONL file or web service
@@ -134,7 +104,6 @@ public class JobGenerator extends Base {
             log.error(ex.toString());
         }
 
-
     }
 
     // PRIVATE
@@ -168,14 +137,14 @@ public class JobGenerator extends Base {
         String hashStr = u.digest(uuid);
 
         // TODO: this will come from a web service or file
-        HashMap<String, String> hm = new HashMap<String, String>();
+        HashMap<String, String> hm = new HashMap<>();
         hm.put("param1", "bar");
         hm.put("param2", "foo");
 
         int cores = Base.DEFAULT_NUM_CORES;
         int memGb = Base.DEFAULT_MEMORY;
         int storageGb = Base.DEFAULT_DISKSPACE;
-        ArrayList<String> a = new ArrayList<String>();
+        ArrayList<String> a = new ArrayList<>();
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order();

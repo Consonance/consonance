@@ -8,8 +8,6 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
 
 /**
@@ -24,21 +22,12 @@ public class ContainerProvisioner extends Base {
     private Utilities u = new Utilities();
 
     public static void main(String[] argv) throws Exception {
-
-        OptionParser parser = new OptionParser();
-        parser.accepts("config").withOptionalArg().ofType(String.class);
-        OptionSet options = parser.parse(argv);
-
-        String configFile = null;
-        if (options.has("config")) {
-            configFile = (String) options.valueOf("config");
-        }
-        /** ContainerProvisioner c = */
-        new ContainerProvisioner(configFile);
-
+        new ContainerProvisioner(argv);
     }
 
-    private ContainerProvisioner(String configFile) {
+    private ContainerProvisioner(String[] argv) throws IOException {
+        super();
+        parseOptions(argv);
 
         try {
 
@@ -56,8 +45,7 @@ public class ContainerProvisioner extends Base {
             vmChannel.basicConsume(queueName + "_vms", true, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (true) {
-
+            do {
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
@@ -79,7 +67,7 @@ public class ContainerProvisioner extends Base {
                     throw new RuntimeException(ex);
                 }
 
-            }
+            } while (options.has(endlessSpec));
 
         } catch (IOException ex) {
             throw new RuntimeException(ex);

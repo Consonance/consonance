@@ -1,6 +1,5 @@
 package info.pancancer.arch3.persistence;
 
-import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
@@ -23,12 +22,15 @@ import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by boconnor on 2015-04-22.
  */
-public class PostgreSQL extends Base {
+public class PostgreSQL {
 
+    protected final Logger log = LoggerFactory.getLogger(getClass());
     QueryRunner run = new QueryRunner();
     private String url;
     private Properties props;
