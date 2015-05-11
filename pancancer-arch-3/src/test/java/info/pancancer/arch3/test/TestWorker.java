@@ -137,6 +137,7 @@ public class TestWorker {
         testResults = testResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
         testResults = testResults.replaceAll("\r", "");
         testResults = testResults.replaceAll("IP address: /[^\"]*", "IP address: 0.0.0.0");
+        testResults = testResults.replaceAll("/home/[^ /]*/", "/home/\\$USER/");
         //Need to resolve problem of JSON structures having randomly different order or this test won't pass.
         assertEquals(knownResults,testResults);
     }
