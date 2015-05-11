@@ -1,6 +1,6 @@
 package info.pancancer.arch3.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import info.pancancer.arch3.beans.Job;
@@ -116,20 +116,12 @@ public class TestWorker {
         
         testWorker.run();
         String testResults = this.outStream.toString();
-        String knownResults = new String(Files.readAllBytes(Paths.get("src/test/resources/TestWorkerResult.txt")));
+//        String knownResults = new String(Files.readAllBytes(Paths.get("src/test/resources/TestWorkerResult.txt")));
         System.setOut(originalOutStream);
         //System.out.println(testResults);
        
         //Because we are generating temp files with unique names and numeric sequence, simply asserting that the two strings match will not work.
         //The text containing the temp file name must be cleaned before we can assert that the code worked.
-        knownResults = knownResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
-        knownResults = knownResults.replaceAll("oozie-[a-z0-9\\-]+", "JOB_ID");
-        knownResults = knownResults.replaceAll("\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}", "0000/00/00 00:00:00");
-        knownResults = knownResults.replaceAll("bundle_manager\\d+", "bundle_manager_LONG_NUMERIC_SEQUENCE");
-        knownResults = knownResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
-        knownResults = knownResults.replaceAll("\r", "");
-        knownResults = knownResults.replaceAll("IP address: /[^\"]*", "IP address: 0.0.0.0");
-        
         testResults = testResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
         testResults = testResults.replaceAll("oozie-[a-z0-9\\-]+", "JOB_ID");
         testResults = testResults.replaceAll("\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}", "0000/00/00 00:00:00");
@@ -138,7 +130,22 @@ public class TestWorker {
         testResults = testResults.replaceAll("\r", "");
         testResults = testResults.replaceAll("IP address: /[^\"]*", "IP address: 0.0.0.0");
         testResults = testResults.replaceAll("/home/[^ /]*/", "/home/\\$USER/");
-        //Need to resolve problem of JSON structures having randomly different order or this test won't pass.
-        assertEquals(knownResults,testResults);
+        
+        //Check for the docker command.
+        assertTrue("Check for docker command",testResults.contains("Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.ssh/gnos.pem:/home/$USER/.ssh/gnos.pem seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]"));
+        assertTrue("Check for sleep message",testResults.contains("Sleeping before executing workflow for 1000 ms."));
+        assertTrue("Check for workflow complete",testResults.contains("Workflow run 10 is now completed"));
+        
+        String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
+        assertTrue("check begining of output",testResults.startsWith(begining));
+        
+        String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
+        assertTrue("check ending of output",testResults.endsWith(ending));
+        
+        String initalHeartbeat = new String(Files.readAllBytes(Paths.get("src/test/resources/testInitialHeartbeat.txt")));
+        assertTrue("Check for an initial heart beat", testResults.contains(initalHeartbeat));
+        
+        String finalHeartbeat = new String(Files.readAllBytes(Paths.get("src/test/resources/testFinalHeartbeat.txt")));
+        assertTrue("Check for final heartbeat",testResults.contains(finalHeartbeat));
     }
 }

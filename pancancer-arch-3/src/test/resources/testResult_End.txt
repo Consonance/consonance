@@ -1,0 +1,8 @@
+ WORKER FINISHING JOB
+vm123456 acknowledges mockEnvelope
+ 
+
+
+WORKER FOR VM UUID HAS FINISHED!!!: 'vm123456'
+
+
