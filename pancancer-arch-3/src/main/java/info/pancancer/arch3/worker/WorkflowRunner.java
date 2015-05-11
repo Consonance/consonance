@@ -36,7 +36,11 @@ public class WorkflowRunner implements Callable<String> {
         }
 
         public String getAllLinesAsString() {
-            return StringUtils.join(this.lines, "\n");
+            Lock lock = new ReentrantLock(); 
+            lock.lock();
+            String allTheLines = StringUtils.join(this.lines, "\n");
+            lock.unlock();
+            return allTheLines;
         }
 
         public List<String> getLastNLines(int n) {

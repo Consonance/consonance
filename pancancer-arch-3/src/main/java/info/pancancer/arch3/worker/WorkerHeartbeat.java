@@ -94,14 +94,6 @@ public class WorkerHeartbeat implements Runnable {
         this.secondsDelay = secondsDelay;
     }
 
-//    public String getMessageBody() {
-//        return messageBody;
-//    }
-//
-//    public void setMessageBody(String messageBody) {
-//        this.messageBody = messageBody;
-//    }
-
     public String getNetworkID() {
         return networkID;
     }
