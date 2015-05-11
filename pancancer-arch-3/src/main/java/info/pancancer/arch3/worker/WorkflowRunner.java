@@ -1,8 +1,11 @@
 package info.pancancer.arch3.worker;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
@@ -26,35 +29,37 @@ public class WorkflowRunner implements Callable<String> {
 
         @Override
         protected void processLine(String line, int level) {
+            Lock lock = new ReentrantLock();
+            lock.lock();
             lines.add(line);
+            lock.unlock();
         }
 
         public String getAllLinesAsString() {
-
             return StringUtils.join(this.lines, "\n");
         }
 
-        public List<String> getLines() {
-            return lines;
-        }
-
         public List<String> getLastNLines(int n) {
+            Lock lock = new ReentrantLock();
+            lock.lock();
+            List<String> nlines = new ArrayList<String>(n);
             int start, end;
-
-            end = this.lines.size() - 1;
+            end = this.lines.size();
             start = Math.max(0, this.lines.size() - n);
-
-            return this.lines.subList(start, end);
+            if (end>start && start>=0)
+            {
+                nlines = this.lines.subList(start, end);
+                lock.unlock();
+            }
+            return nlines;
         }
     }
 
     private long preworkDelay;
     private long postworkDelay;
     private CommandLine cli;
-
     // private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     // private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
-
     private CollectingLogOutputStream outputStream = new CollectingLogOutputStream();
     private CollectingLogOutputStream errorStream = new CollectingLogOutputStream();
 
@@ -64,8 +69,23 @@ public class WorkflowRunner implements Callable<String> {
      * @return
      */
     public String getStdOut() {
+        String s;
+        Lock lock = new ReentrantLock();
+        lock.lock();
         this.outputStream.flush();
-        return outputStream.getAllLinesAsString();
+        s = this.outputStream.getAllLinesAsString();
+        lock.unlock();
+        return s;
+    }
+    
+    /**
+     * Get the last *n* lines of output.
+     * @param n - the number of lines to get.
+     * @return A string with *n* lines.
+     */
+    public String getStdOut(int n)
+    {
+        return StringUtils.join(this.outputStream.getLastNLines(n),"\n");
     }
 
     /**

@@ -1,9 +1,4 @@
-Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
-"jobUuid": "1234567890",
-"type": "job-message-type",
-"state": "RUNNING",
-"stderr": "",
-"stdout": "Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
 [--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
 Installing Bundle (Working Directory Only)
 Bundle: /workflow
@@ -26,6 +21,4 @@ Using working directory: /datastore/JOB_ID
 [0000/00/00 00:00:00] | Setting workflow-run status to complete for: 10
 [--plugin, io.seqware.pipeline.plugins.WorkflowWatcher, --, --workflow-run-accession, 10]
 Workflow run 10 is now completed
-[--plugin, net.sourceforge.seqware.pipeline.plugins.WorkflowStatusChecker, --, --workflow-run-accession, 10]",
-"message": "job is running; IP address: 0.0.0.0"
-}
+[--plugin, net.sourceforge.seqware.pipeline.plugins.WorkflowStatusChecker, --, --workflow-run-accession, 10]

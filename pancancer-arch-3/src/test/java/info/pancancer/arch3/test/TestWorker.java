@@ -130,7 +130,7 @@ public class TestWorker {
         testResults = testResults.replaceAll("\r", "");
         testResults = testResults.replaceAll("IP address: /[^\"]*", "IP address: 0.0.0.0");
         testResults = testResults.replaceAll("/home/[^ /]*/", "/home/\\$USER/");
-        
+        System.out.println(testResults);
         //Check for the docker command.
         assertTrue("Check for docker command",testResults.contains("Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.ssh/gnos.pem:/home/$USER/.ssh/gnos.pem seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]"));
         assertTrue("Check for sleep message",testResults.contains("Sleeping before executing workflow for 1000 ms."));
@@ -140,12 +140,12 @@ public class TestWorker {
         assertTrue("check begining of output",testResults.startsWith(begining));
         
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
-        assertTrue("check ending of output",testResults.endsWith(ending));
+        assertTrue("check ending of output",testResults.contains(ending));
         
         String initalHeartbeat = new String(Files.readAllBytes(Paths.get("src/test/resources/testInitialHeartbeat.txt")));
         assertTrue("Check for an initial heart beat", testResults.contains(initalHeartbeat));
         
-        String finalHeartbeat = new String(Files.readAllBytes(Paths.get("src/test/resources/testFinalHeartbeat.txt")));
-        assertTrue("Check for final heartbeat",testResults.contains(finalHeartbeat));
+        String workflowOutput = new String(Files.readAllBytes(Paths.get("src/test/resources/testFinalHeartbeat.txt")));
+        assertTrue("Check for workflow output",testResults.contains(workflowOutput));
     }
 }

@@ -276,23 +276,18 @@ public class Worker implements Runnable {
 
             ExecutorService exService = Executors.newFixedThreadPool(2);
             exService.execute(heartbeat);
-            // This short little sleep is only here so that when I run unit tests, the output will be consistent between all executions:
-            // FIRST the heartbeat startup output, THEN the workflow runner output.
-
-            Thread.sleep(QUICK_SLEEP);
             Future<String> workflowResult = exService.submit(workflowRunner);
             workflowOutput = workflowResult.get();
             System.out.println("Docker execution result: " + workflowOutput);
             exService.shutdownNow();
-            Thread.sleep(QUICK_SLEEP);
         } catch (IOException e) {
             if (workflowRunner.getStdErr() != null) {
-                log.error("Error from Docker (stderr): " + workflowOutput);
+                log.error("Error executing job: " + workflowRunner.getStdErr(),e);
             } else if (workflowRunner.getStdOut() != null) {
                 // maybe the message is in stdout?
-                log.error("Error from Docker (stdout): " + workflowOutput);
+                log.error("Error executing job: " + workflowRunner.getStdOut(),e);
             } else {
-                log.error("Docker experienced an error but did not return any output, error is: " + e.getMessage());
+                log.error("Error executing job: " + e.getMessage(),e);
             }
             e.printStackTrace();
             log.error(e.toString());

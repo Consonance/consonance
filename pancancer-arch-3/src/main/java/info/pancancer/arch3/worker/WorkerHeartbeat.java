@@ -7,6 +7,9 @@ import info.pancancer.arch3.utils.Utilities;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.rabbitmq.client.Channel;
 
@@ -28,11 +31,8 @@ public class WorkerHeartbeat implements Runnable {
     private String vmUuid;
     private String jobUuid;
 
-    // public volatile boolean stop = false;
-
     @Override
     public void run() {
-        // while (!Thread.currentThread().isInterrupted()) {
         System.out.println("starting heartbeat thread, will send heartbeat message ever " + secondsDelay + " seconds.");
         while (!Thread.currentThread().interrupted()) {
 
@@ -40,14 +40,17 @@ public class WorkerHeartbeat implements Runnable {
             try {
                 Status heartbeatStatus = new Status();
                 heartbeatStatus.setJobUuid(this.jobUuid);
-                // String networkID = getFirstNonLoopbackAddress().toString();
                 heartbeatStatus.setMessage("job is running; IP address: " + networkID);
                 heartbeatStatus.setState(StatusState.RUNNING);
                 heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
                 heartbeatStatus.setVmUuid(vmUuid);
 
-                String stdOut = this.statusSource.getStdOut();
+                //String stdOut = this.statusSource.getStdOut();
+                Lock lock = new ReentrantLock();
+                lock.lock();
+                String stdOut = this.statusSource.getStdOut(2);
                 String stdErr = this.statusSource.getStdErr();
+                lock.unlock();
                 heartbeatStatus.setStdout(stdOut);
                 heartbeatStatus.setStderr(stdErr);
 
@@ -91,13 +94,13 @@ public class WorkerHeartbeat implements Runnable {
         this.secondsDelay = secondsDelay;
     }
 
-    public String getMessageBody() {
-        return messageBody;
-    }
-
-    public void setMessageBody(String messageBody) {
-        this.messageBody = messageBody;
-    }
+//    public String getMessageBody() {
+//        return messageBody;
+//    }
+//
+//    public void setMessageBody(String messageBody) {
+//        this.messageBody = messageBody;
+//    }
 
     public String getNetworkID() {
         return networkID;
