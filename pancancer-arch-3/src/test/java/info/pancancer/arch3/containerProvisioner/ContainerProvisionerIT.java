@@ -50,10 +50,9 @@ public class ContainerProvisionerIT {
      *
      * @throws java.lang.Exception
      */
-    // @Test
+    @Test
     public void testNormalOperation() throws Exception {
-        // need to create a vm order first, otherwise will hang
-
+        // ideally, we would mock up a VM order in here
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
         ContainerProvisioner.main(new String[] { "--config", file.getAbsolutePath() });
     }

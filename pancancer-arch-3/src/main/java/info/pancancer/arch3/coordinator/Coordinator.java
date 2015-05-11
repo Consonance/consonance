@@ -16,8 +16,14 @@ import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +45,8 @@ import org.slf4j.LoggerFactory;
  */
 public class Coordinator extends Base {
 
+    private static final int DEFAULT_THREADS = 3;
+
     public static void main(String[] argv) throws Exception {
         Coordinator coordinator = new Coordinator(argv);
         coordinator.doWork();
@@ -49,19 +57,28 @@ public class Coordinator extends Base {
         parseOptions(argv);
     }
 
-    public void doWork() throws InterruptedException {
+    public void doWork() throws InterruptedException, ExecutionException {
+        ExecutorService pool = Executors.newFixedThreadPool(DEFAULT_THREADS);
         CoordinatorOrders coordinatorOrders = new CoordinatorOrders(this.configFile, this.options.has(this.endlessSpec));
         CleanupJobs cleanupJobs = new CleanupJobs(this.configFile, this.options.has(this.endlessSpec));
         FlagJobs flagJobs = new FlagJobs(this.configFile, this.options.has(this.endlessSpec));
-        coordinatorOrders.start();
-        cleanupJobs.start();
-        flagJobs.start();
-        coordinatorOrders.join();
-        cleanupJobs.join();
-        flagJobs.join();
+        List<Future<?>> futures = new ArrayList<>();
+        futures.add(pool.submit(coordinatorOrders));
+        futures.add(pool.submit(cleanupJobs));
+        futures.add(pool.submit(flagJobs));
+        try {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (InterruptedException | ExecutionException ex) {
+            log.error(ex.toString());
+            throw new RuntimeException(ex);
+        } finally {
+            pool.shutdown();
+        }
     }
 
-    private static class CoordinatorOrders extends Thread {
+    private static class CoordinatorOrders implements Callable<Void> {
 
         private JSONObject settings = null;
         private Channel jobChannel = null;
@@ -74,13 +91,12 @@ public class Coordinator extends Base {
         private final Logger log = LoggerFactory.getLogger(getClass());
 
         public CoordinatorOrders(String config, boolean endless) throws InterruptedException {
-            super("CoordinatorOrders");
             this.endless = endless;
             this.configFile = config;
         }
 
         @Override
-        public void run() {
+        public Void call() throws Exception {
 
             try {
 
@@ -143,7 +159,15 @@ public class Coordinator extends Base {
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 log.error(ex.toString());
+            } finally {
+                orderChannel.close();
+                orderChannel.getConnection().close();
+                jobChannel.close();
+                jobChannel.getConnection().close();
+                vmChannel.close();
+                vmChannel.getConnection().close();
             }
+            return null;
         }
 
         private String requestVm(String message) {
@@ -209,7 +233,7 @@ public class Coordinator extends Base {
     /**
      * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
      */
-    private static class CleanupJobs extends Thread {
+    private static class CleanupJobs implements Callable<Void> {
 
         private JSONObject settings = null;
         private Channel resultsChannel = null;
@@ -220,13 +244,12 @@ public class Coordinator extends Base {
         private String configFile = null;
 
         public CleanupJobs(String config, boolean endless) throws InterruptedException {
-            super("Cleanup Jobs");
             this.endless = endless;
             this.configFile = config;
         }
 
         @Override
-        public void run() {
+        public Void call() throws IOException {
             try {
 
                 settings = u.parseConfig(configFile);
@@ -285,17 +308,20 @@ public class Coordinator extends Base {
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
+            } finally {
+                resultsChannel.close();
+                resultsChannel.getConnection().close();
             }
             // log.error(ex.toString());
             // log.error(ex.toString());
-
+            return null;
         }
     }
 
     /**
      * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
      */
-    private static class FlagJobs extends Thread {
+    private static class FlagJobs implements Callable<Void> {
 
         private JSONObject settings = null;
         private final Utilities u = new Utilities();
@@ -304,13 +330,12 @@ public class Coordinator extends Base {
         private final Logger log = LoggerFactory.getLogger(getClass());
 
         public FlagJobs(String config, boolean endless) {
-            super("FlagJobs");
             this.endless = endless;
             this.configFile = config;
         }
 
         @Override
-        public void run() {
+        public Void call() {
             settings = u.parseConfig(configFile);
 
             // writes to DB as well
@@ -351,6 +376,7 @@ public class Coordinator extends Base {
                 }
 
             } while (endless);
+            return null;
         }
     }
 

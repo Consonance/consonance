@@ -46,7 +46,10 @@ public class ContainerProvisioner extends Base {
 
             // TODO: need threads that each read from orders and another that reads results
             do {
-                QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+                QueueingConsumer.Delivery delivery = consumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
+                if (delivery == null) {
+                    continue;
+                }
                 // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                 System.out.println(" [x] Received VM request '" + message + "'");
