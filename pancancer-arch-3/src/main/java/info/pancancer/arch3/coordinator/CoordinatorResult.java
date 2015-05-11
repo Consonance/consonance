@@ -10,12 +10,10 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
 
 /**
- * Created by boconnor on 15-04-18.
+ * There is no reference to this in the README.md. Is this a dead class? Created by boconnor on 15-04-18.
  *
  * This consumes the jobs and prepares messages for the VM and Job Queues.
  *
@@ -37,21 +35,13 @@ public class CoordinatorResult extends Base {
     private QueueingConsumer resultsConsumer = null;
 
     public static void main(String[] argv) throws Exception {
-
-        OptionParser parser = new OptionParser();
-        parser.accepts("config").withOptionalArg().ofType(String.class);
-        OptionSet options = parser.parse(argv);
-
-        String configFile = null;
-        if (options.has("config")) {
-            configFile = (String) options.valueOf("config");
-        }
-        /** CoordinatorResult c = */
-        new CoordinatorResult(configFile);
+        new CoordinatorResult(argv);
 
     }
 
-    private CoordinatorResult(String configFile) {
+    private CoordinatorResult(String[] argv) throws IOException {
+        super();
+        parseOptions(argv);
 
         try {
 
@@ -79,7 +69,7 @@ public class CoordinatorResult extends Base {
             orderChannel.basicConsume(queueName + "_orders", true, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (true) {
+            do {
 
                 readResults();
 
@@ -87,7 +77,7 @@ public class CoordinatorResult extends Base {
                  * try { // pause Thread.sleep(1000); } catch (InterruptedException ex) { log.error(ex.toString()); }
                  */
 
-            }
+            } while (options.has(endlessSpec));
 
         } catch (IOException ex) {
             System.out.println(ex.toString());

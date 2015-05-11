@@ -33,6 +33,7 @@ import org.json.simple.JSONObject;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -42,6 +43,11 @@ import org.junit.Test;
 public class PostgreSQLIT {
     private File configFile;
     private PostgreSQL postgres;
+
+    @BeforeClass
+    public static void setup() throws IOException {
+        Utilities.clearState();
+    }
 
     @Before
     public void setUp() throws IOException {

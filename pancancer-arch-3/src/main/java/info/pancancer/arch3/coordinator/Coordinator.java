@@ -1,7 +1,6 @@
 package info.pancancer.arch3.coordinator;
 
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -19,8 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,70 +39,44 @@ import org.slf4j.LoggerFactory;
  */
 public class Coordinator extends Base {
 
-    private JSONObject settings = null;
-    private Channel jobChannel = null;
-    private Channel vmChannel = null;
-    private Channel orderChannel = null;
-    private Connection connection = null;
-    private String queueName = null;
-    private Utilities u = new Utilities();
-
     public static void main(String[] argv) throws Exception {
-
-        OptionParser parser = new OptionParser();
-        parser.accepts("config").withOptionalArg().ofType(String.class);
-        OptionSet options = parser.parse(argv);
-
-        String configFile = null;
-        if (options.has("config")) {
-            configFile = (String) options.valueOf("config");
-        }
-
-        // processes orders and turns them into requests for VMs/Containers (handled by ContainerProvisioner) and Jobs (handled by Worker)
-        /** CoordinatorOrders t1 = */
-        new CoordinatorOrders(configFile);
-
-        // this cleans up Jobs
-        /** CleanupJobs t2 = */
-        new CleanupJobs(configFile);
-
-        // this marks jobs as lost, resubmits them, etc
-        /** FlagJobs t3 = */
-        new FlagJobs(configFile);
-
+        Coordinator coordinator = new Coordinator(argv);
+        coordinator.doWork();
     }
 
-    public Coordinator(String configFile) {
-        settings = u.parseConfig(configFile);
+    public Coordinator(String[] argv) throws IOException {
+        super();
+        parseOptions(argv);
     }
 
-}
-
-class CoordinatorOrders {
-
-    private JSONObject settings = null;
-    private Channel jobChannel = null;
-    private Channel vmChannel = null;
-    private Channel orderChannel = null;
-    private Connection connection = null;
-    private String queueName = null;
-    private Utilities u = new Utilities();
-
-    private Inner inner;
-
-    public CoordinatorOrders(String configFile) {
-        inner = new Inner(configFile);
+    public void doWork() throws InterruptedException {
+        CoordinatorOrders coordinatorOrders = new CoordinatorOrders(this.configFile, this.options.has(this.endlessSpec));
+        CleanupJobs cleanupJobs = new CleanupJobs(this.configFile, this.options.has(this.endlessSpec));
+        FlagJobs flagJobs = new FlagJobs(this.configFile, this.options.has(this.endlessSpec));
+        coordinatorOrders.start();
+        cleanupJobs.start();
+        flagJobs.start();
+        coordinatorOrders.join();
+        cleanupJobs.join();
+        flagJobs.join();
     }
 
-    private class Inner extends Thread {
+    private static class CoordinatorOrders extends Thread {
 
+        private JSONObject settings = null;
+        private Channel jobChannel = null;
+        private Channel vmChannel = null;
+        private Channel orderChannel = null;
+        private String queueName = null;
+        private final Utilities u = new Utilities();
+        private final boolean endless;
         private String configFile = null;
         private final Logger log = LoggerFactory.getLogger(getClass());
 
-        Inner(String config) {
-            super(config);
-            configFile = config;
-            start();
+        public CoordinatorOrders(String config, boolean endless) throws InterruptedException {
+            super("CoordinatorOrders");
+            this.endless = endless;
+            this.configFile = config;
         }
 
         @Override
@@ -121,7 +92,8 @@ class CoordinatorOrders {
                 // read from
                 orderChannel = u.setupQueue(settings, queueName + "_orders");
                 // write to
-                jobChannel = u.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand with full
+                jobChannel = u.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand with
+                                                                          // full
                                                                           // info
                 // write to
                 vmChannel = u.setupQueue(settings, queueName + "_vms");
@@ -131,9 +103,12 @@ class CoordinatorOrders {
                 orderChannel.basicConsume(queueName + "_orders", false, consumer);
 
                 // TODO: need threads that each read from orders and another that reads results
-                while (true) {
+                do {
 
-                    QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+                    QueueingConsumer.Delivery delivery = consumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
+                    if (delivery == null) {
+                        continue;
+                    }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] RECEIVED ORDER:\n'" + message + "'\n");
@@ -161,7 +136,7 @@ class CoordinatorOrders {
 
                     System.out.println("acknowledging " + delivery.getEnvelope().toString());
                     orderChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                }
+                } while (endless);
 
             } catch (IOException ex) {
                 System.out.println(ex.toString());
@@ -231,32 +206,26 @@ class CoordinatorOrders {
 
     }
 
-}
+    /**
+     * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     */
+    private static class CleanupJobs extends Thread {
 
-/**
- * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
- */
-class CleanupJobs {
-
-    private JSONObject settings = null;
-    private Channel resultsChannel = null;
-    private Channel vmChannel = null;
-    private String queueName = null;
-    private Utilities u = new Utilities();
-    private QueueingConsumer resultsConsumer = null;
-
-    private Inner inner;
-
-    private class Inner extends Thread {
-
+        private JSONObject settings = null;
+        private Channel resultsChannel = null;
+        private String queueName = null;
+        private final Utilities u = new Utilities();
+        private QueueingConsumer resultsConsumer = null;
+        private final boolean endless;
         private String configFile = null;
 
-        Inner(String config) {
-            super(config);
-            configFile = config;
-            start();
+        public CleanupJobs(String config, boolean endless) throws InterruptedException {
+            super("Cleanup Jobs");
+            this.endless = endless;
+            this.configFile = config;
         }
 
+        @Override
         public void run() {
             try {
 
@@ -277,9 +246,12 @@ class CleanupJobs {
                 PostgreSQL db = new PostgreSQL(settings);
 
                 // TODO: need threads that each read from orders and another that reads results
-                while (true) {
+                do {
 
-                    QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
+                    QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
+                    if (delivery == null) {
+                        continue;
+                    }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
@@ -307,7 +279,7 @@ class CleanupJobs {
                      * try { // pause Thread.sleep(5000); } catch (InterruptedException ex) { //log.error(ex.toString()); }
                      */
 
-                }
+                } while (endless);
 
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -318,94 +290,68 @@ class CleanupJobs {
             // log.error(ex.toString());
 
         }
-
     }
 
-    public CleanupJobs(String configFile) {
-        inner = new Inner(configFile);
-    }
-}
+    /**
+     * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     */
+    private static class FlagJobs extends Thread {
 
-/**
- * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
- */
-class FlagJobs {
-
-    private JSONObject settings = null;
-    private Channel resultsChannel = null;
-    private Channel vmChannel = null;
-    private String queueName = null;
-    private Utilities u = new Utilities();
-    private QueueingConsumer resultsConsumer = null;
-
-    private Inner inner;
-
-    private class Inner extends Thread {
-
-        private String configFile = null;
+        private JSONObject settings = null;
+        private final Utilities u = new Utilities();
+        private final boolean endless;
+        private final String configFile;
         private final Logger log = LoggerFactory.getLogger(getClass());
 
-        Inner(String config) {
-            super(config);
-            configFile = config;
-            start();
+        public FlagJobs(String config, boolean endless) {
+            super("FlagJobs");
+            this.endless = endless;
+            this.configFile = config;
         }
 
         @Override
         public void run() {
-            try {
+            settings = u.parseConfig(configFile);
 
-                settings = u.parseConfig(configFile);
+            // writes to DB as well
+            PostgreSQL db = new PostgreSQL(settings);
 
-                // writes to DB as well
-                PostgreSQL db = new PostgreSQL(settings);
+            // TODO: need threads that each read from orders and another that reads results
+            do {
 
-                // TODO: need threads that each read from orders and another that reads results
-                while (true) {
+                // checks the jobs in the database and sees if any have become "lost"
+                List<Job> jobs = db.getJobs(JobState.RUNNING);
 
-                    // checks the jobs in the database and sees if any have become "lost"
-                    List<Job> jobs = db.getJobs(JobState.RUNNING);
+                // how long before we call something lost?
+                long secBeforeLost = (Long) settings.get("max_seconds_before_lost");
 
-                    // how long before we call something lost?
-                    long secBeforeLost = (Long) settings.get("max_seconds_before_lost");
+                for (Job job : jobs) {
+                    Timestamp nowTs = new Timestamp(new Date().getTime());
+                    Timestamp updateTs = job.getUpdateTs();
 
-                    for (Job job : jobs) {
-                        Timestamp nowTs = new Timestamp(new Date().getTime());
-                        Timestamp updateTs = job.getUpdateTs();
+                    long diff = nowTs.getTime() - updateTs.getTime();
+                    long diffSec = diff / Base.ONE_SECOND_IN_MILLISECONDS;
 
-                        long diff = nowTs.getTime() - updateTs.getTime();
-                        long diffSec = diff / Base.ONE_SECOND_IN_MILLISECONDS;
+                    log.error("DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
 
-                        log.error("DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
-
-                        // if this is true need to mark the job as lost!
-                        if (diffSec > secBeforeLost) {
-                            // it must be lost
-                            log.error("JOB " + job.getUuid() + " NOT SEEN IN " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
-                            db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
-                        }
-
-                    }
-
-                    try {
-                        // pause
-                        Thread.sleep(Base.FIVE_SECOND_IN_MILLISECONDS);
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
+                    // if this is true need to mark the job as lost!
+                    if (diffSec > secBeforeLost) {
+                        // it must be lost
+                        log.error("JOB " + job.getUuid() + " NOT SEEN IN " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
+                        db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
                     }
 
                 }
 
-            } catch (Exception ex) {
-                System.out.println(ex.toString());
-                throw new RuntimeException(ex);
-            }
+                try {
+                    // pause
+                    Thread.sleep(Base.FIVE_SECOND_IN_MILLISECONDS);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+            } while (endless);
         }
-
-    }
-
-    public FlagJobs(String configFile) {
-        inner = new Inner(configFile);
     }
 
 }

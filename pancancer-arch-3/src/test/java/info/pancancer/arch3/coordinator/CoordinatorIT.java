@@ -14,8 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package info.pancancer.arch3.containerProvisioner;
+package info.pancancer.arch3.coordinator;
 
+import info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +29,7 @@ import org.junit.Test;
  *
  * @author dyuen
  */
-public class ContainerProvisionerIT {
+public class CoordinatorIT {
 
     @BeforeClass
     public static void setup() throws IOException {
@@ -36,26 +37,28 @@ public class ContainerProvisionerIT {
     }
 
     /**
-     * Test of main method, of class ContainerProvisioner.
+     * Test of main method, of class Coordinator.
      *
      * @throws java.lang.Exception
      */
     @Test(expected = OptionException.class)
-    public void testHelpMessage() throws Exception {
-        ContainerProvisioner.main(new String[] { "--help" });
+    public void testMainUsage() throws Exception {
+        Coordinator.main(new String[] { "--help" });
     }
 
     /**
-     * Test of main method, of class ContainerProvisioner.
+     * Test of doWork method, of class Coordinator.
      *
      * @throws java.lang.Exception
      */
-    // @Test
-    public void testNormalOperation() throws Exception {
-        // need to create a vm order first, otherwise will hang
-
+    @Test
+    public void testNormalUsage() throws Exception {
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
-        ContainerProvisioner.main(new String[] { "--config", file.getAbsolutePath() });
+        File iniDir = FileUtils.getFile("ini");
+        // prime the pump with a job
+        JobGeneratorDEWorkflow.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
+        // note that without a worker running in parallel, the results job will time out
+        Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
     }
 
 }

@@ -28,7 +28,7 @@ import org.junit.Test;
  *
  * @author dyuen
  */
-public class ContainerProvisionerIT {
+public class ContainerProvisionerThreadsIT {
 
     @BeforeClass
     public static void setup() throws IOException {
@@ -36,17 +36,17 @@ public class ContainerProvisionerIT {
     }
 
     /**
-     * Test of main method, of class ContainerProvisioner.
+     * Test of main method, of class ContainerProvisionerThreads.
      *
      * @throws java.lang.Exception
      */
     @Test(expected = OptionException.class)
     public void testHelpMessage() throws Exception {
-        ContainerProvisioner.main(new String[] { "--help" });
+        ContainerProvisionerThreads.main(new String[] { "--help" });
     }
 
     /**
-     * Test of main method, of class ContainerProvisioner.
+     * Test of main method, of class ContainerProvisionerThreads.
      *
      * @throws java.lang.Exception
      */
@@ -55,7 +55,7 @@ public class ContainerProvisionerIT {
         // need to create a vm order first, otherwise will hang
 
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
-        ContainerProvisioner.main(new String[] { "--config", file.getAbsolutePath() });
+        ContainerProvisionerThreads.main(new String[] { "--config", file.getAbsolutePath() });
     }
 
 }

@@ -1,5 +1,8 @@
 package info.pancancer.arch3.utils;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,14 +20,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 
 /**
  * A kitchen sink of utility methods, in a thread for some reason.
@@ -37,7 +38,6 @@ public class Utilities /* extends Thread */{
     public static final String VM_MESSAGE_TYPE = "vm-message-type";
     public static final String JOB_MESSAGE_TYPE = "job-message-type";
 
-    private String outputFile = null;
     private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
 
     public JSONObject parseJSONStr(String jsonStr) {
@@ -51,6 +51,15 @@ public class Utilities /* extends Thread */{
         }
 
         return data;
+    }
+
+    public static void clearState() throws IOException {
+        File file = FileUtils.getFile("scripts", "cleanup.sh");
+        file.setExecutable(true);
+        CommandLine commandLine = new CommandLine("/bin/bash");
+        commandLine.addArgument("-c");
+        commandLine.addArgument(file.getAbsolutePath(), false); // false is important to prevent commons-exec from acting stupid
+        new DefaultExecutor().execute(commandLine);
     }
 
     public JSONObject parseConfig(String configFile) {

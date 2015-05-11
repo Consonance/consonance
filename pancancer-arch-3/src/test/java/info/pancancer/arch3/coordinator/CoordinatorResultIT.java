@@ -14,21 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package info.pancancer.arch3.containerProvisioner;
+package info.pancancer.arch3.coordinator;
 
 import info.pancancer.arch3.utils.Utilities;
-import java.io.File;
 import java.io.IOException;
 import joptsimple.OptionException;
-import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- *
+ * This may be a dead class.
+ * 
  * @author dyuen
  */
-public class ContainerProvisionerIT {
+public class CoordinatorResultIT {
 
     @BeforeClass
     public static void setup() throws IOException {
@@ -36,26 +35,11 @@ public class ContainerProvisionerIT {
     }
 
     /**
-     * Test of main method, of class ContainerProvisioner.
-     *
-     * @throws java.lang.Exception
+     * Test of main method, of class CoordinatorResult.
      */
     @Test(expected = OptionException.class)
-    public void testHelpMessage() throws Exception {
-        ContainerProvisioner.main(new String[] { "--help" });
-    }
-
-    /**
-     * Test of main method, of class ContainerProvisioner.
-     *
-     * @throws java.lang.Exception
-     */
-    // @Test
-    public void testNormalOperation() throws Exception {
-        // need to create a vm order first, otherwise will hang
-
-        File file = FileUtils.getFile("src", "test", "resources", "config.json");
-        ContainerProvisioner.main(new String[] { "--config", file.getAbsolutePath() });
+    public void testMainUsage() throws Exception {
+        CoordinatorResult.main(new String[] { "--help" });
     }
 
 }

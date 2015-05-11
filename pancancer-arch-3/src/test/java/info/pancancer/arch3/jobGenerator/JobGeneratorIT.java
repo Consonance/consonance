@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package info.pancancer.arch3.containerProvisioner;
+package info.pancancer.arch3.jobGenerator;
 
 import info.pancancer.arch3.utils.Utilities;
 import java.io.File;
@@ -28,7 +28,7 @@ import org.junit.Test;
  *
  * @author dyuen
  */
-public class ContainerProvisionerIT {
+public class JobGeneratorIT {
 
     @BeforeClass
     public static void setup() throws IOException {
@@ -36,26 +36,25 @@ public class ContainerProvisionerIT {
     }
 
     /**
-     * Test of main method, of class ContainerProvisioner.
+     * Test of main method, of class JobGenerator.
      *
      * @throws java.lang.Exception
      */
     @Test(expected = OptionException.class)
     public void testHelpMessage() throws Exception {
-        ContainerProvisioner.main(new String[] { "--help" });
+        JobGenerator.main(new String[] { "--help" });
     }
 
     /**
-     * Test of main method, of class ContainerProvisioner.
+     * Test of main method, of class JobGenerator.
      *
      * @throws java.lang.Exception
      */
-    // @Test
+    @Test
     public void testNormalOperation() throws Exception {
         // need to create a vm order first, otherwise will hang
-
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
-        ContainerProvisioner.main(new String[] { "--config", file.getAbsolutePath() });
+        JobGenerator.main(new String[] { "--config", file.getAbsolutePath() });
     }
 
 }
