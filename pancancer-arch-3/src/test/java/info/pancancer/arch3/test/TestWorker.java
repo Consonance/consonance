@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.tools.ant.types.Assertions;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,12 +74,7 @@ public class TestWorker {
     @Mock
     private Logger mockLogger;
 
-    // private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    // private PrintStream originalOutStream = new PrintStream(System.out);
-    // private ByteArrayOutputStream errStream = new ByteArrayOutputStream();
-    // private PrintStream originalErrStream = new PrintStream(System.err);
-
-    private static StringBuffer outBuffer = new StringBuffer();
+   private static StringBuffer outBuffer = new StringBuffer();
 
     public class LoggingAnswer implements Answer<Object> {
         @Override
@@ -107,14 +101,8 @@ public class TestWorker {
     @Before
     public void setup() throws IOException, Exception {
         MockitoAnnotations.initMocks(this);
-
-        // outStream = new ByteArrayOutputStream();
-        // System.setOut(new PrintStream(outStream));
-
-        // errStream = new ByteArrayOutputStream();
-        // System.setE(errStream));
+        
         outBuffer = new StringBuffer();
-        // LoggingAnswer logAnswer = new LoggingAnswer();
         Mockito.doAnswer(logAnswer).when(mockLogger).info(anyString());
         Mockito.doAnswer(logAnswer).when(mockLogger).debug(anyString());
         Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString());
@@ -169,10 +157,8 @@ public class TestWorker {
         Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
 
         testWorker.run();
-        String testResults = this.outBuffer.toString();// this.outStream.toString();
-        // System.setOut(originalOutStream);
-        //log.debug("ResultS: "+testResults);
-
+        String testResults = outBuffer.toString();
+        
         assertTrue("Mock Exception is present", testResults.contains("java.util.concurrent.ExecutionException: Mock Exception"));
         assertTrue("cause is present ", testResults.contains("Caused by: java.lang.Exception: cause"));
     }
@@ -187,11 +173,7 @@ public class TestWorker {
         Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
         try {
             testWorker.run();
-            //System.out.println(outBuffer.length());
-            String testResults = this.outBuffer.toString();// this.outStream.toString();
-            // System.setOut(originalOutStream);
-            // System.out.println(testResults);
-            //log.debug(testResults);
+            String testResults = outBuffer.toString();
             assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
         } catch (Exception e) {
             e.printStackTrace();
@@ -209,10 +191,7 @@ public class TestWorker {
         Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
         try {
             testWorker.run();
-            //System.out.println(outBuffer.length());
-            String testResults = this.outBuffer.toString();// this.outStream.toString();
-            // System.setOut(originalOutStream);
-            // System.out.println(testResults);
+            String testResults = outBuffer.toString();
             assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
         } catch (Exception e) {
             e.printStackTrace();
@@ -229,14 +208,9 @@ public class TestWorker {
 
         Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1" });
 
-        // testWorker.run();
-
-        String testResults = this.outBuffer.toString();// this.outStream.toString();
-        // System.setOut(originalOutStream);
-
+        String testResults = outBuffer.toString();
+        
         testResults = cleanResults(testResults);
-
-        // System.out.println(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
         assertTrue("check begining of output", testResults.startsWith(begining));
@@ -274,15 +248,9 @@ public class TestWorker {
 
         Worker.main(new String[] { "--uuid", "vm123456" });
 
-        // testWorker.run();
-
-        //System.out.println(outBuffer.length());
-        String testResults = outBuffer.toString();// this.outStream.toString();
-        // System.setOut(originalOutStream);
+        String testResults = outBuffer.toString();
 
         testResults = cleanResults(testResults);
-
-        //log.debug("RESULTS: "+testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
 
@@ -306,12 +274,8 @@ public class TestWorker {
 
         testWorker.run();
 
-        String testResults = outBuffer.toString();// this.outStream.toString();
-        // System.setOut(originalOutStream);
-
+        String testResults = outBuffer.toString();
         testResults = cleanResults(testResults);
-
-        // System.out.println(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
         assertTrue("check begining of output", testResults.startsWith(begining));

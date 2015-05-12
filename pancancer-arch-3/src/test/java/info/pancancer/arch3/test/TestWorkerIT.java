@@ -35,6 +35,7 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 
+@Ignore
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorkerIT {
@@ -72,7 +73,6 @@ public class TestWorkerIT {
         Mockito.when(Utilities.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
     }
 
-    @Ignore
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
         JSONObject jsonObj = new JSONObject();
