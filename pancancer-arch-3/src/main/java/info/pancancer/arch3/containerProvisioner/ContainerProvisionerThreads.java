@@ -62,14 +62,11 @@ public class ContainerProvisionerThreads extends Base {
     }
 
     /**
-     * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     * This dequeues the VM requests from the VM queue and stages them in the DB as pending so I can keep a count of what's
+     * running/pending/finished.
      */
     private static class ProcessVMOrders implements Callable<Void> {
 
-        private JSONObject settings = null;
-        private Channel vmChannel = null;
-        private String queueName = null;
-        private final Utilities u = new Utilities();
         private final boolean endless;
         private final String config;
 
@@ -80,14 +77,15 @@ public class ContainerProvisionerThreads extends Base {
 
         @Override
         public Void call() throws IOException {
+            Channel vmChannel = null;
             try {
 
-                settings = u.parseConfig(config);
+                JSONObject settings = Utilities.parseConfig(config);
 
-                queueName = (String) settings.get("rabbitMQQueueName");
+                String queueName = (String) settings.get("rabbitMQQueueName");
 
                 // read from
-                vmChannel = u.setupQueue(settings, queueName + "_vms");
+                vmChannel = Utilities.setupQueue(settings, queueName + "_vms");
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
@@ -120,24 +118,21 @@ public class ContainerProvisionerThreads extends Base {
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             } finally {
-                vmChannel.close();
-                vmChannel.getConnection().close();
+                if (vmChannel != null) {
+                    vmChannel.close();
+                    vmChannel.getConnection().close();
+                }
             }
             return null;
         }
     }
 
     /**
-     * This examines the provision table in the DB to identify the number of running VMs. It then figures out if the number running is < the
-     * max number. If so it picks the oldest pending, switches to running, and launches a worker thread.
+     * This examines the provision table in the DB to identify the number of running VMs. It then figures out if the number running is less
+     * than the max number. If so it picks the oldest pending, switches to running, and launches a worker thread.
      */
     private static class ProvisionVMs implements Callable<Void> {
 
-        private JSONObject settings = null;
-        // private final Channel resultsChannel = null;
-        // private final Channel vmChannel = null;
-        private String queueName = null;
-        private final Utilities u = new Utilities();
         private long maxWorkers = 0;
         private final String configFile;
         private final boolean endless;
@@ -151,12 +146,12 @@ public class ContainerProvisionerThreads extends Base {
         public Void call() throws IOException {
             try {
 
-                settings = u.parseConfig(configFile);
+                JSONObject settings = Utilities.parseConfig(configFile);
 
                 // max number of workers
                 maxWorkers = (Long) settings.get("max_running_containers");
 
-                queueName = (String) settings.get("rabbitMQQueueName");
+                // queueName = (String) settings.get("rabbitMQQueueName");
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
@@ -192,34 +187,22 @@ public class ContainerProvisionerThreads extends Base {
             } catch (ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             }
-            /**
-             * finally { if (resultsChannel != null) { resultsChannel.close(); resultsChannel.getConnection().close(); vmChannel.close();
-             * vmChannel.getConnection().close(); } }
-             */
             return null;
         }
 
         // TOOD: obviously, this will need to launch something using Youxia in the future
         private void launchVM(String uuid) {
-
             new Worker(configFile, uuid, 1).run();
-
             System.out.println("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
-
         }
 
     }
 
     /**
-     * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     * This keeps an eye on the results queue. It updates the database with finished jobs. Presumably it should also kill VMs.
      */
     private static class CleanupVMs implements Callable<Void> {
 
-        private JSONObject settings = null;
-        private Channel resultsChannel = null;
-        private String queueName = null;
-        private final Utilities u = new Utilities();
-        private QueueingConsumer resultsConsumer = null;
         private final String configFile;
         private final boolean endless;
 
@@ -230,19 +213,20 @@ public class ContainerProvisionerThreads extends Base {
 
         @Override
         public Void call() throws IOException {
+            Channel resultsChannel = null;
             try {
 
-                settings = u.parseConfig(configFile);
+                JSONObject settings = Utilities.parseConfig(configFile);
 
-                queueName = (String) settings.get("rabbitMQQueueName");
+                String queueName = (String) settings.get("rabbitMQQueueName");
 
                 // read from
-                resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
+                resultsChannel = Utilities.setupMultiQueue(settings, queueName + "_results");
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
                 String resultsQueue = resultsChannel.queueDeclare().getQueue();
                 resultsChannel.queueBind(resultsQueue, queueName + "_results", "");
-                resultsConsumer = new QueueingConsumer(resultsChannel);
+                QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
 
                 // writes to DB as well
@@ -284,8 +268,10 @@ public class ContainerProvisionerThreads extends Base {
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             } finally {
-                resultsChannel.close();
-                resultsChannel.getConnection().close();
+                if (resultsChannel != null) {
+                    resultsChannel.close();
+                    resultsChannel.getConnection().close();
+                }
             }
             return null;
         }

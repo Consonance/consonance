@@ -1,5 +1,10 @@
 package info.pancancer.arch3.coordinator;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
@@ -8,7 +13,6 @@ import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
@@ -20,16 +24,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -81,14 +78,15 @@ public class Coordinator extends Base {
         }
     }
 
+    /**
+     * Reads from the Order queue and breaks it up into VMs for the VM queue and jobs for the job queue.
+     */
     private static class CoordinatorOrders implements Callable<Void> {
 
-        private JSONObject settings = null;
         private Channel jobChannel = null;
         private Channel vmChannel = null;
         private Channel orderChannel = null;
         private String queueName = null;
-        private final Utilities u = new Utilities();
         private final boolean endless;
         private String configFile = null;
         private final Logger log = LoggerFactory.getLogger(getClass());
@@ -100,22 +98,22 @@ public class Coordinator extends Base {
 
         @Override
         public Void call() throws Exception {
-
             try {
 
-                settings = u.parseConfig(configFile);
+                JSONObject settings = Utilities.parseConfig(configFile);
 
                 PostgreSQL db = new PostgreSQL(settings);
 
                 queueName = (String) settings.get("rabbitMQQueueName");
                 // read from
-                orderChannel = u.setupQueue(settings, queueName + "_orders");
+                orderChannel = Utilities.setupQueue(settings, queueName + "_orders");
                 // write to
-                jobChannel = u.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand with
-                                                                          // full
-                                                                          // info
+                jobChannel = Utilities.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand
+                                                                                  // with
+                // full
+                // info
                 // write to
-                vmChannel = u.setupQueue(settings, queueName + "_vms");
+                vmChannel = Utilities.setupQueue(settings, queueName + "_vms");
                 // read from
 
                 QueueingConsumer consumer = new QueueingConsumer(orderChannel);
@@ -173,6 +171,13 @@ public class Coordinator extends Base {
             return null;
         }
 
+        /**
+         * Requests a new VM from the VM queue.
+         *
+         * @param message
+         *            a JSON representation of a Provision
+         * @return
+         */
         private String requestVm(String message) {
 
             // TODO: should save information to persistant storage
@@ -197,6 +202,12 @@ public class Coordinator extends Base {
 
         }
 
+        /**
+         * This sends a Job message to the job queue.
+         *
+         * @param message
+         * @return
+         */
         private String requestJob(String message) {
 
             StringBuilder result = new StringBuilder();
@@ -235,14 +246,11 @@ public class Coordinator extends Base {
 
     /**
      * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     *
+     * This looks like a duplicate class from ContainerProvisionerThreads.
      */
     private static class CleanupJobs implements Callable<Void> {
 
-        private JSONObject settings = null;
-        private Channel resultsChannel = null;
-        private String queueName = null;
-        private final Utilities u = new Utilities();
-        private QueueingConsumer resultsConsumer = null;
         private final boolean endless;
         private String configFile = null;
 
@@ -253,19 +261,20 @@ public class Coordinator extends Base {
 
         @Override
         public Void call() throws IOException {
+            Channel resultsChannel = null;
             try {
 
-                settings = Utilities.parseConfig(configFile);
+                JSONObject settings = Utilities.parseConfig(configFile);
 
-                queueName = (String) settings.get("rabbitMQQueueName");
+                String queueName = (String) settings.get("rabbitMQQueueName");
 
                 // read from
-                resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
+                resultsChannel = Utilities.setupMultiQueue(settings, queueName + "_results");
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
                 String resultsQueue = resultsChannel.queueDeclare().getQueue();
                 resultsChannel.queueBind(resultsQueue, queueName + "_results", "");
-                resultsConsumer = new QueueingConsumer(resultsChannel);
+                QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
 
                 // writes to DB as well
@@ -312,8 +321,10 @@ public class Coordinator extends Base {
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             } finally {
-                resultsChannel.close();
-                resultsChannel.getConnection().close();
+                if (resultsChannel != null) {
+                    resultsChannel.close();
+                    resultsChannel.getConnection().close();
+                }
             }
             // log.error(ex.toString());
             // log.error(ex.toString());
@@ -323,12 +334,10 @@ public class Coordinator extends Base {
     }
 
     /**
-     * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     * This looks for jobs in the database that have not been updated in a while to determine if they are lost.
      */
     private static class FlagJobs implements Callable<Void> {
 
-        private JSONObject settings = null;
-        private final Utilities u = new Utilities();
         private final boolean endless;
         private final String configFile;
         private final Logger log = LoggerFactory.getLogger(getClass());
@@ -340,7 +349,7 @@ public class Coordinator extends Base {
 
         @Override
         public Void call() {
-            settings = Utilities.parseConfig(configFile);
+            JSONObject settings = Utilities.parseConfig(configFile);
 
             // writes to DB as well
             PostgreSQL db = new PostgreSQL(settings);
@@ -385,8 +394,8 @@ public class Coordinator extends Base {
 
     }
 
-//    public FlagJobs(String configFile) {
-//        inner = new Inner(configFile);
-//    }
+    // public FlagJobs(String configFile) {
+    // inner = new Inner(configFile);
+    // }
 
 }
