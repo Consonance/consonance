@@ -17,7 +17,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -51,6 +53,15 @@ public class Utilities /* extends Thread */{
         }
 
         return data;
+    }
+
+    public static void clearState() throws IOException {
+        File file = FileUtils.getFile("scripts", "cleanup.sh");
+        file.setExecutable(true);
+        CommandLine commandLine = new CommandLine("/bin/bash");
+        commandLine.addArgument("-c");
+        commandLine.addArgument(file.getAbsolutePath(), false); // false is important to prevent commons-exec from acting stupid
+        new DefaultExecutor().execute(commandLine);
     }
 
     public static JSONObject parseConfig(String configFile) {
@@ -158,7 +169,7 @@ public class Utilities /* extends Thread */{
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println(ex.toString());
         }
-        return (channel);
+        return channel;
 
     }
 
@@ -188,7 +199,7 @@ public class Utilities /* extends Thread */{
 
     }
 
-    public JSONObject parseResult(String previous) {
+    private JSONObject parseResult(String previous) {
         JSONObject obj = parseJSONStr(previous);
         resultsArr.add(obj);
         return (obj);

@@ -28,11 +28,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import junit.framework.Assert;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -42,6 +43,11 @@ import org.junit.Test;
 public class PostgreSQLIT {
     private File configFile;
     private PostgreSQL postgres;
+
+    @BeforeClass
+    public static void setup() throws IOException {
+        Utilities.clearState();
+    }
 
     @Before
     public void setUp() throws IOException {

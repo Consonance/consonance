@@ -25,3 +25,6 @@ pancancer-arch-3/target
 *.settings
 /pancancer-common/target/
 /target/
+
+# Ignore NetBeans files
+nbactions.xml

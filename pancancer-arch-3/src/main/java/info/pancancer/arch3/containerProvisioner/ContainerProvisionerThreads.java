@@ -1,5 +1,9 @@
 package info.pancancer.arch3.containerProvisioner;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
@@ -8,94 +12,77 @@ import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.json.simple.JSONObject;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Created by boconnor on 15-04-18.
  */
 public class ContainerProvisionerThreads extends Base {
 
-    private JSONObject settings = null;
-    private Channel resultsChannel = null;
-    private Channel vmChannel = null;
-    private String queueName = null;
-    private Utilities u = new Utilities();
+    private static final int DEFAULT_THREADS = 3;
 
     public static void main(String[] argv) throws Exception {
+        ContainerProvisionerThreads containerProvisionerThreads = new ContainerProvisionerThreads(argv);
+        containerProvisionerThreads.startThreads();
+    }
 
-        OptionParser parser = new OptionParser();
-        parser.accepts("config").withOptionalArg().ofType(String.class);
-        OptionSet options = parser.parse(argv);
+    private ContainerProvisionerThreads(String[] argv) throws IOException {
+        super();
+        super.parseOptions(argv);
+    }
 
-        String configFile = null;
-        if (options.has("config")) {
-            configFile = (String) options.valueOf("config");
+    public void startThreads() throws InterruptedException {
+        ExecutorService pool = Executors.newFixedThreadPool(DEFAULT_THREADS);
+        ProcessVMOrders processVMOrders = new ProcessVMOrders(this.configFile, this.options.has(this.endlessSpec));
+        ProvisionVMs provisionVMs = new ProvisionVMs(this.configFile, this.options.has(this.endlessSpec));
+        CleanupVMs cleanupVMs = new CleanupVMs(this.configFile, this.options.has(this.endlessSpec));
+        List<Future<?>> futures = new ArrayList<>();
+        futures.add(pool.submit(processVMOrders));
+        futures.add(pool.submit(provisionVMs));
+        futures.add(pool.submit(cleanupVMs));
+        try {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (InterruptedException | ExecutionException ex) {
+            log.error(ex.toString());
+            throw new RuntimeException(ex);
+        } finally {
+            pool.shutdown();
         }
-        // this isn't really used...
-        /** ContainerProvisionerThreads c = */
-        new ContainerProvisionerThreads(configFile);
-
-        // the thread that handles reading the queue and writing to the DB
-        /** ProcessVMOrders t1 = */
-        new ProcessVMOrders(configFile);
-
-        // this actually launches worker daemons
-        /** ProvisionVMs t2 = */
-        new ProvisionVMs(configFile);
-
-        // this cleans up VMs, currently this is just a DB update but in the future it's a Youxia call
-        /** CleanupVMs t3 = */
-        new CleanupVMs(configFile);
     }
 
-    private ContainerProvisionerThreads(String configFile) {
+    /**
+     * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     */
+    private static class ProcessVMOrders implements Callable<Void> {
 
-        settings = u.parseConfig(configFile);
+        private JSONObject settings = null;
+        private Channel vmChannel = null;
+        private String queueName = null;
+        private final Utilities u = new Utilities();
+        private final boolean endless;
+        private final String config;
 
-    }
-
-
-}
-
-/**
- * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
- */
-class ProcessVMOrders {
-
-    private JSONObject settings = null;
-    private Channel vmChannel = null;
-    private String queueName = null;
-    private final Utilities u = new Utilities();
-
-    private final Inner inner;
-
-    private class Inner extends Thread {
-
-        private String configFile = null;
-
-        Inner(String config) {
-            super(config);
-            configFile = config;
-            start();
+        public ProcessVMOrders(String config, boolean endless) {
+            this.endless = endless;
+            this.config = config;
         }
 
         @Override
-        public void run() {
+        public Void call() throws IOException {
             try {
 
-                settings = u.parseConfig(configFile);
+                settings = u.parseConfig(config);
 
                 queueName = (String) settings.get("rabbitMQQueueName");
 
@@ -109,11 +96,12 @@ class ProcessVMOrders {
                 vmChannel.basicConsume(queueName + "_vms", true, consumer);
 
                 // TODO: need threads that each read from orders and another that reads results
-                while (true) {
-
+                do {
                     System.out.println("CHECKING FOR NEW VM ORDER!");
-
-                    QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+                    QueueingConsumer.Delivery delivery = consumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
+                    if (delivery == null) {
+                        continue;
+                    }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] Received New VM Request '" + message + "'");
@@ -125,55 +113,42 @@ class ProcessVMOrders {
 
                     // puts it into the DB so I can count it in another thread
                     db.createProvision(p);
-
-                    /*
-                     * try { // pause Thread.sleep(5000); } catch (InterruptedException ex) { //log.error(ex.toString()); }
-                     */
-
-                }
+                } while (endless);
 
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
+            } finally {
+                vmChannel.close();
+                vmChannel.getConnection().close();
             }
+            return null;
         }
-
     }
 
-    public ProcessVMOrders(String configFile) {
-        inner = new Inner(configFile);
-    }
-}
+    /**
+     * This examines the provision table in the DB to identify the number of running VMs. It then figures out if the number running is < the
+     * max number. If so it picks the oldest pending, switches to running, and launches a worker thread.
+     */
+    private static class ProvisionVMs implements Callable<Void> {
 
+        private JSONObject settings = null;
+        // private final Channel resultsChannel = null;
+        // private final Channel vmChannel = null;
+        private String queueName = null;
+        private final Utilities u = new Utilities();
+        private long maxWorkers = 0;
+        private final String configFile;
+        private final boolean endless;
 
-/**
- * This examines the provision table in the DB to identify the number of running VMs. It then figures out if the number running is < the max
- * number. If so it picks the oldest pending, switches to running, and launches a worker thread.
- */
-class ProvisionVMs {
-
-    private JSONObject settings = null;
-    private final Channel resultsChannel = null;
-    private final Channel vmChannel = null;
-    private String queueName = null;
-    private Utilities u = new Utilities();
-    private long maxWorkers = 0;
-
-    private Inner inner;
-
-    private class Inner extends Thread {
-
-        private String configFile = null;
-
-        Inner(String config) {
-            super(config);
-            configFile = config;
-            start();
+        public ProvisionVMs(String configFile, boolean endless) {
+            this.configFile = configFile;
+            this.endless = endless;
         }
 
         @Override
-        public void run() {
+        public Void call() throws IOException {
             try {
 
                 settings = u.parseConfig(configFile);
@@ -187,7 +162,7 @@ class ProvisionVMs {
                 PostgreSQL db = new PostgreSQL(settings);
 
                 // TODO: need threads that each read from orders and another that reads results
-                while (true) {
+                do {
 
                     // System.out.println("CHECKING RUNNING VMs");
 
@@ -206,29 +181,28 @@ class ProvisionVMs {
                         String uuid = db.getPendingProvisionUUID();
                         // this just updates one that's pending
                         db.updatePendingProvision(uuid);
-                        // now launch the VM... doing this after the update above to prevent race condition if the worker signals finished
+                        // now launch the VM... doing this after the update above to prevent race condition if the worker signals
+                        // finished
                         // before it's marked as pending
                         launchVM(uuid);
 
                     }
+                } while (endless);
 
-                    /*
-                     * try { // pause Thread.sleep(5000); } catch (InterruptedException ex) { //log.error(ex.toString()); }
-                     */
-
-                }
-
-            } catch (ShutdownSignalException ex) {
-                throw new RuntimeException(ex);
-            } catch (ConsumerCancelledException ex) {
+            } catch (ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             }
+            /**
+             * finally { if (resultsChannel != null) { resultsChannel.close(); resultsChannel.getConnection().close(); vmChannel.close();
+             * vmChannel.getConnection().close(); } }
+             */
+            return null;
         }
 
         // TOOD: obviously, this will need to launch something using Youxia in the future
         private void launchVM(String uuid) {
 
-           new Worker(configFile, uuid, 1).run();
+            new Worker(configFile, uuid, 1).run();
 
             System.out.println("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
 
@@ -236,38 +210,26 @@ class ProvisionVMs {
 
     }
 
-    public ProvisionVMs(String configFile) {
-        inner = new Inner(configFile);
-    }
-}
+    /**
+     * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     */
+    private static class CleanupVMs implements Callable<Void> {
 
+        private JSONObject settings = null;
+        private Channel resultsChannel = null;
+        private String queueName = null;
+        private final Utilities u = new Utilities();
+        private QueueingConsumer resultsConsumer = null;
+        private final String configFile;
+        private final boolean endless;
 
-/**
- * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
- */
-class CleanupVMs {
-
-    private JSONObject settings = null;
-    private Channel resultsChannel = null;
-    private final Channel vmChannel = null;
-    private String queueName = null;
-    private Utilities u = new Utilities();
-    private QueueingConsumer resultsConsumer = null;
-
-    private Inner inner;
-
-    private class Inner extends Thread {
-
-        private String configFile = null;
-
-        Inner(String config) {
-            super(config);
-            configFile = config;
-            start();
+        public CleanupVMs(String configFile, boolean endless) {
+            this.configFile = configFile;
+            this.endless = endless;
         }
 
         @Override
-        public void run() {
+        public Void call() throws IOException {
             try {
 
                 settings = u.parseConfig(configFile);
@@ -286,13 +248,15 @@ class CleanupVMs {
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
 
-
                 // TODO: need threads that each read from orders and another that reads results
-                while (true) {
+                do {
 
                     System.out.println("CHECKING FOR VMs TO REAP!");
 
-                    QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
+                    QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
+                    if (delivery == null) {
+                        continue;
+                    }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
@@ -313,30 +277,18 @@ class CleanupVMs {
                         ProvisionState provisionState = ProvisionState.valueOf(status.getState().toString());
                         db.updateProvision(status.getVmUuid(), status.getJobUuid(), provisionState);
                     }
-
-                    /*
-                     * try { // pause Thread.sleep(5000); } catch (InterruptedException ex) { System.err.println(ex.toString()); }
-                     */
-
-                }
+                } while (endless);
 
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
+            } finally {
+                resultsChannel.close();
+                resultsChannel.getConnection().close();
             }
+            return null;
         }
 
     }
-
-    public CleanupVMs(String configFile) {
-        inner = new Inner(configFile);
-    }
 }
-
-
-
-
-
-
-

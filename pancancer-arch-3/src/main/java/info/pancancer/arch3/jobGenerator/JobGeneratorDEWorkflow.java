@@ -16,8 +16,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
+import joptsimple.ArgumentAcceptingOptionSpec;
 import org.apache.tools.ant.DirectoryScanner;
 import org.json.simple.JSONObject;
 
@@ -40,43 +39,29 @@ public class JobGeneratorDEWorkflow extends Base {
     private int overallIterationsMax = 0;
     private int overallRuntimeMaxHours = 0;
 
-    public static void main(String[] args) {
-        OptionParser parser = new OptionParser();
-        parser.accepts("config").withOptionalArg().ofType(String.class);
-        parser.accepts("ini-dir").withOptionalArg().ofType(String.class);
-        parser.accepts("workflow-name").withOptionalArg().ofType(String.class);
-        parser.accepts("workflow-version").withOptionalArg().ofType(String.class);
-        parser.accepts("workflow-path").withOptionalArg().ofType(String.class);
+    private final ArgumentAcceptingOptionSpec<String> iniDirSpec;
+    private final ArgumentAcceptingOptionSpec<String> workflowNameSpec;
+    private final ArgumentAcceptingOptionSpec<String> workflowVersionSpec;
+    private final ArgumentAcceptingOptionSpec<String> workflowPathSpec;
 
-        OptionSet options = parser.parse(args);
-
-        String configFile = null;
-        String iniDir = null;
-        String workflowName = "DEWrapper";
-        String workflowVersion = "1.0.0";
-        String workflowPath = "/workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0";
-        if (options.has("config")) {
-            configFile = (String) options.valueOf("config");
-        }
-        if (options.has("ini-dir")) {
-            iniDir = (String) options.valueOf("ini-dir");
-        }
-        if (options.has("workflow-name")) {
-            workflowName = (String) options.valueOf("workflow-name");
-        }
-        if (options.has("workflow-version")) {
-            workflowVersion = (String) options.valueOf("workflow-version");
-        }
-        if (options.has("workflow-path")) {
-            workflowPath = (String) options.valueOf("workflow-path");
-        }
-
-        JobGeneratorDEWorkflow jg = new JobGeneratorDEWorkflow(configFile, iniDir, workflowName, workflowVersion, workflowPath);
-
+    public static void main(String[] argv) throws IOException {
+        JobGeneratorDEWorkflow jg = new JobGeneratorDEWorkflow(argv);
         jg.log.info("MASTER FINISHED, EXITING!");
     }
 
-    public JobGeneratorDEWorkflow(String configFile, String iniDir, String workflowName, String workflowVersion, String workflowPath) {
+    public JobGeneratorDEWorkflow(String[] argv) throws IOException {
+        super();
+        this.iniDirSpec = super.parser.accepts("ini-dir").withOptionalArg().ofType(String.class).defaultsTo("null");
+        this.workflowNameSpec = super.parser.accepts("workflow-name").withOptionalArg().ofType(String.class).defaultsTo("DEWrapper");
+        this.workflowVersionSpec = super.parser.accepts("workflow-version").withOptionalArg().ofType(String.class).defaultsTo("1.0.0");
+        this.workflowPathSpec = super.parser.accepts("workflow-path").withOptionalArg().ofType(String.class)
+                .defaultsTo("/workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0");
+        parseOptions(argv);
+
+        String iniDir = options.valueOf(iniDirSpec);
+        String workflowName = options.valueOf(workflowNameSpec);
+        String workflowVersion = options.valueOf(workflowVersionSpec);
+        String workflowPath = options.valueOf(workflowPathSpec);
 
         // UTILS OBJECT
         Utilities u = new Utilities();
