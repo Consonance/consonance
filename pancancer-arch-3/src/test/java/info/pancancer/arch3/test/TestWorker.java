@@ -12,6 +12,7 @@ import info.pancancer.arch3.worker.WorkflowRunner;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.tools.ant.types.Assertions;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,9 +28,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
@@ -38,10 +44,13 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 
-@PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class, WorkerHeartbeat.class, WorkflowRunner.class })
+@PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class, WorkerHeartbeat.class, WorkflowRunner.class, Logger.class,
+        LoggerFactory.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorker {
 
+    private static final Logger log = LoggerFactory.getLogger(TestWorker.class);
+    
     @Mock
     private WorkerHeartbeat mockHeartbeat;
 
@@ -63,22 +72,56 @@ public class TestWorker {
     @Mock
     private BasicProperties mockProperties;
 
-    private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    private PrintStream originalOutStream = new PrintStream(System.out);
+    @Mock
+    private Logger mockLogger;
 
-    private ByteArrayOutputStream errStream = new ByteArrayOutputStream();
-    private PrintStream originalErrStream = new PrintStream(System.err);
+    // private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    // private PrintStream originalOutStream = new PrintStream(System.out);
+    // private ByteArrayOutputStream errStream = new ByteArrayOutputStream();
+    // private PrintStream originalErrStream = new PrintStream(System.err);
 
-    
+    private static StringBuffer outBuffer = new StringBuffer();
+
+    public class LoggingAnswer implements Answer<Object> {
+        @Override
+        public Object answer(InvocationOnMock invocation) throws Throwable {
+            outBuffer.append(invocation.getArguments()[0]).append("\n");
+            if (invocation.getArguments().length == 2)
+            {
+                if (invocation.getArguments()[1] instanceof Throwable)
+                {
+                    OutputStream outStream = new ByteArrayOutputStream();
+                    PrintStream ps = new PrintStream(outStream);
+                    ((Throwable)invocation.getArguments()[1]).printStackTrace(ps);
+                    outBuffer.append(new String (outStream.toString()));
+                    ps.close();
+                    outStream.close();
+                }
+            }
+            return null;
+        }
+    }
+
+    private LoggingAnswer logAnswer = new LoggingAnswer();
+
     @Before
     public void setup() throws IOException, Exception {
-        outStream = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outStream));
-
-        errStream = new ByteArrayOutputStream();
-        System.setErr(new PrintStream(errStream));
-        
         MockitoAnnotations.initMocks(this);
+
+        // outStream = new ByteArrayOutputStream();
+        // System.setOut(new PrintStream(outStream));
+
+        // errStream = new ByteArrayOutputStream();
+        // System.setE(errStream));
+        outBuffer = new StringBuffer();
+        // LoggingAnswer logAnswer = new LoggingAnswer();
+        Mockito.doAnswer(logAnswer).when(mockLogger).info(anyString());
+        Mockito.doAnswer(logAnswer).when(mockLogger).debug(anyString());
+        Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString());
+        Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString(), any(Exception.class));
+        PowerMockito.mockStatic(org.slf4j.LoggerFactory.class);
+        Mockito.when(org.slf4j.LoggerFactory.getLogger(Worker.class)).thenReturn(mockLogger);
+
         PowerMockito.mockStatic(Utilities.class);
 
         Mockito.doNothing().when(mockConnection).close();
@@ -113,27 +156,6 @@ public class TestWorker {
     }
 
     @Test
-    public void testWorker_emptyMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
-        setupConfig();
-        byte body[] = (new String("")).getBytes();
-        Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
-        Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
-        PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
-
-        Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
-        try {
-            testWorker.run();
-            String testResults = this.outStream.toString();
-            System.setOut(originalOutStream);
-            System.out.println(testResults);
-            assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    @Test
     public void testWorker_executionException() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
         Mockito.when(mockRunner.call()).thenThrow(new ExecutionException("Mock Exception", new Exception("cause")));
         PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
@@ -142,35 +164,34 @@ public class TestWorker {
 
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
-        Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
-
-        PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
+        setupMockQueue(testDelivery);
 
         Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
 
         testWorker.run();
-        String testResults = this.errStream.toString();
-        System.setOut(originalOutStream);
-        System.out.println("ResultS: "+testResults);
+        String testResults = this.outBuffer.toString();// this.outStream.toString();
+        // System.setOut(originalOutStream);
+        //log.debug("ResultS: "+testResults);
 
         assertTrue("Mock Exception is present", testResults.contains("java.util.concurrent.ExecutionException: Mock Exception"));
         assertTrue("cause is present ", testResults.contains("Caused by: java.lang.Exception: cause"));
     }
 
     @Test
-    public void testWorker_nullMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_emptyMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
         setupConfig();
-
-        Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, null);
-        Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
-        PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
+        byte body[] = (new String("")).getBytes();
+        Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
+        setupMockQueue(testDelivery);
 
         Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
         try {
             testWorker.run();
-            String testResults = this.outStream.toString();
-            System.setOut(originalOutStream);
-            System.out.println(testResults);
+            //System.out.println(outBuffer.length());
+            String testResults = this.outBuffer.toString();// this.outStream.toString();
+            // System.setOut(originalOutStream);
+            // System.out.println(testResults);
+            //log.debug(testResults);
             assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
         } catch (Exception e) {
             e.printStackTrace();
@@ -179,25 +200,43 @@ public class TestWorker {
     }
 
     @Test
+    public void testWorker_nullMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+        setupConfig();
+
+        Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, null);
+        setupMockQueue(testDelivery);
+
+        Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
+        try {
+            testWorker.run();
+            //System.out.println(outBuffer.length());
+            String testResults = this.outBuffer.toString();// this.outStream.toString();
+            // System.setOut(originalOutStream);
+            // System.out.println(testResults);
+            assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
     public void testWorker_main() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
         setupConfig();
 
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
-        Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
-
-        PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
+        setupMockQueue(testDelivery);
 
         Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1" });
 
         // testWorker.run();
 
-        String testResults = this.outStream.toString();
-        System.setOut(originalOutStream);
+        String testResults = this.outBuffer.toString();// this.outStream.toString();
+        // System.setOut(originalOutStream);
 
         testResults = cleanResults(testResults);
 
-        System.out.println(testResults);
+        // System.out.println(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
         assertTrue("check begining of output", testResults.startsWith(begining));
@@ -214,9 +253,7 @@ public class TestWorker {
 
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
-        Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
-
-        PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
+        setupMockQueue(testDelivery);
 
         try {
             Worker.main(new String[] {});
@@ -233,22 +270,22 @@ public class TestWorker {
 
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
-        Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
-
-        PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
+        setupMockQueue(testDelivery);
 
         Worker.main(new String[] { "--uuid", "vm123456" });
 
         // testWorker.run();
 
-        String testResults = this.outStream.toString();
-        System.setOut(originalOutStream);
+        //System.out.println(outBuffer.length());
+        String testResults = outBuffer.toString();// this.outStream.toString();
+        // System.setOut(originalOutStream);
 
         testResults = cleanResults(testResults);
 
-        System.out.println(testResults);
+        //log.debug("RESULTS: "+testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
+
         assertTrue("check begining of output", testResults.startsWith(begining));
 
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
@@ -263,20 +300,18 @@ public class TestWorker {
 
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
-        Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
-
-        PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
+        setupMockQueue(testDelivery);
 
         Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
 
         testWorker.run();
 
-        String testResults = this.outStream.toString();
-        System.setOut(originalOutStream);
+        String testResults = outBuffer.toString();// this.outStream.toString();
+        // System.setOut(originalOutStream);
 
         testResults = cleanResults(testResults);
 
-        System.out.println(testResults);
+        // System.out.println(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
         assertTrue("check begining of output", testResults.startsWith(begining));
@@ -323,5 +358,10 @@ public class TestWorker {
         jsonObj.put("postworkerSleep", "1");
         jsonObj.put("hostUserName", System.getProperty("user.name"));
         Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
+    }
+
+    private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {
+        Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
+        PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
     }
 }

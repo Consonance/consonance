@@ -49,7 +49,7 @@ import com.rabbitmq.client.QueueingConsumer;
 public class Worker implements Runnable {
 
     private static final String NO_MESSAGE_FROM_QUEUE_MESSAGE = " [x] Job request came back null/empty! ";
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+    protected static final Logger LOG = LoggerFactory.getLogger(Worker.class);
     private JSONObject settings = null;
     private Channel resultsChannel = null;
     private Channel jobChannel = null;
@@ -85,7 +85,8 @@ public class Worker implements Runnable {
         // TODO: can't run on the command line anymore!
         Worker w = new Worker(configFile, uuid, maxRuns);
         w.run();
-        System.out.println("Exiting.");
+        //System.out.println("Exiting.");
+        LOG.info("Exiting.");
     }
 
     /**
@@ -122,7 +123,8 @@ public class Worker implements Runnable {
         try {
 
             // the VM UUID
-            System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
+            //System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
+            LOG.info(" WORKER VM UUID: '" + vmUuid + "'");
 
             // read from
             jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
@@ -139,7 +141,7 @@ public class Worker implements Runnable {
             // TODO: need threads that each read from orders and another that reads results
             while (max > 0 /*|| maxRuns <= 0*/) {
 
-                System.out.println(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
+                LOG.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
 
                 max--;
 
@@ -151,13 +153,13 @@ public class Worker implements Runnable {
                 // System.out.println("THERE ARE CURRENTLY "+messages+" JOBS QUEUED!");
 
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-                System.out.println(vmUuid + "  received " + delivery.getEnvelope().toString());
+                LOG.info(vmUuid + "  received " + delivery.getEnvelope().toString());
                 // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 if (delivery.getBody() != null) {
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     if (message.trim().length() > 0) {
 
-                        System.out.println(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
+                        LOG.info(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
 
                         Job job = new Job().fromJSON(message);
 
@@ -167,7 +169,7 @@ public class Worker implements Runnable {
                                 "job is starting");
                         String statusJSON = status.toJSON();
 
-                        System.out.println(" WORKER LAUNCHING JOB");
+                        LOG.info(" WORKER LAUNCHING JOB");
                         // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own
                         // thread, harvesting STDERR/STDOUT periodically
                         String workflowOutput = launchJob(statusJSON, job);
@@ -178,25 +180,25 @@ public class Worker implements Runnable {
                                 "job is finished");
                         statusJSON = status.toJSON();
 
-                        System.out.println(" WORKER FINISHING JOB");
+                        LOG.info(" WORKER FINISHING JOB");
 
                         finishJob(statusJSON);
                     } else {
-                        System.out.println(NO_MESSAGE_FROM_QUEUE_MESSAGE);
+                        LOG.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                     }
-                    System.out.println(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
+                    LOG.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
                     jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } else {
-                    System.out.println(NO_MESSAGE_FROM_QUEUE_MESSAGE);
+                    LOG.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                 }
             }
-            System.out.println(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
+            LOG.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
             jobChannel.getConnection().close();
             resultsChannel.getConnection().close();
         } catch (Exception ex) {
-            System.err.println(ex.toString());
+            LOG.error(ex.getMessage(),ex);
             ex.printStackTrace();
         }
     }
@@ -210,7 +212,7 @@ public class Worker implements Runnable {
      * @throws IOException
      */
     private Path writeINIFile(Job job) throws IOException {
-        System.out.println("INI is: " + job.getIniStr());
+        LOG.info("INI is: " + job.getIniStr());
 
         Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
         perms.addAll(Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE,
@@ -218,7 +220,7 @@ public class Worker implements Runnable {
                 PosixFilePermission.OTHERS_WRITE));
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
         Path pathToINI = java.nio.file.Files.createTempFile("seqware_", ".ini", attrs);
-        System.out.println("INI file: " + pathToINI.toString());
+        LOG.info("INI file: " + pathToINI.toString());
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8));
         bw.write(job.getIniStr());
         bw.flush();
@@ -273,20 +275,17 @@ public class Worker implements Runnable {
             exService.execute(heartbeat);
             Future<String> workflowResult = exService.submit(workflowRunner);
             workflowOutput = workflowResult.get();
-            System.out.println("Docker execution result: " + workflowOutput);
+            LOG.info("Docker execution result: " + workflowOutput);
             exService.shutdownNow();
         } catch (SocketException e) {
             // This comes from trying to get the IP address.
-            log.error(e.getMessage(), e);
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
         } catch (IOException e) {
             // This could be caused by a problem writing the file, or publishing a message to the queue.
-            log.error(e.getMessage(), e);
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
         } catch (ExecutionException | InterruptedException e) {
             // This comes from trying to get the workflow execution result.
-            log.error("Error executing workflow: " + e.getMessage(), e);
-            e.printStackTrace();
+            LOG.error("Error executing workflow: " + e.getMessage(), e);
         }
         return workflowOutput;
     }
@@ -330,7 +329,7 @@ public class Worker implements Runnable {
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            log.error(e.toString());
+            LOG.error(e.toString());
         }
     }
 
