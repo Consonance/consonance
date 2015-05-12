@@ -1,10 +1,5 @@
 package info.pancancer.arch3.coordinator;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
@@ -13,6 +8,7 @@ import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
@@ -24,9 +20,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -214,7 +217,7 @@ public class Coordinator extends Base {
                 jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
 
-                JSONObject settings = u.parseConfig(this.configFile);
+                JSONObject settings = Utilities.parseConfig(this.configFile);
                 PostgreSQL db = new PostgreSQL(settings);
                 Job newJob = new Job().fromJSON(message);
                 newJob.setState(JobState.PENDING);
@@ -252,7 +255,7 @@ public class Coordinator extends Base {
         public Void call() throws IOException {
             try {
 
-                settings = u.parseConfig(configFile);
+                settings = Utilities.parseConfig(configFile);
 
                 queueName = (String) settings.get("rabbitMQQueueName");
 
@@ -316,6 +319,7 @@ public class Coordinator extends Base {
             // log.error(ex.toString());
             return null;
         }
+
     }
 
     /**
@@ -336,7 +340,7 @@ public class Coordinator extends Base {
 
         @Override
         public Void call() {
-            settings = u.parseConfig(configFile);
+            settings = Utilities.parseConfig(configFile);
 
             // writes to DB as well
             PostgreSQL db = new PostgreSQL(settings);
@@ -378,6 +382,11 @@ public class Coordinator extends Base {
             } while (endless);
             return null;
         }
+
     }
+
+//    public FlagJobs(String configFile) {
+//        inner = new Inner(configFile);
+//    }
 
 }

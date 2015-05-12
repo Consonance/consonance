@@ -1,42 +1,105 @@
 package info.pancancer.arch3.worker;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.lang3.StringUtils;
 
+/**
+ * This class will make a command-line call to run a workflow. <br/>
+ * The actual command to execute should be specified using setCommandLine. <br/>
+ * It is also possible to specify a brief delay before and after the command is executed, using setPreworkDelay and setPostworkDelay.
+ * 
+ * @author sshorser
+ *
+ */
 public class WorkflowRunner implements Callable<String> {
+
+    public class CollectingLogOutputStream extends LogOutputStream {
+        private final List<String> lines = new LinkedList<String>();
+
+        @Override
+        protected void processLine(String line, int level) {
+            Lock lock = new ReentrantLock();
+            lock.lock();
+            lines.add(line);
+            lock.unlock();
+        }
+
+        public String getAllLinesAsString() {
+            Lock lock = new ReentrantLock();
+            lock.lock();
+            String allTheLines = StringUtils.join(this.lines, "\n");
+            lock.unlock();
+            return allTheLines;
+        }
+
+        public List<String> getLastNLines(int n) {
+            Lock lock = new ReentrantLock();
+            lock.lock();
+            List<String> nlines = new ArrayList<String>(n);
+            int start, end;
+            end = this.lines.size();
+            start = Math.max(0, this.lines.size() - n);
+            if (end > start && start >= 0) {
+                nlines = this.lines.subList(start, end);
+            }
+            lock.unlock();
+            return nlines;
+        }
+    }
 
     private long preworkDelay;
     private long postworkDelay;
     private CommandLine cli;
+    // private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    // private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+    private CollectingLogOutputStream outputStream = new CollectingLogOutputStream();
+    private CollectingLogOutputStream errorStream = new CollectingLogOutputStream();
 
-    private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
-
+    /**
+     * Get the stdout of the running command.
+     * 
+     * @return
+     */
     public String getStdOut() {
-        try {
-            this.outputStream.flush();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
+        String s;
+        Lock lock = new ReentrantLock();
+        lock.lock();
+        this.outputStream.flush();
+        s = this.outputStream.getAllLinesAsString();
+        lock.unlock();
+        return s;
     }
 
+    /**
+     * Get the last *n* lines of output.
+     * 
+     * @param n
+     *            - the number of lines to get.
+     * @return A string with *n* lines.
+     */
+    public String getStdOut(int n) {
+        return StringUtils.join(this.outputStream.getLastNLines(n), "\n");
+    }
+
+    /**
+     * Get the stderr of the running command.
+     * 
+     * @return
+     */
     public String getStdErr() {
-        try {
-            this.errorStream.flush();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return new String(errorStream.toByteArray(), StandardCharsets.UTF_8);
+        this.errorStream.flush();
+        return errorStream.getAllLinesAsString();
     }
 
     @Override
@@ -64,8 +127,7 @@ public class WorkflowRunner implements Callable<String> {
         // Use the result handler for non-blocking call, so this way we should be able to get updates of
         // stdout and stderr while the command is running.
         resultHandler.waitFor();
-        workflowOutput = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
-        // System.out.println("Docker execution result: " + workflowOutput);
+        workflowOutput = outputStream.getAllLinesAsString();
         if (this.postworkDelay > 0) {
             System.out.println("Sleeping after exeuting workflow for " + this.postworkDelay + " ms.");
             Thread.sleep(this.postworkDelay);
