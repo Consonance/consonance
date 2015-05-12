@@ -61,8 +61,8 @@ public class JobGeneratorShutdownHandler extends Thread {
                 }
                 String json = sb.toString();
                 br.close();
-                Utilities u = new Utilities();
-                JSONObject parsed = u.parseJSONStr(json);
+                //Utilities u = new Utilities();
+                JSONObject parsed = Utilities.parseJSONStr(json);
                 resultsArr = (ArrayList<JSONObject>) parsed.get("results");
 
             }

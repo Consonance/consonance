@@ -1,8 +1,5 @@
 package info.pancancer.arch3.utils;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,6 +24,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+
 /**
  * A kitchen sink of utility methods, in a thread for some reason.
  *
@@ -34,13 +35,14 @@ import org.json.simple.parser.ParseException;
  */
 public class Utilities /* extends Thread */{
 
+    //TODO: These really should be refactored out to an enum
     // message types
     public static final String VM_MESSAGE_TYPE = "vm-message-type";
     public static final String JOB_MESSAGE_TYPE = "job-message-type";
 
     private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
 
-    public JSONObject parseJSONStr(String jsonStr) {
+    public static JSONObject parseJSONStr(String jsonStr) {
         JSONObject data = null;
 
         JSONParser parser = new JSONParser();
@@ -62,7 +64,7 @@ public class Utilities /* extends Thread */{
         new DefaultExecutor().execute(commandLine);
     }
 
-    public JSONObject parseConfig(String configFile) {
+    public static JSONObject parseConfig(String configFile) {
         String json = null;
 
         // local file specified on command line tried first
@@ -143,7 +145,7 @@ public class Utilities /* extends Thread */{
 
     }
 
-    public Channel setupQueue(JSONObject settings, String queue) {
+    public static Channel setupQueue(JSONObject settings, String queue) {
 
         String server = (String) settings.get("rabbitMQHost");
         String user = (String) settings.get("rabbitMQUser");
@@ -171,7 +173,7 @@ public class Utilities /* extends Thread */{
 
     }
 
-    public Channel setupMultiQueue(JSONObject settings, String queue) {
+    public static Channel setupMultiQueue(JSONObject settings, String queue) {
 
         String server = (String) settings.get("rabbitMQHost");
         String user = (String) settings.get("rabbitMQUser");
@@ -224,7 +226,7 @@ public class Utilities /* extends Thread */{
         return min + (int) (Math.random() * ((1 + max) - min));
     }
 
-    private boolean canDownloadConfig() {
+    private static boolean canDownloadConfig() {
 
         try {
             URL u = new URL("http://169.254.169.254/latest/user-data");
