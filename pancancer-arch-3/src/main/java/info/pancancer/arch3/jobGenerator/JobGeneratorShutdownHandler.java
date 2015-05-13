@@ -10,7 +10,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -21,8 +20,6 @@ import org.json.simple.JSONObject;
 public class JobGeneratorShutdownHandler extends Thread {
     private String outputFile = null;
     private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
-    private static final CharsetEncoder ENCODER = StandardCharsets.UTF_8.newEncoder();
-
     /**
      * This is here to exclusively do cleanup after a cntl+c e.g. persist to disk
      */

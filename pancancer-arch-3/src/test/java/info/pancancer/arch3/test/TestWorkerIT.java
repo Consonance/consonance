@@ -5,7 +5,9 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Utilities;
+import info.pancancer.arch3.worker.CollectingLogOutputStream;
 import info.pancancer.arch3.worker.Worker;
+import info.pancancer.arch3.worker.WorkflowRunner;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,6 +17,11 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteResultHandler;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -23,6 +30,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -35,8 +45,7 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 
-@Ignore
-@PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class })
+@PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class, DefaultExecutor.class, WorkflowRunner.class, DefaultExecuteResultHandler.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorkerIT {
 
@@ -57,6 +66,11 @@ public class TestWorkerIT {
 
     @Mock
     private BasicProperties mockProperties;
+    
+    @Spy
+    private DefaultExecutor mockExecutor = new DefaultExecutor();
+    
+    private DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
 
     private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
     private PrintStream originalOutStream = new PrintStream(System.out);
@@ -75,6 +89,29 @@ public class TestWorkerIT {
 
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+        PumpStreamHandler streamHandler = new PumpStreamHandler(new CollectingLogOutputStream());
+        mockExecutor.setStreamHandler(streamHandler);
+        PowerMockito.whenNew(DefaultExecuteResultHandler.class).withNoArguments().thenReturn(this.handler);
+        Mockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                for (int i = 0 ; i < 5 ; i++)
+                {
+                    CommandLine cli = new CommandLine("echo");
+                    cli.addArgument("iteration: "+i);
+                    mockExecutor.execute(cli);
+                    Thread.sleep(500);
+                }
+                CommandLine cli = new CommandLine("bash");
+                cli.addArgument("./src/test/resources/err_output.sh");
+                mockExecutor.execute(cli);
+                //Here we make sure that the Handler that always gets used always returns 0, and then everything completes OK.
+                handler.onProcessComplete(0);
+                return null;
+            }
+        }).when(mockExecutor).execute(any(CommandLine.class),any(ExecuteResultHandler.class));
+        PowerMockito.whenNew(DefaultExecutor.class).withNoArguments().thenReturn(mockExecutor);
+        
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("rabbitMQQueueName", "seqware");
         jsonObj.put("heartbeatRate", "2.5");
@@ -106,32 +143,37 @@ public class TestWorkerIT {
         String testResults = this.outStream.toString();
         // String knownResults = new String(Files.readAllBytes(Paths.get("src/test/resources/TestWorkerResult.txt")));
         System.setOut(originalOutStream);
-        // System.out.println(testResults);
+        //System.out.println(testResults);
 
-        // Because we are generating temp files with unique names and numeric sequence, simply asserting that the two strings match will not
-        // work.
-        // The text containing the temp file name must be cleaned before we can assert that the code worked.
         testResults = cleanResults(testResults);
-        System.out.println(testResults);
-        // Check for the docker command.
         assertTrue(
                 "Check for docker command",
                 testResults
                         .contains("Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.ssh/gnos.pem:/home/$USER/.ssh/gnos.pem seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]"));
         assertTrue("Check for sleep message", testResults.contains("Sleeping before executing workflow for 1000 ms."));
-        assertTrue("Check for workflow complete", testResults.contains("Workflow run 10 is now completed"));
+        assertTrue("Check for workflow complete", testResults.contains("Docker execution result: \"iteration: 0\"\n"+
+                                                                        "\"iteration: 1\"\n"+
+                                                                        "\"iteration: 2\"\n"+
+                                                                        "\"iteration: 3\"\n"+
+                                                                        "\"iteration: 4\"\n"));
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
-        assertTrue("check begining of output", testResults.startsWith(begining));
+        assertTrue("check begining of output", testResults.contains(begining));
 
+        assertTrue("check INI",testResults.contains("INI is: param1=value1\n"+
+                                                    "param2=value2\n"+
+                                                    "param3=help I'm trapped in an INI file"));
+        
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
         assertTrue("check ending of output", testResults.contains(ending));
 
         String initalHeartbeat = new String(Files.readAllBytes(Paths.get("src/test/resources/testInitialHeartbeat.txt")));
         assertTrue("Check for an initial heart beat", testResults.contains(initalHeartbeat));
 
-        String workflowOutput = new String(Files.readAllBytes(Paths.get("src/test/resources/testFinalHeartbeat.txt")));
-        assertTrue("Check for workflow output", testResults.contains(workflowOutput));
+        //String workflowOutput = new String(Files.readAllBytes(Paths.get("src/test/resources/testFinalHeartbeat.txt")));
+        //assertTrue("Check for workflow output", testResults.contains(workflowOutput));
+        
+        assertTrue("check for stderr in heartbeat",testResults.contains("\"stderr\": \"123_err\","));
     }
 
     private String cleanResults(String testResults) {
