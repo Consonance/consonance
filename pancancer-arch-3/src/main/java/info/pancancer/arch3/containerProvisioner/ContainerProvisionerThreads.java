@@ -199,14 +199,17 @@ public class ContainerProvisionerThreads extends Base {
                             System.out.println("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
                         }
                     } else {
-                        String param = (String) settings.get("youxia_deployer_parameters");
-                        CommandLine parse = CommandLine.parse("dummy " + param);
-                        List<String> arguments = Arrays.asList(parse.getArguments());
-                        arguments.add("--total-nodes-num");
-                        arguments.add(String.valueOf(numberRunningContainers + numberPendingContainers));
-                        String[] toArray = arguments.toArray(new String[arguments.size()]);
-                        System.out.println("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
-                        Deployer.main(toArray);
+                        long requiredVMs = numberRunningContainers + numberPendingContainers;
+                        if (requiredVMs > 0) {
+                            String param = (String) settings.get("youxia_deployer_parameters");
+                            CommandLine parse = CommandLine.parse("dummy " + param);
+                            List<String> arguments = Arrays.asList(parse.getArguments());
+                            arguments.add("--total-nodes-num");
+                            arguments.add(String.valueOf(requiredVMs));
+                            String[] toArray = arguments.toArray(new String[arguments.size()]);
+                            System.out.println("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
+                            Deployer.main(toArray);
+                        }
                     }
                 } while (endless);
 

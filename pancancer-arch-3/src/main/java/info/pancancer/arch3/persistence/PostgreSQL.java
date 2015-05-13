@@ -54,9 +54,9 @@ public class PostgreSQL {
 
     }
 
-    public int getDesiredNumberOfVMs() {
+    public long getDesiredNumberOfVMs() {
         return runSelectStatement("select count(*) from provision where status = '" + ProvisionState.PENDING + "' or status = '"
-                + ProvisionState.RUNNING + "'", new ScalarHandler<Integer>());
+                + ProvisionState.RUNNING + "'", new ScalarHandler<Long>());
     }
 
     public String getPendingProvisionUUID() {

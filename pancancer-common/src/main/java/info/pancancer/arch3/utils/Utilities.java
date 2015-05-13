@@ -28,11 +28,11 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 /**
- * A kitchen sink of utility methods, in a thread for some reason.
+ * A kitchen sink of utility methods.
  *
  * @author boconnor
  */
-public class Utilities /* extends Thread */{
+public class Utilities {
 
     // TODO: These really should be refactored out to an enum
     // message types

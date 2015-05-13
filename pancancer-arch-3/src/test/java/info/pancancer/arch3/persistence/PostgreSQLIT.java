@@ -260,7 +260,7 @@ public class PostgreSQLIT {
             p.setState(state);
             postgres.createProvision(p);
         }
-        int result = postgres.getDesiredNumberOfVMs();
+        long result = postgres.getDesiredNumberOfVMs();
         // only the two in pending and running state should matter
         assertEquals(2, result);
     }
