@@ -140,7 +140,7 @@ public class Worker implements Runnable {
 
             // TODO: need threads that each read from orders and another that reads results
             while (max > 0 /*|| maxRuns <= 0*/) {
-                LOG.debug("max is: "+max);
+                //LOG.debug("max is: "+max);
                 LOG.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
 
                 max--;
