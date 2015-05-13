@@ -144,8 +144,8 @@ public class TestWorker {
     }
 
     @Test
-    public void testWorker_executionException() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
-        Mockito.when(mockRunner.call()).thenThrow(new ExecutionException("Mock Exception", new Exception("cause")));
+    public void testWorker_exception() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+        Mockito.when(mockRunner.call()).thenThrow(new RuntimeException("Mock Exception"));
         PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
 
         setupConfig();
@@ -158,9 +158,8 @@ public class TestWorker {
 
         testWorker.run();
         String testResults = outBuffer.toString();
-        
-        assertTrue("Mock Exception is present", testResults.contains("java.util.concurrent.ExecutionException: Mock Exception"));
-        assertTrue("cause is present ", testResults.contains("Caused by: java.lang.Exception: cause"));
+
+        assertTrue("Mock Exception is present", testResults.contains("java.lang.RuntimeException: Mock Exception"));
     }
 
     @Test
@@ -213,7 +212,7 @@ public class TestWorker {
         testResults = cleanResults(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
-        assertTrue("check begining of output", testResults.startsWith(begining));
+        assertTrue("check begining of output", testResults.contains(begining));
 
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
         assertTrue("check ending of output", testResults.contains(ending));
@@ -253,8 +252,8 @@ public class TestWorker {
         testResults = cleanResults(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
-
-        assertTrue("check begining of output", testResults.startsWith(begining));
+        //System.out.println(testResults);
+        assertTrue("check begining of output", testResults.contains(begining));
 
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
         assertTrue("check ending of output", testResults.contains(ending));
@@ -278,7 +277,7 @@ public class TestWorker {
         testResults = cleanResults(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
-        assertTrue("check begining of output", testResults.startsWith(begining));
+        assertTrue("check begining of output", testResults.contains(begining));
 
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
         assertTrue("check ending of output", testResults.contains(ending));
