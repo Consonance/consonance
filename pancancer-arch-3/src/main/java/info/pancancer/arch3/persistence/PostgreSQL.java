@@ -22,15 +22,12 @@ import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by boconnor on 2015-04-22.
  */
 public class PostgreSQL {
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
     QueryRunner run = new QueryRunner();
     private String url;
     private Properties props;
@@ -57,8 +54,14 @@ public class PostgreSQL {
 
     }
 
+    public int getDesiredNumberOfVMs() {
+        return runSelectStatement("select count(*) from provision where status = '" + ProvisionState.PENDING + "' or status = '"
+                + ProvisionState.RUNNING + "'", new ScalarHandler<Integer>());
+    }
+
     public String getPendingProvisionUUID() {
-        return runSelectStatement("select provision_uuid from provision where status = 'PENDING' limit 1", new ScalarHandler<String>());
+        return runSelectStatement("select provision_uuid from provision where status = '" + ProvisionState.PENDING + "' limit 1",
+                new ScalarHandler<String>());
     }
 
     public void clearDatabase() {
@@ -156,8 +159,6 @@ public class PostgreSQL {
             map = this.runSelectStatement("select * from job", new KeyedHandler<>("job_uuid"));
         }
 
-        Utilities u = new Utilities();
-
         for (Entry<Object, Map<String, Object>> entry : map.entrySet()) {
 
             Job j = new Job();
@@ -166,7 +167,7 @@ public class PostgreSQL {
             j.setWorkflow((String) entry.getValue().get("workflow"));
             j.setWorkflowVersion((String) entry.getValue().get("workflow_version"));
             j.setJobHash((String) entry.getValue().get("job_hash"));
-            JSONObject iniJson = u.parseJSONStr((String) entry.getValue().get("ini"));
+            JSONObject iniJson = Utilities.parseJSONStr((String) entry.getValue().get("ini"));
             HashMap<String, String> ini = new HashMap<>();
             for (Object key : iniJson.keySet()) {
                 ini.put((String) key, (String) iniJson.get(key));

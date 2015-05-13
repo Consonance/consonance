@@ -1,5 +1,8 @@
 package info.pancancer.arch3.utils;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,10 +27,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-
 /**
  * A kitchen sink of utility methods, in a thread for some reason.
  *
@@ -35,12 +34,12 @@ import com.rabbitmq.client.ConnectionFactory;
  */
 public class Utilities /* extends Thread */{
 
-    //TODO: These really should be refactored out to an enum
+    // TODO: These really should be refactored out to an enum
     // message types
     public static final String VM_MESSAGE_TYPE = "vm-message-type";
     public static final String JOB_MESSAGE_TYPE = "job-message-type";
 
-    private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
+    private final ArrayList<JSONObject> resultsArr = new ArrayList<>();
 
     public static JSONObject parseJSONStr(String jsonStr) {
         JSONObject data = null;
@@ -199,18 +198,12 @@ public class Utilities /* extends Thread */{
 
     }
 
-    private JSONObject parseResult(String previous) {
-        JSONObject obj = parseJSONStr(previous);
-        resultsArr.add(obj);
-        return (obj);
-    }
-
     public JSONObject parseJob(String job) {
         return (parseJSONStr(job));
     }
 
     public ArrayList<JSONObject> getResultsArr() {
-        return (resultsArr);
+        return resultsArr;
     }
 
     /**
@@ -268,7 +261,7 @@ public class Utilities /* extends Thread */{
         } catch (IOException ex) {
             Logger.getLogger(Utilities.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return (false);
+        return false;
     }
 
     private static final int MILLISECONDS_IN_A_MINUTE = 60 * 1000;

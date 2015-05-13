@@ -16,15 +16,16 @@ public class Status {
     private String message = null;
     private String stderr = null;
     private String stdout = null;
+    private String ipAddress = null;
 
-    public Status(String vmUuid, String jobUuid, StatusState state, String type, String stderr, String stdout, String message) {
+    public Status(String vmUuid, String jobUuid, StatusState state, String type, String message,
+            String ipAddress) {
         this.vmUuid = vmUuid;
         this.jobUuid = jobUuid;
         this.state = state;
         this.type = type;
-        this.stderr = stderr;
-        this.stdout = stdout;
         this.message = message;
+        this.ipAddress = ipAddress;
     }
 
     public Status() {
@@ -37,8 +38,9 @@ public class Status {
         j.append("{" + "\"vmUuid\": \"").append(vmUuid).append("\",\n" + "\"jobUuid\": \"").append(jobUuid)
                 .append("\",\n" + "\"type\": \"").append(type).append("\",\n" + "\"state\": \"").append(state)
                 .append("\",\n" + "\"stderr\": \"").append(stderr).append("\",\n" + "\"stdout\": \"").append(stdout)
-                .append("\",\n" + "\"message\": \"").append(message).append("\"\n" + "}\n");
-        return (j.toString());
+                .append("\",\n" + "\"ipAddress\": \"").append(ipAddress).append("\",\n" + "\"message\": \"").append(message)
+                .append("\"\n" + "}\n");
+        return j.toString();
     }
 
     public Status fromJSON(String json) {
@@ -51,8 +53,9 @@ public class Status {
         type = (String) obj.get("type");
         stderr = (String) obj.get("stderr");
         stdout = (String) obj.get("stdout");
+        ipAddress = (String) obj.get("ipAddress");
 
-        return (this);
+        return this;
 
     }
 
@@ -110,5 +113,20 @@ public class Status {
 
     public void setStdout(String stdout) {
         this.stdout = stdout;
+    }
+
+    /**
+     * @return the ipAddress
+     */
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    /**
+     * @param ipAddress
+     *            the ipAddress to set
+     */
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }
