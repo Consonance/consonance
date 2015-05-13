@@ -1,6 +1,3 @@
- WORKER VM UUID: 'vm123456'
- WORKER IS PREPARING TO PULL JOB FROM QUEUE vm123456
-vm123456  received mockEnvelope
  [x] Received JOBS REQUEST '{
   "job_uuid" : "1234567890",
   "workflow_name" : "HelloWorld",
@@ -13,9 +10,3 @@ vm123456  received mockEnvelope
     "param3" : "help I'm trapped in an INI file"
   }
 }' @ vm123456
- WORKER LAUNCHING JOB
-INI is: param1=value1
-param2=value2
-param3=help I'm trapped in an INI file
-
-INI file: /tmp/seqware_tmpfile.ini
