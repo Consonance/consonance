@@ -15,14 +15,15 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -35,7 +36,8 @@ import com.rabbitmq.client.ConnectionFactory;
  */
 public class Utilities /* extends Thread */{
 
-    //TODO: These really should be refactored out to an enum
+    protected static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
+    // TODO: These really should be refactored out to an enum
     // message types
     public static final String VM_MESSAGE_TYPE = "vm-message-type";
     public static final String JOB_MESSAGE_TYPE = "job-message-type";
@@ -74,7 +76,7 @@ public class Utilities /* extends Thread */{
         }
         File masterConfig = new File("/etc/genetic-algorithm/config.json");
         if (configFile != null && configFileObj.exists()) {
-            System.out.println("USING CONFIG FROM SPECIFIED FILE!");
+            LOG.info("USING CONFIG FROM SPECIFIED FILE!");
             try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8))) {
                 StringBuilder sb = new StringBuilder();
                 String line = br.readLine();
@@ -91,7 +93,7 @@ public class Utilities /* extends Thread */{
             }
 
         } else if (canDownloadConfig()) {
-            System.out.println("USING CONFIG FROM USER DATA!");
+            LOG.info("USING CONFIG FROM USER DATA!");
 
             StringBuilder sb = new StringBuilder();
             URLConnection urlConn = null;
@@ -121,7 +123,7 @@ public class Utilities /* extends Thread */{
             json = sb.toString();
 
         } else if (masterConfig.exists()) {
-            System.out.println("USING CONFIG FROM /etc");
+            LOG.info("USING CONFIG FROM /etc");
             try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("/etc/genetic-algorithm/config.json"),
                     StandardCharsets.UTF_8))) {
                 StringBuilder sb = new StringBuilder();
@@ -264,9 +266,9 @@ public class Utilities /* extends Thread */{
                 return false;
             }
         } catch (MalformedURLException ex) {
-            Logger.getLogger(Utilities.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage(), ex);
         } catch (IOException ex) {
-            Logger.getLogger(Utilities.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage(), ex);
         }
         return (false);
     }

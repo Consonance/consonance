@@ -10,6 +10,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.rabbitmq.client.Channel;
 
 /**
@@ -28,10 +31,12 @@ public class WorkerHeartbeat implements Runnable {
     private String networkID;
     private String vmUuid;
     private String jobUuid;
+    
+    protected static final Logger LOG = LoggerFactory.getLogger(Worker.class);
 
     @Override
     public void run() {
-        System.out.println("starting heartbeat thread, will send heartbeat message ever " + secondsDelay + " seconds.");
+        LOG.info("starting heartbeat thread, will send heartbeat message ever " + secondsDelay + " seconds.");
         while (!Thread.currentThread().interrupted()) {
 
             // byte[] stdOut = this.getMessageBody().getBytes(StandardCharsets.UTF_8);
@@ -52,14 +57,18 @@ public class WorkerHeartbeat implements Runnable {
                 heartbeatStatus.setStdout(stdOut);
                 heartbeatStatus.setStderr(stdErr);
                 String heartBeatMessage = heartbeatStatus.toJSON();
-                System.out.println("Sending heartbeat message to " + queueName + ", with body: " + heartBeatMessage);
+                LOG.debug("Sending heartbeat message to " + queueName + ", with body: " + heartBeatMessage);
                 reportingChannel.basicPublish(queueName, queueName, null, heartBeatMessage.getBytes(StandardCharsets.UTF_8));
                 Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("IOException caught! Message may not have been published. Exception is: "+e.getMessage(),e);
+                //TODO: Should the thread die if this happens? Should the exception be rethrown?
+                //For now, we'll just end the thread.
+                //return;
+                Thread.currentThread().interrupt();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                System.out.println("Heartbeat shutting down.");
+                LOG.info("Heartbeat shutting down.");
             }
         }
     }

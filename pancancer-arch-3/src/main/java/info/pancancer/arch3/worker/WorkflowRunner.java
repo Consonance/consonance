@@ -86,14 +86,14 @@ public class WorkflowRunner implements Callable<String> {
          * "/datastore:/datastore", "-v","/home/"+this.userName+"/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem",
          * "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
          */
-        System.out.println("Executing command: " + this.cli.toString().replace(",", ""));
+        LOG.info("Executing command: " + this.cli.toString().replace(",", ""));
 
         DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
         executor.setStreamHandler(streamHandler);
 
         try {
             if (this.preworkDelay > 0) {
-                System.out.println("Sleeping before executing workflow for " + this.preworkDelay + " ms.");
+                LOG.info("Sleeping before executing workflow for " + this.preworkDelay + " ms.");
                 Thread.sleep(this.preworkDelay);
             }
 
@@ -103,7 +103,7 @@ public class WorkflowRunner implements Callable<String> {
             resultHandler.waitFor();
             workflowOutput = outputStream.getAllLinesAsString();
             if (this.postworkDelay > 0) {
-                System.out.println("Sleeping after exeuting workflow for " + this.postworkDelay + " ms.");
+                LOG.info("Sleeping after exeuting workflow for " + this.postworkDelay + " ms.");
                 Thread.sleep(this.postworkDelay);
             }
         } catch (ExecuteException e) {
