@@ -30,11 +30,11 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
 /**
- * A kitchen sink of utility methods, in a thread for some reason.
+ * A kitchen sink of utility methods.
  *
  * @author boconnor
  */
-public class Utilities /* extends Thread */{
+public class Utilities {
 
     protected static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
     // TODO: These really should be refactored out to an enum
@@ -169,7 +169,7 @@ public class Utilities /* extends Thread */{
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println(ex.toString());
+            LOG.error("Error setting up queue connections to queue:"+queue+" on host: "+server+"; error is: "+ex.getMessage(),ex);
         }
         return channel;
 
@@ -195,7 +195,7 @@ public class Utilities /* extends Thread */{
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println(ex.toString());
+            LOG.error("Error setting up queue connections: "+ex.getMessage(),ex);
         }
         return (channel);
 
@@ -259,8 +259,8 @@ public class Utilities /* extends Thread */{
                 } catch (Exception e) {
                     throw new RuntimeException("Exception while calling URL: http://169.254.169.254/latest/user-data", e);
                 }
-                System.out.println("FROM USER DATA: " + sb.toString());
-                System.out.println("MATCHES?: " + sb.toString().matches("^\\s*\\{\\.*\\}\\s*$"));
+                LOG.debug("FROM USER DATA: " + sb.toString());
+                LOG.debug("MATCHES?: " + sb.toString().matches("^\\s*\\{\\.*\\}\\s*$"));
                 return (sb.toString().matches("^\\s*\\{\\.*\\}\\s*$"));
             } else {
                 return false;

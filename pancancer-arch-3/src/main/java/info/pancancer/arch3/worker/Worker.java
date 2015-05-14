@@ -67,7 +67,7 @@ public class Worker implements Runnable {
     public static void main(String[] argv) throws Exception {
 
         pathToPIDFile = System.getProperty("pidfile");
-        LOG.info("PID file: "+pathToPIDFile);
+        LOG.info("PID file: " + pathToPIDFile);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -150,6 +150,12 @@ public class Worker implements Runnable {
 
             // read from
             jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
+            if (jobChannel == null) {
+                throw new NullPointerException(
+                        "jobChannel is null for queue: "
+                                + this.jobQueueName
+                                + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
+            }
 
             // write to
             // TODO: Add some sort of "local debug" mode so that developers working on their local
