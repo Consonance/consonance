@@ -17,7 +17,9 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -53,9 +55,28 @@ public class Worker implements Runnable {
     private String vmUuid = null;
     private int maxRuns = 1;
     private String userName;
-    private static final long QUICK_SLEEP = 50;
+    private static String pathToPIDFile;
 
     public static void main(String[] argv) throws Exception {
+
+        pathToPIDFile = System.getProperty("pidfile");
+        LOG.info("PID file: " + pathToPIDFile);
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                LOG.info("Worker caught a shutdown signal, shutting down now!");
+                if (pathToPIDFile != null && pathToPIDFile.trim().length() > 0) {
+                    Path pidPath = Paths.get(pathToPIDFile);
+                    try {
+                        Files.delete(pidPath);
+                    } catch (IOException e) {
+                        LOG.error("Unable to delete PID file: " + pathToPIDFile + " , message: " + e.getMessage());
+                        LOG.error("You may have to delete the PID file manually to run the worker again.");
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
 
         OptionParser parser = new OptionParser();
         parser.accepts("config").withOptionalArg().ofType(String.class);
@@ -122,6 +143,12 @@ public class Worker implements Runnable {
 
             // read from
             jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
+            if (jobChannel == null) {
+                throw new NullPointerException(
+                        "jobChannel is null for queue: "
+                                + this.jobQueueName
+                                + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
+            }
 
             // write to
             // TODO: Add some sort of "local debug" mode so that developers working on their local
@@ -130,11 +157,11 @@ public class Worker implements Runnable {
             resultsChannel = Utilities.setupMultiQueue(settings, this.resultsQueueName);
 
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-            String consumerTag = jobChannel.basicConsume(this.jobQueueName, false, consumer);
+            jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
             while (max > 0 /* || maxRuns <= 0 */) {
-                //LOG.debug("max is: "+max);
+                // LOG.debug("max is: "+max);
                 LOG.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
 
                 max--;
@@ -170,7 +197,7 @@ public class Worker implements Runnable {
                         // thread, harvesting STDERR/STDOUT periodically
                         String workflowOutput = launchJob(statusJSON, job);
 
-                        //launchJob(job.getUuid(), job);
+                        // launchJob(job.getUuid(), job);
 
                         status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, 
                                 "job is finished", getFirstNonLoopbackAddress().toString());
@@ -215,7 +242,7 @@ public class Worker implements Runnable {
                 PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE,
                 PosixFilePermission.OTHERS_READ, PosixFilePermission.OTHERS_WRITE);
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
-        Path pathToINI = java.nio.file.Files.createTempFile("seqware_", ".ini", attrs);
+        Path pathToINI = Files.createTempFile("seqware_", ".ini", attrs);
         LOG.info("INI file: " + pathToINI.toString());
         try (BufferedWriter bw = new BufferedWriter(
                 new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8))) {

@@ -18,14 +18,15 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A kitchen sink of utility methods.
@@ -34,6 +35,7 @@ import org.json.simple.parser.ParseException;
  */
 public class Utilities {
 
+    protected static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
     // TODO: These really should be refactored out to an enum
     // message types
     public static final String VM_MESSAGE_TYPE = "vm-message-type";
@@ -73,7 +75,7 @@ public class Utilities {
         }
         File masterConfig = new File("/etc/genetic-algorithm/config.json");
         if (configFile != null && configFileObj.exists()) {
-            System.out.println("USING CONFIG FROM SPECIFIED FILE!");
+            LOG.info("USING CONFIG FROM SPECIFIED FILE!");
             try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8))) {
                 StringBuilder sb = new StringBuilder();
                 String line = br.readLine();
@@ -90,7 +92,7 @@ public class Utilities {
             }
 
         } else if (canDownloadConfig()) {
-            System.out.println("USING CONFIG FROM USER DATA!");
+            LOG.info("USING CONFIG FROM USER DATA!");
 
             StringBuilder sb = new StringBuilder();
             URLConnection urlConn = null;
@@ -120,7 +122,7 @@ public class Utilities {
             json = sb.toString();
 
         } else if (masterConfig.exists()) {
-            System.out.println("USING CONFIG FROM /etc");
+            LOG.info("USING CONFIG FROM /etc");
             try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("/etc/genetic-algorithm/config.json"),
                     StandardCharsets.UTF_8))) {
                 StringBuilder sb = new StringBuilder();
@@ -166,7 +168,7 @@ public class Utilities {
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println(ex.toString());
+            LOG.error("Error setting up queue connections to queue:"+queue+" on host: "+server+"; error is: "+ex.getMessage(),ex);
         }
         return channel;
 
@@ -192,7 +194,7 @@ public class Utilities {
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println(ex.toString());
+            LOG.error("Error setting up queue connections: "+ex.getMessage(),ex);
         }
         return (channel);
 
@@ -250,16 +252,16 @@ public class Utilities {
                 } catch (Exception e) {
                     throw new RuntimeException("Exception while calling URL: http://169.254.169.254/latest/user-data", e);
                 }
-                System.out.println("FROM USER DATA: " + sb.toString());
-                System.out.println("MATCHES?: " + sb.toString().matches("^\\s*\\{\\.*\\}\\s*$"));
+                LOG.debug("FROM USER DATA: " + sb.toString());
+                LOG.debug("MATCHES?: " + sb.toString().matches("^\\s*\\{\\.*\\}\\s*$"));
                 return (sb.toString().matches("^\\s*\\{\\.*\\}\\s*$"));
             } else {
                 return false;
             }
         } catch (MalformedURLException ex) {
-            Logger.getLogger(Utilities.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage(), ex);
         } catch (IOException ex) {
-            Logger.getLogger(Utilities.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage(), ex);
         }
         return false;
     }
