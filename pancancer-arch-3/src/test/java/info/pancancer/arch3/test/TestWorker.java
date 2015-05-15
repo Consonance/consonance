@@ -74,7 +74,7 @@ public class TestWorker {
     @Mock
     private Logger mockLogger;
 
-   private static StringBuffer outBuffer = new StringBuffer();
+    private static StringBuffer outBuffer = new StringBuffer();
 
     public class LoggingAnswer implements Answer<Object> {
         @Override

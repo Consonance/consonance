@@ -15,7 +15,9 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -60,13 +62,33 @@ public class Worker implements Runnable {
     private int maxRuns = 1;
     private String userName;
     private static final long QUICK_SLEEP = 50;
+    private static String pathToPIDFile;
 
     public static void main(String[] argv) throws Exception {
+
+        pathToPIDFile = System.getProperty("pidfile");
+        LOG.info("PID file: " + pathToPIDFile);
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                LOG.info("Worker caught a shutdown signal, shutting down now!");
+                if (pathToPIDFile != null && pathToPIDFile.trim().length() > 0) {
+                    Path pidPath = Paths.get(pathToPIDFile);
+                    try {
+                        Files.delete(pidPath);
+                    } catch (IOException e) {
+                        LOG.error("Unable to delete PID file: " + pathToPIDFile + " , message: " + e.getMessage());
+                        LOG.error("You may have to delete the PID file manually to run the worker again.");
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
 
         OptionParser parser = new OptionParser();
         parser.accepts("config").withOptionalArg().ofType(String.class);
         parser.accepts("max-runs").withOptionalArg().ofType(Integer.class);
-        //UUID should be required: if the user doesn't specify it, there's no other way for the VM to get a UUID
+        // UUID should be required: if the user doesn't specify it, there's no other way for the VM to get a UUID
         parser.accepts("uuid").withRequiredArg().ofType(String.class).required();
         OptionSet options = parser.parse(argv);
 
@@ -79,13 +101,13 @@ public class Worker implements Runnable {
         if (options.has("max-runs")) {
             maxRuns = (Integer) options.valueOf("max-runs");
         }
-        //uuid is REQUIRED, OptionParser will fail if it's missing.
+        // uuid is REQUIRED, OptionParser will fail if it's missing.
         uuid = (String) options.valueOf("uuid");
-        
+
         // TODO: can't run on the command line anymore!
         Worker w = new Worker(configFile, uuid, maxRuns);
         w.run();
-        //System.out.println("Exiting.");
+        // System.out.println("Exiting.");
         LOG.info("Exiting.");
     }
 
@@ -123,11 +145,17 @@ public class Worker implements Runnable {
         try {
 
             // the VM UUID
-            //System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
+            // System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
             LOG.info(" WORKER VM UUID: '" + vmUuid + "'");
 
             // read from
             jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
+            if (jobChannel == null) {
+                throw new NullPointerException(
+                        "jobChannel is null for queue: "
+                                + this.jobQueueName
+                                + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
+            }
 
             // write to
             // TODO: Add some sort of "local debug" mode so that developers working on their local
@@ -139,8 +167,8 @@ public class Worker implements Runnable {
             String consumerTag = jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (max > 0 /*|| maxRuns <= 0*/) {
-                //LOG.debug("max is: "+max);
+            while (max > 0 /* || maxRuns <= 0 */) {
+                // LOG.debug("max is: "+max);
                 LOG.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
 
                 max--;
@@ -174,7 +202,7 @@ public class Worker implements Runnable {
                         // thread, harvesting STDERR/STDOUT periodically
                         String workflowOutput = launchJob(statusJSON, job);
 
-                        //launchJob(job.getUuid(), job);
+                        // launchJob(job.getUuid(), job);
 
                         status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, "", workflowOutput,
                                 "job is finished");
@@ -198,7 +226,7 @@ public class Worker implements Runnable {
             jobChannel.getConnection().close();
             resultsChannel.getConnection().close();
         } catch (Exception ex) {
-            LOG.error(ex.getMessage(),ex);
+            LOG.error(ex.getMessage(), ex);
             ex.printStackTrace();
         }
     }
