@@ -61,7 +61,6 @@ public class Worker implements Runnable {
     private String vmUuid = null;
     private int maxRuns = 1;
     private String userName;
-    private static final long QUICK_SLEEP = 50;
     private static String pathToPIDFile;
 
     public static void main(String[] argv) throws Exception {
@@ -164,7 +163,7 @@ public class Worker implements Runnable {
             resultsChannel = Utilities.setupMultiQueue(settings, this.resultsQueueName);
 
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-            String consumerTag = jobChannel.basicConsume(this.jobQueueName, false, consumer);
+            jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
             while (max > 0 /* || maxRuns <= 0 */) {
@@ -247,7 +246,7 @@ public class Worker implements Runnable {
                 PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE, PosixFilePermission.OTHERS_READ,
                 PosixFilePermission.OTHERS_WRITE));
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
-        Path pathToINI = java.nio.file.Files.createTempFile("seqware_", ".ini", attrs);
+        Path pathToINI = Files.createTempFile("seqware_", ".ini", attrs);
         LOG.info("INI file: " + pathToINI.toString());
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8));
         bw.write(job.getIniStr());

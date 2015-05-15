@@ -88,7 +88,6 @@ public class Coordinator extends Base {
         private Channel vmChannel = null;
         private Channel orderChannel = null;
         private String queueName = null;
-        private final Utilities u = new Utilities();
         private final boolean endless;
         private String configFile = null;
         private final Logger log = LoggerFactory.getLogger(getClass());
@@ -103,19 +102,19 @@ public class Coordinator extends Base {
 
             try {
 
-                settings = u.parseConfig(configFile);
+                settings = Utilities.parseConfig(configFile);
 
                 PostgreSQL db = new PostgreSQL(settings);
 
                 queueName = (String) settings.get("rabbitMQQueueName");
                 // read from
-                orderChannel = u.setupQueue(settings, queueName + "_orders");
+                orderChannel = Utilities.setupQueue(settings, queueName + "_orders");
                 // write to
-                jobChannel = u.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand with
+                jobChannel = Utilities.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand with
                                                                           // full
                                                                           // info
                 // write to
-                vmChannel = u.setupQueue(settings, queueName + "_vms");
+                vmChannel = Utilities.setupQueue(settings, queueName + "_vms");
                 // read from
 
                 QueueingConsumer consumer = new QueueingConsumer(orderChannel);
@@ -241,7 +240,6 @@ public class Coordinator extends Base {
         private JSONObject settings = null;
         private Channel resultsChannel = null;
         private String queueName = null;
-        private final Utilities u = new Utilities();
         private QueueingConsumer resultsConsumer = null;
         private final boolean endless;
         private String configFile = null;
@@ -260,7 +258,7 @@ public class Coordinator extends Base {
                 queueName = (String) settings.get("rabbitMQQueueName");
 
                 // read from
-                resultsChannel = u.setupMultiQueue(settings, queueName + "_results");
+                resultsChannel = Utilities.setupMultiQueue(settings, queueName + "_results");
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
                 String resultsQueue = resultsChannel.queueDeclare().getQueue();
@@ -328,7 +326,6 @@ public class Coordinator extends Base {
     private static class FlagJobs implements Callable<Void> {
 
         private JSONObject settings = null;
-        private final Utilities u = new Utilities();
         private final boolean endless;
         private final String configFile;
         private final Logger log = LoggerFactory.getLogger(getClass());
