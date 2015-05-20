@@ -59,7 +59,7 @@ public class JobGenerator extends Base {
 
         // CONFIG
         queueName = (String) settings.get("rabbitMQQueueName");
-        System.out.println("QUEUE NAME: " + queueName);
+        log.info("QUEUE NAME: " + queueName);
 
         // SETUP QUEUE
         this.jchannel = u.setupQueue(settings, queueName + "_orders");
@@ -69,7 +69,7 @@ public class JobGenerator extends Base {
 
             totalJobs--;
 
-            System.out.println("\nGENERATING NEW JOBS\n");
+            log.info("\nGENERATING NEW JOBS\n");
             // TODO: this is fake, in a real program this is being read from JSONL file or web service
             // check to see if new results are available and/or if the work queue is empty
             String[] newJobs = generateNewJobs("", resultsArr, u);
@@ -112,7 +112,7 @@ public class JobGenerator extends Base {
         ArrayList<String> jobs = new ArrayList<String>();
         try {
             int messages = jchannel.queueDeclarePassive(queueName + "_orders").getMessageCount();
-            System.out.println("JOB QUEUE SIZE: " + messages);
+            log.info("JOB QUEUE SIZE: " + messages);
             // if there are no messages then we'll want to add some new jobs
             if (!exceededTimeOrJobs()) {
                 // TODO, actually generate new jobs if the job queue is empty
@@ -170,12 +170,12 @@ public class JobGenerator extends Base {
     private void enqueueNewJobs(String[] initialJobs) {
         for (String msg : initialJobs) {
             try {
-                System.out.println("\nSENDING JOB:\n '" + msg + "'\n" + this.jchannel + " \n");
+                log.info("\nSENDING JOB:\n '" + msg + "'\n" + this.jchannel + " \n");
 
                 this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         msg.getBytes(StandardCharsets.UTF_8));
             } catch (IOException ex) {
-                log.error(ex.toString());
+                log.error(ex.getMessage(),ex);
             }
         }
     }
