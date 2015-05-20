@@ -106,7 +106,6 @@ public class Worker implements Runnable {
         // TODO: can't run on the command line anymore!
         Worker w = new Worker(configFile, uuid, maxRuns);
         w.run();
-        // System.out.println("Exiting.");
         LOG.info("Exiting.");
     }
 
@@ -144,7 +143,6 @@ public class Worker implements Runnable {
         try {
 
             // the VM UUID
-            // System.out.println(" WORKER VM UUID: '" + vmUuid + "'");
             LOG.info(" WORKER VM UUID: '" + vmUuid + "'");
 
             // read from

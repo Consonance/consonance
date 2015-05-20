@@ -130,7 +130,7 @@ public class Coordinator extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    System.out.println(" [x] RECEIVED ORDER:\n'" + message + "'\n");
+                    log.info(" [x] RECEIVED ORDER:\n'" + message + "'\n");
 
                     // run the job
                     Order order = new Order().fromJSON(message);
@@ -148,17 +148,17 @@ public class Coordinator extends Base {
 
                     } else {
 
-                        System.out.println("\n\nSKIPPING JOB WITH HASH " + order.getJob().getJobHash()
+                        log.info("\n\nSKIPPING JOB WITH HASH " + order.getJob().getJobHash()
                                 + " PREVIOUSLY SUBMITTED/FAILED/RUNNING/SUCCESSFUL\n");
 
                     }
 
-                    System.out.println("acknowledging " + delivery.getEnvelope().toString());
+                    log.info("acknowledging " + delivery.getEnvelope().toString());
                     orderChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);
 
             } catch (IOException ex) {
-                System.out.println(ex.toString());
+                log.error(ex.getMessage(),ex);
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException | NullPointerException ex) {
                 log.error(ex.getMessage(),ex);
@@ -185,15 +185,15 @@ public class Coordinator extends Base {
 
             try {
 
-                System.out.println(" + SENDING VM ORDER! " + queueName + "_vms");
+                log.info(" + SENDING VM ORDER! " + queueName + "_vms");
 
                 int messages = vmChannel.queueDeclarePassive(queueName + "_vms").getMessageCount();
-                System.out.println("  + VM QUEUE SIZE: " + messages);
+                log.info("  + VM QUEUE SIZE: " + messages);
 
                 vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
 
-                System.out.println(" + MESSAGE SENT!\n" + message + "\n");
+                log.info(" + MESSAGE SENT!\n" + message + "\n");
 
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -215,10 +215,10 @@ public class Coordinator extends Base {
                 // Channel vmchannel = u.setupQueue(settings,
                 // queueName+"_job_requests_"+workflowName+"_"+workflowVersion+"_"+cores+"_"+memGb+"_"+storageGb);
 
-                System.out.println(" + SENDING JOB ORDER! " + queueName + "_jobs");
+               log.info(" + SENDING JOB ORDER! " + queueName + "_jobs");
 
                 int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
-                System.out.println("  + JOB QUEUE SIZE: " + messages);
+                log.info("  + JOB QUEUE SIZE: " + messages);
 
                 jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
@@ -229,7 +229,7 @@ public class Coordinator extends Base {
                 newJob.setState(JobState.PENDING);
                 db.createJob(newJob);
 
-                System.out.println(" + MESSAGE SENT!\n" + message + "\n");
+                log.info(" + MESSAGE SENT!\n" + message + "\n");
 
             } catch (IOException ex) {
                 throw new RuntimeException(ex);

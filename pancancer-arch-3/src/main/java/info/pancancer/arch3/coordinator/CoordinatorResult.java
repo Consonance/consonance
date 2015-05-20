@@ -80,10 +80,10 @@ public class CoordinatorResult extends Base {
             } while (options.has(endlessSpec));
 
         } catch (IOException ex) {
-            System.out.println(ex.toString());
+            log.error(ex.getMessage(),ex);
             ex.printStackTrace();
         } catch (ShutdownSignalException | ConsumerCancelledException ex) {
-            log.error(ex.toString());
+            log.error(ex.getMessage(),ex);
         }
     }
 
@@ -93,15 +93,15 @@ public class CoordinatorResult extends Base {
 
         try {
 
-            System.out.println("SENDING VM ORDER! " + queueName + "_vms");
+            log.info("SENDING VM ORDER! " + queueName + "_vms");
 
             int messages = vmChannel.queueDeclarePassive(queueName + "_vms").getMessageCount();
-            System.out.println("VM QUEUE SIZE: " + messages);
+            log.info("VM QUEUE SIZE: " + messages);
 
             vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
 
-            System.out.println(" + RESULTS SENT ! " + queueName + "_vms");
+            log.info(" + RESULTS SENT ! " + queueName + "_vms");
 
         } catch (IOException ex) {
             log.error(ex.toString());
@@ -140,25 +140,25 @@ public class CoordinatorResult extends Base {
             // Channel vmchannel = u.setupQueue(settings,
             // queueName+"_job_requests_"+workflowName+"_"+workflowVersion+"_"+cores+"_"+memGb+"_"+storageGb);
 
-            System.out.println("SENDING JOB ORDER! " + queueName + "_jobs");
+            log.info("SENDING JOB ORDER! " + queueName + "_jobs");
 
             int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
-            System.out.println("JOB QUEUE SIZE: " + messages);
+            log.info("JOB QUEUE SIZE: " + messages);
 
             jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
 
-            System.out.println("  + RESULTS SENT!");
+            log.info("  + RESULTS SENT!");
 
         } catch (IOException ex) {
-            log.error(ex.toString());
+            log.error(ex.getMessage(),ex);
         }
         return result.toString();
     }
 
     private void readResults() {
 
-        System.out.println("ATTEMPTING TO READ RESULTS!");
+        log.info("ATTEMPTING TO READ RESULTS!");
 
         try {
             final int defaultTries = 10;
@@ -168,10 +168,10 @@ public class CoordinatorResult extends Base {
                 QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery();
                 if (delivery == null) {
                     tries = 0;
-                    System.out.println("Came back null!!!");
+                    log.error("Delivery came back null!!!");
                 } else {
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    System.out.println(" [x] Received RESULT '" + message + "'");
+                    log.info(" [x] Received RESULT '" + message + "'");
                 }
             }
         } catch (InterruptedException e) {

@@ -69,7 +69,7 @@ public class JobGeneratorDEWorkflow extends Base {
 
         // CONFIG
         queueName = (String) settings.get("rabbitMQQueueName");
-        System.out.println("QUEUE NAME: " + queueName);
+        log.info("QUEUE NAME: " + queueName);
 
         // SETUP QUEUE
         this.jchannel = u.setupQueue(settings, queueName + "_orders");
@@ -88,7 +88,7 @@ public class JobGeneratorDEWorkflow extends Base {
             // keep track of the iterations
             currIterations++;
 
-            System.out.println("\nGENERATING NEW JOBS\n");
+            log.info("\nGENERATING NEW JOBS\n");
             // TODO: this is fake, in a real program this is being read from JSONL file or web service
             // check to see if new results are available and/or if the work queue is empty
             Order o = generateNewJob(iniDir + "/" + file, workflowName, workflowVersion, workflowPath, u);
@@ -100,7 +100,7 @@ public class JobGeneratorDEWorkflow extends Base {
                 // pause
                 Thread.sleep(ONE_SECOND_IN_MILLISECONDS);
             } catch (InterruptedException ex) {
-                log.error(ex.toString());
+                log.error(ex.getMessage(),ex);
             }
 
         }
@@ -128,7 +128,7 @@ public class JobGeneratorDEWorkflow extends Base {
         HashMap<String, String> hm = parseIniFile(file);
 
         for (String key : hm.keySet()) {
-            System.out.println("KEY: " + key + " VALUE: " + hm.get(key));
+            log.info("KEY: " + key + " VALUE: " + hm.get(key));
         }
 
         // if this is the donor then use it for the hashStr
@@ -175,7 +175,7 @@ public class JobGeneratorDEWorkflow extends Base {
     private void enqueueNewJobs(String job) {
 
         try {
-            System.out.println("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
+            log.info("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
 
             this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
                     job.getBytes(StandardCharsets.UTF_8));
