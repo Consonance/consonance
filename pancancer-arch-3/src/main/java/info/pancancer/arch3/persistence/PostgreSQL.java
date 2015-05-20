@@ -5,6 +5,7 @@ import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.utils.Utilities;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
@@ -38,14 +40,36 @@ public class PostgreSQL {
     public PostgreSQL(JSONObject settings) {
 
         try {
+            String nullConfigs = "";
             String host = (String) settings.get("postgresHost");
+            if (host == null) {
+                nullConfigs += "postgresHost ";
+            }
+
             String user = (String) settings.get("postgresUser");
+            if (user == null) {
+                nullConfigs += "postgresUser ";
+            }
+
             String pass = (String) settings.get("postgresPass");
+            if (pass == null) {
+                nullConfigs += "postgresPass ";
+            }
+
             String db = (String) settings.get("postgresDBName");
+            if (db == null) {
+                nullConfigs += "postgresDBName ";
+            }
+
+            if (nullConfigs.trim().length() > 0) {
+                throw new NullPointerException("The following configuration values are null: " + nullConfigs
+                        + ". Please check your configuration file.");
+            }
 
             Class.forName("org.postgresql.Driver");
 
             this.url = "jdbc:postgresql://" + host + "/" + db;
+            log.debug("PostgreSQL URL is: " + this.url);
             this.props = new Properties();
             props.setProperty("user", user);
             props.setProperty("password", pass);

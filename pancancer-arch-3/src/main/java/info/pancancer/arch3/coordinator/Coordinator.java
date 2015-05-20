@@ -110,9 +110,10 @@ public class Coordinator extends Base {
                 // read from
                 orderChannel = Utilities.setupQueue(settings, queueName + "_orders");
                 // write to
-                jobChannel = Utilities.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand with
-                                                                          // full
-                                                                          // info
+                jobChannel = Utilities.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand
+                                                                                  // with
+                // full
+                // info
                 // write to
                 vmChannel = Utilities.setupQueue(settings, queueName + "_vms");
                 // read from
@@ -159,15 +160,21 @@ public class Coordinator extends Base {
             } catch (IOException ex) {
                 System.out.println(ex.toString());
                 throw new RuntimeException(ex);
-            } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
-                log.error(ex.toString());
+            } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException | NullPointerException ex) {
+                log.error(ex.getMessage(),ex);
             } finally {
-                orderChannel.close();
-                orderChannel.getConnection().close();
-                jobChannel.close();
-                jobChannel.getConnection().close();
-                vmChannel.close();
-                vmChannel.getConnection().close();
+                // orderChannel.close();
+                if (orderChannel != null) {
+                    orderChannel.getConnection().close();
+                }
+                // jobChannel.close();
+                if (jobChannel != null) {
+                    jobChannel.getConnection().close();
+                }
+                // vmChannel.close();
+                if (vmChannel != null) {
+                    vmChannel.getConnection().close();
+                }
             }
             return null;
         }
@@ -382,8 +389,8 @@ public class Coordinator extends Base {
 
     }
 
-//    public FlagJobs(String configFile) {
-//        inner = new Inner(configFile);
-//    }
+    // public FlagJobs(String configFile) {
+    // inner = new Inner(configFile);
+    // }
 
 }
