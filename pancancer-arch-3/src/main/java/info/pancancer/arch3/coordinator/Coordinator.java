@@ -5,7 +5,6 @@ import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
-
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
@@ -14,7 +13,6 @@ import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
@@ -26,7 +24,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,10 +156,10 @@ public class Coordinator extends Base {
                 } while (endless);
 
             } catch (IOException ex) {
-                log.error(ex.getMessage(),ex);
+                log.error(ex.getMessage(), ex);
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException | NullPointerException ex) {
-                log.error(ex.getMessage(),ex);
+                log.error(ex.getMessage(), ex);
             } finally {
                 // orderChannel.close();
                 if (orderChannel != null) {
@@ -229,7 +226,7 @@ public class Coordinator extends Base {
                 // Channel vmchannel = u.setupQueue(settings,
                 // queueName+"_job_requests_"+workflowName+"_"+workflowVersion+"_"+cores+"_"+memGb+"_"+storageGb);
 
-               log.info(" + SENDING JOB ORDER! " + queueName + "_jobs");
+                log.info(" + SENDING JOB ORDER! " + queueName + "_jobs");
 
                 int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
                 log.info("  + JOB QUEUE SIZE: " + messages);
@@ -276,13 +273,14 @@ public class Coordinator extends Base {
                 JSONObject settings = Utilities.parseConfig(configFile);
 
                 String queueName = (String) settings.get("rabbitMQQueueName");
+                final String resultQueueName = queueName + "_results";
 
                 // read from
-                resultsChannel = Utilities.setupMultiQueue(settings, queueName + "_results");
+                resultsChannel = Utilities.setupExchange(settings, resultQueueName);
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
-                String resultsQueue = resultsChannel.queueDeclare().getQueue();
-                resultsChannel.queueBind(resultsQueue, queueName + "_results", "");
+                String resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupJobs");
+                resultsChannel.queueBind(resultsQueue, resultQueueName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
 

@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.io.FileUtils;
@@ -168,13 +167,13 @@ public class Utilities {
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            LOG.error("Error setting up queue connections to queue:"+queue+" on host: "+server+"; error is: "+ex.getMessage(),ex);
+            LOG.error("Error setting up queue connections to queue:" + queue + " on host: " + server + "; error is: " + ex.getMessage(), ex);
         }
         return channel;
 
     }
 
-    public static Channel setupMultiQueue(JSONObject settings, String queue) {
+    public static Channel setupExchange(JSONObject settings, String queue) {
 
         String server = (String) settings.get("rabbitMQHost");
         String user = (String) settings.get("rabbitMQUser");
@@ -190,18 +189,27 @@ public class Utilities {
             factory.setPassword(pass);
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
-            channel.exchangeDeclare(queue, "fanout");
+            channel.exchangeDeclare(queue, "fanout", true, false, null);
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            LOG.error("Error setting up queue connections: "+ex.getMessage(),ex);
+            LOG.error("Error setting up queue connections: " + ex.getMessage(), ex);
+            throw new RuntimeException(ex);
         }
-        return (channel);
+        return channel;
+    }
 
+    public static String setupQueueOnExchange(Channel channel, String queue, String suffix) {
+        try {
+            return channel.queueDeclare(queue + "_for_" + suffix, true, false, false, null).getQueue();
+        } catch (Exception ex) {
+            LOG.error("Error setting up queue on exchange: " + ex.getMessage(), ex);
+            throw new RuntimeException(ex);
+        }
     }
 
     public JSONObject parseJob(String job) {
-        return (parseJSONStr(job));
+        return parseJSONStr(job);
     }
 
     public ArrayList<JSONObject> getResultsArr() {

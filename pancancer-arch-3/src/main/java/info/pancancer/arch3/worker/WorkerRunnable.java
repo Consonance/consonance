@@ -119,7 +119,7 @@ public class WorkerRunnable implements Runnable {
             // TODO: Add some sort of "local debug" mode so that developers working on their local
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
-            resultsChannel = Utilities.setupMultiQueue(settings, this.resultsQueueName);
+            resultsChannel = Utilities.setupExchange(settings, this.resultsQueueName);
 
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
             jobChannel.basicConsume(this.jobQueueName, false, consumer);
@@ -127,7 +127,7 @@ public class WorkerRunnable implements Runnable {
             // TODO: need threads that each read from orders and another that reads results
             while (max > 0 /* || maxRuns <= 0 */) {
                 // log.debug("max is: "+max);
-                log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + vmUuid);
+                log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
 
                 max--;
 
@@ -190,8 +190,14 @@ public class WorkerRunnable implements Runnable {
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
-            jobChannel.getConnection().close();
-            resultsChannel.getConnection().close();
+            if (resultsChannel != null) {
+                resultsChannel.close();
+                resultsChannel.getConnection().close();
+            }
+            if (jobChannel != null) {
+                jobChannel.close();
+                jobChannel.getConnection().close();
+            }
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
             ex.printStackTrace();
@@ -319,6 +325,7 @@ public class WorkerRunnable implements Runnable {
      *            - The actual message to publish.
      */
     private void finishJob(String message) {
+        log.info("Publishing worker results to results channel " + this.resultsQueueName + ": " + message);
         try {
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
@@ -326,5 +333,4 @@ public class WorkerRunnable implements Runnable {
             log.error(e.toString());
         }
     }
-
 }

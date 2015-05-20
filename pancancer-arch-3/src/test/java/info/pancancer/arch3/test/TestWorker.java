@@ -112,7 +112,7 @@ public class TestWorker {
 
         Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
-        Mockito.when(Utilities.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
         Mockito.when(mockRunner.call()).thenReturn("Mock Workflow Response");
         PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);

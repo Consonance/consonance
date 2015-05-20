@@ -117,7 +117,7 @@ public class TestCoordinator {
 
         Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
-        Mockito.when(Utilities.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
     }
 

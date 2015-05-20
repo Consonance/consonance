@@ -125,7 +125,7 @@ public class TestWorkerWithMockingIT {
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
         Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
-        Mockito.when(Utilities.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
     }
 
     @Test

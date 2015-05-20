@@ -65,14 +65,14 @@ public class JobGeneratorDEWorkflow extends Base {
 
         // UTILS OBJECT
         Utilities u = new Utilities();
-        settings = u.parseConfig(configFile);
+        settings = Utilities.parseConfig(configFile);
 
         // CONFIG
         queueName = (String) settings.get("rabbitMQQueueName");
         log.info("QUEUE NAME: " + queueName);
 
         // SETUP QUEUE
-        this.jchannel = u.setupQueue(settings, queueName + "_orders");
+        this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
 
         // read an array of files
         DirectoryScanner scanner = new DirectoryScanner();
@@ -100,7 +100,7 @@ public class JobGeneratorDEWorkflow extends Base {
                 // pause
                 Thread.sleep(ONE_SECOND_IN_MILLISECONDS);
             } catch (InterruptedException ex) {
-                log.error(ex.getMessage(),ex);
+                log.error(ex.getMessage(), ex);
             }
 
         }
