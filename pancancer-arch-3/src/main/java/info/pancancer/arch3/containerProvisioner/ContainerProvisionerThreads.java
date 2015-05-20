@@ -13,7 +13,7 @@ import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
-import info.pancancer.arch3.worker.Worker;
+import info.pancancer.arch3.worker.WorkerRunnable;
 import io.cloudbindle.youxia.deployer.Deployer;
 import io.cloudbindle.youxia.reaper.Reaper;
 
@@ -202,7 +202,7 @@ public class ContainerProvisionerThreads extends Base {
                             // now launch the VM... doing this after the update above to prevent race condition if the worker signals
                             // finished
                             // before it's marked as pending
-                            new Worker(configFile, uuid, 1).run();
+                            new WorkerRunnable(configFile, uuid, 1).run();
                             LOG.info("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
                         }
                     } else {
