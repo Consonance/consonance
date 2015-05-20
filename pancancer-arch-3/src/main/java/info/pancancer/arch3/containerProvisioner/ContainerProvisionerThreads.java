@@ -5,6 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
+
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
@@ -15,6 +16,7 @@ import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
 import io.cloudbindle.youxia.deployer.Deployer;
 import io.cloudbindle.youxia.reaper.Reaper;
+
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,9 +32,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import joptsimple.OptionSpecBuilder;
+
 import org.apache.commons.exec.CommandLine;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -80,6 +86,7 @@ public class ContainerProvisionerThreads extends Base {
      */
     private static class ProcessVMOrders implements Callable<Void> {
 
+        protected static final Logger LOG = LoggerFactory.getLogger(ProcessVMOrders.class);
         private final boolean endless;
         private final String config;
 
@@ -108,14 +115,14 @@ public class ContainerProvisionerThreads extends Base {
 
                 // TODO: need threads that each read from orders and another that reads results
                 do {
-                    System.out.println("CHECKING FOR NEW VM ORDER!");
+                    LOG.info("CHECKING FOR NEW VM ORDER!");
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
                         continue;
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    System.out.println(" [x] Received New VM Request '" + message + "'");
+                    LOG.info(" [x] Received New VM Request '" + message + "'");
 
                     // now parse it as a VM order
                     Provision p = new Provision();
@@ -145,7 +152,7 @@ public class ContainerProvisionerThreads extends Base {
      * than the max number. If so it picks the oldest pending, switches to running, and launches a worker thread.
      */
     private static class ProvisionVMs implements Callable<Void> {
-
+        protected static final Logger LOG = LoggerFactory.getLogger(ProvisionVMs.class);
         private long maxWorkers = 0;
         private final String configFile;
         private final boolean endless;
@@ -181,12 +188,12 @@ public class ContainerProvisionerThreads extends Base {
                     long numberPendingContainers = db.getProvisionCount(ProvisionState.PENDING);
 
                     if (testMode) {
-                        // System.out.println("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
+                        LOG.debug("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
 
                         // if this is true need to launch another container
                         if (numberRunningContainers < maxWorkers && numberPendingContainers > 0) {
 
-                            System.out.println("  RUNNING CONTAINERS < " + maxWorkers + " SO WILL LAUNCH VM");
+                            LOG.info("  RUNNING CONTAINERS < " + maxWorkers + " SO WILL LAUNCH VM");
 
                             // TODO: this will obviously get much more complicated when integrated with Youxia launch VM
                             String uuid = db.getPendingProvisionUUID();
@@ -196,7 +203,7 @@ public class ContainerProvisionerThreads extends Base {
                             // finished
                             // before it's marked as pending
                             new Worker(configFile, uuid, 1).run();
-                            System.out.println("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
+                            LOG.info("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
                         }
                     } else {
                         long requiredVMs = numberRunningContainers + numberPendingContainers;
@@ -208,7 +215,7 @@ public class ContainerProvisionerThreads extends Base {
                             arguments.add("--total-nodes-num");
                             arguments.add(String.valueOf(requiredVMs));
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
-                            System.out.println("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
+                            LOG.info("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
                             Deployer.main(toArray);
                         }
                     }
@@ -226,7 +233,7 @@ public class ContainerProvisionerThreads extends Base {
      * This keeps an eye on the results queue. It updates the database with finished jobs. Presumably it should also kill VMs.
      */
     private static class CleanupVMs implements Callable<Void> {
-
+        protected static final Logger LOG = LoggerFactory.getLogger(CleanupVMs.class);
         private final String configFile;
         private final boolean endless;
 
@@ -259,7 +266,7 @@ public class ContainerProvisionerThreads extends Base {
                 // TODO: need threads that each read from orders and another that reads results
                 do {
 
-                    System.out.println("CHECKING FOR VMs TO REAP!");
+                    LOG.info("CHECKING FOR VMs TO REAP!");
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
@@ -267,7 +274,7 @@ public class ContainerProvisionerThreads extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    System.out.println(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
+                    LOG.info(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
@@ -290,7 +297,7 @@ public class ContainerProvisionerThreads extends Base {
                         gson.toJson(targets, bw);
                         arguments.add(createTempFile.toAbsolutePath().toString());
                         String[] toArray = arguments.toArray(new String[arguments.size()]);
-                        System.out.println("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
+                        LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
                         Reaper.main(toArray);
                     } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
                             || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING)

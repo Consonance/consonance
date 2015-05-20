@@ -5,6 +5,7 @@ import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
+
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
@@ -13,6 +14,7 @@ import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
@@ -24,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -256,7 +259,7 @@ public class Coordinator extends Base {
      * This looks like a duplicate class from ContainerProvisionerThreads.
      */
     private static class CleanupJobs implements Callable<Void> {
-
+        protected static final Logger LOG = LoggerFactory.getLogger(CleanupJobs.class);
         private final boolean endless;
         private String configFile = null;
 
@@ -295,7 +298,7 @@ public class Coordinator extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    System.out.println(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
+                    LOG.info(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
@@ -304,7 +307,7 @@ public class Coordinator extends Base {
                     // this is acutally finishing the VM and not the work
                     if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
-                        System.out.println("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
+                        LOG.info("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
                         db.finishJob(status.getJobUuid());
                     } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED || status.getState() == StatusState.PENDING)
                             && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {

@@ -12,14 +12,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JobGeneratorShutdownHandler extends Thread {
     private String outputFile = null;
+    protected static final Logger LOG = LoggerFactory.getLogger(JobGeneratorShutdownHandler.class);
     private ArrayList<JSONObject> resultsArr = new ArrayList<JSONObject>();
+
     /**
      * This is here to exclusively do cleanup after a cntl+c e.g. persist to disk
      */
@@ -32,9 +34,9 @@ public class JobGeneratorShutdownHandler extends Thread {
                 BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8));
                 obj.writeJSONString(bw);
                 bw.close();
-                System.out.println("WRITING RESULTS TO " + this.outputFile);
+                LOG.info("WRITING RESULTS TO " + this.outputFile);
             } catch (IOException ex) {
-                Logger.getLogger(Utilities.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(ex.getMessage(), ex);
             }
         }
     }
@@ -58,13 +60,13 @@ public class JobGeneratorShutdownHandler extends Thread {
                 }
                 String json = sb.toString();
                 br.close();
-                //Utilities u = new Utilities();
+                // Utilities u = new Utilities();
                 JSONObject parsed = Utilities.parseJSONStr(json);
                 resultsArr = (ArrayList<JSONObject>) parsed.get("results");
 
             }
         } catch (Exception ex) {
-            Logger.getLogger(JobGeneratorShutdownHandler.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage(), ex);
         }
     }
 }
