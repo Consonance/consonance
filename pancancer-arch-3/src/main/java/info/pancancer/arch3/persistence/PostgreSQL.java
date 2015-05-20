@@ -24,13 +24,16 @@ import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by boconnor on 2015-04-22.
  */
 public class PostgreSQL {
 
-    QueryRunner run = new QueryRunner();
+    protected static final Logger LOG = LoggerFactory.getLogger(PostgreSQL.class);
+    private QueryRunner run = new QueryRunner();
     private String url;
     private Properties props;
 
@@ -66,7 +69,7 @@ public class PostgreSQL {
             Class.forName("org.postgresql.Driver");
 
             this.url = "jdbc:postgresql://" + host + "/" + db;
-            log.debug("PostgreSQL URL is: " + this.url);
+            LOG.debug("PostgreSQL URL is: " + this.url);
             this.props = new Properties();
             props.setProperty("user", user);
             props.setProperty("password", pass);
