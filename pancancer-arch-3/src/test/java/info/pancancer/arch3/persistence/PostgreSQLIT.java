@@ -52,8 +52,7 @@ public class PostgreSQLIT {
     @Before
     public void setUp() throws IOException {
         this.configFile = FileUtils.getFile("src", "test", "resources", "config.json");
-        Utilities u = new Utilities();
-        JSONObject parseConfig = u.parseConfig(configFile.getAbsolutePath());
+        JSONObject parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         this.postgres = new PostgreSQL(parseConfig);
 
         // clean up the database
@@ -241,6 +240,29 @@ public class PostgreSQLIT {
         postgres.createJob(createJob);
         boolean result = postgres.previouslyRun("test_hash");
         assertEquals(true, result);
+    }
+
+    /**
+     * Test of clearDatabase method, of class PostgreSQL.
+     */
+    @Test
+    public void testClearDatabase() {
+        postgres.clearDatabase();
+    }
+
+    /**
+     * Test of getDesiredNumberOfVMs method, of class PostgreSQL.
+     */
+    @Test
+    public void testGetDesiredNumberOfVMs() {
+        Provision p = createProvision();
+        for (ProvisionState state : ProvisionState.values()) {
+            p.setState(state);
+            postgres.createProvision(p);
+        }
+        long result = postgres.getDesiredNumberOfVMs();
+        // only the two in pending and running state should matter
+        assertEquals(2, result);
     }
 
 }

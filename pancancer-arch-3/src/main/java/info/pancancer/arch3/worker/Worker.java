@@ -1,11 +1,13 @@
 package info.pancancer.arch3.worker;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Utilities;
-
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,31 +23,23 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.EnumSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
 import org.apache.commons.exec.CommandLine;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-
 /**
  * This class represents a Worker, in the Architecture 3 design. A Worker can receive job messages from a queue and execute a seqware
  * workflow based on the contents of the job message.
- * 
+ *
  * Created by boconnor on 15-04-18.
  */
 public class Worker implements Runnable {
@@ -112,7 +106,7 @@ public class Worker implements Runnable {
 
     /**
      * Create a new Worker.
-     * 
+     *
      * @param configFile
      *            - The name of the configuration file to read.
      * @param vmUuid
@@ -192,8 +186,10 @@ public class Worker implements Runnable {
 
                         // TODO: this will obviously get much more complicated when integrated with Docker
                         // launch VM
-                        Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE, "", "",
-                                "job is starting");
+                        Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE, 
+                                "job is starting", getFirstNonLoopbackAddress().toString());
+			status.setStderr("");
+			status.setStdout("");
                         String statusJSON = status.toJSON();
 
                         LOG.info(" WORKER LAUNCHING JOB");
@@ -203,8 +199,10 @@ public class Worker implements Runnable {
 
                         // launchJob(job.getUuid(), job);
 
-                        status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, "", workflowOutput,
-                                "job is finished");
+                        status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, 
+                                "job is finished", getFirstNonLoopbackAddress().toString());
+			status.setStderr("");
+			status.setStdout(workflowOutput);
                         statusJSON = status.toJSON();
 
                         LOG.info(" WORKER FINISHING JOB");
@@ -232,7 +230,7 @@ public class Worker implements Runnable {
 
     /**
      * Write the content of the job object to an INI file which will be used by the workflow.
-     * 
+     *
      * @param job
      *            - the job object which must contain a HashMap, which will be used to write an INI file.
      * @return A Path object pointing to the new file will be returned.
@@ -240,25 +238,24 @@ public class Worker implements Runnable {
      */
     private Path writeINIFile(Job job) throws IOException {
         LOG.info("INI is: " + job.getIniStr());
-
-        Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
-        perms.addAll(Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE,
-                PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE, PosixFilePermission.OTHERS_READ,
-                PosixFilePermission.OTHERS_WRITE));
+        EnumSet<PosixFilePermission> perms = EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
+                PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE,
+                PosixFilePermission.OTHERS_READ, PosixFilePermission.OTHERS_WRITE);
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
         Path pathToINI = Files.createTempFile("seqware_", ".ini", attrs);
         LOG.info("INI file: " + pathToINI.toString());
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8));
-        bw.write(job.getIniStr());
-        bw.flush();
-        bw.close();
+        try (BufferedWriter bw = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8))) {
+            bw.write(job.getIniStr());
+            bw.flush();
+        }
         return pathToINI;
     }
 
     // TODO: obviously, this will need to launch something using Youxia in the future
     /**
      * This function will execute a workflow, based on the content of the Job object that is passed in.
-     * 
+     *
      * @param message
      *            - The message that will be published on the queue when the worker starts running the job.
      * @param job
@@ -319,7 +316,7 @@ public class Worker implements Runnable {
 
     /**
      * Get the IP address of this machine, preference is given to returning an IPv4 address, if there is one.
-     * 
+     *
      * @return An InetAddress object.
      * @throws SocketException
      */
@@ -347,7 +344,7 @@ public class Worker implements Runnable {
 
     /**
      * Publish a message stating that the job is finished.
-     * 
+     *
      * @param message
      *            - The actual message to publish.
      */

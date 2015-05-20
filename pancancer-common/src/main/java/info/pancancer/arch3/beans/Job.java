@@ -1,13 +1,5 @@
 package info.pancancer.arch3.beans;
 
-import info.pancancer.arch3.utils.Utilities;
-
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,6 +7,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import info.pancancer.arch3.utils.Utilities;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Created by boconnor on 2015-04-22.
@@ -31,7 +29,7 @@ public class Job {
     private String workflowPath;
     private String jobHash;
     private String messageType;
-    private Map<String, String> ini = new HashMap<String, String>();
+    private Map<String, String> ini = new HashMap<>();
     private Timestamp createTs;
     private Timestamp updateTs;
 
@@ -93,9 +91,9 @@ public class Job {
 
     @JsonIgnore
     public String getIniStr() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String key : this.ini.keySet()) {
-            sb.append(key + "=" + this.ini.get(key)).append("\n");
+            sb.append(key).append("=").append(this.ini.get(key)).append("\n");
         }
         return (sb.toString());
     }
