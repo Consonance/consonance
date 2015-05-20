@@ -347,6 +347,9 @@
                 <configuration>
                     <xmlOutput>true</xmlOutput>
                     <threshold>High</threshold>
+		    <excludeFilterFile>
+		        ${project.basedir}/findbugs-exclude.xml
+	            </excludeFilterFile>
                 </configuration>
             </plugin>
             <plugin>
