@@ -51,10 +51,10 @@ public class ContainerProvisionerThreadsIT {
      * @throws java.lang.Exception
      */
     @Test
-    public void testNormalOperation() throws Exception {
+    public void testTestModeOperation() throws Exception {
         // ideally, we would mock up some orders here
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
-        ContainerProvisionerThreads.main(new String[] { "--config", file.getAbsolutePath() });
+        ContainerProvisionerThreads.main(new String[] { "--test", "--config", file.getAbsolutePath() });
     }
 
 }
