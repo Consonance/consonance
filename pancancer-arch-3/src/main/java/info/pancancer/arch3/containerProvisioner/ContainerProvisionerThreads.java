@@ -203,7 +203,8 @@ public class ContainerProvisionerThreads extends Base {
                         if (requiredVMs > 0) {
                             String param = (String) settings.get("youxia_deployer_parameters");
                             CommandLine parse = CommandLine.parse("dummy " + param);
-                            List<String> arguments = Arrays.asList(parse.getArguments());
+                            List<String> arguments = new ArrayList<>();
+                            arguments.addAll(Arrays.asList(parse.getArguments()));
                             arguments.add("--total-nodes-num");
                             arguments.add(String.valueOf(requiredVMs));
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
