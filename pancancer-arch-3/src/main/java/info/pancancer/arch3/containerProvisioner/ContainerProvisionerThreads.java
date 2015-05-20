@@ -209,7 +209,7 @@ public class ContainerProvisionerThreads extends Base {
                         long requiredVMs = numberRunningContainers + numberPendingContainers;
                         if (requiredVMs > 0) {
                             String param = (String) settings.get("youxia_deployer_parameters");
-                            CommandLine parse = CommandLine.parse("dummy " + param);
+                            CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
                             List<String> arguments = new ArrayList<>();
                             arguments.addAll(Arrays.asList(parse.getArguments()));
                             arguments.add("--total-nodes-num");
@@ -284,9 +284,10 @@ public class ContainerProvisionerThreads extends Base {
                     if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
-                        String param = (String) settings.get("youxia_deployer_parameters");
-                        CommandLine parse = CommandLine.parse("dummy " + param);
-                        List<String> arguments = Arrays.asList(parse.getArguments());
+                        String param = (String) settings.get("youxia_reaper_parameters");
+                        CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
+                        List<String> arguments = new ArrayList<>();
+                        arguments.addAll(Arrays.asList(parse.getArguments()));
                         arguments.add("--kill-list");
                         // create a json file with the one targetted ip address
                         Gson gson = new Gson();
