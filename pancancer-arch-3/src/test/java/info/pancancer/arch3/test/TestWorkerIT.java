@@ -26,7 +26,6 @@ import org.apache.commons.exec.ExecuteResultHandler;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.json.simple.JSONObject;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -205,7 +204,7 @@ public class TestWorkerIT {
         assertTrue("check ending of output", testResults.contains(ending));
 
         String initalHeartbeat = new String(Files.readAllBytes(Paths.get("src/test/resources/testInitialHeartbeat.txt")));
-        assertTrue("Check for an initial heart beat", testResults.contains(initalHeartbeat));
+        assertTrue("Check for an initial heart beat, found" + testResults, testResults.contains(initalHeartbeat));
 
         // String workflowOutput = new String(Files.readAllBytes(Paths.get("src/test/resources/testFinalHeartbeat.txt")));
         // assertTrue("Check for workflow output", testResults.contains(workflowOutput));

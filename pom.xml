@@ -13,13 +13,14 @@
     <artifactId>sandbox</artifactId>
     <packaging>pom</packaging>
     <groupId>io.cancer.collaboratory</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:CancerCollaboratory/sandbox.git</github.url>
         <skipITs>true</skipITs>
+        <youxia.version>1.1.0-beta.4</youxia.version>
     </properties>
 
     <scm>
@@ -41,22 +42,32 @@
     <dependencyManagement>
         <!-- need to unify shared dependency versions -->
         <dependencies>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-databind</artifactId>
-				<version>2.5.3</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-annotations</artifactId>
-				<version>2.5.0</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-core</artifactId>
-				<version>2.5.3</version>
-			</dependency>
-			<dependency>
+            <dependency>
+                <groupId>io.cloudbindle</groupId>
+                <artifactId>youxia-deployer</artifactId>
+                <version>${youxia.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cloudbindle</groupId>
+                <artifactId>youxia-reaper</artifactId>
+                <version>${youxia.version}</version>
+            </dependency>
+            <dependency> 
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.5.3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.5.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>2.5.3</version>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
@@ -64,7 +75,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.5</version>
+                <version>1.7.7</version>
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.cobertura</groupId>
@@ -72,10 +83,10 @@
                 <version>2.1.1</version>
                 <scope>provided</scope>
                 <exclusions>
-                	<exclusion>
-                		<artifactId>junit</artifactId>
-                		<groupId>junit</groupId>
-                	</exclusion>
+                    <exclusion>
+                        <artifactId>junit</artifactId>
+                        <groupId>junit</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
         </dependencies>
@@ -349,8 +360,8 @@
                 <version>2.7</version>
                 <configuration>
                     <formats>
-                    	<format>xml</format>
-                    	<format>html</format>
+                        <format>xml</format>
+                        <format>html</format>
                     </formats>
                     <aggregate>true</aggregate>
                 </configuration>

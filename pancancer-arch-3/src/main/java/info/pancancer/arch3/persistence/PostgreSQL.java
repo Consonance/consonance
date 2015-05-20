@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory;
  */
 public class PostgreSQL {
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
-    QueryRunner run = new QueryRunner();
+    protected static final Logger LOG = LoggerFactory.getLogger(PostgreSQL.class);
+    private QueryRunner run = new QueryRunner();
     private String url;
     private Properties props;
 
@@ -69,7 +69,7 @@ public class PostgreSQL {
             Class.forName("org.postgresql.Driver");
 
             this.url = "jdbc:postgresql://" + host + "/" + db;
-            log.debug("PostgreSQL URL is: " + this.url);
+            LOG.debug("PostgreSQL URL is: " + this.url);
             this.props = new Properties();
             props.setProperty("user", user);
             props.setProperty("password", pass);
@@ -81,8 +81,14 @@ public class PostgreSQL {
 
     }
 
+    public long getDesiredNumberOfVMs() {
+        return runSelectStatement("select count(*) from provision where status = '" + ProvisionState.PENDING + "' or status = '"
+                + ProvisionState.RUNNING + "'", new ScalarHandler<Long>());
+    }
+
     public String getPendingProvisionUUID() {
-        return runSelectStatement("select provision_uuid from provision where status = 'PENDING' limit 1", new ScalarHandler<String>());
+        return runSelectStatement("select provision_uuid from provision where status = '" + ProvisionState.PENDING + "' limit 1",
+                new ScalarHandler<String>());
     }
 
     public void clearDatabase() {
@@ -180,8 +186,6 @@ public class PostgreSQL {
             map = this.runSelectStatement("select * from job", new KeyedHandler<>("job_uuid"));
         }
 
-        Utilities u = new Utilities();
-
         for (Entry<Object, Map<String, Object>> entry : map.entrySet()) {
 
             Job j = new Job();
@@ -190,7 +194,7 @@ public class PostgreSQL {
             j.setWorkflow((String) entry.getValue().get("workflow"));
             j.setWorkflowVersion((String) entry.getValue().get("workflow_version"));
             j.setJobHash((String) entry.getValue().get("job_hash"));
-            JSONObject iniJson = u.parseJSONStr((String) entry.getValue().get("ini"));
+            JSONObject iniJson = Utilities.parseJSONStr((String) entry.getValue().get("ini"));
             HashMap<String, String> ini = new HashMap<>();
             for (Object key : iniJson.keySet()) {
                 ini.put((String) key, (String) iniJson.get(key));
