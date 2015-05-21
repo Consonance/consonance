@@ -54,7 +54,7 @@ public class WorkerIT {
         JobGeneratorDEWorkflow.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
         // prime the worker with a job
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
-        Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test" });
+        Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test", "--pidFile", "/var/run/arch3_worker.pid" });
     }
 
 }
