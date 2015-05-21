@@ -3,6 +3,7 @@ package info.pancancer.arch3.utils;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import info.pancancer.arch3.persistence.PostgreSQL;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,13 +19,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,13 +55,49 @@ public class Utilities {
         return data;
     }
 
-    public static void clearState() throws IOException {
-        File file = FileUtils.getFile("scripts", "cleanup.sh");
-        file.setExecutable(true);
-        CommandLine commandLine = new CommandLine("/bin/bash");
-        commandLine.addArgument("-c");
-        commandLine.addArgument(file.getAbsolutePath(), false); // false is important to prevent commons-exec from acting stupid
-        new DefaultExecutor().execute(commandLine);
+    /**
+     * Clears database state and known queues for testing.
+     *
+     * @param settings
+     * @throws IOException
+     */
+    public static void clearState(JSONObject settings) throws IOException {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config.json");
+        JSONObject parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        PostgreSQL postgres = new PostgreSQL(parseConfig);
+        // clean up the database
+        postgres.clearDatabase();
+
+        String server = (String) settings.get("rabbitMQHost");
+        String user = (String) settings.get("rabbitMQUser");
+        String pass = (String) settings.get("rabbitMQPass");
+
+        Channel channel = null;
+
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost(server);
+        factory.setUsername(user);
+        factory.setPassword(pass);
+        Connection connection = factory.newConnection();
+        channel = connection.createChannel();
+        channel.basicQos(1);
+
+        String prefix = (String) settings.get("rabbitMQQueueName");
+        String[] queues = { prefix + "_jobs", prefix + "_orders", prefix + "_vms", prefix + "_for_CleanupJobs", prefix + "_for_CleanupVMs" };
+        for (String queue : queues) {
+            try {
+                channel.queueDelete(queue);
+            } catch (IOException e) {
+                Log.info("Could not delete " + queue);
+            }
+        }
+
+        // File file = FileUtils.getFile("scripts", "cleanup.sh");
+        // file.setExecutable(true);
+        // CommandLine commandLine = new CommandLine("/bin/bash");
+        // commandLine.addArgument("-c");
+        // commandLine.addArgument(file.getAbsolutePath(), false); // false is important to prevent commons-exec from acting stupid
+        // new DefaultExecutor().execute(commandLine);
     }
 
     public static JSONObject parseConfig(String configFile) {
@@ -168,13 +203,13 @@ public class Utilities {
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            LOG.error("Error setting up queue connections to queue:"+queue+" on host: "+server+"; error is: "+ex.getMessage(),ex);
+            LOG.error("Error setting up queue connections to queue:" + queue + " on host: " + server + "; error is: " + ex.getMessage(), ex);
         }
         return channel;
 
     }
 
-    public static Channel setupMultiQueue(JSONObject settings, String queue) {
+    public static Channel setupExchange(JSONObject settings, String queue) {
 
         String server = (String) settings.get("rabbitMQHost");
         String user = (String) settings.get("rabbitMQUser");
@@ -190,18 +225,27 @@ public class Utilities {
             factory.setPassword(pass);
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
-            channel.exchangeDeclare(queue, "fanout");
+            channel.exchangeDeclare(queue, "fanout", true, false, null);
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            LOG.error("Error setting up queue connections: "+ex.getMessage(),ex);
+            LOG.error("Error setting up queue connections: " + ex.getMessage(), ex);
+            throw new RuntimeException(ex);
         }
-        return (channel);
+        return channel;
+    }
 
+    public static String setupQueueOnExchange(Channel channel, String queue, String suffix) {
+        try {
+            return channel.queueDeclare(queue + "_for_" + suffix, true, false, false, null).getQueue();
+        } catch (Exception ex) {
+            LOG.error("Error setting up queue on exchange: " + ex.getMessage(), ex);
+            throw new RuntimeException(ex);
+        }
     }
 
     public JSONObject parseJob(String job) {
-        return (parseJSONStr(job));
+        return parseJSONStr(job);
     }
 
     public ArrayList<JSONObject> getResultsArr() {

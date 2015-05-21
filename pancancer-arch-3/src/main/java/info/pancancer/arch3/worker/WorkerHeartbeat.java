@@ -32,7 +32,7 @@ public class WorkerHeartbeat implements Runnable {
     private String vmUuid;
     private String jobUuid;
     
-    protected static final Logger LOG = LoggerFactory.getLogger(Worker.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(WorkerRunnable.class);
 
     @Override
     public void run() {

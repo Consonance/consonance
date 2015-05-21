@@ -108,7 +108,7 @@ pure Java running example will be used for integration and other tests.
 
 This generates job orders, 5 in this case. If you leave off the `--total-jobs` option it will submit jobs on an infinite loop.
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5
 
 ### Coordinator
 
@@ -119,17 +119,23 @@ It then monitors the results queue to see when jobs fail or finish.
 Finally, for failed or finished workflows, it informs the Container provisioner about finished
 VMs that can be terminated.
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
 
 ### Container Provisioner
 
 This will spin up (fake) containers that will launch Workers.
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
 
 ### Worker
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
+
+#### Test Mode Worker
+
+    The test mode worker simply consumes a job and sends back results without running anything. This is used to test the basic lifecycle of our components. 
+
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 1234 --test
 
 ### Checking Results
 
@@ -151,12 +157,12 @@ The first step is to use Adam's command line tool to generate one or more INI fi
 
 Now that you have INI files, the next step is to run this command line tool.  It will parse the INI files and generate a job with them and other information it takes from the command line.  It then submits the job "order" to the order message queue.
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir <directories_with_ini_files> --workflow-name <workflow_name> --workflow-version <workflow_version> --workflow-path <workflow_path> 
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir <directories_with_ini_files> --workflow-name <workflow_name> --workflow-version <workflow_version> --workflow-path <workflow_path> 
     
     # for example:
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir ini --workflow-name DEWrapper --workflow-version 1.0.0 --workflow-path /workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir ini --workflow-name DEWrapper --workflow-version 1.0.1-SNAPSHOT --workflow-path /workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.1-SNAPSHOT_SeqWare_1.1.0
     # alternatively for hello world
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir /home/ubuntu/gitroot/central-decider-client/ini --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflow/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir /home/ubuntu/gitroot/central-decider-client/ini --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflow/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0
     
 
 ### Coordinator
@@ -168,19 +174,19 @@ It then monitors the results queue to see when jobs fail or finish.
 Finally, for failed or finished workflows, it informs the Container provisioner about finished
 VMs that can be terminated.
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
 
 ### Container Provisioner
 
 This will spin up (fake) containers that will launch Workers.
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
 
 ### Worker
 
 The ContainerProvisioner above is actually pulling jobs using embedded worker threads (this will not be the case for production, instead the above will just launch VMs).  The below can be started on another VM and will compete for jobs from the job queue.  If you run on a different box than the above components make sure the conf/config.json is updated to point to the correct `rabbitMQHost`.
 
-    java -cp target/pancancer-arch-3-1.0.0-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 50f20496-c221-4c25-b09b-839511e76df4
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 50f20496-c221-4c25-b09b-839511e76df4
 
 You can generate a UUID here: https://www.guidgenerator.com/online-guid-generator.aspx
 

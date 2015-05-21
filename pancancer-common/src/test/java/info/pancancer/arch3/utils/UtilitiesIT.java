@@ -66,14 +66,14 @@ public class UtilitiesIT {
     }
 
     /**
-     * Test of setupMultiQueue method, of class Utilities.
+     * Test of setupExchange method, of class Utilities.
      *
      * @throws java.io.IOException
      */
     @Test
     public void testSetupMultiQueue() throws IOException {
         Utilities instance = new Utilities();
-        Channel result = instance.setupMultiQueue(getSettings(), "testing_queue");
+        Channel result = instance.setupExchange(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();
     }

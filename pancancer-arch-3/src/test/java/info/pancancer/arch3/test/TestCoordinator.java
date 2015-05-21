@@ -1,33 +1,36 @@
 package info.pancancer.arch3.test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.anyVararg;
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
+import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.coordinator.Coordinator;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.json.simple.JSONObject;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.anyVararg;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -38,13 +41,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
 
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, Coordinator.class, Logger.class, LoggerFactory.class, PostgreSQL.class })
 @RunWith(PowerMockRunner.class)
@@ -73,10 +69,10 @@ public class TestCoordinator {
 
     @Mock
     private Connection mockDBConnection;
-    
+
     @Mock
     private QueryRunner mockRunner;
-    
+
     private static StringBuffer outBuffer = new StringBuffer();
 
     public class LoggingAnswer implements Answer<Object> {
@@ -121,7 +117,7 @@ public class TestCoordinator {
 
         Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
-        Mockito.when(Utilities.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
     }
 
@@ -156,7 +152,7 @@ public class TestCoordinator {
             testCoordinator.doWork();
             fail("Should not have reached here.");
         } catch (Exception e) {
-            //System.out.println(outBuffer.toString());
+            // System.out.println(outBuffer.toString());
             assertTrue(outBuffer.toString().contains("invalid database address: jdbc:postgresql://localhost/dbname"));
         }
     }
@@ -169,26 +165,26 @@ public class TestCoordinator {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-//        try {
-            Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/coordinatorConfig.json" });
-            testCoordinator.doWork();
-            System.out.println(outBuffer.toString());
-//            fail("Should not have reached here.");
-//        } catch (Exception e) {
-//            //
-//            assertTrue(outBuffer.toString().contains("invalid database address: jdbc:postgresql://localhost/dbname"));
-//        }
+        // try {
+        Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/coordinatorConfig.json" });
+        testCoordinator.doWork();
+        System.out.println(outBuffer.toString());
+        // fail("Should not have reached here.");
+        // } catch (Exception e) {
+        // //
+        // assertTrue(outBuffer.toString().contains("invalid database address: jdbc:postgresql://localhost/dbname"));
+        // }
     }
-    
-    private void setupMockDB() throws Exception
-    {
+
+    private void setupMockDB() throws Exception {
         PowerMockito.mockStatic(DriverManager.class);
         Mockito.when(DriverManager.getConnection(anyString(), any(Properties.class))).thenReturn(mockDBConnection);
-       
-        Mockito.when(mockRunner.query(any(Connection.class), anyString(), any(ResultSetHandler.class), anyVararg())).thenReturn(new HashMap());
+
+        Mockito.when(mockRunner.query(any(Connection.class), anyString(), any(ResultSetHandler.class), anyVararg())).thenReturn(
+                new HashMap());
         PowerMockito.whenNew(QueryRunner.class).withNoArguments().thenReturn(mockRunner);
     }
-    
+
     private byte[] setupMessage() {
         Job j = new Job();
         j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");

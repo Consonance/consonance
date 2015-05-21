@@ -48,7 +48,7 @@ public class JobGenerator extends Base {
         // UTILS OBJECT
         Utilities u = new Utilities();
         JobGeneratorShutdownHandler shutdownHandler = new JobGeneratorShutdownHandler();
-        settings = u.parseConfig(configFile);
+        settings = Utilities.parseConfig(configFile);
         if (outputFile == null) {
             outputFile = (String) settings.get("results");
         }
@@ -62,7 +62,7 @@ public class JobGenerator extends Base {
         log.info("QUEUE NAME: " + queueName);
 
         // SETUP QUEUE
-        this.jchannel = u.setupQueue(settings, queueName + "_orders");
+        this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
 
         // LOOP, ADDING JOBS EVERY FEW MINUTES
         while (totalJobs > 0) {
@@ -109,7 +109,7 @@ public class JobGenerator extends Base {
     // PRIVATE
 
     private String[] generateNewJobs(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
-        ArrayList<String> jobs = new ArrayList<String>();
+        ArrayList<String> jobs = new ArrayList<>();
         try {
             int messages = jchannel.queueDeclarePassive(queueName + "_orders").getMessageCount();
             log.info("JOB QUEUE SIZE: " + messages);
@@ -175,7 +175,7 @@ public class JobGenerator extends Base {
                 this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         msg.getBytes(StandardCharsets.UTF_8));
             } catch (IOException ex) {
-                log.error(ex.getMessage(),ex);
+                log.error(ex.getMessage(), ex);
             }
         }
     }

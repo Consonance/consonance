@@ -5,7 +5,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
-
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
@@ -13,10 +12,9 @@ import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
-import info.pancancer.arch3.worker.Worker;
+import info.pancancer.arch3.worker.WorkerRunnable;
 import io.cloudbindle.youxia.deployer.Deployer;
 import io.cloudbindle.youxia.reaper.Reaper;
-
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,9 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
 import joptsimple.OptionSpecBuilder;
-
 import org.apache.commons.exec.CommandLine;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -188,7 +184,7 @@ public class ContainerProvisionerThreads extends Base {
                     long numberPendingContainers = db.getProvisionCount(ProvisionState.PENDING);
 
                     if (testMode) {
-                        LOG.debug("  CHECKING NUMBER OF RUNNING: "+numberRunningContainers);
+                        LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
 
                         // if this is true need to launch another container
                         if (numberRunningContainers < maxWorkers && numberPendingContainers > 0) {
@@ -202,14 +198,14 @@ public class ContainerProvisionerThreads extends Base {
                             // now launch the VM... doing this after the update above to prevent race condition if the worker signals
                             // finished
                             // before it's marked as pending
-                            new Worker(configFile, uuid, 1).run();
+                            new WorkerRunnable(configFile, uuid, 1).run();
                             LOG.info("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
                         }
                     } else {
                         long requiredVMs = numberRunningContainers + numberPendingContainers;
                         if (requiredVMs > 0) {
                             String param = (String) settings.get("youxia_deployer_parameters");
-                            CommandLine parse = CommandLine.parse("dummy " + param);
+                            CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
                             List<String> arguments = new ArrayList<>();
                             arguments.addAll(Arrays.asList(parse.getArguments()));
                             arguments.add("--total-nodes-num");
@@ -250,13 +246,14 @@ public class ContainerProvisionerThreads extends Base {
                 JSONObject settings = Utilities.parseConfig(configFile);
 
                 String queueName = (String) settings.get("rabbitMQQueueName");
+                final String resultQueueName = queueName + "_results";
 
                 // read from
-                resultsChannel = Utilities.setupMultiQueue(settings, queueName + "_results");
+                resultsChannel = Utilities.setupExchange(settings, resultQueueName);
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
-                String resultsQueue = resultsChannel.queueDeclare().getQueue();
-                resultsChannel.queueBind(resultsQueue, queueName + "_results", "");
+                String resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupVMs");
+                resultsChannel.queueBind(resultsQueue, resultQueueName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
 
@@ -284,9 +281,10 @@ public class ContainerProvisionerThreads extends Base {
                     if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
-                        String param = (String) settings.get("youxia_deployer_parameters");
-                        CommandLine parse = CommandLine.parse("dummy " + param);
-                        List<String> arguments = Arrays.asList(parse.getArguments());
+                        String param = (String) settings.get("youxia_reaper_parameters");
+                        CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
+                        List<String> arguments = new ArrayList<>();
+                        arguments.addAll(Arrays.asList(parse.getArguments()));
                         arguments.add("--kill-list");
                         // create a json file with the one targetted ip address
                         Gson gson = new Gson();

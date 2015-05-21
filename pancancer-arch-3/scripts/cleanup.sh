@@ -1,6 +1,7 @@
 #!/bin/bash
 
 for i in `rabbitmqadmin list queues name | grep -v name | awk '{print $2}'`;   do echo $i;   rabbitmqadmin delete queue name="$i";   done;
+for i in `rabbitmqadmin list exchanges name | grep -v name | awk '{print $2}'`;   do echo $i;   rabbitmqadmin delete exchange name="$i";   done;
 
 dropdb queue_status
 createdb queue_status

@@ -14,8 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package info.pancancer.arch3.containerProvisioner;
+package info.pancancer.arch3.worker;
 
+import info.pancancer.arch3.coordinator.Coordinator;
+import info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow;
 import info.pancancer.arch3.utils.ITUtilities;
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +30,7 @@ import org.junit.Test;
  *
  * @author dyuen
  */
-public class ContainerProvisionerThreadsIT {
+public class WorkerIT {
 
     @BeforeClass
     public static void setup() throws IOException {
@@ -36,25 +38,29 @@ public class ContainerProvisionerThreadsIT {
     }
 
     /**
-     * Test of main method, of class ContainerProvisionerThreads.
+     * Test of main method, of class Worker.
      *
      * @throws java.lang.Exception
      */
     @Test(expected = OptionException.class)
     public void testHelpMessage() throws Exception {
-        ContainerProvisionerThreads.main(new String[] { "--help" });
+        Worker.main(new String[] { "--help" });
     }
 
     /**
-     * Test of main method, of class ContainerProvisionerThreads.
+     * Test of main method, of class JobGeneratorDEWorkflow.
      *
      * @throws java.lang.Exception
      */
     @Test
     public void testTestModeOperation() throws Exception {
-        // ideally, we would mock up some orders here
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
-        ContainerProvisionerThreads.main(new String[] { "--test", "--config", file.getAbsolutePath() });
+        File iniDir = FileUtils.getFile("ini");
+        // prime the coordinator with an order
+        JobGeneratorDEWorkflow.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
+        // prime the worker with a job
+        Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
+        Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test" });
     }
 
 }

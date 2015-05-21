@@ -6,7 +6,7 @@ import static org.mockito.Matchers.anyString;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.CollectingLogOutputStream;
-import info.pancancer.arch3.worker.Worker;
+import info.pancancer.arch3.worker.WorkerRunnable;
 import info.pancancer.arch3.worker.WorkerHeartbeat;
 import info.pancancer.arch3.worker.WorkflowRunner;
 
@@ -48,10 +48,10 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 
-@PrepareForTest({ QueueingConsumer.class, Utilities.class, Worker.class, DefaultExecutor.class, WorkflowRunner.class,
+@PrepareForTest({ QueueingConsumer.class, Utilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
         DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class })
 @RunWith(PowerMockRunner.class)
-public class TestWorkerIT {
+public class TestWorkerWithMockingIT {
 
     @Mock
     private Utilities mockUtil;
@@ -117,7 +117,7 @@ public class TestWorkerIT {
         Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString());
         Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString(), any(Exception.class));
         PowerMockito.mockStatic(org.slf4j.LoggerFactory.class);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(Worker.class)).thenReturn(mockLogger);
+        Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkerRunnable.class)).thenReturn(mockLogger);
         Mockito.when(org.slf4j.LoggerFactory.getLogger(Utilities.class)).thenReturn(mockLogger);
         Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkerHeartbeat.class)).thenReturn(mockLogger);
         Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkflowRunner.class)).thenReturn(mockLogger);
@@ -125,7 +125,7 @@ public class TestWorkerIT {
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
         Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
-        Mockito.when(Utilities.setupMultiQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
     }
 
     @Test
@@ -177,7 +177,7 @@ public class TestWorkerIT {
 
         PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
 
-        Worker testWorker = new Worker("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
 
         testWorker.run();
         String testResults = this.outBuffer.toString();//this.outStream.toString();
