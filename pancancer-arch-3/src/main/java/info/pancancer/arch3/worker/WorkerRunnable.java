@@ -53,6 +53,11 @@ public class WorkerRunnable implements Runnable {
     private int maxRuns = 1;
     private String userName;
     private boolean testMode;
+    private static final int DEFAULT_PRESLEEP = 1;
+    private static final int DEFAULT_POSTSLEEP = 1;
+    public static final String POSTWORKER_SLEEP = "postworkerSleep";
+    public static final String PREWORKER_SLEEP = "preworkerSleep";
+    public static final String HEARTBEAT_RATE = "heartbeatRate";
 
     /**
      * Create a new Worker.
@@ -257,8 +262,8 @@ public class WorkerRunnable implements Runnable {
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
             heartbeat.setReportingChannel(resultsChannel);
-            if (settings.containsKey("heartbeatRate")) {
-                heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get("heartbeatRate")));
+            if (settings.containsKey(HEARTBEAT_RATE)) {
+                heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get(HEARTBEAT_RATE)));
             }
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
@@ -266,8 +271,17 @@ public class WorkerRunnable implements Runnable {
             heartbeat.setStatusSource(workflowRunner);
             // heartbeat.setMessageBody(heartbeatStatus.toJSON());
 
-            long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get("preworkerSleep"));
-            long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get("postworkerSleep"));
+            long presleep = WorkerRunnable.DEFAULT_PRESLEEP;
+            if (settings.containsKey(PREWORKER_SLEEP)) {
+                presleep = Long.parseLong((String) settings.get(PREWORKER_SLEEP));
+            }
+            long postsleep = WorkerRunnable.DEFAULT_POSTSLEEP;
+            if (settings.containsKey(POSTWORKER_SLEEP)) {
+                postsleep = Long.parseLong((String) settings.get(POSTWORKER_SLEEP));
+            }
+
+            long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get(PREWORKER_SLEEP));
+            long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get(POSTWORKER_SLEEP));
 
             workflowRunner.setCli(cli);
             workflowRunner.setPreworkDelay(presleepMillis);
