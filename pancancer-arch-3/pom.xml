@@ -170,6 +170,10 @@
                     <groupId>com.google.code.gson</groupId>
                     <artifactId>gson</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId> ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -179,6 +183,10 @@
                 <exclusion>
                     <groupId>com.github.seqware</groupId>
                     <artifactId>seqware-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId> ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

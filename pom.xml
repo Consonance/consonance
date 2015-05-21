@@ -52,7 +52,7 @@
                 <artifactId>youxia-reaper</artifactId>
                 <version>${youxia.version}</version>
             </dependency>
-            <dependency> 
+            <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>2.5.3</version>
@@ -86,6 +86,10 @@
                     <exclusion>
                         <artifactId>junit</artifactId>
                         <groupId>junit</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-classic</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -347,9 +351,9 @@
                 <configuration>
                     <xmlOutput>true</xmlOutput>
                     <threshold>High</threshold>
-		    <excludeFilterFile>
-		        ${project.basedir}/findbugs-exclude.xml
-	            </excludeFilterFile>
+                    <excludeFilterFile>
+                        ${project.basedir}/findbugs-exclude.xml
+                    </excludeFilterFile>
                 </configuration>
             </plugin>
             <plugin>
