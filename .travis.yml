@@ -1,7 +1,7 @@
 notifications:
   slack: oicr:S9k4EowgQv9AnbCfEZHSzCsg
 
-sudo: false
+sudo: required 
 language: java
 jdk: 
   - oraclejdk7
