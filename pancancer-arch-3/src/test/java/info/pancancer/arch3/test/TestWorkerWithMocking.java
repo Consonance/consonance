@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
         DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class })
 @RunWith(PowerMockRunner.class)
-public class TestWorkerWithMockingIT {
+public class TestWorkerWithMocking {
 
     @Mock
     private Utilities mockUtil;
