@@ -257,7 +257,9 @@ public class WorkerRunnable implements Runnable {
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
             heartbeat.setReportingChannel(resultsChannel);
-            heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get("heartbeatRate")));
+            if (settings.containsKey("heartbeatRate")) {
+                heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get("heartbeatRate")));
+            }
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
             heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString());
