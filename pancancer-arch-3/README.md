@@ -131,6 +131,12 @@ This will spin up (fake) containers that will launch Workers.
 
     java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json
 
+#### Test Mode Worker
+
+    The test mode worker simply consumes a job and sends back results without running anything. This is used to test the basic lifecycle of our components. 
+
+    java -cp target/pancancer-arch-3-1.0.1-SNAPSHOT.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 1234 --test
+
 ### Checking Results
 
 Log into the DB and do:

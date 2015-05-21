@@ -1,0 +1,49 @@
+[youxia]
+sensu_username = admin
+sensu_password = seqware
+sensu_ip_address = 9.9.9.9 
+sensu_port = 4567
+managed_tag = foobar 
+slack_webhook = 
+
+# aws settings
+aws_ssh_key = /home/foobar/.ssh/foobar.pem
+aws_key_name = foobar 
+region = sa-east-1
+zone = sa-east-1a,sa-east-1b
+# openstack settings
+openstack_username = foobar 
+openstack_password = foobar 
+openstack_endpoint = http://9.9.9.9:5000/v2.0
+openstack_key_name = foobar 
+openstack_ssh_key = /home/foobar/.ssh/foobar.pem 
+openstack_zone = RegionOne
+
+[deployer]
+ami_image = ami-2385383e
+security_group = iron_head
+product = Linux/UNIX
+instance_type = m3.large
+
+[deployer_openstack]
+min_cores = 8 
+min_ram = 32768
+#image_id = 5898eefa-0347-40ce-882c-e33f5680e788
+image_id = 0d22ce84-59c7-48e4-87d0-31d4c8360689
+security_group = foobar 
+network_id = a10fb42e-621a-4ae3-9090-d760fa356f18
+arbitrary_wait = 200000
+
+[seqware]
+rest_user = admin@admin.com
+rest_pass = admin
+rest_port = 8080
+rest_root = SeqWareWebService
+
+[generator]
+max_scheduled_workflows = 1
+max_workflows = 1
+workflow_accession = 1 
+workflow_name = HelloWorld 
+workflow_version = 1.0-SNAPSHOT
+
