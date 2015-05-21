@@ -1,15 +1,17 @@
 package info.pancancer.arch3.test;
 
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
+import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Utilities;
-import info.pancancer.arch3.worker.CollectingLogOutputStream;
-import info.pancancer.arch3.worker.WorkerRunnable;
 import info.pancancer.arch3.worker.WorkerHeartbeat;
+import info.pancancer.arch3.worker.WorkerRunnable;
 import info.pancancer.arch3.worker.WorkflowRunner;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -18,16 +20,17 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteResultHandler;
-import org.apache.commons.exec.PumpStreamHandler;
 import org.json.simple.JSONObject;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -39,14 +42,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.ShutdownSignalException;
 
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
         DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class })
@@ -76,9 +71,9 @@ public class TestWorkerWithMockingIT {
 
     private DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
 
-//    private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-//    private PrintStream originalOutStream = new PrintStream(System.out);
-//    private PrintStream testPrintStream = new PrintStream(outStream);
+    // private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    // private PrintStream originalOutStream = new PrintStream(System.out);
+    // private PrintStream testPrintStream = new PrintStream(outStream);
 
     @Mock
     private Logger mockLogger;
@@ -109,7 +104,7 @@ public class TestWorkerWithMockingIT {
     public void setUp() throws IOException {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(Utilities.class);
-//        System.setOut(testPrintStream);
+        // System.setOut(testPrintStream);
 
         outBuffer = new StringBuffer();
         Mockito.doAnswer(logAnswer).when(mockLogger).info(anyString());
@@ -130,8 +125,8 @@ public class TestWorkerWithMockingIT {
 
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
-        //PumpStreamHandler streamHandler = new PumpStreamHandler(new CollectingLogOutputStream());
-        //mockExecutor.setStreamHandler(streamHandler);
+        // PumpStreamHandler streamHandler = new PumpStreamHandler(new CollectingLogOutputStream());
+        // mockExecutor.setStreamHandler(streamHandler);
         PowerMockito.whenNew(DefaultExecuteResultHandler.class).withNoArguments().thenReturn(this.handler);
         Mockito.doAnswer(new Answer<Object>() {
             @Override
@@ -180,12 +175,12 @@ public class TestWorkerWithMockingIT {
         WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
 
         testWorker.run();
-        String testResults = this.outBuffer.toString();//this.outStream.toString();
+        String testResults = this.outBuffer.toString();// this.outStream.toString();
         // String knownResults = new String(Files.readAllBytes(Paths.get("src/test/resources/TestWorkerResult.txt")));
-//        System.setOut(originalOutStream);
+        // System.setOut(originalOutStream);
 
         testResults = cleanResults(testResults);
-        //System.out.println("\n===============================\nTest Results: " + testResults);
+        // System.out.println("\n===============================\nTest Results: " + testResults);
         assertTrue(
                 "Check for docker command",
                 testResults

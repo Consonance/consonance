@@ -291,7 +291,7 @@ public class WorkerRunnable implements Runnable {
             Future<String> workflowResult = exService.submit(workflowRunner);
             // make sure both are complete
             workflowOutput = workflowResult.get();
-            submit.get();
+            // don't get the heartbeat if the workflow is complete already
 
             log.info("Docker execution result: " + workflowOutput);
         } catch (SocketException e) {
