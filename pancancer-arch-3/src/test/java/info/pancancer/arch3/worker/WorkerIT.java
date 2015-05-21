@@ -19,11 +19,15 @@ package info.pancancer.arch3.worker;
 import info.pancancer.arch3.coordinator.Coordinator;
 import info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow;
 import info.pancancer.arch3.utils.ITUtilities;
+
 import java.io.File;
 import java.io.IOException;
+
 import joptsimple.OptionException;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -35,16 +39,6 @@ public class WorkerIT {
     @BeforeClass
     public static void setup() throws IOException {
         ITUtilities.clearState();
-    }
-
-    /**
-     * Test of main method, of class Worker.
-     *
-     * @throws java.lang.Exception
-     */
-    @Test(expected = OptionException.class)
-    public void testHelpMessage() throws Exception {
-        Worker.main(new String[] { "--help" });
     }
 
     /**
