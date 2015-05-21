@@ -3,12 +3,9 @@ package info.pancancer.arch3.worker;
 import info.pancancer.arch3.Base;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import org.slf4j.Logger;
 
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
@@ -32,10 +29,14 @@ public class Worker extends Base {
         super();
         this.testSpec = super.parser.accepts("test", "In test mode, worker simply completes successfully");
         this.configSpec = parser.accepts("config", "Specify a config file").withRequiredArg().required().ofType(String.class);
-        //TODO: Implement the "endless" logic for the worker? Or change the command-line parser to not accept "--endless" for Worker, which requires changes in Base.
-        this.maxRunsSpec = parser.accepts("max-runs","The maximum number of workflows to execute. If \"--endless\" is set, this number will be ignored.").withOptionalArg().ofType(Integer.class).defaultsTo(1);
+        // TODO: Implement the "endless" logic for the worker? Or change the command-line parser to not accept "--endless" for Worker, which
+        // requires changes in Base.
+        this.maxRunsSpec = parser
+                .accepts("max-runs", "The maximum number of workflows to execute. If \"--endless\" is set, this number will be ignored.")
+                .withOptionalArg().ofType(Integer.class).defaultsTo(1);
         // UUID should be required: if the user doesn't specify it, there's no other way for the VM to get a UUID
-        this.uuidSpec = parser.accepts("uuid","The UUID of this VM.").withRequiredArg().required().ofType(String.class).required().defaultsTo("/var/run/arch3_worker.pid");
+        this.uuidSpec = parser.accepts("uuid", "The UUID of this VM.").withRequiredArg().required().ofType(String.class).required()
+                .defaultsTo("/var/run/arch3_worker.pid");
         this.pidFileSpec = parser.accepts("pidFile", "Path to lock file.").withRequiredArg().required().ofType(String.class);
         parser.accepts("help").forHelp();
         optParser = parser;
@@ -45,12 +46,9 @@ public class Worker extends Base {
     public static void main(String[] argv) throws Exception {
         final Worker worker = new Worker(argv);
         OptionSet options = worker.options;
-        if (options.has("help"))
-        {
+        if (options.has("help")) {
             optParser.printHelpOn(System.out);
-        }
-        else
-        {
+        } else {
             if (options.has(worker.pidFileSpec)) {
                 final String pidFile = options.valueOf(worker.pidFileSpec);
                 Runtime.getRuntime().addShutdownHook(new Thread() {

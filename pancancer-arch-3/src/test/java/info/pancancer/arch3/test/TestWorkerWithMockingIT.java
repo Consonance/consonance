@@ -76,9 +76,9 @@ public class TestWorkerWithMockingIT {
 
     private DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
 
-//    private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-//    private PrintStream originalOutStream = new PrintStream(System.out);
-//    private PrintStream testPrintStream = new PrintStream(outStream);
+    // private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    // private PrintStream originalOutStream = new PrintStream(System.out);
+    // private PrintStream testPrintStream = new PrintStream(outStream);
 
     @Mock
     private Logger mockLogger;
@@ -109,7 +109,7 @@ public class TestWorkerWithMockingIT {
     public void setUp() throws IOException {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(Utilities.class);
-//        System.setOut(testPrintStream);
+        // System.setOut(testPrintStream);
 
         outBuffer = new StringBuffer();
         Mockito.doAnswer(logAnswer).when(mockLogger).info(anyString());
@@ -130,8 +130,8 @@ public class TestWorkerWithMockingIT {
 
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
-        //PumpStreamHandler streamHandler = new PumpStreamHandler(new CollectingLogOutputStream());
-        //mockExecutor.setStreamHandler(streamHandler);
+        // PumpStreamHandler streamHandler = new PumpStreamHandler(new CollectingLogOutputStream());
+        // mockExecutor.setStreamHandler(streamHandler);
         PowerMockito.whenNew(DefaultExecuteResultHandler.class).withNoArguments().thenReturn(this.handler);
         Mockito.doAnswer(new Answer<Object>() {
             @Override
@@ -180,12 +180,12 @@ public class TestWorkerWithMockingIT {
         WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
 
         testWorker.run();
-        String testResults = this.outBuffer.toString();//this.outStream.toString();
+        String testResults = this.outBuffer.toString();// this.outStream.toString();
         // String knownResults = new String(Files.readAllBytes(Paths.get("src/test/resources/TestWorkerResult.txt")));
-//        System.setOut(originalOutStream);
+        // System.setOut(originalOutStream);
 
         testResults = cleanResults(testResults);
-        //System.out.println("\n===============================\nTest Results: " + testResults);
+        System.out.println("\n===============================\nTest Results: " + testResults);
         assertTrue(
                 "Check for docker command",
                 testResults
