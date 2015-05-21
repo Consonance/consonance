@@ -214,7 +214,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1" });
+        Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1", "--pidFile", "/var/run/arch3_worker.pid" });
 
         String testResults = outBuffer.toString();
 
@@ -241,7 +241,8 @@ public class TestWorker {
             Worker.main(new String[] {});
             fail("this line should not have been reached");
         } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Missing required option(s) [uuid]"));
+            System.out.println(e.getMessage());
+            assertTrue(e.getMessage().contains("Missing required option(s) [config, pidFile, uuid]"));
         }
 
     }
@@ -254,7 +255,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Worker.main(new String[] { "--uuid", "vm123456" });
+        Worker.main(new String[] { "--uuid", "vm123456", "--pidFile","/var/run/arch3_worker.pid", "--config", "src/test/resources/workerConfig.json" });
 
         String testResults = outBuffer.toString();
 
