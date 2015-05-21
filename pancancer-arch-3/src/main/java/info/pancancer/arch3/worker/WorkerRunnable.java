@@ -245,7 +245,7 @@ public class WorkerRunnable implements Runnable {
      */
     private String launchJob(String message, Job job) {
         String workflowOutput = "";
-
+        ExecutorService exService = Executors.newFixedThreadPool(2);
         WorkflowRunner workflowRunner = new WorkflowRunner();
         try {
 
@@ -280,19 +280,20 @@ public class WorkerRunnable implements Runnable {
                 postsleep = Long.parseLong((String) settings.get(POSTWORKER_SLEEP));
             }
 
-            long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get(PREWORKER_SLEEP));
-            long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get(POSTWORKER_SLEEP));
+            long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * presleep;
+            long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * postsleep;
 
             workflowRunner.setCli(cli);
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
-
-            ExecutorService exService = Executors.newFixedThreadPool(2);
-            exService.execute(heartbeat);
+            // submit both
+            Future<?> submit = exService.submit(heartbeat);
             Future<String> workflowResult = exService.submit(workflowRunner);
+            // make sure both are complete
             workflowOutput = workflowResult.get();
+            submit.get();
+
             log.info("Docker execution result: " + workflowOutput);
-            exService.shutdownNow();
         } catch (SocketException e) {
             // This comes from trying to get the IP address.
             log.error(e.getMessage(), e);
@@ -302,6 +303,8 @@ public class WorkerRunnable implements Runnable {
         } catch (ExecutionException | InterruptedException e) {
             // This comes from trying to get the workflow execution result.
             log.error("Error executing workflow: " + e.getMessage(), e);
+        } finally {
+            exService.shutdownNow();
         }
         return workflowOutput;
     }
