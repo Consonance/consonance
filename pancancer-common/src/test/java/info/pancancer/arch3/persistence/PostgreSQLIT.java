@@ -16,11 +16,11 @@
  */
 package info.pancancer.arch3.persistence;
 
-import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
+import info.pancancer.arch3.utils.ITUtilities;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.File;
 import java.io.IOException;
@@ -46,7 +46,7 @@ public class PostgreSQLIT {
 
     @BeforeClass
     public static void setup() throws IOException {
-        Utilities.clearState();
+        ITUtilities.clearState();
     }
 
     @Before
@@ -181,9 +181,9 @@ public class PostgreSQLIT {
     }
 
     public Provision createProvision() {
-        int cores = Base.DEFAULT_NUM_CORES;
-        int memGb = Base.DEFAULT_MEMORY;
-        int storageGb = Base.DEFAULT_DISKSPACE;
+        int cores = 8;
+        int memGb = 128;
+        int storageGb = 1024;
         ArrayList<String> a = new ArrayList<>();
         a.add("ansible_playbook_path");
         Provision p = new Provision(cores, memGb, storageGb, a);

@@ -1,7 +1,7 @@
 notifications:
   slack: oicr:S9k4EowgQv9AnbCfEZHSzCsg
 
-sudo: required 
+sudo: false
 language: java
 jdk: 
   - oraclejdk7
@@ -23,8 +23,3 @@ addons:
 
 services:
   - rabbitmq
-install:
-    - sudo rabbitmq-plugins enable rabbitmq_management
-    - sudo rabbitmq-plugins enable rabbitmq_federation
-    - sudo rabbitmq-plugins enable rabbitmq_federation_management
-    - sudo service rabbitmq-server restart

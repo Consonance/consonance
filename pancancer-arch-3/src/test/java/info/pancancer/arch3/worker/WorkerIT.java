@@ -18,7 +18,7 @@ package info.pancancer.arch3.worker;
 
 import info.pancancer.arch3.coordinator.Coordinator;
 import info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow;
-import info.pancancer.arch3.utils.Utilities;
+import info.pancancer.arch3.utils.ITUtilities;
 import java.io.File;
 import java.io.IOException;
 import joptsimple.OptionException;
@@ -34,7 +34,7 @@ public class WorkerIT {
 
     @BeforeClass
     public static void setup() throws IOException {
-        Utilities.clearState();
+        ITUtilities.clearState();
     }
 
     /**

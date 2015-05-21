@@ -16,7 +16,7 @@
  */
 package info.pancancer.arch3.containerProvisioner;
 
-import info.pancancer.arch3.utils.Utilities;
+import info.pancancer.arch3.utils.ITUtilities;
 import java.io.File;
 import java.io.IOException;
 import joptsimple.OptionException;
@@ -32,7 +32,7 @@ public class ContainerProvisionerThreadsIT {
 
     @BeforeClass
     public static void setup() throws IOException {
-        Utilities.clearState();
+        ITUtilities.clearState();
     }
 
     /**
