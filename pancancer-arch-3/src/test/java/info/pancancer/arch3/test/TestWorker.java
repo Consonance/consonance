@@ -7,14 +7,12 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
-
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
 import info.pancancer.arch3.worker.WorkerHeartbeat;
 import info.pancancer.arch3.worker.WorkerRunnable;
 import info.pancancer.arch3.worker.WorkflowRunner;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,19 +21,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.json.simple.JSONObject;
-
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -182,14 +175,6 @@ public class TestWorker {
     }
 
     @Test
-    public void testWorker_helpMessage() throws Exception
-    {
-        setupConfig();
-        //TODO: Capture System.out and assert the correct text is here 
-        Worker.main(new String[]{"--help"});
-    }
-    
-    @Test
     public void testWorker_nullMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
         setupConfig();
 
@@ -214,7 +199,8 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1", "--pidFile", "/var/run/arch3_worker.pid" });
+        Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1",
+                "--pidFile", "/var/run/arch3_worker.pid" });
 
         String testResults = outBuffer.toString();
 
@@ -242,7 +228,7 @@ public class TestWorker {
             fail("this line should not have been reached");
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            assertTrue(e.getMessage().contains("Missing required option(s) [config, pidFile, uuid]"));
+            assertTrue(e.getMessage().contains("Missing required option(s) [config, uuid]"));
         }
 
     }
@@ -255,7 +241,8 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Worker.main(new String[] { "--uuid", "vm123456", "--pidFile","/var/run/arch3_worker.pid", "--config", "src/test/resources/workerConfig.json" });
+        Worker.main(new String[] { "--uuid", "vm123456", "--pidFile", "/var/run/arch3_worker.pid", "--config",
+                "src/test/resources/workerConfig.json" });
 
         String testResults = outBuffer.toString();
 

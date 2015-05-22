@@ -1,24 +1,21 @@
 package info.pancancer.arch3.worker;
 
+import com.rabbitmq.client.Channel;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Utilities;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.rabbitmq.client.Channel;
 
 /**
  * This class will send a "heartbeat" message. How often it is sent can be configured via setSecondsDelay. The default delay is 2 seconds.
  * The destination queue for the messages, and the body of the messages can also be configured via setter methods.
- * 
+ *
  * @author sshorser
  *
  */
@@ -31,7 +28,7 @@ public class WorkerHeartbeat implements Runnable {
     private String networkID;
     private String vmUuid;
     private String jobUuid;
-    
+
     protected static final Logger LOG = LoggerFactory.getLogger(WorkerRunnable.class);
 
     @Override
@@ -47,8 +44,9 @@ public class WorkerHeartbeat implements Runnable {
                 heartbeatStatus.setState(StatusState.RUNNING);
                 heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
                 heartbeatStatus.setVmUuid(this.vmUuid);
+                heartbeatStatus.setIpAddress(networkID);
 
-                //String stdOut = this.statusSource.getStdOut();
+                // String stdOut = this.statusSource.getStdOut();
                 Lock lock = new ReentrantLock();
                 lock.lock();
                 String stdOut = this.statusSource.getStdOut(2);
@@ -61,10 +59,10 @@ public class WorkerHeartbeat implements Runnable {
                 reportingChannel.basicPublish(queueName, queueName, null, heartBeatMessage.getBytes(StandardCharsets.UTF_8));
                 Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
             } catch (IOException e) {
-                LOG.error("IOException caught! Message may not have been published. Exception is: "+e.getMessage(),e);
-                //TODO: Should the thread die if this happens? Should the exception be rethrown?
-                //For now, we'll just end the thread.
-                //return;
+                LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);
+                // TODO: Should the thread die if this happens? Should the exception be rethrown?
+                // For now, we'll just end the thread.
+                // return;
                 Thread.currentThread().interrupt();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

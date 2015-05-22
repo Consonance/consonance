@@ -53,6 +53,12 @@ public class WorkerRunnable implements Runnable {
     private int maxRuns = 1;
     private String userName;
     private boolean testMode;
+    private static final int DEFAULT_PRESLEEP = 1;
+    private static final int DEFAULT_POSTSLEEP = 1;
+    public static final String POSTWORKER_SLEEP = "postworkerSleep";
+    public static final String PREWORKER_SLEEP = "preworkerSleep";
+    public static final String HEARTBEAT_RATE = "heartbeatRate";
+    public static final String HOST_USER_NAME = "hostUserName";
 
     /**
      * Create a new Worker.
@@ -90,7 +96,7 @@ public class WorkerRunnable implements Runnable {
         }
         this.jobQueueName = this.queueName + "_jobs";
         this.resultsQueueName = this.queueName + "_results";
-        this.userName = (String) settings.get("hostUserName");
+        this.userName = settings.containsKey(HOST_USER_NAME) ? (String) settings.get(HOST_USER_NAME) : "ubuntu";
         this.vmUuid = vmUuid;
         this.maxRuns = maxRuns;
         this.testMode = testMode;
@@ -152,7 +158,7 @@ public class WorkerRunnable implements Runnable {
                         // TODO: this will obviously get much more complicated when integrated with Docker
                         // launch VM
                         Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE,
-                                "job is starting", getFirstNonLoopbackAddress().toString());
+                                "job is starting", getFirstNonLoopbackAddress().toString().substring(1));
                         status.setStderr("");
                         status.setStdout("");
                         String statusJSON = status.toJSON();
@@ -170,7 +176,7 @@ public class WorkerRunnable implements Runnable {
                         // launchJob(job.getUuid(), job);
 
                         status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, "job is finished",
-                                getFirstNonLoopbackAddress().toString());
+                                getFirstNonLoopbackAddress().toString().substring(1));
                         status.setStderr("");
                         status.setStdout(workflowOutput);
                         statusJSON = status.toJSON();
@@ -240,7 +246,7 @@ public class WorkerRunnable implements Runnable {
      */
     private String launchJob(String message, Job job) {
         String workflowOutput = "";
-
+        ExecutorService exService = Executors.newFixedThreadPool(2);
         WorkflowRunner workflowRunner = new WorkflowRunner();
         try {
 
@@ -251,32 +257,44 @@ public class WorkerRunnable implements Runnable {
             CommandLine cli = new CommandLine("docker");
             cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-v",
                     job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini", "-v", "/datastore:/datastore", "-v",
-                    "/home/" + this.userName + "/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem", "seqware/seqware_whitestar_pancancer",
+                    "/home/" + this.userName + "/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem", "pancancer/seqware_whitestar_pancancer",
                     "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
             heartbeat.setReportingChannel(resultsChannel);
-            heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get("heartbeatRate")));
+            if (settings.containsKey(HEARTBEAT_RATE)) {
+                heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get(HEARTBEAT_RATE)));
+            }
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
-            heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString());
+            heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString().substring(1));
             heartbeat.setStatusSource(workflowRunner);
             // heartbeat.setMessageBody(heartbeatStatus.toJSON());
 
-            long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get("preworkerSleep"));
-            long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * Long.parseLong((String) settings.get("postworkerSleep"));
+            long presleep = WorkerRunnable.DEFAULT_PRESLEEP;
+            if (settings.containsKey(PREWORKER_SLEEP)) {
+                presleep = Long.parseLong((String) settings.get(PREWORKER_SLEEP));
+            }
+            long postsleep = WorkerRunnable.DEFAULT_POSTSLEEP;
+            if (settings.containsKey(POSTWORKER_SLEEP)) {
+                postsleep = Long.parseLong((String) settings.get(POSTWORKER_SLEEP));
+            }
+
+            long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * presleep;
+            long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * postsleep;
 
             workflowRunner.setCli(cli);
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
-
-            ExecutorService exService = Executors.newFixedThreadPool(2);
-            exService.execute(heartbeat);
+            // submit both
+            Future<?> submit = exService.submit(heartbeat);
             Future<String> workflowResult = exService.submit(workflowRunner);
+            // make sure both are complete
             workflowOutput = workflowResult.get();
+            // don't get the heartbeat if the workflow is complete already
+
             log.info("Docker execution result: " + workflowOutput);
-            exService.shutdownNow();
         } catch (SocketException e) {
             // This comes from trying to get the IP address.
             log.error(e.getMessage(), e);
@@ -286,6 +304,8 @@ public class WorkerRunnable implements Runnable {
         } catch (ExecutionException | InterruptedException e) {
             // This comes from trying to get the workflow execution result.
             log.error("Error executing workflow: " + e.getMessage(), e);
+        } finally {
+            exService.shutdownNow();
         }
         return workflowOutput;
     }

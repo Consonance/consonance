@@ -148,7 +148,8 @@ public class JobGenerator extends Base {
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order();
-        newOrder.setJob(new Job("DEWrapperWorkflow", "1.0.0", "/path/to/workflow", hashStr, hm));
+        newOrder.setJob(new Job("HelloWorld", "1.0-SNAPSHOT", "/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.1", hashStr,
+                hm));
         newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
 
         return newOrder;
