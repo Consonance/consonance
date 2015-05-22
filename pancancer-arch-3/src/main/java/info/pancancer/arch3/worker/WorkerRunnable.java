@@ -58,6 +58,7 @@ public class WorkerRunnable implements Runnable {
     public static final String POSTWORKER_SLEEP = "postworkerSleep";
     public static final String PREWORKER_SLEEP = "preworkerSleep";
     public static final String HEARTBEAT_RATE = "heartbeatRate";
+    public static final String HOST_USER_NAME = "hostUserName";
 
     /**
      * Create a new Worker.
@@ -95,7 +96,7 @@ public class WorkerRunnable implements Runnable {
         }
         this.jobQueueName = this.queueName + "_jobs";
         this.resultsQueueName = this.queueName + "_results";
-        this.userName = (String) settings.get("hostUserName");
+        this.userName = settings.containsKey(HOST_USER_NAME) ? (String) settings.get(HOST_USER_NAME) : "ubuntu";
         this.vmUuid = vmUuid;
         this.maxRuns = maxRuns;
         this.testMode = testMode;
@@ -157,7 +158,7 @@ public class WorkerRunnable implements Runnable {
                         // TODO: this will obviously get much more complicated when integrated with Docker
                         // launch VM
                         Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE,
-                                "job is starting", getFirstNonLoopbackAddress().toString());
+                                "job is starting", getFirstNonLoopbackAddress().toString().substring(1));
                         status.setStderr("");
                         status.setStdout("");
                         String statusJSON = status.toJSON();
@@ -175,7 +176,7 @@ public class WorkerRunnable implements Runnable {
                         // launchJob(job.getUuid(), job);
 
                         status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, "job is finished",
-                                getFirstNonLoopbackAddress().toString());
+                                getFirstNonLoopbackAddress().toString().substring(1));
                         status.setStderr("");
                         status.setStdout(workflowOutput);
                         statusJSON = status.toJSON();
@@ -256,7 +257,7 @@ public class WorkerRunnable implements Runnable {
             CommandLine cli = new CommandLine("docker");
             cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-v",
                     job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini", "-v", "/datastore:/datastore", "-v",
-                    "/home/" + this.userName + "/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem", "seqware/seqware_whitestar_pancancer",
+                    "/home/" + this.userName + "/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem", "pancancer/seqware_whitestar_pancancer",
                     "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
@@ -267,7 +268,7 @@ public class WorkerRunnable implements Runnable {
             }
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
-            heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString());
+            heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString().substring(1));
             heartbeat.setStatusSource(workflowRunner);
             // heartbeat.setMessageBody(heartbeatStatus.toJSON());
 

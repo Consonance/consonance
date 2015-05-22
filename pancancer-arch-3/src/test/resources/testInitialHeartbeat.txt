@@ -4,6 +4,3 @@ Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
 "state": "RUNNING",
 "stderr": "",
 "stdout": "",
-"ipAddress": "null",
-"message": "job is running; IP address: 0.0.0.0"
-}
