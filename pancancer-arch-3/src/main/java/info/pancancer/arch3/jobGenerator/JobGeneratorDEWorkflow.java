@@ -145,6 +145,8 @@ public class JobGeneratorDEWorkflow extends Base {
         Order newOrder = new Order();
         newOrder.setJob(new Job(workflowName, workflowVersion, workflowPath, hashStr, hm));
         newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
+        // need to give provision object a uuid from a job so that completed jobs can report in
+        newOrder.getProvision().setUuid(newOrder.getJob().getUuid());
 
         return newOrder;
 
