@@ -107,7 +107,7 @@ public class ContainerProvisionerThreads extends Base {
                 PostgreSQL db = new PostgreSQL(settings);
 
                 QueueingConsumer consumer = new QueueingConsumer(vmChannel);
-                vmChannel.basicConsume(queueName + "_vms", true, consumer);
+                vmChannel.basicConsume(queueName + "_vms", false, consumer);
 
                 // TODO: need threads that each read from orders and another that reads results
                 do {
@@ -127,6 +127,7 @@ public class ContainerProvisionerThreads extends Base {
 
                     // puts it into the DB so I can count it in another thread
                     db.createProvision(p);
+                    vmChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);
 
             } catch (IOException ex) {
@@ -255,7 +256,7 @@ public class ContainerProvisionerThreads extends Base {
                 String resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupVMs");
                 resultsChannel.queueBind(resultsQueue, resultQueueName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
-                resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
+                resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
@@ -290,9 +291,10 @@ public class ContainerProvisionerThreads extends Base {
                         Gson gson = new Gson();
                         String[] targets = new String[] { status.getIpAddress() };
                         Path createTempFile = Files.createTempFile("target", "json");
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(createTempFile.toFile()),
-                                StandardCharsets.UTF_8));
-                        gson.toJson(targets, bw);
+                        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(createTempFile.toFile()),
+                                StandardCharsets.UTF_8))) {
+                            gson.toJson(targets, bw);
+                        }
                         arguments.add(createTempFile.toAbsolutePath().toString());
                         String[] toArray = arguments.toArray(new String[arguments.size()]);
                         LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
@@ -305,6 +307,7 @@ public class ContainerProvisionerThreads extends Base {
                         ProvisionState provisionState = ProvisionState.valueOf(status.getState().toString());
                         db.updateProvision(status.getVmUuid(), status.getJobUuid(), provisionState);
                     }
+                    resultsChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);
 
             } catch (IOException ex) {

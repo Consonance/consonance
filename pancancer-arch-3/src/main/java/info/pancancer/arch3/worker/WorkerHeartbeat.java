@@ -1,6 +1,7 @@
 package info.pancancer.arch3.worker;
 
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.MessageProperties;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
@@ -56,7 +57,8 @@ public class WorkerHeartbeat implements Runnable {
                 heartbeatStatus.setStderr(stdErr);
                 String heartBeatMessage = heartbeatStatus.toJSON();
                 LOG.debug("Sending heartbeat message to " + queueName + ", with body: " + heartBeatMessage);
-                reportingChannel.basicPublish(queueName, queueName, null, heartBeatMessage.getBytes(StandardCharsets.UTF_8));
+                reportingChannel.basicPublish(queueName, queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
+                        heartBeatMessage.getBytes(StandardCharsets.UTF_8));
                 Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
             } catch (IOException e) {
                 LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);

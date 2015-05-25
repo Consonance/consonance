@@ -282,7 +282,7 @@ public class Coordinator extends Base {
                 String resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupJobs");
                 resultsChannel.queueBind(resultsQueue, resultQueueName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
-                resultsChannel.basicConsume(resultsQueue, true, resultsConsumer);
+                resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
@@ -320,7 +320,7 @@ public class Coordinator extends Base {
                     /*
                      * try { // pause Thread.sleep(5000); } catch (InterruptedException ex) { //log.error(ex.toString()); }
                      */
-
+                    resultsChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);
 
             } catch (IOException ex) {
