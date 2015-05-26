@@ -6,6 +6,7 @@ import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
@@ -181,8 +182,8 @@ public class ContainerProvisionerThreads extends Base {
                     // System.out.println("CHECKING RUNNING VMs");
 
                     // read from DB
-                    long numberRunningContainers = db.getProvisionCount(ProvisionState.RUNNING);
-                    long numberPendingContainers = db.getProvisionCount(ProvisionState.PENDING);
+                    long numberRunningContainers = db.getJobs(JobState.PENDING).size();
+                    long numberPendingContainers = db.getJobs(JobState.RUNNING).size();
 
                     if (testMode) {
                         LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
