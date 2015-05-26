@@ -148,7 +148,7 @@ public class JobGenerator extends Base {
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order();
-        newOrder.setJob(new Job("HelloWorld", "1.0-SNAPSHOT", "/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.1", hashStr,
+        newOrder.setJob(new Job("HelloWorld", "1.0-SNAPSHOT", "/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0", hashStr,
                 hm));
         newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
         // need to give provision object a uuid from a job so that completed jobs can report in
