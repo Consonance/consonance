@@ -13,7 +13,7 @@
     <artifactId>sandbox</artifactId>
     <packaging>pom</packaging>
     <groupId>io.cancer.collaboratory</groupId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -28,7 +28,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>HEAD</tag>
+        <tag>1.0.3</tag>
     </scm>
     <distributionManagement>
         <repository>
