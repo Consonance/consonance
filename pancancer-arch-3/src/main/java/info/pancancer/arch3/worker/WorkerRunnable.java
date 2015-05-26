@@ -318,6 +318,10 @@ public class WorkerRunnable implements Runnable {
      */
     private static InetAddress getFirstNonLoopbackAddress() throws SocketException {
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (i.getName().contains("docker")) {
+                // the virtual ip address for the docker mount is useless but is not a loopback address
+                continue;
+            }
             for (InetAddress addr : Collections.list(i.getInetAddresses())) {
                 if (!addr.isLoopbackAddress()) {
                     // Prefer IP v4
