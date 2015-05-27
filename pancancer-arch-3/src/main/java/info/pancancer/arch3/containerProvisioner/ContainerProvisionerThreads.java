@@ -300,7 +300,11 @@ public class ContainerProvisionerThreads extends Base {
                         arguments.add(createTempFile.toAbsolutePath().toString());
                         String[] toArray = arguments.toArray(new String[arguments.size()]);
                         LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
-                        Reaper.main(toArray);
+                        try {
+                            Reaper.main(toArray);
+                        } catch (Exception e) {
+                            LOG.error("Youxia reaper threw the following exception", e);
+                        }
                     } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
                             || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING)
                             && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
