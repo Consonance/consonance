@@ -182,6 +182,17 @@ public class PostgreSQL {
         return (String) map.entrySet().iterator().next().getKey();
     }
 
+    public String[] getSuccessfulVMAddresses() {
+        Map<String, Map<String, Object>> runSelectStatement = runSelectStatement(
+                "select provision_id, ip_address from provision where status = '" + ProvisionState.SUCCESS + "'", new KeyedHandler<String>(
+                        "provision_id"));
+        List<String> list = new ArrayList<>();
+        for (Entry<String, Map<String, Object>> entry : runSelectStatement.entrySet()) {
+            list.add((String) entry.getValue().get("ip_address"));
+        }
+        return list.toArray(new String[list.size()]);
+    }
+
     public List<Job> getJobs(JobState status) {
 
         List<Job> jobs = new ArrayList<>();

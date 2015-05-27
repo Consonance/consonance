@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
@@ -49,6 +51,10 @@ public class PostgreSQLIT {
         ITUtilities.clearState();
     }
 
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+    }
+
     @Before
     public void setUp() throws IOException {
         this.configFile = FileUtils.getFile("src", "test", "resources", "config.json");
@@ -57,6 +63,10 @@ public class PostgreSQLIT {
 
         // clean up the database
         postgres.clearDatabase();
+    }
+
+    @After
+    public void tearDown() throws Exception {
     }
 
     /**
@@ -285,6 +295,26 @@ public class PostgreSQLIT {
         long result = postgres.getDesiredNumberOfVMs();
         // only the two in pending and running state should matter
         assertEquals(2, result);
+    }
+
+    /**
+     * Test of getSuccessfulVMAddresses method, of class PostgreSQL.
+     */
+    @Test
+    public void testGetSuccessfulVMAddresses() {
+        System.out.println("getSuccessfulVMAddresses");
+        Provision p = createProvision();
+        p.setIpAddress("9.9.9.9");
+        p.setState(ProvisionState.START);
+        postgres.createProvision(p);
+        p.setIpAddress("9.9.9.8");
+        p.setState(ProvisionState.SUCCESS);
+        postgres.createProvision(p);
+        p.setIpAddress("9.9.9.7");
+        p.setState(ProvisionState.SUCCESS);
+        postgres.createProvision(p);
+        String[] result = postgres.getSuccessfulVMAddresses();
+        Assert.assertTrue("found addresses, incorrect number" + result.length, result.length == 2);
     }
 
 }

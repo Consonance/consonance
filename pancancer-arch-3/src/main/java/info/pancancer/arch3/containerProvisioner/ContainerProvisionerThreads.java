@@ -290,11 +290,12 @@ public class ContainerProvisionerThreads extends Base {
                         arguments.add("--kill-list");
                         // create a json file with the one targetted ip address
                         Gson gson = new Gson();
-                        String[] targets = new String[] { status.getIpAddress() };
+                        String[] successfulVMAddresses = db.getSuccessfulVMAddresses();
+                        LOG.info("Kill list contains: " + Arrays.asList(successfulVMAddresses));
                         Path createTempFile = Files.createTempFile("target", "json");
                         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(createTempFile.toFile()),
                                 StandardCharsets.UTF_8))) {
-                            gson.toJson(targets, bw);
+                            gson.toJson(successfulVMAddresses, bw);
                         }
                         arguments.add(createTempFile.toAbsolutePath().toString());
                         String[] toArray = arguments.toArray(new String[arguments.size()]);
