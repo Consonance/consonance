@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -194,9 +195,8 @@ public class ContainerProvisionerThreads extends Base {
                             LOG.info("  RUNNING CONTAINERS < " + maxWorkers + " SO WILL LAUNCH VM");
 
                             // TODO: this will obviously get much more complicated when integrated with Youxia launch VM
-                            String uuid = db.getPendingProvisionUUID();
-                            // this just updates one that's pending
-                            db.updatePendingProvision(uuid);
+                            // fake a uuid
+                            String uuid = UUID.randomUUID().toString().toLowerCase();
                             // now launch the VM... doing this after the update above to prevent race condition if the worker signals
                             // finished
                             // before it's marked as pending
@@ -306,7 +306,7 @@ public class ContainerProvisionerThreads extends Base {
                         // deal with running, failed, pending, provisioning
                         // convert from provision state to statestate
                         ProvisionState provisionState = ProvisionState.valueOf(status.getState().toString());
-                        db.updateProvision(status.getVmUuid(), status.getJobUuid(), provisionState);
+                        db.updateProvisionByJobUUID(status.getJobUuid(), status.getVmUuid(), provisionState, status.getIpAddress());
                     }
                     resultsChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);

@@ -65,10 +65,11 @@ public class PostgreSQLIT {
     @Test
     public void testGetPendingProvisionUUID() {
         Provision p = createProvision();
+        p.setProvisionUUID("provision_uuid");
         p.setState(ProvisionState.PENDING);
-        String uuid = postgres.createProvision(p);
+        postgres.createProvision(p);
         String result = postgres.getPendingProvisionUUID();
-        assertEquals(uuid, result);
+        assertEquals("provision_uuid", result);
     }
 
     /**
@@ -77,11 +78,12 @@ public class PostgreSQLIT {
     @Test
     public void testUpdatePendingProvision() {
         Provision p = createProvision();
+        p.setProvisionUUID("provision_uuid");
         p.setState(ProvisionState.PENDING);
-        String uuid = postgres.createProvision(p);
+        postgres.createProvision(p);
         long result = postgres.getProvisionCount(ProvisionState.RUNNING);
         Assert.assertTrue("could not count provisions " + result, result == 0);
-        postgres.updatePendingProvision(uuid);
+        postgres.updatePendingProvision("provision_uuid");
         result = postgres.getProvisionCount(ProvisionState.RUNNING);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
@@ -92,11 +94,12 @@ public class PostgreSQLIT {
     @Test
     public void testFinishContainer() {
         Provision p = createProvision();
+        p.setProvisionUUID("provision_uuid");
         p.setState(ProvisionState.PENDING);
-        String uuid = postgres.createProvision(p);
+        postgres.createProvision(p);
         long result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not count provisions " + result, result == 0);
-        postgres.finishContainer(uuid);
+        postgres.finishContainer("provision_uuid");
         result = postgres.getProvisionCount(ProvisionState.SUCCESS);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
@@ -144,16 +147,35 @@ public class PostgreSQLIT {
     }
 
     /**
-     * Test of updateProvision method, of class PostgreSQL.
+     * Test of updateProvisionByProvisionUUID method, of class PostgreSQL.
      */
     @Test
-    public void testUpdateProvision() {
+    public void testUpdateProvisionByProvisionUUID() {
         Provision p = createProvision();
+        p.setJobUUID("job_uuid");
+        p.setProvisionUUID("provision_uuid");
         p.setState(ProvisionState.PENDING);
-        String uuid = postgres.createProvision(p);
+        postgres.createProvision(p);
         long result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not count provisions " + result, result == 0);
-        postgres.updateProvision(uuid, "job_uuid", ProvisionState.FAILED);
+        postgres.updateProvisionByProvisionUUID("provision_uuid", "job_uuid", ProvisionState.FAILED, "9.9.9.9");
+        result = postgres.getProvisionCount(ProvisionState.FAILED);
+        Assert.assertTrue("could not update provisions " + result, result == 1);
+    }
+
+    /**
+     * Test of updateProvisionByJobUUID method, of class PostgreSQL.
+     */
+    @Test
+    public void testUpdateProvisionByJobUUID() {
+        Provision p = createProvision();
+        p.setJobUUID("job_uuid");
+        p.setProvisionUUID("provision_uuid");
+        p.setState(ProvisionState.PENDING);
+        postgres.createProvision(p);
+        long result = postgres.getProvisionCount(ProvisionState.FAILED);
+        Assert.assertTrue("could not count provisions " + result, result == 0);
+        postgres.updateProvisionByJobUUID("job_uuid", "provision_uuid", ProvisionState.FAILED, "9.9.9.9");
         result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
@@ -176,8 +198,8 @@ public class PostgreSQLIT {
     @Test
     public void testCreateProvision() {
         Provision p = createProvision();
-        String result = postgres.createProvision(p);
-        Assert.assertTrue("could not create provision " + p.toJSON(), !result.isEmpty());
+        Integer id = postgres.createProvision(p);
+        Assert.assertTrue("could not create provision " + p.toJSON(), id != null);
     }
 
     public Provision createProvision() {
