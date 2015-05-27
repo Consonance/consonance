@@ -214,7 +214,12 @@ public class ContainerProvisionerThreads extends Base {
                             arguments.add(String.valueOf(requiredVMs));
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
                             LOG.info("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
-                            Deployer.main(toArray);
+                            try {
+                                Deployer.main(toArray);
+                            } catch (Exception e) {
+                                LOG.error("Youxia deployer threw the following exception", e);
+                            }
+
                         }
                     }
                 } while (endless);
