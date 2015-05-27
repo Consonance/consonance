@@ -214,10 +214,13 @@ public class ContainerProvisionerThreads extends Base {
                             arguments.add(String.valueOf(requiredVMs));
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
                             LOG.info("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
-                            try {
-                                Deployer.main(toArray);
-                            } catch (Exception e) {
-                                LOG.error("Youxia deployer threw the following exception", e);
+                            // need to make sure reaper and deployer do not overlap
+                            synchronized (ContainerProvisionerThreads.class) {
+                                try {
+                                    Deployer.main(toArray);
+                                } catch (Exception e) {
+                                    LOG.error("Youxia deployer threw the following exception", e);
+                                }
                             }
 
                         }
@@ -305,10 +308,13 @@ public class ContainerProvisionerThreads extends Base {
                         arguments.add(createTempFile.toAbsolutePath().toString());
                         String[] toArray = arguments.toArray(new String[arguments.size()]);
                         LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
-                        try {
-                            Reaper.main(toArray);
-                        } catch (Exception e) {
-                            LOG.error("Youxia reaper threw the following exception", e);
+                        // need to make sure reaper and deployer do not overlap
+                        synchronized (ContainerProvisionerThreads.class) {
+                            try {
+                                Reaper.main(toArray);
+                            } catch (Exception e) {
+                                LOG.error("Youxia reaper threw the following exception", e);
+                            }
                         }
                     } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
                             || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING)
