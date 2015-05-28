@@ -104,11 +104,13 @@ setup on a single box just using Java and RabbitMQ.  Eventually, this will just
 be one of multiple possible backends configured by the settings file. This single-machine,
 pure Java running example will be used for integration and other tests.
 
+You should also create a ~/.youxia/config file. See https://github.com/CloudBindle/youxia#configuration for an example. 
+
 ### Job Generator
 
 This generates job orders, 5 in this case. If you leave off the `--total-jobs` option it will submit jobs on an infinite loop.
 
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5
+    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5 [--endless]
 
 ### Coordinator
 
@@ -119,17 +121,19 @@ It then monitors the results queue to see when jobs fail or finish.
 Finally, for failed or finished workflows, it informs the Container provisioner about finished
 VMs that can be terminated.
 
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
+    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json [--endless]
 
 ### Container Provisioner
 
-This will spin up (fake) containers that will launch Workers.
+This will spin up containers that will launch Workers.
 
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
+    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json [--endless]
 
 ### Worker
 
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 1234
+If you need to create a worker, use the following Ansible playbook https://github.com/ICGC-TCGA-PanCancer/container-host-bag
+
+    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 1234 [--endless]
 
 #### Test Mode Worker
 
