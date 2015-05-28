@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +44,7 @@ import org.slf4j.LoggerFactory;
 public class ContainerProvisionerThreads extends Base {
 
     private static final int DEFAULT_THREADS = 3;
+    private static final int MINUTE_IN_MILLISECONDS = 60 * 1000;
     private final OptionSpecBuilder testSpec;
 
     public static void main(String[] argv) throws Exception {
@@ -194,9 +196,8 @@ public class ContainerProvisionerThreads extends Base {
                             LOG.info("  RUNNING CONTAINERS < " + maxWorkers + " SO WILL LAUNCH VM");
 
                             // TODO: this will obviously get much more complicated when integrated with Youxia launch VM
-                            String uuid = db.getPendingProvisionUUID();
-                            // this just updates one that's pending
-                            db.updatePendingProvision(uuid);
+                            // fake a uuid
+                            String uuid = UUID.randomUUID().toString().toLowerCase();
                             // now launch the VM... doing this after the update above to prevent race condition if the worker signals
                             // finished
                             // before it's marked as pending
@@ -214,7 +215,17 @@ public class ContainerProvisionerThreads extends Base {
                             arguments.add(String.valueOf(requiredVMs));
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
                             LOG.info("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
-                            Deployer.main(toArray);
+                            // need to make sure reaper and deployer do not overlap
+                            synchronized (ContainerProvisionerThreads.class) {
+                                try {
+                                    Deployer.main(toArray);
+                                } catch (Exception e) {
+                                    LOG.error("Youxia deployer threw the following exception", e);
+                                }
+                            }
+                            if (endless) {
+                                Thread.sleep(MINUTE_IN_MILLISECONDS);
+                            }
                         }
                     }
                 } while (endless);
@@ -290,23 +301,34 @@ public class ContainerProvisionerThreads extends Base {
                         arguments.add("--kill-list");
                         // create a json file with the one targetted ip address
                         Gson gson = new Gson();
-                        String[] targets = new String[] { status.getIpAddress() };
+                        String[] successfulVMAddresses = db.getSuccessfulVMAddresses();
+                        LOG.info("Kill list contains: " + Arrays.asList(successfulVMAddresses));
                         Path createTempFile = Files.createTempFile("target", "json");
                         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(createTempFile.toFile()),
                                 StandardCharsets.UTF_8))) {
-                            gson.toJson(targets, bw);
+                            gson.toJson(successfulVMAddresses, bw);
                         }
                         arguments.add(createTempFile.toAbsolutePath().toString());
                         String[] toArray = arguments.toArray(new String[arguments.size()]);
                         LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
-                        Reaper.main(toArray);
+                        // need to make sure reaper and deployer do not overlap
+                        synchronized (ContainerProvisionerThreads.class) {
+                            try {
+                                Reaper.main(toArray);
+                            } catch (Exception e) {
+                                LOG.error("Youxia reaper threw the following exception", e);
+                            }
+                        }
+                        if (endless) {
+                            Thread.sleep(MINUTE_IN_MILLISECONDS);
+                        }
                     } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
                             || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING)
                             && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // deal with running, failed, pending, provisioning
                         // convert from provision state to statestate
                         ProvisionState provisionState = ProvisionState.valueOf(status.getState().toString());
-                        db.updateProvision(status.getVmUuid(), status.getJobUuid(), provisionState);
+                        db.updateProvisionByJobUUID(status.getJobUuid(), status.getVmUuid(), provisionState, status.getIpAddress());
                     }
                     resultsChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);

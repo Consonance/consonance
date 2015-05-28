@@ -18,6 +18,7 @@ CREATE TABLE provision (
     status text,
     provision_uuid text,
     job_uuid text,
+    ip_address text,
     cores integer,
     mem_gb integer,
     storage_gb integer,

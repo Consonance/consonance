@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
@@ -49,6 +51,10 @@ public class PostgreSQLIT {
         ITUtilities.clearState();
     }
 
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+    }
+
     @Before
     public void setUp() throws IOException {
         this.configFile = FileUtils.getFile("src", "test", "resources", "config.json");
@@ -59,16 +65,21 @@ public class PostgreSQLIT {
         postgres.clearDatabase();
     }
 
+    @After
+    public void tearDown() throws Exception {
+    }
+
     /**
      * Test of getPendingProvisionUUID method, of class PostgreSQL.
      */
     @Test
     public void testGetPendingProvisionUUID() {
         Provision p = createProvision();
+        p.setProvisionUUID("provision_uuid");
         p.setState(ProvisionState.PENDING);
-        String uuid = postgres.createProvision(p);
+        postgres.createProvision(p);
         String result = postgres.getPendingProvisionUUID();
-        assertEquals(uuid, result);
+        assertEquals("provision_uuid", result);
     }
 
     /**
@@ -77,11 +88,12 @@ public class PostgreSQLIT {
     @Test
     public void testUpdatePendingProvision() {
         Provision p = createProvision();
+        p.setProvisionUUID("provision_uuid");
         p.setState(ProvisionState.PENDING);
-        String uuid = postgres.createProvision(p);
+        postgres.createProvision(p);
         long result = postgres.getProvisionCount(ProvisionState.RUNNING);
         Assert.assertTrue("could not count provisions " + result, result == 0);
-        postgres.updatePendingProvision(uuid);
+        postgres.updatePendingProvision("provision_uuid");
         result = postgres.getProvisionCount(ProvisionState.RUNNING);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
@@ -92,11 +104,12 @@ public class PostgreSQLIT {
     @Test
     public void testFinishContainer() {
         Provision p = createProvision();
+        p.setProvisionUUID("provision_uuid");
         p.setState(ProvisionState.PENDING);
-        String uuid = postgres.createProvision(p);
+        postgres.createProvision(p);
         long result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not count provisions " + result, result == 0);
-        postgres.finishContainer(uuid);
+        postgres.finishContainer("provision_uuid");
         result = postgres.getProvisionCount(ProvisionState.SUCCESS);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
@@ -144,16 +157,35 @@ public class PostgreSQLIT {
     }
 
     /**
-     * Test of updateProvision method, of class PostgreSQL.
+     * Test of updateProvisionByProvisionUUID method, of class PostgreSQL.
      */
     @Test
-    public void testUpdateProvision() {
+    public void testUpdateProvisionByProvisionUUID() {
         Provision p = createProvision();
+        p.setJobUUID("job_uuid");
+        p.setProvisionUUID("provision_uuid");
         p.setState(ProvisionState.PENDING);
-        String uuid = postgres.createProvision(p);
+        postgres.createProvision(p);
         long result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not count provisions " + result, result == 0);
-        postgres.updateProvision(uuid, "job_uuid", ProvisionState.FAILED);
+        postgres.updateProvisionByProvisionUUID("provision_uuid", "job_uuid", ProvisionState.FAILED, "9.9.9.9");
+        result = postgres.getProvisionCount(ProvisionState.FAILED);
+        Assert.assertTrue("could not update provisions " + result, result == 1);
+    }
+
+    /**
+     * Test of updateProvisionByJobUUID method, of class PostgreSQL.
+     */
+    @Test
+    public void testUpdateProvisionByJobUUID() {
+        Provision p = createProvision();
+        p.setJobUUID("job_uuid");
+        p.setProvisionUUID("provision_uuid");
+        p.setState(ProvisionState.PENDING);
+        postgres.createProvision(p);
+        long result = postgres.getProvisionCount(ProvisionState.FAILED);
+        Assert.assertTrue("could not count provisions " + result, result == 0);
+        postgres.updateProvisionByJobUUID("job_uuid", "provision_uuid", ProvisionState.FAILED, "9.9.9.9");
         result = postgres.getProvisionCount(ProvisionState.FAILED);
         Assert.assertTrue("could not update provisions " + result, result == 1);
     }
@@ -176,8 +208,8 @@ public class PostgreSQLIT {
     @Test
     public void testCreateProvision() {
         Provision p = createProvision();
-        String result = postgres.createProvision(p);
-        Assert.assertTrue("could not create provision " + p.toJSON(), !result.isEmpty());
+        Integer id = postgres.createProvision(p);
+        Assert.assertTrue("could not create provision " + p.toJSON(), id != null);
     }
 
     public Provision createProvision() {
@@ -263,6 +295,26 @@ public class PostgreSQLIT {
         long result = postgres.getDesiredNumberOfVMs();
         // only the two in pending and running state should matter
         assertEquals(2, result);
+    }
+
+    /**
+     * Test of getSuccessfulVMAddresses method, of class PostgreSQL.
+     */
+    @Test
+    public void testGetSuccessfulVMAddresses() {
+        System.out.println("getSuccessfulVMAddresses");
+        Provision p = createProvision();
+        p.setIpAddress("9.9.9.9");
+        p.setState(ProvisionState.START);
+        postgres.createProvision(p);
+        p.setIpAddress("9.9.9.8");
+        p.setState(ProvisionState.SUCCESS);
+        postgres.createProvision(p);
+        p.setIpAddress("9.9.9.7");
+        p.setState(ProvisionState.SUCCESS);
+        postgres.createProvision(p);
+        String[] result = postgres.getSuccessfulVMAddresses();
+        Assert.assertTrue("found addresses, incorrect number" + result.length, result.length == 2);
     }
 
 }

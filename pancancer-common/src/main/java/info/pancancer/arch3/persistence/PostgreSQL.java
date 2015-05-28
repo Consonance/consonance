@@ -5,7 +5,6 @@ import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.utils.Utilities;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
@@ -151,20 +149,28 @@ public class PostgreSQL {
                 vmUuid, uuid);
     }
 
-    public void updateProvision(String uuid, String jobUuid, ProvisionState status) {
-        runUpdateStatement("update provision set status = ? , job_uuid = ? , update_timestamp = NOW() where provision_uuid = ?",
-                status.toString(), jobUuid, uuid);
+    public void updateProvisionByProvisionUUID(String provisionUuid, String jobUuid, ProvisionState status, String ipAddress) {
+        runUpdateStatement(
+                "update provision set status = ? , job_uuid = ? , update_timestamp = NOW(), ip_address = ? where provision_uuid = ?",
+                status.toString(), jobUuid, ipAddress, provisionUuid);
+    }
+
+    public void updateProvisionByJobUUID(String jobUUID, String provisionUUID, ProvisionState status, String ipAddress) {
+        runUpdateStatement(
+                "update provision set status = ? , provision_uuid = ?, update_timestamp = NOW(), ip_address = ? where job_uuid = ?",
+                status.toString(), provisionUUID, ipAddress, jobUUID);
     }
 
     public long getProvisionCount(ProvisionState status) {
         return this.runSelectStatement("select count(*) from provision where status = ?", new ScalarHandler<Long>(), status.toString());
     }
 
-    public String createProvision(Provision p) {
+    public Integer createProvision(Provision p) {
         Map<Object, Map<String, Object>> map = this.runInsertStatement(
-                "INSERT INTO provision (status, provision_uuid, cores, mem_gb, storage_gb) VALUES (?,?,?,?,?)", new KeyedHandler<>(
-                        "provision_uuid"), p.getState().toString(), p.getUuid(), p.getCores(), p.getMemGb(), p.getStorageGb());
-        return (String) map.entrySet().iterator().next().getKey();
+                "INSERT INTO provision (status, provision_uuid, cores, mem_gb, storage_gb, job_uuid, ip_address) VALUES (?,?,?,?,?,?,?)",
+                new KeyedHandler<>("provision_id"), p.getState().toString(), p.getProvisionUUID(), p.getCores(), p.getMemGb(),
+                p.getStorageGb(), p.getJobUUID(), p.getIpAddress());
+        return (Integer) map.entrySet().iterator().next().getKey();
     }
 
     public String createJob(Job j) {
@@ -174,6 +180,17 @@ public class PostgreSQL {
                         "job_uuid"), j.getState().toString(), j.getUuid(), j.getWorkflow(), j.getWorkflowVersion(), j.getJobHash(), jsonIni
                         .toJSONString());
         return (String) map.entrySet().iterator().next().getKey();
+    }
+
+    public String[] getSuccessfulVMAddresses() {
+        Map<String, Map<String, Object>> runSelectStatement = runSelectStatement(
+                "select provision_id, ip_address from provision where status = '" + ProvisionState.SUCCESS + "'", new KeyedHandler<String>(
+                        "provision_id"));
+        List<String> list = new ArrayList<>();
+        for (Entry<String, Map<String, Object>> entry : runSelectStatement.entrySet()) {
+            list.add((String) entry.getValue().get("ip_address"));
+        }
+        return list.toArray(new String[list.size()]);
     }
 
     public List<Job> getJobs(JobState status) {

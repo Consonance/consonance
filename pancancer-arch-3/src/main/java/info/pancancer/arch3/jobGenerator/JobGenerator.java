@@ -152,7 +152,7 @@ public class JobGenerator extends Base {
                 hm));
         newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
         // need to give provision object a uuid from a job so that completed jobs can report in
-        newOrder.getProvision().setUuid(newOrder.getJob().getUuid());
+        newOrder.getProvision().setJobUUID(newOrder.getJob().getUuid());
 
         return newOrder;
 

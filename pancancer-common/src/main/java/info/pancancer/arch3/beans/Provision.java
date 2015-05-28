@@ -3,7 +3,6 @@ package info.pancancer.arch3.beans;
 import info.pancancer.arch3.utils.Utilities;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -12,13 +11,17 @@ import org.json.simple.JSONObject;
  */
 public class Provision {
 
-    long cores;
-    long memGb;
-    long storageGb;
-    ProvisionState state = ProvisionState.START;
-    List<String> ansiblePlaybooks;
-    Utilities u = new Utilities();
-    String uuid = UUID.randomUUID().toString().toLowerCase();
+    private long cores;
+    private long memGb;
+    private long storageGb;
+    private ProvisionState state = ProvisionState.START;
+    private List<String> ansiblePlaybooks;
+    private String ipAddress = "";
+    private String jobUUID = "";
+    /**
+     * This is the provision_uuid
+     */
+    private String provisionUUID = "";
 
     public Provision(int cores, int memGb, int storageGb, List<String> ansiblePlaybooks) {
         this.cores = cores;
@@ -35,9 +38,10 @@ public class Provision {
 
         StringBuilder j = new StringBuilder();
 
-        j.append("{" + "   \"message_type\": \"provision\",\n" + "\"provision_uuid\": \"").append(uuid).append("\",\n" + "   \"cores\": ")
-                .append(cores).append(",\n" + "    \"mem_gb\": ").append(memGb).append(",\n" + "    \"storage_gb\": ").append(storageGb)
-                .append(",\n" + "    \"bindle_profiles_to_run\": [");
+        j.append("{" + "   \"message_type\": \"provision\",\n" + "\"provision_uuid\": \"").append(provisionUUID)
+                .append("\",\n" + "   \"cores\": ").append(cores).append(",\n" + "    \"mem_gb\": ").append(memGb)
+                .append(",\n" + "    \"storage_gb\": ").append(storageGb).append(",\n" + "    \"job_uuid\": \"").append(jobUUID)
+                .append("\",\n" + "    \"ip_address\": \"").append(ipAddress).append("\",\n" + "    \"bindle_profiles_to_run\": [");
 
         boolean first = true;
         for (String playbook : ansiblePlaybooks) {
@@ -53,27 +57,29 @@ public class Provision {
     }
 
     public Provision fromJSON(String json) {
-
+        Utilities u = new Utilities();
         JSONObject obj = u.parseJob(json);
         cores = (Long) obj.get("cores");
         memGb = (Long) obj.get("mem_gb");
         storageGb = (Long) obj.get("storage_gb");
-        uuid = (String) obj.get("provision_uuid");
+        this.setJobUUID((String) obj.get("job_uuid"));
+        this.setIpAddress((String) obj.get("ip_address"));
+        provisionUUID = (String) obj.get("provision_uuid");
         JSONArray playbooks = (JSONArray) obj.get("bindle_profiles_to_run");
         ansiblePlaybooks = new ArrayList<>();
         for (Object key : playbooks) {
             ansiblePlaybooks.add((String) key);
         }
-        return (this);
+        return this;
 
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getProvisionUUID() {
+        return provisionUUID;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setProvisionUUID(String provisionUUID) {
+        this.provisionUUID = provisionUUID;
     }
 
     public long getStorageGb() {
@@ -114,5 +120,35 @@ public class Provision {
 
     public void setState(ProvisionState state) {
         this.state = state;
+    }
+
+    /**
+     * @return the ipAddress
+     */
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    /**
+     * @param ipAddress
+     *            the ipAddress to set
+     */
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    /**
+     * @return the jobUUID
+     */
+    public String getJobUUID() {
+        return jobUUID;
+    }
+
+    /**
+     * @param jobUUID
+     *            the jobUUID to set
+     */
+    public void setJobUUID(String jobUUID) {
+        this.jobUUID = jobUUID;
     }
 }
