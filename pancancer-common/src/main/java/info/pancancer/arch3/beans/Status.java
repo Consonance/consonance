@@ -1,14 +1,13 @@
 package info.pancancer.arch3.beans;
 
-import info.pancancer.arch3.utils.Utilities;
-import org.json.simple.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * This represents a Status which is a message sent to the Results/Status queue. Created by boconnor on 2015-04-22.
  */
 public class Status {
 
-    private final Utilities u = new Utilities();
     private String type = null;
     private StatusState state = null;
     private String vmUuid = null;
@@ -18,8 +17,7 @@ public class Status {
     private String stdout = null;
     private String ipAddress = null;
 
-    public Status(String vmUuid, String jobUuid, StatusState state, String type, String message,
-            String ipAddress) {
+    public Status(String vmUuid, String jobUuid, StatusState state, String type, String message, String ipAddress) {
         this.vmUuid = vmUuid;
         this.jobUuid = jobUuid;
         this.state = state;
@@ -33,30 +31,13 @@ public class Status {
     }
 
     public String toJSON() {
-
-        StringBuilder j = new StringBuilder();
-        j.append("{" + "\"vmUuid\": \"").append(vmUuid).append("\",\n" + "\"jobUuid\": \"").append(jobUuid)
-                .append("\",\n" + "\"type\": \"").append(type).append("\",\n" + "\"state\": \"").append(state)
-                .append("\",\n" + "\"stderr\": \"").append(stderr).append("\",\n" + "\"stdout\": \"").append(stdout)
-                .append("\",\n" + "\"ipAddress\": \"").append(ipAddress).append("\",\n" + "\"message\": \"").append(message)
-                .append("\"\n" + "}\n");
-        return j.toString();
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
 
     public Status fromJSON(String json) {
-
-        JSONObject obj = u.parseJob(json);
-        jobUuid = (String) obj.get("jobUuid");
-        vmUuid = (String) obj.get("vmUuid");
-        state = StatusState.valueOf((String) obj.get("state"));
-        message = (String) obj.get("message");
-        type = (String) obj.get("type");
-        stderr = (String) obj.get("stderr");
-        stdout = (String) obj.get("stdout");
-        ipAddress = (String) obj.get("ipAddress");
-
-        return this;
-
+        Gson gson = new Gson();
+        return gson.fromJson(json, Status.class);
     }
 
     public String getType() {
