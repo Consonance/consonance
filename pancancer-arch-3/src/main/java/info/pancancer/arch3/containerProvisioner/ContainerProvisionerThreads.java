@@ -334,8 +334,13 @@ public class ContainerProvisionerThreads extends Base {
                 } while (endless);
 
             } catch (IOException ex) {
+                LOG.error("CleanupVMs threw the following exception", ex);
                 throw new RuntimeException(ex);
             } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
+                LOG.error("CleanupVMs threw the following exception", ex);
+                throw new RuntimeException(ex);
+            } catch (Exception ex) {
+                LOG.error("CleanupVMs threw the following exception", ex);
                 throw new RuntimeException(ex);
             } finally {
                 if (resultsChannel != null) {
