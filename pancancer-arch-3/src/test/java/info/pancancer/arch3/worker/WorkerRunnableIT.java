@@ -16,7 +16,9 @@
  */
 package info.pancancer.arch3.worker;
 
+import java.io.File;
 import java.net.InetAddress;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,12 +30,14 @@ public class WorkerRunnableIT {
 
     /**
      * Test of getFirstNonLoopbackAddress method, of class WorkerRunnable.
-     * 
+     *
      * @throws java.lang.Exception
      */
     @Test
     public void testGetFirstNonLoopbackAddress() throws Exception {
-        InetAddress result = WorkerRunnable.getFirstNonLoopbackAddress();
+        File configFile = FileUtils.getFile("src", "test", "resources", "config.json");
+        WorkerRunnable instance = new WorkerRunnable(configFile.getAbsolutePath(), "test", 1);
+        InetAddress result = instance.getFirstNonLoopbackAddress();
         Assert.assertTrue("ip address was null", result != null);
     }
 

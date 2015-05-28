@@ -46,6 +46,11 @@
         <dependencies>
             <dependency>
                 <groupId>io.cloudbindle</groupId>
+                <artifactId>youxia-common</artifactId>
+                <version>${youxia.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cloudbindle</groupId>
                 <artifactId>youxia-deployer</artifactId>
                 <version>${youxia.version}</version>
             </dependency>

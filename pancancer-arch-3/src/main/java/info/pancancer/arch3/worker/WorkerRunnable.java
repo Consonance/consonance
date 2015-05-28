@@ -317,14 +317,14 @@ public class WorkerRunnable implements Runnable {
      * @return An InetAddress object.
      * @throws SocketException
      */
-    public static InetAddress getFirstNonLoopbackAddress() throws SocketException {
+    public InetAddress getFirstNonLoopbackAddress() throws SocketException {
         final String dockerInterfaceName = "docker";
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
             if (i.getName().contains(dockerInterfaceName)) {
                 // the virtual ip address for the docker mount is useless but is not a loopback address
                 continue;
             }
-            Log.info("Examining " + i.getName());
+            log.info("Examining " + i.getName());
             for (InetAddress addr : Collections.list(i.getInetAddresses())) {
                 if (!addr.isLoopbackAddress()) {
                     // Prefer IP v4
@@ -337,7 +337,7 @@ public class WorkerRunnable implements Runnable {
         }
         Log.info("Could not find an ipv4 address");
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-            Log.info("Examining " + i.getName());
+            log.info("Examining " + i.getName());
             if (i.getName().contains(dockerInterfaceName)) {
                 // the virtual ip address for the docker mount is useless but is not a loopback address
                 continue;
