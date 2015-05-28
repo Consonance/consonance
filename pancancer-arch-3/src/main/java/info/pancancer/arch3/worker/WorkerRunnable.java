@@ -8,6 +8,7 @@ import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Utilities;
+import io.cloudbindle.youxia.util.Log;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -316,12 +317,14 @@ public class WorkerRunnable implements Runnable {
      * @return An InetAddress object.
      * @throws SocketException
      */
-    private static InetAddress getFirstNonLoopbackAddress() throws SocketException {
+    public static InetAddress getFirstNonLoopbackAddress() throws SocketException {
+        final String dockerInterfaceName = "docker";
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-            if (i.getName().contains("docker")) {
+            if (i.getName().contains(dockerInterfaceName)) {
                 // the virtual ip address for the docker mount is useless but is not a loopback address
                 continue;
             }
+            Log.info("Examining " + i.getName());
             for (InetAddress addr : Collections.list(i.getInetAddresses())) {
                 if (!addr.isLoopbackAddress()) {
                     // Prefer IP v4
@@ -330,6 +333,14 @@ public class WorkerRunnable implements Runnable {
                     }
                 }
 
+            }
+        }
+        Log.info("Could not find an ipv4 address");
+        for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            Log.info("Examining " + i.getName());
+            if (i.getName().contains(dockerInterfaceName)) {
+                // the virtual ip address for the docker mount is useless but is not a loopback address
+                continue;
             }
             // If we got here it means we never found an IP v4 address, so we'll have to return the IPv6 address.
             for (InetAddress addr : Collections.list(i.getInetAddresses())) {

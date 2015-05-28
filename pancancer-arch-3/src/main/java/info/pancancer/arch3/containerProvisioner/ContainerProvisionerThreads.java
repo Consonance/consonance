@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 public class ContainerProvisionerThreads extends Base {
 
     private static final int DEFAULT_THREADS = 3;
+    private static final int MINUTE_IN_MILLISECONDS = 60 * 1000;
     private final OptionSpecBuilder testSpec;
 
     public static void main(String[] argv) throws Exception {
@@ -222,7 +223,9 @@ public class ContainerProvisionerThreads extends Base {
                                     LOG.error("Youxia deployer threw the following exception", e);
                                 }
                             }
-
+                            if (endless) {
+                                Thread.sleep(MINUTE_IN_MILLISECONDS);
+                            }
                         }
                     }
                 } while (endless);
@@ -315,6 +318,9 @@ public class ContainerProvisionerThreads extends Base {
                             } catch (Exception e) {
                                 LOG.error("Youxia reaper threw the following exception", e);
                             }
+                        }
+                        if (endless) {
+                            Thread.sleep(MINUTE_IN_MILLISECONDS);
                         }
                     } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
                             || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING)
