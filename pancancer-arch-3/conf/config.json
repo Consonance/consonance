@@ -18,6 +18,6 @@
   "max_random_time" : 10,
   "min_random_time" : 2,
   "check_previous_job_hash" : "true",
-  "max_seconds_before_lost" : 10,
+  "max_seconds_before_lost" : 3600,
   "youxia_deployer_parameters" : "--max-spot-price 1 --batch-size 1"
 }
