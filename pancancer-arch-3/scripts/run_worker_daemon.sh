@@ -4,7 +4,7 @@ LOG_FILE=/var/log/arch3_worker.log
 PID_FILE=/var/run/arch3_worker.pid
 USER=ubuntu
 
-cd ~$USER
+cd ~/home/$USER
 
 if [ -f $PID_FILE ]; then
   echo "Existing PID file found at $PID_FILE"
