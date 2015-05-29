@@ -46,6 +46,7 @@ public class ContainerProvisionerThreads extends Base {
     private static final int DEFAULT_THREADS = 3;
     private static final int MINUTE_IN_MILLISECONDS = 60 * 1000;
     private final OptionSpecBuilder testSpec;
+    public static final String MAX_RUNNING_CONTAINERS = "max_running_containers";
 
     public static void main(String[] argv) throws Exception {
         ContainerProvisionerThreads containerProvisionerThreads = new ContainerProvisionerThreads(argv);
@@ -169,11 +170,11 @@ public class ContainerProvisionerThreads extends Base {
             try {
 
                 JSONObject settings = Utilities.parseConfig(configFile);
-
-                // max number of workers
-                maxWorkers = (Long) settings.get("max_running_containers");
-
-                // queueName = (String) settings.get("rabbitMQQueueName");
+                if (!settings.containsKey(MAX_RUNNING_CONTAINERS)){
+		    LOG.info("No max_running_containers specified, skipping provision ");
+                    return null;
+		}
+                
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
@@ -189,6 +190,7 @@ public class ContainerProvisionerThreads extends Base {
 
                     if (testMode) {
                         LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
+                        maxWorkers = (Long) settings.get(MAX_RUNNING_CONTAINERS);
 
                         // if this is true need to launch another container
                         if (numberRunningContainers < maxWorkers && numberPendingContainers > 0) {
@@ -292,6 +294,11 @@ public class ContainerProvisionerThreads extends Base {
                     // now update that DB record to be exited
                     // this is acutally finishing the VM and not the work
                     if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                        if (!settings.containsKey(MAX_RUNNING_CONTAINERS)){
+		            LOG.info("No max_running_containers specified, skipping provision ");
+                            continue;
+		        }
+
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
                         String param = (String) settings.get("youxia_reaper_parameters");
