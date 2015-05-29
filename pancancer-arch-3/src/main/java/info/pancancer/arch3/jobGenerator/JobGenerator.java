@@ -1,5 +1,6 @@
 package info.pancancer.arch3.jobGenerator;
 
+import com.google.common.base.Joiner;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import info.pancancer.arch3.Base;
@@ -132,14 +133,14 @@ public class JobGenerator extends Base {
     // TODO: this will actually need to come from a file or web service
     private Order makeNewOrder(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
 
-        // TODO: will need to make this from parameters in INI
         String uuid = UUID.randomUUID().toString().toLowerCase();
-        String hashStr = u.digest(uuid);
 
         // TODO: this will come from a web service or file
         HashMap<String, String> hm = new HashMap<>();
         hm.put("param1", "bar");
         hm.put("param2", "foo");
+        Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
+        String hashStr = String.valueOf(mapJoiner.join(hm).hashCode());
 
         int cores = Base.DEFAULT_NUM_CORES;
         int memGb = Base.DEFAULT_MEMORY;

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
@@ -18,38 +17,39 @@ import org.slf4j.LoggerFactory;
  * This class will make a command-line call to run a workflow. <br/>
  * The actual command to execute should be specified using setCommandLine. <br/>
  * It is also possible to specify a brief delay before and after the command is executed, using setPreworkDelay and setPostworkDelay.
- * 
+ *
  * @author sshorser
  *
  */
-public class WorkflowRunner implements Callable<String> {
+public class WorkflowRunner implements Callable<WorkflowResult> {
     protected static final Logger LOG = LoggerFactory.getLogger(WorkflowRunner.class);
     private long preworkDelay;
     private long postworkDelay;
     private CommandLine cli;
-    // private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    // private ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
-    private CollectingLogOutputStream outputStream = new CollectingLogOutputStream();
-    private CollectingLogOutputStream errorStream = new CollectingLogOutputStream();
+    private final CollectingLogOutputStream outputStream = new CollectingLogOutputStream();
+    private final CollectingLogOutputStream errorStream = new CollectingLogOutputStream();
 
     /**
      * Get the stdout of the running command.
-     * 
+     *
      * @return
      */
     public String getStdOut() {
         String s;
         Lock lock = new ReentrantLock();
         lock.lock();
-        this.outputStream.flush();
-        s = this.outputStream.getAllLinesAsString();
-        lock.unlock();
+        try {
+            this.outputStream.flush();
+            s = this.outputStream.getAllLinesAsString();
+        } finally {
+            lock.unlock();
+        }
         return s;
     }
 
     /**
      * Get the last *n* lines of output.
-     * 
+     *
      * @param n
      *            - the number of lines to get.
      * @return A string with *n* lines.
@@ -60,23 +60,26 @@ public class WorkflowRunner implements Callable<String> {
 
     /**
      * Get the stderr of the running command.
-     * 
+     *
      * @return
      */
     public String getStdErr() {
         String s;
         Lock lock = new ReentrantLock();
         lock.lock();
-        this.errorStream.flush();
-        s = this.errorStream.getAllLinesAsString();
-        lock.unlock();
+        try {
+            this.errorStream.flush();
+            s = this.errorStream.getAllLinesAsString();
+        } finally {
+            lock.unlock();
+        }
         return s;
     }
 
     @Override
-    public String call() throws IOException {
+    public WorkflowResult call() throws IOException {
         PumpStreamHandler streamHandler = new PumpStreamHandler(this.outputStream, this.errorStream);
-        String workflowOutput = "";
+        WorkflowResult result = new WorkflowResult();
 
         DefaultExecutor executor = new DefaultExecutor();
 
@@ -101,26 +104,25 @@ public class WorkflowRunner implements Callable<String> {
             // Use the result handler for non-blocking call, so this way we should be able to get updates of
             // stdout and stderr while the command is running.
             resultHandler.waitFor();
-            workflowOutput = outputStream.getAllLinesAsString();
+            result.setWorkflowStdout(outputStream.getAllLinesAsString());
+            result.setWorkflowStdErr(errorStream.getAllLinesAsString());
+            result.setExitCode(resultHandler.getExitValue());
             if (this.postworkDelay > 0) {
-                LOG.info("Sleeping after exeuting workflow for " + this.postworkDelay + " ms.");
+                LOG.info("Sleeping after executing workflow for " + this.postworkDelay + " ms.");
                 Thread.sleep(this.postworkDelay);
             }
         } catch (ExecuteException e) {
             LOG.error(e.getMessage(), e);
-            workflowOutput = this.getStdErr();
-        } catch (InterruptedException e) {
+            result.setWorkflowStdout(this.getStdErr());
+        } catch (InterruptedException | IOException e) {
             LOG.error(e.getMessage(), e);
-            workflowOutput = this.getStdErr();
-        } catch (IOException e) {
-            LOG.error(e.getMessage(), e);
-            workflowOutput = this.getStdErr();
+            result.setWorkflowStdout(this.getStdErr());
         } finally {
             this.outputStream.close();
             this.errorStream.close();
         }
         LOG.debug("Workflowrunner exiting");
-        return workflowOutput;
+        return result;
     }
 
     public long getPreworkDelay() {

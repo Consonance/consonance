@@ -1,5 +1,6 @@
 package info.pancancer.arch3.jobGenerator;
 
+import com.google.common.base.Joiner;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MessageProperties;
@@ -122,7 +123,6 @@ public class JobGeneratorDEWorkflow extends Base {
 
         // TODO: will need to make this from parameters in INI
         String uuid = UUID.randomUUID().toString().toLowerCase();
-        String hashStr = u.digest(uuid);
 
         // TODO: this will come from a web service or file
         HashMap<String, String> hm = parseIniFile(file);
@@ -131,10 +131,8 @@ public class JobGeneratorDEWorkflow extends Base {
             log.info("KEY: " + key + " VALUE: " + hm.get(key));
         }
 
-        // if this is the donor then use it for the hashStr
-        if (hm.containsKey("donor_id") && hm.containsKey("project_code")) {
-            hashStr = hm.get("project_code") + "::" + hm.get("donor_id");
-        }
+        Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
+        String hashStr = String.valueOf(mapJoiner.join(hm).hashCode());
 
         int cores = DEFAULT_NUM_CORES;
         int memGb = DEFAULT_MEMORY;
