@@ -12,6 +12,7 @@ import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
 import info.pancancer.arch3.worker.WorkerHeartbeat;
 import info.pancancer.arch3.worker.WorkerRunnable;
+import info.pancancer.arch3.worker.WorkflowResult;
 import info.pancancer.arch3.worker.WorkflowRunner;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -114,7 +115,11 @@ public class TestWorker {
 
         Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
 
-        Mockito.when(mockRunner.call()).thenReturn("Mock Workflow Response");
+        WorkflowResult result = new WorkflowResult();
+        result.setWorkflowStdout("Mock Workflow Response");
+        result.setWorkflowStdErr("Mock Workflow Response");
+        result.setExitCode(0);
+        Mockito.when(mockRunner.call()).thenReturn(result);
         PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
 
         Mockito.doNothing().when(mockHeartbeat).run();
@@ -159,19 +164,14 @@ public class TestWorker {
     @Test
     public void testWorker_emptyMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
         setupConfig();
-        byte body[] = (new String("")).getBytes();
+        byte body[] = ("").getBytes();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
         WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
-        try {
-            testWorker.run();
-            String testResults = outBuffer.toString();
-            assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        testWorker.run();
+        String testResults = outBuffer.toString();
+        assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
     }
 
     @Test

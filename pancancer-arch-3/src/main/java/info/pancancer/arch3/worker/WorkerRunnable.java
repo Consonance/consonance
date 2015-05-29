@@ -167,19 +167,21 @@ public class WorkerRunnable implements Runnable {
                         log.info(" WORKER LAUNCHING JOB");
                         // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own
                         // thread, harvesting STDERR/STDOUT periodically
-                        String workflowOutput;
+                        WorkflowResult workflowResult = new WorkflowResult();
                         if (testMode) {
-                            workflowOutput = "everything is awesome";
+                            workflowResult.setWorkflowStdout("everything is awesome");
+                            workflowResult.setExitCode(0);
                         } else {
-                            workflowOutput = launchJob(statusJSON, job);
+                            workflowResult = launchJob(statusJSON, job);
                         }
 
                         // launchJob(job.getUuid(), job);
 
-                        status = new Status(vmUuid, job.getUuid(), StatusState.SUCCESS, Utilities.JOB_MESSAGE_TYPE, "job is finished",
-                                getFirstNonLoopbackAddress().toString().substring(1));
-                        status.setStderr("");
-                        status.setStdout(workflowOutput);
+                        status = new Status(vmUuid, job.getUuid(), workflowResult.getExitCode() == 0 ? StatusState.SUCCESS
+                                : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE, "job is finished", getFirstNonLoopbackAddress()
+                                .toString().substring(1));
+                        status.setStderr(workflowResult.getWorkflowStdErr());
+                        status.setStdout(workflowResult.getWorkflowStdout());
                         statusJSON = status.toJSON();
 
                         log.info(" WORKER FINISHING JOB");
@@ -207,7 +209,6 @@ public class WorkerRunnable implements Runnable {
             }
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
-            ex.printStackTrace();
         }
     }
 
@@ -245,8 +246,8 @@ public class WorkerRunnable implements Runnable {
      *            - The job contains information about what workflow to execute, and how.
      * @return The complete stdout and stderr from the workflow execution will be returned.
      */
-    private String launchJob(String message, Job job) {
-        String workflowOutput = "";
+    private WorkflowResult launchJob(String message, Job job) {
+        WorkflowResult workflowResult = null;
         ExecutorService exService = Executors.newFixedThreadPool(2);
         WorkflowRunner workflowRunner = new WorkflowRunner();
         try {
@@ -290,12 +291,12 @@ public class WorkerRunnable implements Runnable {
             workflowRunner.setPostworkDelay(postsleepMillis);
             // submit both
             Future<?> submit = exService.submit(heartbeat);
-            Future<String> workflowResult = exService.submit(workflowRunner);
+            Future<WorkflowResult> workflowResultFuture = exService.submit(workflowRunner);
             // make sure both are complete
-            workflowOutput = workflowResult.get();
+            workflowResult = workflowResultFuture.get();
             // don't get the heartbeat if the workflow is complete already
 
-            log.info("Docker execution result: " + workflowOutput);
+            log.info("Docker execution result: " + workflowResult.getWorkflowStdout());
         } catch (SocketException e) {
             // This comes from trying to get the IP address.
             log.error(e.getMessage(), e);
@@ -308,7 +309,7 @@ public class WorkerRunnable implements Runnable {
         } finally {
             exService.shutdownNow();
         }
-        return workflowOutput;
+        return workflowResult;
     }
 
     /**
