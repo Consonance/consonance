@@ -317,4 +317,17 @@ public class PostgreSQLIT {
         Assert.assertTrue("found addresses, incorrect number" + result.length, result.length == 2);
     }
 
+    /**
+     * Test of updateJobMessage method, of class PostgreSQL.
+     */
+    @Test
+    public void testUpdateJobMessage() {
+        System.out.println("updateJobMessage");
+        Job createJob = createJob();
+        createJob.setState(JobState.START);
+        String uuid = postgres.createJob(createJob);
+        postgres.updateJobMessage(uuid, "oof", "oh");
+        List<Job> jobs = postgres.getJobs(JobState.START);
+        Assert.assertTrue("job stdout and stderr incorrect", jobs.get(0).getStdout().equals("oof") && jobs.get(0).getStderr().equals("oh"));
+    }
 }

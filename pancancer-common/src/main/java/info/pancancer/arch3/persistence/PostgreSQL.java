@@ -140,6 +140,10 @@ public class PostgreSQL {
                 ProvisionState.SUCCESS.toString(), uuid);
     }
 
+    public void updateJobMessage(String uuid, String stdout, String stderr) {
+        runUpdateStatement("update job set stdout = ?, stderr = ?, update_timestamp = NOW() where job_uuid = ?", stdout, stderr, uuid);
+    }
+
     public void finishJob(String uuid) {
         runUpdateStatement("update job set status = ? , update_timestamp = NOW() where job_uuid = ?", JobState.SUCCESS.toString(), uuid);
     }
@@ -211,6 +215,8 @@ public class PostgreSQL {
             j.setWorkflow((String) entry.getValue().get("workflow"));
             j.setWorkflowVersion((String) entry.getValue().get("workflow_version"));
             j.setJobHash((String) entry.getValue().get("job_hash"));
+            j.setStdout((String) entry.getValue().get("stdout"));
+            j.setStderr((String) entry.getValue().get("stderr"));
             JSONObject iniJson = Utilities.parseJSONStr((String) entry.getValue().get("ini"));
             HashMap<String, String> ini = new HashMap<>();
             for (Object key : iniJson.keySet()) {
