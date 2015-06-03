@@ -32,6 +32,8 @@ public class Job {
     private Map<String, String> ini = new HashMap<>();
     private Timestamp createTs;
     private Timestamp updateTs;
+    private String stdout;
+    private String stderr;
 
     public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini) {
         this.workflow = workflow;
@@ -182,5 +184,34 @@ public class Job {
 
     public void setVmUuid(String vmUuid) {
         this.vmUuid = vmUuid;
+    }
+
+    /**
+     * @return the stdout
+     */
+    public String getStdout() {
+        return stdout;
+    }
+
+    /**
+     * @param stdout
+     *            the stdout to set
+     */
+    public void setStdout(String stdout) {
+        this.stdout = stdout;
+    }
+
+    /**
+     * @return the stderr
+     */
+    public String getStderr() {
+        return stderr;
+    }
+
+    /**
+     * @param stderr the stderr to set
+     */
+    public void setStderr(String stderr) {
+        this.stderr = stderr;
     }
 }

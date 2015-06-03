@@ -6,7 +6,6 @@ import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.utils.Utilities;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -15,12 +14,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +40,9 @@ public class PostgreSQL {
     private QueryRunner run = new QueryRunner();
     private String url;
     private Properties props;
+    private PoolingDataSource<PoolableConnection> dataSource = null;
 
     public PostgreSQL(JSONObject settings) {
-
         try {
             String nullConfigs = "";
             String host = (String) settings.get("postgresHost");
@@ -59,6 +65,11 @@ public class PostgreSQL {
                 nullConfigs += "postgresDBName ";
             }
 
+            String maxConnections = (String) settings.get("maxConnections");
+            if (maxConnections == null) {
+                maxConnections = "5";
+            }
+
             if (nullConfigs.trim().length() > 0) {
                 throw new NullPointerException("The following configuration values are null: " + nullConfigs
                         + ". Please check your configuration file.");
@@ -72,7 +83,15 @@ public class PostgreSQL {
             props.setProperty("user", user);
             props.setProperty("password", pass);
             // props.setProperty("ssl","true");
+            props.setProperty("initialSize", "5");
+            props.setProperty("maxActive", maxConnections);
 
+            ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(this.url, props);
+            PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
+            poolableConnectionFactory.setValidationQuery("select count(*) from job;");
+            ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory);
+            poolableConnectionFactory.setPool(connectionPool);
+            dataSource = new PoolingDataSource<>(connectionPool);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -96,7 +115,7 @@ public class PostgreSQL {
     private <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(url, props);
+            conn = dataSource.getConnection();
             return run.query(conn, query, handler, params);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -108,7 +127,7 @@ public class PostgreSQL {
     private <T> T runInsertStatement(String query, ResultSetHandler<T> handler, Object... params) {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(url, props);
+            conn = dataSource.getConnection();
             return run.insert(conn, query, handler, params);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -120,7 +139,7 @@ public class PostgreSQL {
     private boolean runUpdateStatement(String query, Object... params) {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(url, props);
+            conn = dataSource.getConnection();
             run.update(conn, query, params);
             return true;
         } catch (SQLException e) {
@@ -138,6 +157,10 @@ public class PostgreSQL {
     public void finishContainer(String uuid) {
         runUpdateStatement("update provision set status = ? , update_timestamp = NOW() where provision_uuid = ? ",
                 ProvisionState.SUCCESS.toString(), uuid);
+    }
+
+    public void updateJobMessage(String uuid, String stdout, String stderr) {
+        runUpdateStatement("update job set stdout = ?, stderr = ?, update_timestamp = NOW() where job_uuid = ?", stdout, stderr, uuid);
     }
 
     public void finishJob(String uuid) {
@@ -211,6 +234,8 @@ public class PostgreSQL {
             j.setWorkflow((String) entry.getValue().get("workflow"));
             j.setWorkflowVersion((String) entry.getValue().get("workflow_version"));
             j.setJobHash((String) entry.getValue().get("job_hash"));
+            j.setStdout((String) entry.getValue().get("stdout"));
+            j.setStderr((String) entry.getValue().get("stderr"));
             JSONObject iniJson = Utilities.parseJSONStr((String) entry.getValue().get("ini"));
             HashMap<String, String> ini = new HashMap<>();
             for (Object key : iniJson.keySet()) {

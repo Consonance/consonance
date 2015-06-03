@@ -6,24 +6,21 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
-import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.coordinator.Coordinator;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Utilities;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.dbcp2.PoolableConnection;
+import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.json.simple.JSONObject;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,8 +31,6 @@ import static org.mockito.Matchers.anyVararg;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -65,50 +60,22 @@ public class TestCoordinator {
     private BasicProperties mockProperties;
 
     @Mock
-    private Logger mockLogger;
-
-    @Mock
     private Connection mockDBConnection;
 
     @Mock
     private QueryRunner mockRunner;
 
+    @Mock
+    private PoolingDataSource<PoolableConnection> poolingDataSource;
+
     private static StringBuffer outBuffer = new StringBuffer();
-
-    public class LoggingAnswer implements Answer<Object> {
-        @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
-            outBuffer.append(invocation.getArguments()[0]).append("\n");
-            if (invocation.getArguments().length == 2) {
-                if (invocation.getArguments()[1] instanceof Throwable) {
-                    OutputStream outStream = new ByteArrayOutputStream();
-                    PrintStream ps = new PrintStream(outStream);
-                    ((Throwable) invocation.getArguments()[1]).printStackTrace(ps);
-                    outBuffer.append(new String(outStream.toString()));
-                    ps.close();
-                    outStream.close();
-                }
-            }
-            return null;
-        }
-    }
-
-    private LoggingAnswer logAnswer = new LoggingAnswer();
 
     @Before
     public void setup() throws IOException {
         MockitoAnnotations.initMocks(this);
 
         outBuffer = new StringBuffer();
-        Mockito.doAnswer(logAnswer).when(mockLogger).info(anyString());
-        Mockito.doAnswer(logAnswer).when(mockLogger).debug(anyString());
-        Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString());
-        Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString(), any(Exception.class));
-        PowerMockito.mockStatic(org.slf4j.LoggerFactory.class);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(Base.class)).thenReturn(mockLogger);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(Coordinator.class)).thenReturn(mockLogger);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(PostgreSQL.class)).thenReturn(mockLogger);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(any(Class.class))).thenReturn(mockLogger);
+
         PowerMockito.mockStatic(Utilities.class);
 
         Mockito.doNothing().when(mockConnection).close();
@@ -121,60 +88,51 @@ public class TestCoordinator {
 
     }
 
-    @Test
+    @Test(expected = Exception.class)
     public void testCoordinator_badDBConfig() throws InterruptedException, Exception {
         setupConfig(false);
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        try {
-            Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/config.json" });
-            testCoordinator.doWork();
-            fail("Should not have reached here.");
-        } catch (Exception e) {
-            assertTrue(outBuffer
-                    .toString()
-                    .contains(
-                            "The following configuration values are null: postgresHost postgresUser postgresPass postgresDBName . Please check your configuration file."));
-        }
+        Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/config.json" });
+        testCoordinator.doWork();
+        fail("Should not have reached here.");
+
     }
 
-    @Test
+    @Test(expected = Exception.class)
     public void testCoordinator_invalidDB() throws InterruptedException, Exception {
         setupConfig(true);
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        try {
-            Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/coordinatorConfig.json" });
-            testCoordinator.doWork();
-            fail("Should not have reached here.");
-        } catch (Exception e) {
-            // System.out.println(outBuffer.toString());
-            assertTrue(outBuffer.toString().contains("invalid database address: jdbc:postgresql://localhost/dbname"));
-        }
-    }
-
-    @Test
-    public void testCoordinator() throws InterruptedException, Exception {
-        setupMockDB();
-        setupConfig(true);
-        byte[] body = setupMessage();
-        Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
-        setupMockQueue(testDelivery);
-
-        // try {
         Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/coordinatorConfig.json" });
         testCoordinator.doWork();
-        System.out.println(outBuffer.toString());
-        // fail("Should not have reached here.");
-        // } catch (Exception e) {
-        // //
-        // assertTrue(outBuffer.toString().contains("invalid database address: jdbc:postgresql://localhost/dbname"));
-        // }
+        fail("Should not have reached here.");
+
     }
+
+    // @Test
+    // public void testCoordinator() throws InterruptedException, Exception {
+    // setupMockDB();
+    // setupConfig(true);
+    // byte[] body = setupMessage();
+    // Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
+    // setupMockQueue(testDelivery);
+    //
+    // // try {
+    // File file = FileUtils.getFile("src", "test", "resources", "config.json");
+    // Coordinator testCoordinator = new Coordinator(new String[] { "--config", file.getAbsolutePath() });
+    // testCoordinator.doWork();
+    // System.out.println(outBuffer.toString());
+    // // fail("Should not have reached here.");
+    // // } catch (Exception e) {
+    // // //
+    // // assertTrue(outBuffer.toString().contains("invalid database address: jdbc:postgresql://localhost/dbname"));
+    // // }
+    // }
 
     private void setupMockDB() throws Exception {
         PowerMockito.mockStatic(DriverManager.class);
@@ -183,6 +141,8 @@ public class TestCoordinator {
         Mockito.when(mockRunner.query(any(Connection.class), anyString(), any(ResultSetHandler.class), anyVararg())).thenReturn(
                 new HashMap());
         PowerMockito.whenNew(QueryRunner.class).withNoArguments().thenReturn(mockRunner);
+        PowerMockito.whenNew(PoolingDataSource.class).withAnyArguments().thenReturn(poolingDataSource);
+        Mockito.when(poolingDataSource.getConnection()).thenReturn(mockDBConnection);
     }
 
     private byte[] setupMessage() {

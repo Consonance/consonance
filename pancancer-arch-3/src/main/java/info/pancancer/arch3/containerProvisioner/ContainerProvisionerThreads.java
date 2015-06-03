@@ -170,11 +170,10 @@ public class ContainerProvisionerThreads extends Base {
             try {
 
                 JSONObject settings = Utilities.parseConfig(configFile);
-                if (!settings.containsKey(MAX_RUNNING_CONTAINERS)){
-		    LOG.info("No max_running_containers specified, skipping provision ");
+                if (!settings.containsKey(MAX_RUNNING_CONTAINERS)) {
+                    LOG.info("No max_running_containers specified, skipping provision ");
                     return null;
-		}
-                
+                }
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
@@ -291,13 +290,18 @@ public class ContainerProvisionerThreads extends Base {
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
 
+                    // in end states, keep a copy of the results
+                    if (status.getState() == StatusState.SUCCESS || status.getState() == StatusState.FAILED) {
+                        db.updateJobMessage(status.getJobUuid(), status.getStdout(), status.getStderr());
+                    }
+
                     // now update that DB record to be exited
                     // this is acutally finishing the VM and not the work
                     if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
-                        if (!settings.containsKey(MAX_RUNNING_CONTAINERS)){
-		            LOG.info("No max_running_containers specified, skipping provision ");
+                        if (!settings.containsKey(MAX_RUNNING_CONTAINERS)) {
+                            LOG.info("No max_running_containers specified, skipping provision ");
                             continue;
-		        }
+                        }
 
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
