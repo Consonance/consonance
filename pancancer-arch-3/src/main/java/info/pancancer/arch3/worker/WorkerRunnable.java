@@ -3,12 +3,14 @@ package info.pancancer.arch3.worker;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.util.Log;
+
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.apache.commons.exec.CommandLine;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -42,6 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 public class WorkerRunnable implements Runnable {
 
+    private static final String ENDLESS = "endless";
     private static final String NO_MESSAGE_FROM_QUEUE_MESSAGE = " [x] Job request came back null/empty! ";
     protected final Logger log = LoggerFactory.getLogger(getClass());
     private JSONObject settings = null;
@@ -54,6 +58,7 @@ public class WorkerRunnable implements Runnable {
     private int maxRuns = 1;
     private String userName;
     private boolean testMode;
+    private boolean endless = false;
     private static final int DEFAULT_PRESLEEP = 1;
     private static final int DEFAULT_POSTSLEEP = 1;
     public static final String POSTWORKER_SLEEP = "postworkerSleep";
@@ -98,6 +103,10 @@ public class WorkerRunnable implements Runnable {
         this.jobQueueName = this.queueName + "_jobs";
         this.resultsQueueName = this.queueName + "_results";
         this.userName = settings.containsKey(HOST_USER_NAME) ? (String) settings.get(HOST_USER_NAME) : "ubuntu";
+        this.endless = (boolean) (settings.containsKey(ENDLESS) ? (String) settings.get(ENDLESS) : false);
+        if (this.endless) {
+            log.info("The \"--endless\" flag was set, this worker will run endlessly!");
+        }
         this.vmUuid = vmUuid;
         this.maxRuns = maxRuns;
         this.testMode = testMode;
@@ -132,11 +141,13 @@ public class WorkerRunnable implements Runnable {
             jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
             // TODO: need threads that each read from orders and another that reads results
-            while (max > 0 /* || maxRuns <= 0 */) {
+            while (max > 0 || endless) {
                 // log.debug("max is: "+max);
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
 
-                max--;
+                if (!endless) {
+                    max--;
+                }
 
                 // loop once
                 // TODO: this will be configurable so it could process multiple jobs before exiting
