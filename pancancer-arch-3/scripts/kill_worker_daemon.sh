@@ -1,3 +1,3 @@
 #! /bin/bash
 
-pkill -SIGTERM -f 'java -Dpidfile.*pancancer-arch-3.*Worker.*'
+pkill -SIGTERM -f 'nohup.*java.*info.pancancer.arch3.worker.Worker'
