@@ -7,6 +7,7 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
+
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
@@ -14,6 +15,7 @@ import info.pancancer.arch3.worker.WorkerHeartbeat;
 import info.pancancer.arch3.worker.WorkerRunnable;
 import info.pancancer.arch3.worker.WorkflowResult;
 import info.pancancer.arch3.worker.WorkflowRunner;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -22,14 +24,27 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
+
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -104,6 +119,9 @@ public class TestWorker {
         PowerMockito.mockStatic(org.slf4j.LoggerFactory.class);
         Mockito.when(org.slf4j.LoggerFactory.getLogger(Worker.class)).thenReturn(mockLogger);
         Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkerRunnable.class)).thenReturn(mockLogger);
+        Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkerHeartbeat.class)).thenReturn(mockLogger);
+        Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkflowRunner.class)).thenReturn(mockLogger);
+        Mockito.when(org.slf4j.LoggerFactory.getLogger(Utilities.class)).thenReturn(mockLogger);
 
         PowerMockito.mockStatic(Utilities.class);
 
@@ -188,6 +206,150 @@ public class TestWorker {
             assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testWorker_endless() throws Exception {
+
+        byte[] body = setupMessage();
+        Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
+        setupMockQueue(testDelivery);
+        Mockito.when(Utilities.parseJSONStr(anyString())).thenCallRealMethod();
+        Mockito.when(Utilities.parseConfig(anyString())).thenCallRealMethod();
+        final FutureTask<String> tester = new FutureTask<String>(new Callable<String>() {
+            @Override
+            public String call() {
+                System.out.println("tester thread started");
+                try {
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--endless",
+                            "--pidFile", "/var/run/arch3_worker.pid" });
+                } catch (CancellationException | InterruptedException e) {
+                    String s = outBuffer.toString();
+                    System.out.println("Exception caught: " + e.getMessage());
+                    return s;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("Unexpected exception");
+                    return null;
+                } finally {
+                    return outBuffer.toString();
+                }
+            }
+
+        });
+
+        final Thread killer = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                System.out.println("killer thread started");
+                try {
+                    // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
+                    // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+                }
+                tester.cancel(true);
+            }
+        });
+
+        ExecutorService es = Executors.newFixedThreadPool(2);
+        es.execute(tester);
+        es.execute(killer);
+        try {
+            tester.get();
+        } catch (CancellationException e) {
+            // System.out.println(outBuffer.toString());
+            String output = outBuffer.toString();
+
+            assertTrue("--endless flag was detected and set",
+                    output.contains("The \"--endless\" flag was set, this worker will run endlessly!"));
+            int numJobsPulled = StringUtils.countMatches(output, " WORKER IS PREPARING TO PULL JOB FROM QUEUE ");
+            System.out.println("Number of jobs attempted: " + numJobsPulled);
+            assertTrue("number of jobs attempted > 1", numJobsPulled > 1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+
+    }
+
+    @Test
+    public void testWorker_endlessFromConfig() throws Exception {
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("rabbitMQQueueName", "seqware");
+        jsonObj.put("rabbitMQHost", "localhost");
+        jsonObj.put("rabbitMQUser", "guest");
+        jsonObj.put("rabbitMQPass", "guest");
+        jsonObj.put("heartbeatRate", "2.5");
+        jsonObj.put("max-runs", "1");
+        jsonObj.put("preworkerSleep", "1");
+        jsonObj.put("postworkerSleep", "1");
+        jsonObj.put("endless", "true");
+        jsonObj.put("hostUserName", System.getProperty("user.name"));
+        
+        byte[] body = setupMessage();
+        Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
+        setupMockQueue(testDelivery);
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
+        final FutureTask<String> tester = new FutureTask<String>(new Callable<String>() {
+            @Override
+            public String call() {
+                System.out.println("tester thread started");
+                try {
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--pidFile",
+                            "/var/run/arch3_worker.pid" });
+                } catch (CancellationException | InterruptedException e) {
+                    String s = outBuffer.toString();
+                    System.out.println("Exception caught: " + e.getMessage());
+                    return s;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("Unexpected exception");
+                    return null;
+                } finally {
+                    return outBuffer.toString();
+                }
+            }
+
+        });
+
+        final Thread killer = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                System.out.println("killer thread started");
+                try {
+                    // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
+                    // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+                }
+                tester.cancel(true);
+            }
+        });
+
+        ExecutorService es = Executors.newFixedThreadPool(2);
+        es.execute(tester);
+        es.execute(killer);
+        
+        try {
+            tester.get();
+        } catch (CancellationException e) {
+            String output = outBuffer.toString();
+            assertTrue("--endless flag was detected and set",
+                    output.contains("The \"--endless\" flag was set, this worker will run endlessly!"));
+            int numJobsPulled = StringUtils.countMatches(output, " WORKER IS PREPARING TO PULL JOB FROM QUEUE ");
+            System.out.println("Number of jobs attempted: " + numJobsPulled);
+            assertTrue("number of jobs attempted > 1", numJobsPulled > 1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
         }
     }
 

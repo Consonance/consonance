@@ -62,7 +62,7 @@ public class Worker extends Base {
             });
         }
         WorkerRunnable workerRunnable = new WorkerRunnable(options.valueOf(worker.configSpec), options.valueOf(worker.uuidSpec),
-                options.valueOf(worker.maxRunsSpec), options.has(worker.testSpec));
+                options.valueOf(worker.maxRunsSpec), options.has(worker.testSpec), options.has(worker.endlessSpec));
         workerRunnable.run();
         worker.log.info("Exiting.");
     }

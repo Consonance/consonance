@@ -1,5 +1,5 @@
 {
-	"rabbitMQQueueName":"seqware",
+	"rabbitMQQueueName":"arch_3_worker",
 	"rabbitMQHost":"localhost",
 	"rabbitMQUser":"guest",
 	"rabbitMQPass":"guest",
@@ -7,5 +7,6 @@
 	"preworkerSleep":"1",
 	"postworkerSleep":"1",
 	"max-runs":"1",
-	"hostUserName":"sshorser"
+	"hostUserName":"sshorser",
+	"endless":"false"
 }
