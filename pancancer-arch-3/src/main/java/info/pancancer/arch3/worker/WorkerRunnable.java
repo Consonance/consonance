@@ -77,9 +77,10 @@ public class WorkerRunnable implements Runnable {
      *            - The maximum number of workflows this Worker should execute.
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns) {
-        this(configFile, vmUuid, maxRuns, false);
+        this(configFile, vmUuid, maxRuns, false, false);
     }
 
+    
     /**
      * Create a new Worker.
      *
@@ -92,7 +93,7 @@ public class WorkerRunnable implements Runnable {
      * @param testMode
      *            the value of testMode
      */
-    public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode) {
+    public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         this.maxRuns = maxRuns;
         settings = Utilities.parseConfig(configFile);
         this.queueName = (String) settings.get("rabbitMQQueueName");
@@ -103,7 +104,7 @@ public class WorkerRunnable implements Runnable {
         this.jobQueueName = this.queueName + "_jobs";
         this.resultsQueueName = this.queueName + "_results";
         this.userName = settings.containsKey(HOST_USER_NAME) ? (String) settings.get(HOST_USER_NAME) : "ubuntu";
-        this.endless = (boolean) (settings.containsKey(ENDLESS) ? (String) settings.get(ENDLESS) : false);
+        this.endless = endless;//(boolean) (settings.containsKey(ENDLESS) ? (String) settings.get(ENDLESS) : false);
         if (this.endless) {
             log.info("The \"--endless\" flag was set, this worker will run endlessly!");
         }
