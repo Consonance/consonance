@@ -157,10 +157,10 @@ To upgrade from one version of arch3 to a newer version, the simplest approach i
 
 Step-by-step:
 
-1) Terminate the cron task that you have which is running the JobGenerator (thus preventing new jobs from entering the system)
-2) Spin up a new set of these components (you may have the option of using the [pancancer launcher](https://github.com/ICGC-TCGA-PanCancer/pancancer_launcher) , if so use the instructions there). Remember to use a new managed\_tag in your ~/.youxia/config in order to prevent clashes where your two clusters attempt to manage each others nodes. 
-3) Create a cron task in order to run the JobGenerator in your new cluster
-4) When all tasks drain from your old cluster, terminate the launcher and any failed nodes via the AWS console or OpenStack's dashboard. 
+1. Terminate the cron task that you have which is running the JobGenerator (thus preventing new jobs from entering the system)
+2. Spin up a new set of these components (you may have the option of using the [pancancer launcher](https://github.com/ICGC-TCGA-PanCancer/pancancer_launcher) , if so use the instructions there). Remember to use a new managed\_tag in your ~/.youxia/config in order to prevent clashes where your two clusters attempt to manage each others nodes. 
+3. Create a cron task in order to run the JobGenerator in your new cluster
+4. When all tasks drain from your old cluster, terminate the launcher and any failed nodes via the AWS console or OpenStack's dashboard. 
 
 
 ## Testing on AWS
