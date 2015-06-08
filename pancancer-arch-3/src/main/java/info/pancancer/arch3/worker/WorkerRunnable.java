@@ -104,7 +104,16 @@ public class WorkerRunnable implements Runnable {
         this.jobQueueName = this.queueName + "_jobs";
         this.resultsQueueName = this.queueName + "_results";
         this.userName = settings.containsKey(HOST_USER_NAME) ? (String) settings.get(HOST_USER_NAME) : "ubuntu";
-        this.endless = endless;//(boolean) (settings.containsKey(ENDLESS) ? (String) settings.get(ENDLESS) : false);
+        /*
+         * If the user specified "--endless" on the CLI, then this.endless=true
+         * Else: check to see if "endless" is in the config file, and if it is, parse the value of it and use that.
+         *   If not in the config file, then use "false".
+         */
+        this.endless =  endless
+                            ? endless
+                            : (settings.containsKey(ENDLESS)
+                                    ? Boolean.parseBoolean((String)settings.get(ENDLESS))
+                                    : false);
         if (this.endless) {
             log.info("The \"--endless\" flag was set, this worker will run endlessly!");
         }

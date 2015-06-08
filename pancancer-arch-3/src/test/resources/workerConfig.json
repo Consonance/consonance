@@ -7,5 +7,6 @@
 	"preworkerSleep":"1",
 	"postworkerSleep":"1",
 	"max-runs":"1",
-	"hostUserName":"sshorser"
+	"hostUserName":"sshorser",
+	"endless":"false"
 }

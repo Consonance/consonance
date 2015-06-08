@@ -228,6 +228,10 @@ public class TestWorker {
                     String s = outBuffer.toString();
                     System.out.println("Exception caught: " + e.getMessage());
                     return s;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("Unexpected exception");
+                    return null;
                 } finally {
                     return outBuffer.toString();
                 }
@@ -266,7 +270,86 @@ public class TestWorker {
             int numJobsPulled = StringUtils.countMatches(output, " WORKER IS PREPARING TO PULL JOB FROM QUEUE ");
             System.out.println("Number of jobs attempted: " + numJobsPulled);
             assertTrue("number of jobs attempted > 1", numJobsPulled > 1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
 
+    }
+
+    @Test
+    public void testWorker_endlessFromConfig() throws Exception {
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("rabbitMQQueueName", "seqware");
+        jsonObj.put("rabbitMQHost", "localhost");
+        jsonObj.put("rabbitMQUser", "guest");
+        jsonObj.put("rabbitMQPass", "guest");
+        jsonObj.put("heartbeatRate", "2.5");
+        jsonObj.put("max-runs", "1");
+        jsonObj.put("preworkerSleep", "1");
+        jsonObj.put("postworkerSleep", "1");
+        jsonObj.put("endless", "true");
+        jsonObj.put("hostUserName", System.getProperty("user.name"));
+        
+        byte[] body = setupMessage();
+        Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
+        setupMockQueue(testDelivery);
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
+        final FutureTask<String> tester = new FutureTask<String>(new Callable<String>() {
+            @Override
+            public String call() {
+                System.out.println("tester thread started");
+                try {
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--pidFile",
+                            "/var/run/arch3_worker.pid" });
+                } catch (CancellationException | InterruptedException e) {
+                    String s = outBuffer.toString();
+                    System.out.println("Exception caught: " + e.getMessage());
+                    return s;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail("Unexpected exception");
+                    return null;
+                } finally {
+                    return outBuffer.toString();
+                }
+            }
+
+        });
+
+        final Thread killer = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                System.out.println("killer thread started");
+                try {
+                    // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
+                    // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+                }
+                tester.cancel(true);
+            }
+        });
+
+        ExecutorService es = Executors.newFixedThreadPool(2);
+        es.execute(tester);
+        es.execute(killer);
+        
+        try {
+            tester.get();
+        } catch (CancellationException e) {
+            String output = outBuffer.toString();
+            assertTrue("--endless flag was detected and set",
+                    output.contains("The \"--endless\" flag was set, this worker will run endlessly!"));
+            int numJobsPulled = StringUtils.countMatches(output, " WORKER IS PREPARING TO PULL JOB FROM QUEUE ");
+            System.out.println("Number of jobs attempted: " + numJobsPulled);
+            assertTrue("number of jobs attempted > 1", numJobsPulled > 1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
         }
     }
 
