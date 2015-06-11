@@ -19,15 +19,10 @@ package info.pancancer.arch3.worker;
 import info.pancancer.arch3.coordinator.Coordinator;
 import info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow;
 import info.pancancer.arch3.utils.ITUtilities;
-
 import java.io.File;
 import java.io.IOException;
-
-import joptsimple.OptionException;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -48,13 +43,14 @@ public class WorkerIT {
      */
     @Test
     public void testTestModeOperation() throws Exception {
-        File file = FileUtils.getFile("src", "test", "resources", "config.json");
+        File file = FileUtils.getFile("src", "test", "resources", "config");
         File iniDir = FileUtils.getFile("ini");
         // prime the coordinator with an order
         JobGeneratorDEWorkflow.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
         // prime the worker with a job
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
-        Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test", "--pidFile", "/var/run/arch3_worker.pid" });
+        Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test", "--pidFile",
+                "/var/run/arch3_worker.pid" });
     }
 
 }

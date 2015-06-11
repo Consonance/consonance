@@ -1,0 +1,23 @@
+[rabbit]
+rabbitMQHost = localhost
+rabbitMQUser = guest
+rabbitMQPass = guest
+rabbitMQQueueName : pancancer_arch_3
+
+[database]
+postgresHost = 127.0.0.1
+postgresUser = queue_user
+postgresPass = queue
+postgresDBName = queue_status
+  
+[generator]
+results = pancancer_arch_3.json
+
+
+[provision]
+max_running_containers = 5
+
+  
+[coordinator]
+check_previous_job_hash = true
+max_seconds_before_lost = 10

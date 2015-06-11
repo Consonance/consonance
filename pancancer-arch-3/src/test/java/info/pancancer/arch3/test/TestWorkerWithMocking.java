@@ -8,6 +8,7 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.WorkerHeartbeat;
 import info.pancancer.arch3.worker.WorkerRunnable;
@@ -20,11 +21,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteResultHandler;
-import org.json.simple.JSONObject;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,9 +45,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
-        DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class })
+        DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorkerWithMocking {
+
+    @Mock
+    private HierarchicalINIConfiguration config;
 
     @Mock
     private Utilities mockUtil;
@@ -119,8 +123,8 @@ public class TestWorkerWithMocking {
 
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
-        Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
-        Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
     }
 
     @Test
@@ -147,13 +151,19 @@ public class TestWorkerWithMocking {
         }).when(mockExecutor).execute(any(CommandLine.class), any(ExecuteResultHandler.class));
         PowerMockito.whenNew(DefaultExecutor.class).withNoArguments().thenReturn(mockExecutor);
 
-        JSONObject jsonObj = new JSONObject();
-        jsonObj.put("rabbitMQQueueName", "seqware");
-        jsonObj.put("heartbeatRate", "2.5");
-        jsonObj.put("preworkerSleep", "1");
-        jsonObj.put("postworkerSleep", "1");
-        jsonObj.put("hostUserName", System.getProperty("user.name"));
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
+        Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("seqware");
+        Mockito.when(config.getString(Constants.RABBIT_HOST)).thenReturn("localhost");
+        Mockito.when(config.getString(Constants.RABBIT_USERNAME)).thenReturn("guest");
+        Mockito.when(config.getString(Constants.RABBIT_PASSWORD)).thenReturn("guest");
+
+        Mockito.when(config.getString(Constants.WORKER_HEARTBEAT_RATE)).thenReturn("2.5");
+        Mockito.when(config.getString(Constants.WORKER_MAX_RUNS)).thenReturn("1");
+        Mockito.when(config.getLong(Constants.WORKER_PREWORKER_SLEEP, WorkerRunnable.DEFAULT_PRESLEEP)).thenReturn(1L);
+        Mockito.when(config.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP)).thenReturn(1L);
+        Mockito.when(config.getString(Constants.WORKER_ENDLESS)).thenReturn("1");
+
+        Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME)).thenReturn(System.getProperty("user.name"));
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
 
         Job j = new Job();
         j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
@@ -161,7 +171,7 @@ public class TestWorkerWithMocking {
         j.setWorkflowVersion("1.0-SNAPSHOT");
         j.setJobHash("asdlk2390aso12jvrej");
         j.setUuid("1234567890");
-        Map<String, String> iniMap = new HashMap<String, String>(3);
+        Map<String, String> iniMap = new HashMap<>(3);
         iniMap.put("param1", "value1");
         iniMap.put("param2", "value2");
         iniMap.put("param3", "help I'm trapped in an INI file");
@@ -172,10 +182,10 @@ public class TestWorkerWithMocking {
 
         PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
 
         testWorker.run();
-        String testResults = this.outBuffer.toString();// this.outStream.toString();
+        String testResults = TestWorkerWithMocking.outBuffer.toString();// this.outStream.toString();
         // String knownResults = new String(Files.readAllBytes(Paths.get("src/test/resources/TestWorkerResult.txt")));
         // System.setOut(originalOutStream);
 
@@ -185,7 +195,8 @@ public class TestWorkerWithMocking {
                 "Check for docker command",
                 testResults
                         .contains("Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.ssh/gnos.pem:/home/$USER/.ssh/gnos.pem pancancer/seqware_whitestar_pancancer:1.1.1 seqware bundle launch --dir /workflow --ini /ini --no-metadata]"));
-        assertTrue("Check for sleep message", testResults.contains("Sleeping before executing workflow for 1000 ms."));
+        assertTrue("Check for sleep message in the following:" + testResults,
+                testResults.contains("Sleeping before executing workflow for 1000 ms."));
         assertTrue("Check for workflow complete", testResults.contains("Docker execution result: \"iteration: 0\"\n" + "\"iteration: 1\"\n"
                 + "\"iteration: 2\"\n" + "\"iteration: 3\"\n" + "\"iteration: 4\"\n"));
 

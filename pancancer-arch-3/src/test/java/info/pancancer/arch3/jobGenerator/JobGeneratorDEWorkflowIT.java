@@ -52,7 +52,7 @@ public class JobGeneratorDEWorkflowIT {
      */
     @Test
     public void testNormalOperation() throws Exception {
-        File file = FileUtils.getFile("src", "test", "resources", "config.json");
+        File file = FileUtils.getFile("src", "test", "resources", "config");
         File iniDir = FileUtils.getFile("ini");
         JobGeneratorDEWorkflow.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
     }

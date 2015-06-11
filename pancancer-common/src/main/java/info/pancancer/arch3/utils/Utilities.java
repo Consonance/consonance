@@ -4,21 +4,15 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import info.pancancer.arch3.persistence.PostgreSQL;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -55,24 +49,33 @@ public class Utilities {
         return data;
     }
 
+    public static HierarchicalINIConfiguration parseConfig(String path) {
+        try {
+            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(path);
+            return config;
+        } catch (ConfigurationException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     /**
      * Clears database state and known queues for testing.
      *
      * @param settings
      * @throws IOException
      */
-    public static void clearState(JSONObject settings) throws IOException {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config.json");
-        JSONObject parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+    public static void clearState(HierarchicalINIConfiguration settings) throws IOException {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
         // clean up the database
         postgres.clearDatabase();
 
-        String server = (String) settings.get("rabbitMQHost");
-        String user = (String) settings.get("rabbitMQUser");
-        String pass = (String) settings.get("rabbitMQPass");
+        String server = settings.getString(Constants.RABBIT_HOST);
+        String user = settings.getString(Constants.RABBIT_USERNAME);
+        String pass = settings.getString(Constants.RABBIT_PASSWORD);
 
-        Channel channel = null;
+        Channel channel;
 
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(server);
@@ -82,7 +85,7 @@ public class Utilities {
         channel = connection.createChannel();
         channel.basicQos(1);
 
-        String prefix = (String) settings.get("rabbitMQQueueName");
+        String prefix = settings.getString(Constants.RABBIT_QUEUE_NAME);
         String[] queues = { prefix + "_jobs", prefix + "_orders", prefix + "_vms", prefix + "_for_CleanupJobs", prefix + "_for_CleanupVMs" };
         for (String queue : queues) {
             try {
@@ -91,101 +94,13 @@ public class Utilities {
                 Log.info("Could not delete " + queue);
             }
         }
-
-        // File file = FileUtils.getFile("scripts", "cleanup.sh");
-        // file.setExecutable(true);
-        // CommandLine commandLine = new CommandLine("/bin/bash");
-        // commandLine.addArgument("-c");
-        // commandLine.addArgument(file.getAbsolutePath(), false); // false is important to prevent commons-exec from acting stupid
-        // new DefaultExecutor().execute(commandLine);
     }
 
-    public static JSONObject parseConfig(String configFile) {
-        String json = null;
+    public static Channel setupQueue(HierarchicalINIConfiguration settings, String queue) {
 
-        // local file specified on command line tried first
-        File configFileObj = null;
-        if (configFile != null) {
-            configFileObj = new File(configFile);
-        }
-        File masterConfig = new File("/etc/genetic-algorithm/config.json");
-        if (configFile != null && configFileObj.exists()) {
-            LOG.info("USING CONFIG FROM SPECIFIED FILE!");
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8))) {
-                StringBuilder sb = new StringBuilder();
-                String line = br.readLine();
-
-                while (line != null) {
-                    sb.append(line);
-                    sb.append("\n");
-                    line = br.readLine();
-                }
-                json = sb.toString();
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-                // Logger.getLogger(this.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        } else if (canDownloadConfig()) {
-            LOG.info("USING CONFIG FROM USER DATA!");
-
-            StringBuilder sb = new StringBuilder();
-            URLConnection urlConn = null;
-            InputStreamReader in = null;
-            try {
-                URL url = new URL("http://169.254.169.254/latest/user-data");
-                urlConn = url.openConnection();
-                if (urlConn != null) {
-                    urlConn.setReadTimeout(MILLISECONDS_IN_A_MINUTE);
-                }
-                if (urlConn != null && urlConn.getInputStream() != null) {
-                    in = new InputStreamReader(urlConn.getInputStream(), StandardCharsets.UTF_8);
-                    BufferedReader bufferedReader = new BufferedReader(in);
-                    if (bufferedReader != null) {
-                        int cp;
-                        while ((cp = bufferedReader.read()) != -1) {
-                            sb.append((char) cp);
-                        }
-                        bufferedReader.close();
-                    }
-                }
-                in.close();
-            } catch (Exception e) {
-                throw new RuntimeException("Exception while calling URL: http://169.254.169.254/latest/user-data", e);
-            }
-
-            json = sb.toString();
-
-        } else if (masterConfig.exists()) {
-            LOG.info("USING CONFIG FROM /etc");
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("/etc/genetic-algorithm/config.json"),
-                    StandardCharsets.UTF_8))) {
-                StringBuilder sb = new StringBuilder();
-                String line = br.readLine();
-
-                while (line != null) {
-                    sb.append(line);
-                    sb.append("\n");
-                    line = br.readLine();
-                }
-                json = sb.toString();
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
-
-        } else {
-            return null;
-        }
-
-        return parseJSONStr(json);
-
-    }
-
-    public static Channel setupQueue(JSONObject settings, String queue) {
-
-        String server = (String) settings.get("rabbitMQHost");
-        String user = (String) settings.get("rabbitMQUser");
-        String pass = (String) settings.get("rabbitMQPass");
+        String server = settings.getString(Constants.RABBIT_HOST);
+        String user = settings.getString(Constants.RABBIT_USERNAME);
+        String pass = settings.getString(Constants.RABBIT_PASSWORD);
 
         Channel channel = null;
 
@@ -209,11 +124,11 @@ public class Utilities {
 
     }
 
-    public static Channel setupExchange(JSONObject settings, String queue) {
+    public static Channel setupExchange(HierarchicalINIConfiguration settings, String queue) {
 
-        String server = (String) settings.get("rabbitMQHost");
-        String user = (String) settings.get("rabbitMQUser");
-        String pass = (String) settings.get("rabbitMQPass");
+        String server = settings.getString(Constants.RABBIT_HOST);
+        String user = settings.getString(Constants.RABBIT_USERNAME);
+        String pass = settings.getString(Constants.RABBIT_PASSWORD);
 
         Channel channel = null;
 
@@ -265,56 +180,9 @@ public class Utilities {
         return min + (int) (Math.random() * ((1 + max) - min));
     }
 
-    private static boolean canDownloadConfig() {
-
-        try {
-            URL u = new URL("http://169.254.169.254/latest/user-data");
-            HttpURLConnection huc = (HttpURLConnection) u.openConnection();
-            huc.setRequestMethod("HEAD");
-            if (huc.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                StringBuilder sb = new StringBuilder();
-                URLConnection urlConn = null;
-                InputStreamReader in = null;
-                try {
-                    URL url = new URL("http://169.254.169.254/latest/user-data");
-                    urlConn = url.openConnection();
-                    if (urlConn != null) {
-                        urlConn.setReadTimeout(MILLISECONDS_IN_A_MINUTE);
-                    }
-                    if (urlConn != null && urlConn.getInputStream() != null) {
-                        in = new InputStreamReader(urlConn.getInputStream(), Charset.defaultCharset());
-                        BufferedReader bufferedReader = new BufferedReader(in);
-                        if (bufferedReader != null) {
-                            int cp;
-                            while ((cp = bufferedReader.read()) != -1) {
-                                sb.append((char) cp);
-                            }
-                            bufferedReader.close();
-                        }
-                    }
-                    in.close();
-                } catch (Exception e) {
-                    throw new RuntimeException("Exception while calling URL: http://169.254.169.254/latest/user-data", e);
-                }
-                LOG.debug("FROM USER DATA: " + sb.toString());
-                LOG.debug("MATCHES?: " + sb.toString().matches("^\\s*\\{\\.*\\}\\s*$"));
-                return (sb.toString().matches("^\\s*\\{\\.*\\}\\s*$"));
-            } else {
-                return false;
-            }
-        } catch (MalformedURLException ex) {
-            LOG.error(ex.getMessage(), ex);
-        } catch (IOException ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
-        return false;
-    }
-
-    private static final int MILLISECONDS_IN_A_MINUTE = 60 * 1000;
-
     public String digest(String plaintext) {
         String result = null;
-        MessageDigest m = null;
+        MessageDigest m;
         try {
             m = MessageDigest.getInstance("MD5");
             m.reset();
@@ -324,7 +192,7 @@ public class Utilities {
             final int radix = 16;
             result = bigInt.toString(radix);
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return result;
     }

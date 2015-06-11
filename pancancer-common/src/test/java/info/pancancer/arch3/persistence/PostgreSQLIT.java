@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -57,8 +57,8 @@ public class PostgreSQLIT {
 
     @Before
     public void setUp() throws IOException {
-        this.configFile = FileUtils.getFile("src", "test", "resources", "config.json");
-        JSONObject parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        this.configFile = FileUtils.getFile("src", "test", "resources", "config");
+        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         this.postgres = new PostgreSQL(parseConfig);
 
         // clean up the database

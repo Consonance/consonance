@@ -53,7 +53,7 @@ public class CoordinatorIT {
      */
     @Test
     public void testNormalUsage() throws Exception {
-        File file = FileUtils.getFile("src", "test", "resources", "config.json");
+        File file = FileUtils.getFile("src", "test", "resources", "config");
         File iniDir = FileUtils.getFile("ini");
         // prime the pump with a job
         JobGeneratorDEWorkflow.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });

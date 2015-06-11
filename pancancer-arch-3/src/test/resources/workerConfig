@@ -1,0 +1,14 @@
+[rabbit]
+rabbitMQHost = localhost
+rabbitMQUser = guest
+rabbitMQPass = guest
+rabbitMQQueueName : arch_3_worker
+
+  
+[worker]
+heartbeatRate = 60
+preworkerSleep = 5
+postworkerSleep = 5
+max-runs = 1
+hostUserName = sshorser
+endless = false

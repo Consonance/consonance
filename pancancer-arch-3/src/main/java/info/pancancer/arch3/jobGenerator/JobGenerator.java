@@ -7,6 +7,7 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import joptsimple.ArgumentAcceptingOptionSpec;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.json.simple.JSONObject;
 
 /**
@@ -25,7 +27,7 @@ public class JobGenerator extends Base {
 
     // variables
     private String outputFile = null;
-    private JSONObject settings = null;
+    private HierarchicalINIConfiguration settings = null;
     private Channel jchannel = null;
     private String queueName = null;
     private ArrayList<JSONObject> resultsArr = null;
@@ -51,7 +53,7 @@ public class JobGenerator extends Base {
         JobGeneratorShutdownHandler shutdownHandler = new JobGeneratorShutdownHandler();
         settings = Utilities.parseConfig(configFile);
         if (outputFile == null) {
-            outputFile = (String) settings.get("results");
+            outputFile = settings.getString(Constants.JOB_GENERATOR_RESULTS_FILE);
         }
         shutdownHandler.setupOutputFile(outputFile, settings);
         // Utilities will handle persisting data to disk on exit
@@ -59,7 +61,7 @@ public class JobGenerator extends Base {
         resultsArr = u.getResultsArr();
 
         // CONFIG
-        queueName = (String) settings.get("rabbitMQQueueName");
+        queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         log.info("QUEUE NAME: " + queueName);
 
         // SETUP QUEUE

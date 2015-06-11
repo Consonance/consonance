@@ -7,15 +7,14 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
-
 import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
 import info.pancancer.arch3.worker.WorkerHeartbeat;
 import info.pancancer.arch3.worker.WorkerRunnable;
 import info.pancancer.arch3.worker.WorkflowResult;
 import info.pancancer.arch3.worker.WorkflowRunner;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,23 +27,16 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.lang3.StringUtils;
-import org.json.simple.JSONObject;
-
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -57,9 +49,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, Utilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
-        Logger.class, LoggerFactory.class })
+        Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorker {
+
+    @Mock
+    private HierarchicalINIConfiguration config;
 
     @Mock
     private WorkerHeartbeat mockHeartbeat;
@@ -129,9 +124,9 @@ public class TestWorker {
 
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
 
-        Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
-        Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
         WorkflowResult result = new WorkflowResult();
         result.setWorkflowStdout("Mock Workflow Response");
@@ -147,9 +142,10 @@ public class TestWorker {
     @Test
     public void testWorker_noQueueName() {
         PowerMockito.mockStatic(Utilities.class);
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(new JSONObject());
+        setupConfig(false);
+
         try {
-            WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+            WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
             fail("Execution should not have reached this point!");
         } catch (Exception e) {
             assertTrue(
@@ -171,7 +167,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
 
         testWorker.run();
         String testResults = outBuffer.toString();
@@ -186,7 +182,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
         testWorker.run();
         String testResults = outBuffer.toString();
         assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
@@ -199,7 +195,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, null);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
         try {
             testWorker.run();
             String testResults = outBuffer.toString();
@@ -222,7 +218,7 @@ public class TestWorker {
             public String call() {
                 System.out.println("tester thread started");
                 try {
-                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--endless",
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig", "--uuid", "vm123456", "--endless",
                             "--pidFile", "/var/run/arch3_worker.pid" });
                 } catch (CancellationException | InterruptedException e) {
                     String s = outBuffer.toString();
@@ -279,28 +275,31 @@ public class TestWorker {
 
     @Test
     public void testWorker_endlessFromConfig() throws Exception {
-        JSONObject jsonObj = new JSONObject();
-        jsonObj.put("rabbitMQQueueName", "seqware");
-        jsonObj.put("rabbitMQHost", "localhost");
-        jsonObj.put("rabbitMQUser", "guest");
-        jsonObj.put("rabbitMQPass", "guest");
-        jsonObj.put("heartbeatRate", "2.5");
-        jsonObj.put("max-runs", "1");
-        jsonObj.put("preworkerSleep", "1");
-        jsonObj.put("postworkerSleep", "1");
-        jsonObj.put("endless", "true");
-        jsonObj.put("hostUserName", System.getProperty("user.name"));
-        
+
+        Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("seqware");
+        Mockito.when(config.getString(Constants.RABBIT_HOST)).thenReturn("localhost");
+        Mockito.when(config.getString(Constants.RABBIT_USERNAME)).thenReturn("guest");
+        Mockito.when(config.getString(Constants.RABBIT_PASSWORD)).thenReturn("guest");
+
+        Mockito.when(config.getString(Constants.WORKER_HEARTBEAT_RATE)).thenReturn("2.5");
+        Mockito.when(config.getString(Constants.WORKER_MAX_RUNS)).thenReturn("1");
+        Mockito.when(config.getString(Constants.WORKER_PREWORKER_SLEEP)).thenReturn("1");
+        Mockito.when(config.getString(Constants.WORKER_POSTWORKER_SLEEP)).thenReturn("1");
+        Mockito.when(config.getString(Constants.WORKER_ENDLESS)).thenReturn("1");
+
+        Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME)).thenReturn(System.getProperty("user.name"));
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
+
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
         final FutureTask<String> tester = new FutureTask<String>(new Callable<String>() {
             @Override
             public String call() {
                 System.out.println("tester thread started");
                 try {
-                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--pidFile",
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig", "--uuid", "vm123456", "--pidFile",
                             "/var/run/arch3_worker.pid" });
                 } catch (CancellationException | InterruptedException e) {
                     String s = outBuffer.toString();
@@ -337,7 +336,7 @@ public class TestWorker {
         ExecutorService es = Executors.newFixedThreadPool(2);
         es.execute(tester);
         es.execute(killer);
-        
+
         try {
             tester.get();
         } catch (CancellationException e) {
@@ -361,8 +360,8 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1",
-                "--pidFile", "/var/run/arch3_worker.pid" });
+        Worker.main(new String[] { "--config", "src/test/resources/workerConfig", "--uuid", "vm123456", "--max-runs", "1", "--pidFile",
+                "/var/run/arch3_worker.pid" });
 
         String testResults = outBuffer.toString();
 
@@ -404,7 +403,7 @@ public class TestWorker {
         setupMockQueue(testDelivery);
 
         Worker.main(new String[] { "--uuid", "vm123456", "--pidFile", "/var/run/arch3_worker.pid", "--config",
-                "src/test/resources/workerConfig.json" });
+                "src/test/resources/workerConfig" });
 
         String testResults = outBuffer.toString();
 
@@ -428,7 +427,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
 
         testWorker.run();
 
@@ -472,14 +471,20 @@ public class TestWorker {
         return testResults;
     }
 
-    private void setupConfig() {
-        JSONObject jsonObj = new JSONObject();
-        jsonObj.put("rabbitMQQueueName", "seqware");
-        jsonObj.put("heartbeatRate", "2.5");
-        jsonObj.put("preworkerSleep", "1");
-        jsonObj.put("postworkerSleep", "1");
-        jsonObj.put("hostUserName", System.getProperty("user.name"));
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
+    private HierarchicalINIConfiguration setupConfig() {
+        return setupConfig(true);
+    }
+
+    private HierarchicalINIConfiguration setupConfig(boolean properQueueName) {
+        if (properQueueName) {
+            Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("seqware");
+        }
+        Mockito.when(config.getString(Constants.WORKER_HEARTBEAT_RATE)).thenReturn("2.5");
+        Mockito.when(config.getString(Constants.WORKER_PREWORKER_SLEEP)).thenReturn("1");
+        Mockito.when(config.getString(Constants.WORKER_POSTWORKER_SLEEP)).thenReturn("1");
+        Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME)).thenReturn(System.getProperty("user.name"));
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
+        return config;
     }
 
     private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {

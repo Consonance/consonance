@@ -4,6 +4,7 @@ import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -42,33 +44,30 @@ public class PostgreSQL {
     private Properties props;
     private PoolingDataSource<PoolableConnection> dataSource = null;
 
-    public PostgreSQL(JSONObject settings) {
+    public PostgreSQL(HierarchicalINIConfiguration settings) {
         try {
             String nullConfigs = "";
-            String host = (String) settings.get("postgresHost");
+            String host = settings.getString(Constants.POSTGRES_HOST);
             if (host == null) {
                 nullConfigs += "postgresHost ";
             }
 
-            String user = (String) settings.get("postgresUser");
+            String user = settings.getString(Constants.POSTGRES_USERNAME);
             if (user == null) {
                 nullConfigs += "postgresUser ";
             }
 
-            String pass = (String) settings.get("postgresPass");
+            String pass = settings.getString(Constants.POSTGRES_PASSWORD);
             if (pass == null) {
                 nullConfigs += "postgresPass ";
             }
 
-            String db = (String) settings.get("postgresDBName");
+            String db = settings.getString(Constants.POSTGRES_DBNAME);
             if (db == null) {
                 nullConfigs += "postgresDBName ";
             }
 
-            String maxConnections = (String) settings.get("maxConnections");
-            if (maxConnections == null) {
-                maxConnections = "5";
-            }
+            String maxConnections = settings.getString(Constants.POSTGRES_MAX_CONNECTIONS, "5");
 
             if (nullConfigs.trim().length() > 0) {
                 throw new NullPointerException("The following configuration values are null: " + nullConfigs

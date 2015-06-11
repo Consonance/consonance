@@ -53,7 +53,7 @@ public class JobGeneratorIT {
     @Test
     public void testNormalOperation() throws Exception {
         // need to create a vm order first, otherwise will hang
-        File file = FileUtils.getFile("src", "test", "resources", "config.json");
+        File file = FileUtils.getFile("src", "test", "resources", "config");
         JobGenerator.main(new String[] { "--config", file.getAbsolutePath() });
     }
 

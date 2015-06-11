@@ -19,6 +19,7 @@ package info.pancancer.arch3.utils;
 import com.rabbitmq.client.Channel;
 import java.io.File;
 import java.io.IOException;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.junit.Assert;
@@ -32,10 +33,10 @@ import org.junit.Test;
  */
 public class UtilitiesIT {
 
-    public static JSONObject getSettings() {
-        File file = FileUtils.getFile("src", "test", "resources", "config.json");
+    public static HierarchicalINIConfiguration getSettings() {
+        File file = FileUtils.getFile("src", "test", "resources", "config");
         Utilities instance = new Utilities();
-        JSONObject settings = instance.parseConfig(file.getAbsolutePath());
+        HierarchicalINIConfiguration settings = Utilities.parseConfig(file.getAbsolutePath());
         return settings;
     }
 
@@ -48,7 +49,7 @@ public class UtilitiesIT {
     public void testParseJSONStr() throws IOException {
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
         Utilities instance = new Utilities();
-        JSONObject result = instance.parseJSONStr(FileUtils.readFileToString(file));
+        JSONObject result = Utilities.parseJSONStr(FileUtils.readFileToString(file));
         Assert.assertTrue("parsed json is invalid", !result.isEmpty());
     }
 
@@ -60,7 +61,7 @@ public class UtilitiesIT {
     @Test
     public void testSetupQueue() throws IOException {
         Utilities instance = new Utilities();
-        Channel result = instance.setupQueue(getSettings(), "testing_queue");
+        Channel result = Utilities.setupQueue(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();
     }
@@ -73,7 +74,7 @@ public class UtilitiesIT {
     @Test
     public void testSetupMultiQueue() throws IOException {
         Utilities instance = new Utilities();
-        Channel result = instance.setupExchange(getSettings(), "testing_queue");
+        Channel result = Utilities.setupExchange(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();
     }

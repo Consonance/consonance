@@ -12,6 +12,7 @@ import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.json.simple.JSONObject;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,11 +101,11 @@ public class Coordinator extends Base {
         public Void call() throws Exception {
             try {
 
-                JSONObject settings = Utilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
 
                 PostgreSQL db = new PostgreSQL(settings);
 
-                queueName = (String) settings.get("rabbitMQQueueName");
+                queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 // read from
                 orderChannel = Utilities.setupQueue(settings, queueName + "_orders");
                 // write to
@@ -134,7 +135,7 @@ public class Coordinator extends Base {
                     Order order = new Order().fromJSON(message);
 
                     boolean checkPreviousRuns = true;
-                    String checkSetting = (String) settings.get("check_previous_job_hash");
+                    String checkSetting = settings.getString(Constants.COORDINATOR_CHECK_JOB_HASH);
                     if ("false".equalsIgnoreCase(checkSetting)) {
                         checkPreviousRuns = false;
                     }
@@ -234,7 +235,7 @@ public class Coordinator extends Base {
                 jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
 
-                JSONObject settings = Utilities.parseConfig(this.configFile);
+                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
                 PostgreSQL db = new PostgreSQL(settings);
                 Job newJob = new Job().fromJSON(message);
                 newJob.setState(JobState.PENDING);
@@ -270,9 +271,8 @@ public class Coordinator extends Base {
             Channel resultsChannel = null;
             try {
 
-                JSONObject settings = Utilities.parseConfig(configFile);
-
-                String queueName = (String) settings.get("rabbitMQQueueName");
+                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
+                String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 final String resultQueueName = queueName + "_results";
 
                 // read from
@@ -356,7 +356,7 @@ public class Coordinator extends Base {
 
         @Override
         public Void call() {
-            JSONObject settings = Utilities.parseConfig(configFile);
+            HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
 
             // writes to DB as well
             PostgreSQL db = new PostgreSQL(settings);
@@ -368,7 +368,7 @@ public class Coordinator extends Base {
                 List<Job> jobs = db.getJobs(JobState.RUNNING);
 
                 // how long before we call something lost?
-                long secBeforeLost = (Long) settings.get("max_seconds_before_lost");
+                long secBeforeLost = settings.getLong(Constants.COORDINATOR_SECONDS_BEFORE_LOST);
 
                 for (Job job : jobs) {
                     Timestamp nowTs = new Timestamp(new Date().getTime());

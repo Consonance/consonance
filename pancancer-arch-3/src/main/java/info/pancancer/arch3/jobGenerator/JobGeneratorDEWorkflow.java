@@ -9,6 +9,7 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.IniFile;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
@@ -18,8 +19,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
 import joptsimple.ArgumentAcceptingOptionSpec;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.tools.ant.DirectoryScanner;
-import org.json.simple.JSONObject;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -30,7 +31,7 @@ public class JobGeneratorDEWorkflow extends Base {
 
     // variables
     private String outputFile = null;
-    private JSONObject settings = null;
+    private HierarchicalINIConfiguration settings = null;
     private Channel jchannel = null;
     private Connection connection = null;
     private String queueName = null;
@@ -69,7 +70,7 @@ public class JobGeneratorDEWorkflow extends Base {
         settings = Utilities.parseConfig(configFile);
 
         // CONFIG
-        queueName = (String) settings.get("rabbitMQQueueName");
+        queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         log.info("QUEUE NAME: " + queueName);
 
         // SETUP QUEUE
