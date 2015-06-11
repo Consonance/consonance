@@ -207,6 +207,11 @@ public class ContainerProvisionerThreads extends Base {
                         }
                     } else {
                         long requiredVMs = numberRunningContainers + numberPendingContainers;
+                        // cap the number of VMs
+                        LOG.info("  Desire for " + requiredVMs + " VMs");
+                        requiredVMs = Math
+                                .min(requiredVMs, settings.getLong(Constants.PROVISION_MAX_RUNNING_CONTAINERS, Integer.MAX_VALUE));
+                        LOG.info("  Capped at " + requiredVMs + " VMs");
                         if (requiredVMs > 0) {
                             String param = settings.getString(Constants.PROVISION_YOUXIA_DEPLOYER);
                             CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
