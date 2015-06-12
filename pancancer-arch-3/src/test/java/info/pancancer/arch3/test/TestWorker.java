@@ -10,10 +10,10 @@ import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
+import info.pancancer.arch3.worker.CollectingLogOutputStream;
 import info.pancancer.arch3.worker.Worker;
 import info.pancancer.arch3.worker.WorkerHeartbeat;
 import info.pancancer.arch3.worker.WorkerRunnable;
-import info.pancancer.arch3.worker.WorkflowResult;
 import info.pancancer.arch3.worker.WorkflowRunner;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,6 +29,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.lang3.StringUtils;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -49,9 +51,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, Utilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
-        Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class })
+        Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class, DefaultExecutor.class, DefaultExecuteResultHandler.class,
+        CollectingLogOutputStream.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorker {
+
+    @Mock
+    private CollectingLogOutputStream stream;
+
+    @Mock
+    private DefaultExecuteResultHandler handler;
+
+    @Mock
+    private DefaultExecutor executor;
 
     @Mock
     private HierarchicalINIConfiguration config;
@@ -128,12 +140,11 @@ public class TestWorker {
 
         Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
-        WorkflowResult result = new WorkflowResult();
-        result.setWorkflowStdout("Mock Workflow Response");
-        result.setWorkflowStdErr("Mock Workflow Response");
-        result.setExitCode(0);
-        Mockito.when(mockRunner.call()).thenReturn(result);
-        PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
+        PowerMockito.whenNew(DefaultExecutor.class).withAnyArguments().thenReturn(executor);
+        PowerMockito.whenNew(DefaultExecuteResultHandler.class).withAnyArguments().thenReturn(handler);
+        PowerMockito.whenNew(CollectingLogOutputStream.class).withAnyArguments().thenReturn(stream);
+
+        Mockito.when(stream.getAllLinesAsString()).thenReturn("Mock Workflow Response");
 
         Mockito.doNothing().when(mockHeartbeat).run();
         PowerMockito.whenNew(WorkerHeartbeat.class).withNoArguments().thenReturn(mockHeartbeat);
