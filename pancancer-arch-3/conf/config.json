@@ -16,7 +16,7 @@ results = pancancer_arch_3.json
 
 [provision]
 max_running_containers = 5
-youxia_deployer_parameters = "--max-spot-price 1 --batch-size 1
+youxia_deployer_parameters = --max-spot-price 1 --batch-size 1
 
   
 [coordinator]
