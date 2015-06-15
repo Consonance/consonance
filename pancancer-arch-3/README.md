@@ -110,11 +110,11 @@ You should also create a ~/.youxia/config file. See https://github.com/CloudBind
 
 This generates job orders, 5 in this case. If you leave off the `--total-jobs` option it will submit jobs on an infinite loop.
 
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5 [--endless]
+    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5 --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0
 
 To generate a real job from an ini file in the directory real\_test:
 
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --workflow-name DEWrapper --workflow-version 1.0.2 --workflow-path /workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.2_SeqWare_1.1.0 --config conf/config.json  --ini-dir real_test/
+    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGenerator --workflow-name DEWrapper --workflow-version 1.0.2 --workflow-path /workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.2_SeqWare_1.1.0 --config conf/config.json  --ini-dir real_test/
 
 ### Coordinator
 

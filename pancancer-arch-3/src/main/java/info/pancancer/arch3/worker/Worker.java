@@ -55,7 +55,6 @@ public class Worker extends Base {
                         } catch (IOException e) {
                             worker.log.error("Unable to delete PID file: " + pidFile + " , message: " + e.getMessage());
                             worker.log.error("You may have to delete the PID file manually to run the worker again.");
-                            e.printStackTrace();
                         }
                     }
                 }

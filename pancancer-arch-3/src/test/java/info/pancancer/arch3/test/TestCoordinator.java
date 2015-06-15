@@ -9,6 +9,7 @@ import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.coordinator.Coordinator;
 import info.pancancer.arch3.persistence.PostgreSQL;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.sql.Connection;
@@ -16,11 +17,11 @@ import java.sql.DriverManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
-import org.json.simple.JSONObject;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,9 +83,9 @@ public class TestCoordinator {
 
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
 
-        Mockito.when(Utilities.setupQueue(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
-        Mockito.when(Utilities.setupExchange(any(JSONObject.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
     }
 
@@ -95,7 +96,7 @@ public class TestCoordinator {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/config.json" });
+        Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/config" });
         testCoordinator.doWork();
         fail("Should not have reached here.");
 
@@ -108,7 +109,7 @@ public class TestCoordinator {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/coordinatorConfig.json" });
+        Coordinator testCoordinator = new Coordinator(new String[] { "--config", "src/test/resources/coordinatorConfig" });
         testCoordinator.doWork();
         fail("Should not have reached here.");
 
@@ -152,7 +153,7 @@ public class TestCoordinator {
         j.setWorkflowVersion("1.0-SNAPSHOT");
         j.setJobHash("asdlk2390aso12jvrej");
         j.setUuid("1234567890");
-        Map<String, String> iniMap = new HashMap<String, String>(3);
+        Map<String, String> iniMap = new HashMap<>(3);
         iniMap.put("param1", "value1");
         iniMap.put("param2", "value2");
         iniMap.put("param3", "help I'm trapped in an INI file");
@@ -162,18 +163,18 @@ public class TestCoordinator {
     }
 
     private void setupConfig(boolean withPostgresConfig) {
-        JSONObject jsonObj = new JSONObject();
-        jsonObj.put("rabbitMQQueueName", "seqware");
-        jsonObj.put("heartbeatRate", "2.5");
-        jsonObj.put("preworkerSleep", "1");
-        jsonObj.put("postworkerSleep", "1");
-        jsonObj.put("hostUserName", System.getProperty("user.name"));
-        jsonObj.put("max_seconds_before_lost", new Long("1"));
+        HierarchicalINIConfiguration jsonObj = new HierarchicalINIConfiguration();
+        jsonObj.addProperty(Constants.RABBIT_QUEUE_NAME, "seqware");
+        jsonObj.addProperty(Constants.WORKER_HEARTBEAT_RATE, "2.5");
+        jsonObj.addProperty(Constants.WORKER_PREWORKER_SLEEP, "1");
+        jsonObj.addProperty(Constants.WORKER_POSTWORKER_SLEEP, "1");
+        jsonObj.addProperty(Constants.WORKER_HOST_USER_NAME, System.getProperty("user.name"));
+        jsonObj.addProperty(Constants.COORDINATOR_SECONDS_BEFORE_LOST, 1L);
         if (withPostgresConfig) {
-            jsonObj.put("postgresHost", "localhost");
-            jsonObj.put("postgresUser", "user");
-            jsonObj.put("postgresPass", "password");
-            jsonObj.put("postgresDBName", "dbname");
+            jsonObj.addProperty(Constants.POSTGRES_HOST, "localhost");
+            jsonObj.addProperty(Constants.POSTGRES_USERNAME, "user");
+            jsonObj.addProperty(Constants.POSTGRES_PASSWORD, "password");
+            jsonObj.addProperty(Constants.POSTGRES_DBNAME, "dbname");
         }
         Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
     }

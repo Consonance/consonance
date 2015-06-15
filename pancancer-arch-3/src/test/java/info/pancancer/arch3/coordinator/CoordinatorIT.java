@@ -16,7 +16,7 @@
  */
 package info.pancancer.arch3.coordinator;
 
-import info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow;
+import info.pancancer.arch3.jobGenerator.JobGenerator;
 import info.pancancer.arch3.utils.ITUtilities;
 import java.io.File;
 import java.io.IOException;
@@ -53,10 +53,10 @@ public class CoordinatorIT {
      */
     @Test
     public void testNormalUsage() throws Exception {
-        File file = FileUtils.getFile("src", "test", "resources", "config.json");
+        File file = FileUtils.getFile("src", "test", "resources", "config");
         File iniDir = FileUtils.getFile("ini");
         // prime the pump with a job
-        JobGeneratorDEWorkflow.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
+        JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
         // note that without a worker running in parallel, the results job will time out
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
     }

@@ -53,7 +53,7 @@ public class ContainerProvisionerThreadsIT {
     @Test
     public void testTestModeOperation() throws Exception {
         // ideally, we would mock up some orders here
-        File file = FileUtils.getFile("src", "test", "resources", "config.json");
+        File file = FileUtils.getFile("src", "test", "resources", "config");
         ContainerProvisionerThreads.main(new String[] { "--test", "--config", file.getAbsolutePath() });
     }
 

@@ -35,7 +35,7 @@ public class WorkerRunnableIT {
      */
     @Test
     public void testGetFirstNonLoopbackAddress() throws Exception {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config.json");
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
         WorkerRunnable instance = new WorkerRunnable(configFile.getAbsolutePath(), "test", 1);
         InetAddress result = instance.getFirstNonLoopbackAddress();
         Assert.assertTrue("ip address was null", result != null);

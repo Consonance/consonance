@@ -3,14 +3,13 @@ package info.pancancer.arch3.worker;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
-
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.util.Log;
-
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,9 +30,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,10 +43,9 @@ import org.slf4j.LoggerFactory;
  */
 public class WorkerRunnable implements Runnable {
 
-    private static final String ENDLESS = "endless";
     private static final String NO_MESSAGE_FROM_QUEUE_MESSAGE = " [x] Job request came back null/empty! ";
     protected final Logger log = LoggerFactory.getLogger(getClass());
-    private JSONObject settings = null;
+    private HierarchicalINIConfiguration settings = null;
     private Channel resultsChannel = null;
     private Channel jobChannel = null;
     private String queueName = null;
@@ -59,12 +56,8 @@ public class WorkerRunnable implements Runnable {
     private String userName;
     private boolean testMode;
     private boolean endless = false;
-    private static final int DEFAULT_PRESLEEP = 1;
-    private static final int DEFAULT_POSTSLEEP = 1;
-    public static final String POSTWORKER_SLEEP = "postworkerSleep";
-    public static final String PREWORKER_SLEEP = "preworkerSleep";
-    public static final String HEARTBEAT_RATE = "heartbeatRate";
-    public static final String HOST_USER_NAME = "hostUserName";
+    public static final int DEFAULT_PRESLEEP = 1;
+    public static final int DEFAULT_POSTSLEEP = 1;
 
     /**
      * Create a new Worker.
@@ -80,7 +73,6 @@ public class WorkerRunnable implements Runnable {
         this(configFile, vmUuid, maxRuns, false, false);
     }
 
-    
     /**
      * Create a new Worker.
      *
@@ -96,24 +88,19 @@ public class WorkerRunnable implements Runnable {
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         this.maxRuns = maxRuns;
         settings = Utilities.parseConfig(configFile);
-        this.queueName = (String) settings.get("rabbitMQQueueName");
+        this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         if (this.queueName == null) {
             throw new NullPointerException(
                     "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
         }
         this.jobQueueName = this.queueName + "_jobs";
         this.resultsQueueName = this.queueName + "_results";
-        this.userName = settings.containsKey(HOST_USER_NAME) ? (String) settings.get(HOST_USER_NAME) : "ubuntu";
+        this.userName = settings.getString(Constants.WORKER_HOST_USER_NAME, "ubuntu");
         /*
-         * If the user specified "--endless" on the CLI, then this.endless=true
-         * Else: check to see if "endless" is in the config file, and if it is, parse the value of it and use that.
-         *   If not in the config file, then use "false".
+         * If the user specified "--endless" on the CLI, then this.endless=true Else: check to see if "endless" is in the config file, and
+         * if it is, parse the value of it and use that. If not in the config file, then use "false".
          */
-        this.endless =  endless
-                            ? endless
-                            : (settings.containsKey(ENDLESS)
-                                    ? Boolean.parseBoolean((String)settings.get(ENDLESS))
-                                    : false);
+        this.endless = endless ? endless : settings.getBoolean(Constants.WORKER_ENDLESS, false);
         if (this.endless) {
             log.info("The \"--endless\" flag was set, this worker will run endlessly!");
         }
@@ -286,24 +273,15 @@ public class WorkerRunnable implements Runnable {
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
             heartbeat.setReportingChannel(resultsChannel);
-            if (settings.containsKey(HEARTBEAT_RATE)) {
-                heartbeat.setSecondsDelay(Double.parseDouble((String) settings.get(HEARTBEAT_RATE)));
-            }
+            heartbeat.setSecondsDelay(settings.getDouble(Constants.WORKER_HEARTBEAT_RATE, WorkerHeartbeat.DEFAULT_DELAY));
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
             heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString().substring(1));
             heartbeat.setStatusSource(workflowRunner);
             // heartbeat.setMessageBody(heartbeatStatus.toJSON());
 
-            long presleep = WorkerRunnable.DEFAULT_PRESLEEP;
-            if (settings.containsKey(PREWORKER_SLEEP)) {
-                presleep = Long.parseLong((String) settings.get(PREWORKER_SLEEP));
-            }
-            long postsleep = WorkerRunnable.DEFAULT_POSTSLEEP;
-            if (settings.containsKey(POSTWORKER_SLEEP)) {
-                postsleep = Long.parseLong((String) settings.get(POSTWORKER_SLEEP));
-            }
-
+            long presleep = settings.getLong(Constants.WORKER_PREWORKER_SLEEP, WorkerRunnable.DEFAULT_PRESLEEP);
+            long postsleep = settings.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP);
             long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * presleep;
             long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * postsleep;
 

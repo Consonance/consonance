@@ -1,6 +1,6 @@
 [rabbit]
 rabbitMQHost = localhost
-rabbitMQUser = guest 
+rabbitMQUser = guest
 rabbitMQPass = guest
 rabbitMQQueueName : pancancer_arch_3
 
@@ -12,13 +12,12 @@ postgresDBName = queue_status
   
 [generator]
 results = pancancer_arch_3.json
-
+youxia_deployer_parameters = --max-spot-price 1 --batch-size 1
+hostUserName = ubuntu
 
 [provision]
 max_running_containers = 5
-youxia_deployer_parameters = --max-spot-price 1 --batch-size 1
 
-  
 [coordinator]
 check_previous_job_hash = true
 max_seconds_before_lost = 10

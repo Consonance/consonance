@@ -7,14 +7,18 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.utils.Constants;
+import info.pancancer.arch3.utils.IniFile;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.UUID;
+import java.util.Map;
+import java.util.Map.Entry;
 import joptsimple.ArgumentAcceptingOptionSpec;
-import org.json.simple.JSONObject;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.tools.ant.DirectoryScanner;
 
 /**
  * Created by boconnor on 15-04-18.
@@ -24,12 +28,15 @@ import org.json.simple.JSONObject;
 public class JobGenerator extends Base {
 
     // variables
-    private String outputFile = null;
-    private JSONObject settings = null;
+    private HierarchicalINIConfiguration settings = null;
     private Channel jchannel = null;
     private String queueName = null;
-    private ArrayList<JSONObject> resultsArr = null;
-    private int totalJobs = 1;
+    private int currIterations = 0;
+
+    private final ArgumentAcceptingOptionSpec<String> iniDirSpec;
+    private final ArgumentAcceptingOptionSpec<String> workflowNameSpec;
+    private final ArgumentAcceptingOptionSpec<String> workflowVersionSpec;
+    private final ArgumentAcceptingOptionSpec<String> workflowPathSpec;
     private final ArgumentAcceptingOptionSpec<Integer> totalJobSpec;
 
     public static void main(String[] argv) throws IOException {
@@ -37,151 +44,146 @@ public class JobGenerator extends Base {
         jg.log.info("MASTER FINISHED, EXITING!");
     }
 
-    private JobGenerator(String[] argv) throws IOException {
+    public JobGenerator(String[] argv) throws IOException {
         super();
-        this.totalJobSpec = super.parser.accepts("total-jobs").withOptionalArg().ofType(Integer.class);
+        this.iniDirSpec = super.parser.accepts("ini-dir").withOptionalArg().ofType(String.class);
+        this.workflowNameSpec = super.parser.accepts("workflow-name").withOptionalArg().ofType(String.class).defaultsTo("DEWrapper");
+        this.workflowVersionSpec = super.parser.accepts("workflow-version").withOptionalArg().ofType(String.class).defaultsTo("1.0.0");
+        this.workflowPathSpec = super.parser.accepts("workflow-path").withOptionalArg().ofType(String.class)
+                .defaultsTo("/workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0");
+        this.totalJobSpec = super.parser.accepts("total-jobs").requiredUnless(iniDirSpec, this.endlessSpec).withRequiredArg()
+                .ofType(Integer.class).defaultsTo(Integer.MAX_VALUE);
+
         parseOptions(argv);
 
-        if (options.has(totalJobSpec)) {
-            totalJobs = options.valueOf(totalJobSpec);
-        }
+        String iniDir = options.has(iniDirSpec) ? options.valueOf(iniDirSpec) : null;
+        String workflowName = options.valueOf(workflowNameSpec);
+        String workflowVersion = options.valueOf(workflowVersionSpec);
+        String workflowPath = options.valueOf(workflowPathSpec);
 
         // UTILS OBJECT
-        Utilities u = new Utilities();
-        JobGeneratorShutdownHandler shutdownHandler = new JobGeneratorShutdownHandler();
         settings = Utilities.parseConfig(configFile);
-        if (outputFile == null) {
-            outputFile = (String) settings.get("results");
-        }
-        shutdownHandler.setupOutputFile(outputFile, settings);
-        // Utilities will handle persisting data to disk on exit
-        Runtime.getRuntime().addShutdownHook(shutdownHandler);
-        resultsArr = u.getResultsArr();
 
         // CONFIG
-        queueName = (String) settings.get("rabbitMQQueueName");
+        queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         log.info("QUEUE NAME: " + queueName);
 
         // SETUP QUEUE
         this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
 
-        // LOOP, ADDING JOBS EVERY FEW MINUTES
-        while (totalJobs > 0) {
+        if (options.has(iniDirSpec)) {
+            // read an array of files
+            log.info("scanning: " + iniDir);
+            DirectoryScanner scanner = new DirectoryScanner();
+            scanner.setIncludes(new String[] { "**/*.ini" });
+            scanner.setBasedir(iniDir);
+            scanner.setCaseSensitive(false);
+            scanner.scan();
+            String[] files = scanner.getIncludedFiles();
 
-            totalJobs--;
-
-            log.info("\nGENERATING NEW JOBS\n");
-            // TODO: this is fake, in a real program this is being read from JSONL file or web service
-            // check to see if new results are available and/or if the work queue is empty
-            String[] newJobs = generateNewJobs("", resultsArr, u);
-
-            // enqueue new jobs if we have them
-            if (newJobs.length > 0) {
-                enqueueNewJobs(newJobs);
-            } else {
-                // System.out.println("CAN'T FIND NEW STATE TO TRY, LIKELY CONVERGED");
-                totalJobs = 0;
+            // LOOP, ADDING JOBS EVERY FEW MINUTES
+            for (String file : files) {
+                generateAndQueueJob(iniDir + "/" + file, workflowName, workflowVersion, workflowPath);
             }
-
-            // decide to exit
-            if (exceededTimeOrJobs()) {
-                totalJobs = 0;
-                // System.out.println("TIME OR JOBS EXCEEDED, EXITING");
-            } else {
-                try {
-                    // pause
-                    Thread.sleep(Base.ONE_SECOND_IN_MILLISECONDS);
-                } catch (InterruptedException ex) {
-                    log.error(ex.toString());
-                }
+        } else if (options.has(endlessSpec) || options.has(totalJobSpec)) {
+            // limit
+            log.info("running in test mode");
+            boolean endless = options.has(endlessSpec);
+            int limit = options.valueOf(totalJobSpec);
+            for (int i = 0; endless || i < limit; i++) {
+                generateAndQueueJob(null, workflowName, workflowVersion, workflowPath);
             }
         }
 
         try {
 
-            jchannel.getConnection().close(Base.FIVE_SECOND_IN_MILLISECONDS);
+            jchannel.getConnection().close(FIVE_SECOND_IN_MILLISECONDS);
 
         } catch (IOException ex) {
             log.error(ex.toString());
         }
 
+    }
+
+    private void generateAndQueueJob(String iniFile, String workflowName, String workflowVersion, String workflowPath) {
+        // keep track of the iterations
+        currIterations++;
+        log.info("\nGENERATING NEW JOBS, iteration " + currIterations + "\n");
+        // TODO: this is fake, in a real program this is being read from JSONL file or web service
+        // check to see if new results are available and/or if the work queue is empty
+        Order o = generateNewJob(iniFile, workflowName, workflowVersion, workflowPath);
+        // enqueue new job
+        enqueueNewJobs(o.toJSON());
+        try {
+            // pause
+            Thread.sleep(ONE_SECOND_IN_MILLISECONDS);
+        } catch (InterruptedException ex) {
+            log.error(ex.getMessage(), ex);
+        }
     }
 
     // PRIVATE
 
-    private String[] generateNewJobs(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
-        ArrayList<String> jobs = new ArrayList<>();
-        try {
-            int messages = jchannel.queueDeclarePassive(queueName + "_orders").getMessageCount();
-            log.info("JOB QUEUE SIZE: " + messages);
-            // if there are no messages then we'll want to add some new jobs
-            if (!exceededTimeOrJobs()) {
-                // TODO, actually generate new jobs if the job queue is empty
-                Order newOrder = makeNewOrder(baseCmd, resultsArr, u);
-                if (newOrder != null) {
-                    jobs.add(newOrder.toJSON());
-                }
-            }
-
-        } catch (IOException ex) {
-            log.error(ex.toString());
-        }
-        return jobs.toArray(new String[0]);
-
-    }
-
     // TODO: this will actually need to come from a file or web service
-    private Order makeNewOrder(String baseCmd, ArrayList<JSONObject> resultsArr, Utilities u) {
+    private Order generateNewJob(String file, String workflowName, String workflowVersion, String workflowPath) {
 
-        String uuid = UUID.randomUUID().toString().toLowerCase();
+        Map<String, String> hm;
+        if (file != null) {
+            // TODO: this will come from a web service or file
+            hm = parseIniFile(file);
+            for (Entry<String, String> e : hm.entrySet()) {
+                log.info("KEY: " + e.getKey() + " VALUE: " + e.getValue());
+            }
+        } else {
+            hm = new HashMap<>();
+            hm.put("param1", "bar");
+            hm.put("param2", "foo");
+        }
 
-        // TODO: this will come from a web service or file
-        HashMap<String, String> hm = new HashMap<>();
-        hm.put("param1", "bar");
-        hm.put("param2", "foo");
         Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
         String hashStr = String.valueOf(mapJoiner.join(hm).hashCode());
 
-        int cores = Base.DEFAULT_NUM_CORES;
-        int memGb = Base.DEFAULT_MEMORY;
-        int storageGb = Base.DEFAULT_DISKSPACE;
+        int cores = DEFAULT_NUM_CORES;
+        int memGb = DEFAULT_MEMORY;
+        int storageGb = DEFAULT_DISKSPACE;
         ArrayList<String> a = new ArrayList<>();
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order();
-        newOrder.setJob(new Job("HelloWorld", "1.0-SNAPSHOT", "/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0", hashStr,
-                hm));
+        newOrder.setJob(new Job(workflowName, workflowVersion, workflowPath, hashStr, hm));
         newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
-        // need to give provision object a uuid from a job so that completed jobs can report in
         newOrder.getProvision().setJobUUID(newOrder.getJob().getUuid());
 
         return newOrder;
 
     }
 
-    private boolean exceededTimeOrJobs() {
+    private HashMap<String, String> parseIniFile(String iniFile) {
 
-        // FIXME: hardcoded for testing
-        return false;
-        /*
-         * boolean dateResult = false; Date curr = new Date(); if (overallRuntimeMaxHours > 0) { long maxRuntime = overallRuntimeMaxHours *
-         * 60 * 60 * 1000; long currRuntime = curr.getTime() - this.start.getTime(); dateResult = currRuntime > maxRuntime; } boolean
-         * itResult = false; if (overallIterationsMax > 0) { itResult = this.currIterations > this.overallIterationsMax; } return
-         * (dateResult || itResult);
-         */
+        HashMap<String, String> iniHash = new HashMap<>();
+
+        try {
+            IniFile ini = new IniFile(iniFile);
+            iniHash = (HashMap<String, String>) ini.getEntries().get("no-section");
+
+        } catch (IOException e) {
+            log.error(e.toString());
+        }
+
+        return iniHash;
     }
 
-    private void enqueueNewJobs(String[] initialJobs) {
-        for (String msg : initialJobs) {
-            try {
-                log.info("\nSENDING JOB:\n '" + msg + "'\n" + this.jchannel + " \n");
+    private void enqueueNewJobs(String job) {
 
-                this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
-                        msg.getBytes(StandardCharsets.UTF_8));
-            } catch (IOException ex) {
-                log.error(ex.getMessage(), ex);
-            }
+        try {
+            log.info("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
+
+            this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    job.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException ex) {
+            log.error(ex.toString());
         }
+
     }
 
 }

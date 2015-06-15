@@ -12,6 +12,7 @@ import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.persistence.PostgreSQL;
+import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.WorkerRunnable;
 import io.cloudbindle.youxia.deployer.Deployer;
@@ -33,8 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import joptsimple.OptionSpecBuilder;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,6 @@ public class ContainerProvisionerThreads extends Base {
     private static final int DEFAULT_THREADS = 3;
     private static final int MINUTE_IN_MILLISECONDS = 60 * 1000;
     private final OptionSpecBuilder testSpec;
-    public static final String MAX_RUNNING_CONTAINERS = "max_running_containers";
 
     public static void main(String[] argv) throws Exception {
         ContainerProvisionerThreads containerProvisionerThreads = new ContainerProvisionerThreads(argv);
@@ -100,9 +100,9 @@ public class ContainerProvisionerThreads extends Base {
             Channel vmChannel = null;
             try {
 
-                JSONObject settings = Utilities.parseConfig(config);
+                HierarchicalINIConfiguration settings = Utilities.parseConfig(config);
 
-                String queueName = (String) settings.get("rabbitMQQueueName");
+                String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
 
                 // read from
                 vmChannel = Utilities.setupQueue(settings, queueName + "_vms");
@@ -169,8 +169,8 @@ public class ContainerProvisionerThreads extends Base {
         public Void call() throws Exception {
             try {
 
-                JSONObject settings = Utilities.parseConfig(configFile);
-                if (!settings.containsKey(MAX_RUNNING_CONTAINERS)) {
+                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
+                if (!settings.containsKey(Constants.PROVISION_MAX_RUNNING_CONTAINERS)) {
                     LOG.info("No max_running_containers specified, skipping provision ");
                     return null;
                 }
@@ -189,7 +189,7 @@ public class ContainerProvisionerThreads extends Base {
 
                     if (testMode) {
                         LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
-                        maxWorkers = (Long) settings.get(MAX_RUNNING_CONTAINERS);
+                        maxWorkers = settings.getLong(Constants.PROVISION_MAX_RUNNING_CONTAINERS);
 
                         // if this is true need to launch another container
                         if (numberRunningContainers < maxWorkers && numberPendingContainers > 0) {
@@ -207,8 +207,13 @@ public class ContainerProvisionerThreads extends Base {
                         }
                     } else {
                         long requiredVMs = numberRunningContainers + numberPendingContainers;
+                        // cap the number of VMs
+                        LOG.info("  Desire for " + requiredVMs + " VMs");
+                        requiredVMs = Math
+                                .min(requiredVMs, settings.getLong(Constants.PROVISION_MAX_RUNNING_CONTAINERS, Integer.MAX_VALUE));
+                        LOG.info("  Capped at " + requiredVMs + " VMs");
                         if (requiredVMs > 0) {
-                            String param = (String) settings.get("youxia_deployer_parameters");
+                            String param = settings.getString(Constants.PROVISION_YOUXIA_DEPLOYER);
                             CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
                             List<String> arguments = new ArrayList<>();
                             arguments.addAll(Arrays.asList(parse.getArguments()));
@@ -257,9 +262,9 @@ public class ContainerProvisionerThreads extends Base {
             Channel resultsChannel = null;
             try {
 
-                JSONObject settings = Utilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
 
-                String queueName = (String) settings.get("rabbitMQQueueName");
+                String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 final String resultQueueName = queueName + "_results";
 
                 // read from
@@ -298,14 +303,14 @@ public class ContainerProvisionerThreads extends Base {
                     // now update that DB record to be exited
                     // this is acutally finishing the VM and not the work
                     if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
-                        if (!settings.containsKey(MAX_RUNNING_CONTAINERS)) {
+                        if (!settings.containsKey(Constants.PROVISION_MAX_RUNNING_CONTAINERS)) {
                             LOG.info("No max_running_containers specified, skipping provision ");
                             continue;
                         }
 
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
-                        String param = (String) settings.get("youxia_reaper_parameters");
+                        String param = settings.getString(Constants.PROVISION_YOUXIA_REAPER);
                         CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
                         List<String> arguments = new ArrayList<>();
                         arguments.addAll(Arrays.asList(parse.getArguments()));

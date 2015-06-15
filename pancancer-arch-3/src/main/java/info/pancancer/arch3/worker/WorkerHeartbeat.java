@@ -25,7 +25,7 @@ public class WorkerHeartbeat implements Runnable {
     private Channel reportingChannel;
     private String queueName;
     private double secondsDelay = DEFAULT_DELAY;
-    public static final int DEFAULT_DELAY = 30;
+    public static final double DEFAULT_DELAY = 30.0;
     private final int stdoutSnipSize = DEFAULT_SNIP_SIZE;
     public static final int DEFAULT_SNIP_SIZE = 10;
     private WorkflowRunner statusSource;
