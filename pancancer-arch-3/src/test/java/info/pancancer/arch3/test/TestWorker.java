@@ -1,5 +1,51 @@
 package info.pancancer.arch3.test;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.utils.Utilities;
+import info.pancancer.arch3.worker.Worker;
+import info.pancancer.arch3.worker.WorkerHeartbeat;
+import info.pancancer.arch3.worker.WorkerRunnable;
+import info.pancancer.arch3.worker.WorkflowResult;
+import info.pancancer.arch3.worker.WorkflowRunner;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.core.Appender;
+
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
@@ -7,67 +53,14 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
-import info.pancancer.arch3.beans.Job;
-import info.pancancer.arch3.utils.Constants;
-import info.pancancer.arch3.utils.Utilities;
-import info.pancancer.arch3.worker.CollectingLogOutputStream;
-import info.pancancer.arch3.worker.Worker;
-import info.pancancer.arch3.worker.WorkerHeartbeat;
-import info.pancancer.arch3.worker.WorkerRunnable;
-import info.pancancer.arch3.worker.WorkflowRunner;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.exec.DefaultExecuteResultHandler;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.lang3.StringUtils;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-@PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, Utilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
-        Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class, DefaultExecutor.class, DefaultExecuteResultHandler.class,
-        CollectingLogOutputStream.class })
+@PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, Utilities.class, WorkerHeartbeat.class, WorkflowRunner.class, Appender.class,
+        Logger.class, LoggerFactory.class, ch.qos.logback.classic.Logger.class})
 @RunWith(PowerMockRunner.class)
 public class TestWorker {
 
-    @Mock
-    private CollectingLogOutputStream stream;
-
-    @Mock
-    private DefaultExecuteResultHandler handler;
-
-    @Mock
-    private DefaultExecutor executor;
-
-    @Mock
-    private HierarchicalINIConfiguration config;
-
+    private static ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    
     @Mock
     private WorkerHeartbeat mockHeartbeat;
 
@@ -90,61 +83,29 @@ public class TestWorker {
     private BasicProperties mockProperties;
 
     @Mock
-    private Logger mockLogger;
-
-    private static StringBuffer outBuffer = new StringBuffer();
-
-    public class LoggingAnswer implements Answer<Object> {
-        @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
-            outBuffer.append(invocation.getArguments()[0]).append("\n");
-            if (invocation.getArguments().length == 2) {
-                if (invocation.getArguments()[1] instanceof Throwable) {
-                    OutputStream outStream = new ByteArrayOutputStream();
-                    PrintStream ps = new PrintStream(outStream);
-                    ((Throwable) invocation.getArguments()[1]).printStackTrace(ps);
-                    outBuffer.append(new String(outStream.toString()));
-                    ps.close();
-                    outStream.close();
-                }
-            }
-            return null;
-        }
-    }
-
-    private LoggingAnswer logAnswer = new LoggingAnswer();
-
+    private Appender<LoggingEvent> mockAppender;
+    
+    @Captor
+    private ArgumentCaptor<LoggingEvent> argCaptor;
+    
     @Before
     public void setup() throws IOException, Exception {
         MockitoAnnotations.initMocks(this);
 
-        outBuffer = new StringBuffer();
-        Mockito.doAnswer(logAnswer).when(mockLogger).info(anyString());
-        Mockito.doAnswer(logAnswer).when(mockLogger).debug(anyString());
-        Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString());
-        Mockito.doAnswer(logAnswer).when(mockLogger).error(anyString(), any(Exception.class));
-        PowerMockito.mockStatic(org.slf4j.LoggerFactory.class);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(Worker.class)).thenReturn(mockLogger);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkerRunnable.class)).thenReturn(mockLogger);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkerHeartbeat.class)).thenReturn(mockLogger);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(WorkflowRunner.class)).thenReturn(mockLogger);
-        Mockito.when(org.slf4j.LoggerFactory.getLogger(Utilities.class)).thenReturn(mockLogger);
-
+        Mockito.when(mockAppender.getName()).thenReturn("MOCK");
+        LOG.addAppender((Appender) mockAppender);
         PowerMockito.mockStatic(Utilities.class);
-
         Mockito.doNothing().when(mockConnection).close();
-
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
-
         Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
-
         Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
-        PowerMockito.whenNew(DefaultExecutor.class).withAnyArguments().thenReturn(executor);
-        PowerMockito.whenNew(DefaultExecuteResultHandler.class).withAnyArguments().thenReturn(handler);
-        PowerMockito.whenNew(CollectingLogOutputStream.class).withAnyArguments().thenReturn(stream);
-
-        Mockito.when(stream.getAllLinesAsString()).thenReturn("Mock Workflow Response");
+        WorkflowResult result = new WorkflowResult();
+        result.setWorkflowStdout("Mock Workflow Response");
+        result.setWorkflowStdErr("Mock Workflow Response");
+        result.setExitCode(0);
+        Mockito.when(mockRunner.call()).thenReturn(result);
+        PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
 
         Mockito.doNothing().when(mockHeartbeat).run();
         PowerMockito.whenNew(WorkerHeartbeat.class).withNoArguments().thenReturn(mockHeartbeat);
@@ -153,10 +114,9 @@ public class TestWorker {
     @Test
     public void testWorker_noQueueName() {
         PowerMockito.mockStatic(Utilities.class);
-        setupConfig(false);
-
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(new HierarchicalINIConfiguration());
         try {
-            WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
+            WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
             fail("Execution should not have reached this point!");
         } catch (Exception e) {
             assertTrue(
@@ -178,10 +138,12 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
 
         testWorker.run();
-        String testResults = outBuffer.toString();
+        Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+        List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+        String testResults = this.appendEventsIntoString(tmpList);
 
         assertTrue("Mock Exception is present", testResults.contains("java.lang.RuntimeException: Mock Exception"));
     }
@@ -193,9 +155,12 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
         testWorker.run();
-        String testResults = outBuffer.toString();
+        Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+        List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+        String testResults = this.appendEventsIntoString(tmpList);
+
         assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
     }
 
@@ -206,16 +171,29 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, null);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
         try {
             testWorker.run();
-            String testResults = outBuffer.toString();
+            Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+            List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+            String testResults = this.appendEventsIntoString(tmpList);
+
             assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private String appendEventsIntoString(List<LoggingEvent> events)
+    {
+        StringBuffer sbuff = new StringBuffer();
+        for (LoggingEvent e : events)
+        {
+            sbuff.append(e.getMessage());
+        }
+        return sbuff.toString();
+    }
+    
     @Test
     public void testWorker_endless() throws Exception {
 
@@ -227,20 +205,21 @@ public class TestWorker {
         final FutureTask<String> tester = new FutureTask<String>(new Callable<String>() {
             @Override
             public String call() {
-                System.out.println("tester thread started");
+                LOG.debug("tester thread started");
                 try {
-                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig", "--uuid", "vm123456", "--endless",
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--endless",
                             "--pidFile", "/var/run/arch3_worker.pid" });
                 } catch (CancellationException | InterruptedException e) {
-                    String s = outBuffer.toString();
-                    System.out.println("Exception caught: " + e.getMessage());
-                    return s;
+                    LOG.error("Exception caught: " + e.getMessage());
+                    return e.getMessage();
                 } catch (Exception e) {
                     e.printStackTrace();
                     fail("Unexpected exception");
                     return null;
                 } finally {
-                    return outBuffer.toString();
+                    Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+                    String s = appendEventsIntoString(argCaptor.getAllValues());
+                    return s;
                 }
             }
 
@@ -250,14 +229,14 @@ public class TestWorker {
 
             @Override
             public void run() {
-                System.out.println("killer thread started");
+                LOG.debug("killer thread started");
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                    System.out.println(e.getMessage());
+                    LOG.error(e.getMessage());
                 }
                 tester.cancel(true);
             }
@@ -269,59 +248,57 @@ public class TestWorker {
         try {
             tester.get();
         } catch (CancellationException e) {
-            // System.out.println(outBuffer.toString());
-            String output = outBuffer.toString();
-
-            assertTrue("--endless flag was detected and set",
-                    output.contains("The \"--endless\" flag was set, this worker will run endlessly!"));
-            int numJobsPulled = StringUtils.countMatches(output, " WORKER IS PREPARING TO PULL JOB FROM QUEUE ");
-            System.out.println("Number of jobs attempted: " + numJobsPulled);
-            assertTrue("number of jobs attempted > 1", numJobsPulled > 1);
+            Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+            List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+            String output = this.appendEventsIntoString(tmpList);
+            assertTrue(output.contains("The \"--endless\" flag was set, this worker will run endlessly!"));
+            
+            int  numJobsPulled = StringUtils.countMatches(output, " WORKER IS PREPARING TO PULL JOB FROM QUEUE ");
+            
+            LOG.info("Number of jobs attempted: " + numJobsPulled);
+            assertTrue("number of jobs attempted > 1", numJobsPulled >  1);
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
-
     }
 
     @Test
     public void testWorker_endlessFromConfig() throws Exception {
-
-        Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("seqware");
-        Mockito.when(config.getString(Constants.RABBIT_HOST)).thenReturn("localhost");
-        Mockito.when(config.getString(Constants.RABBIT_USERNAME)).thenReturn("guest");
-        Mockito.when(config.getString(Constants.RABBIT_PASSWORD)).thenReturn("guest");
-
-        Mockito.when(config.getString(Constants.WORKER_HEARTBEAT_RATE)).thenReturn("2.5");
-        Mockito.when(config.getString(Constants.WORKER_MAX_RUNS)).thenReturn("1");
-        Mockito.when(config.getString(Constants.WORKER_PREWORKER_SLEEP)).thenReturn("1");
-        Mockito.when(config.getString(Constants.WORKER_POSTWORKER_SLEEP)).thenReturn("1");
-        Mockito.when(config.getString(Constants.WORKER_ENDLESS)).thenReturn("1");
-
-        Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME)).thenReturn(System.getProperty("user.name"));
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
-
+        HierarchicalINIConfiguration configObj = new HierarchicalINIConfiguration();
+        configObj.addProperty("rabbit.rabbitMQQueueName", "seqware");
+        configObj.addProperty("rabbit.rabbitMQHost", "localhost");
+        configObj.addProperty("rabbit.rabbitMQUser", "guest");
+        configObj.addProperty("rabbit.rabbitMQPass", "guest");
+        configObj.addProperty("worker.heartbeatRate", "2.5");
+        configObj.addProperty("worker.max-runs", "1");
+        configObj.addProperty("worker.preworkerSleep", "1");
+        configObj.addProperty("worker.postworkerSleep", "1");
+        configObj.addProperty("worker.endless", "true");
+        configObj.addProperty("worker.hostUserName", System.getProperty("user.name"));
+        
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(configObj);
         final FutureTask<String> tester = new FutureTask<String>(new Callable<String>() {
             @Override
             public String call() {
-                System.out.println("tester thread started");
+                LOG.info("tester thread started");
                 try {
-                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig", "--uuid", "vm123456", "--pidFile",
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--pidFile",
                             "/var/run/arch3_worker.pid" });
                 } catch (CancellationException | InterruptedException e) {
-                    String s = outBuffer.toString();
-                    System.out.println("Exception caught: " + e.getMessage());
-                    return s;
+                    LOG.error("Exception caught: " + e.getMessage());
+                    return e.getMessage();
                 } catch (Exception e) {
                     e.printStackTrace();
                     fail("Unexpected exception");
                     return null;
                 } finally {
-                    return outBuffer.toString();
+                    Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+                    String s = appendEventsIntoString(argCaptor.getAllValues());
+                    return s;
                 }
             }
 
@@ -331,14 +308,14 @@ public class TestWorker {
 
             @Override
             public void run() {
-                System.out.println("killer thread started");
+                LOG.info("killer thread started");
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                    System.out.println(e.getMessage());
+                    LOG.error(e.getMessage());
                 }
                 tester.cancel(true);
             }
@@ -347,15 +324,18 @@ public class TestWorker {
         ExecutorService es = Executors.newFixedThreadPool(2);
         es.execute(tester);
         es.execute(killer);
-
+        
         try {
             tester.get();
         } catch (CancellationException e) {
-            String output = outBuffer.toString();
+            Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+            List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+            String output = this.appendEventsIntoString(tmpList);
+
             assertTrue("--endless flag was detected and set",
                     output.contains("The \"--endless\" flag was set, this worker will run endlessly!"));
             int numJobsPulled = StringUtils.countMatches(output, " WORKER IS PREPARING TO PULL JOB FROM QUEUE ");
-            System.out.println("Number of jobs attempted: " + numJobsPulled);
+            LOG.info("Number of jobs attempted: " + numJobsPulled);
             assertTrue("number of jobs attempted > 1", numJobsPulled > 1);
         } catch (Exception e) {
             e.printStackTrace();
@@ -371,10 +351,12 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Worker.main(new String[] { "--config", "src/test/resources/workerConfig", "--uuid", "vm123456", "--max-runs", "1", "--pidFile",
-                "/var/run/arch3_worker.pid" });
+        Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1",
+                "--pidFile", "/var/run/arch3_worker.pid" });
 
-        String testResults = outBuffer.toString();
+        Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+        List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+        String testResults = this.appendEventsIntoString(tmpList);
 
         testResults = cleanResults(testResults);
 
@@ -399,7 +381,7 @@ public class TestWorker {
             Worker.main(new String[] {});
             fail("this line should not have been reached");
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOG.error(e.getMessage());
             assertTrue(e.getMessage().contains("Missing required option(s) [config, uuid]"));
         }
 
@@ -414,9 +396,11 @@ public class TestWorker {
         setupMockQueue(testDelivery);
 
         Worker.main(new String[] { "--uuid", "vm123456", "--pidFile", "/var/run/arch3_worker.pid", "--config",
-                "src/test/resources/workerConfig" });
+                "src/test/resources/workerConfig.json" });
 
-        String testResults = outBuffer.toString();
+        Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+        List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+        String testResults = this.appendEventsIntoString(tmpList);
 
         testResults = cleanResults(testResults);
 
@@ -438,11 +422,13 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resource/workerConfig.json", "vm123456", 1);
 
         testWorker.run();
 
-        String testResults = outBuffer.toString();
+        Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
+        List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+        String testResults = this.appendEventsIntoString(tmpList);
         testResults = cleanResults(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
@@ -482,20 +468,15 @@ public class TestWorker {
         return testResults;
     }
 
-    private HierarchicalINIConfiguration setupConfig() {
-        return setupConfig(true);
-    }
-
-    private HierarchicalINIConfiguration setupConfig(boolean properQueueName) {
-        if (properQueueName) {
-            Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("seqware");
-        }
-        Mockito.when(config.getString(Constants.WORKER_HEARTBEAT_RATE)).thenReturn("2.5");
-        Mockito.when(config.getString(Constants.WORKER_PREWORKER_SLEEP)).thenReturn("1");
-        Mockito.when(config.getString(Constants.WORKER_POSTWORKER_SLEEP)).thenReturn("1");
-        Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME)).thenReturn(System.getProperty("user.name"));
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
-        return config;
+    private void setupConfig() {
+        HierarchicalINIConfiguration configObj = new HierarchicalINIConfiguration();
+        
+        configObj.addProperty("rabbit.rabbitMQQueueName", "seqware");
+        configObj.addProperty("worker.heartbeatRate", "2.5");
+        configObj.addProperty("worker.preworkerSleep", "1");
+        configObj.addProperty("worker.postworkerSleep", "1");
+        configObj.addProperty("worker.hostUserName", System.getProperty("user.name"));
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(configObj);
     }
 
     private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {
