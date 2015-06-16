@@ -1,9 +1,7 @@
 package info.pancancer.arch3.test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.utils.Utilities;
 import info.pancancer.arch3.worker.Worker;
@@ -27,7 +25,6 @@ import java.util.concurrent.FutureTask;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.lang3.StringUtils;
-import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,7 +34,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
@@ -61,8 +57,7 @@ public class TestWorker {
 
     private static ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
     
-    @Mock
-    private WorkerHeartbeat mockHeartbeat;
+    private WorkerHeartbeat heartbeat=new WorkerHeartbeat();
 
     @Mock
     private WorkflowRunner mockRunner;
@@ -107,8 +102,10 @@ public class TestWorker {
         Mockito.when(mockRunner.call()).thenReturn(result);
         PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
 
-        Mockito.doNothing().when(mockHeartbeat).run();
-        PowerMockito.whenNew(WorkerHeartbeat.class).withNoArguments().thenReturn(mockHeartbeat);
+        //Ensure that the real heartbeat uses a mock channel.
+        heartbeat.setReportingChannel(mockChannel);
+        //Always return this heartbeat object.
+        PowerMockito.whenNew(WorkerHeartbeat.class).withNoArguments().thenReturn(heartbeat);
     }
 
     @Test
