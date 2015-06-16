@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -21,7 +20,6 @@ import java.util.UUID;
 public class Job {
 
     private JobState state = JobState.START;
-    private final Utilities u = new Utilities();
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
     private String vmUuid;
@@ -209,7 +207,8 @@ public class Job {
     }
 
     /**
-     * @param stderr the stderr to set
+     * @param stderr
+     *            the stderr to set
      */
     public void setStderr(String stderr) {
         this.stderr = stderr;

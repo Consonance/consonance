@@ -83,6 +83,9 @@ public class SlackReportBot extends Base {
                     ReportAPI reportAPI = ReportAPIFactory.makeReportAPI(settings, db);
                     SlackRenderer renderer = new SlackRenderer(reportAPI);
                     SlackRenderer.FormattedMessage result = renderer.convertToResult(message);
+                    if (result.attachment != null) {
+                        result.attachment.addMarkdownIn("text");
+                    }
                     session.sendMessage(session.findChannelById(event.getChannel().getId()), result.message, result.attachment);
                 }
             }

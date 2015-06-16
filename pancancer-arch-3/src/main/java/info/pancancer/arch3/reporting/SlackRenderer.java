@@ -20,7 +20,9 @@ import com.ullink.slack.simpleslackapi.SlackAttachment;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
+import io.cloudbindle.youxia.listing.AbstractInstanceListing;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +51,42 @@ public class SlackRenderer {
                 builder.append(entry.getKey().toString()).append(": ").append(entry.getValue()).append("\n");
             }
             return new FormattedMessage(builder.toString(), null);
+        } else if (message.startsWith("YOUXIA")) {
+            Map<String, AbstractInstanceListing.InstanceDescriptor> awsInstances = new HashMap<>();
+            try {
+                awsInstances = reportAPI.getYouxiaInstances("AWS");
+            } catch (Exception ex) {
+                System.out.println("No aws instances");
+            }
+            Map<String, AbstractInstanceListing.InstanceDescriptor> osInstances = new HashMap<>();
+            try {
+                awsInstances = reportAPI.getYouxiaInstances("OPENSTACK");
+            } catch (Exception ex) {
+                System.out.println("No OpenStack instances");
+            }
+            StringBuilder builder = new StringBuilder();
+            if (awsInstances.size() > 0) {
+                builder.append("*").append("Instances on AWS").append("*:\n");
+                for (Entry<String, AbstractInstanceListing.InstanceDescriptor> entry : awsInstances.entrySet()) {
+                    builder.append("*").append(entry.getKey()).append("*:\n");
+                    builder.append("ip address").append(" ").append(entry.getValue().getIpAddress()).append(":\n");
+                    builder.append("private ip address").append(" ").append(entry.getValue().getPrivateIpAddress()).append(":\n");
+                    builder.append("spot instance").append(" ").append(entry.getValue().isSpotInstance()).append(":\n");
+                }
+            }
+            // this sucks, make this better
+            if (osInstances.size() > 0) {
+                builder.append("*").append("Instances on OpenStack").append("*:\n");
+                for (Entry<String, AbstractInstanceListing.InstanceDescriptor> entry : osInstances.entrySet()) {
+                    builder.append("*").append(entry.getKey()).append("*:\n");
+                    builder.append("ip address").append(" ").append(entry.getValue().getIpAddress()).append(":\n");
+                    builder.append("private ip address").append(" ").append(entry.getValue().getPrivateIpAddress()).append(":\n");
+                }
+            }
+            SlackAttachment attach = new SlackAttachment("Live instance info desribed on " + new Date(), "Live instances",
+                    builder.toString(), null);
+            return new FormattedMessage(null, attach);
+
         } else if (message.startsWith("INFO")) {
             StringBuilder builder = new StringBuilder();
             for (Entry<String, String> entry : reportAPI.getEnvironmentMap().entrySet()) {
@@ -58,13 +96,22 @@ public class SlackRenderer {
         } else if (message.startsWith("PROVISIONED")) {
             return new FormattedMessage("this would be a list of provisioned VMs", null);
         } else if (message.startsWith("JOBS")) {
-            return new FormattedMessage("this would be a list of jobs", null);
+            Map<String, Map<String, String>> jobInfo = reportAPI.getJobInfo();
+            StringBuilder builder = new StringBuilder();
+            for (Entry<String, Map<String, String>> entry : jobInfo.entrySet()) {
+                builder.append("*").append(entry.getKey()).append("*\n");
+                for (Entry<String, String> innerEntry : entry.getValue().entrySet()) {
+                    builder.append(innerEntry.getKey()).append(" ").append(innerEntry.getValue()).append("\n");
+                }
+            }
+            SlackAttachment attach = new SlackAttachment("Job info gathered at " + new Date(), "Jobs gathered", builder.toString(), null);
+            return new FormattedMessage(null, attach);
         } else if (message.startsWith("GATHER")) {
             Map<String, Status> cache = reportAPI.getLastStatus();
             StringBuilder builder = new StringBuilder();
             for (Map.Entry<String, Status> entry : cache.entrySet()) {
                 builder.append("*").append(entry.getKey()).append(" reports*:\n");
-                String stdout = "`" + StringUtils.substringAfterLast(entry.getValue().getStdout(), "`\n");
+                String stdout = "`" + StringUtils.substringAfterLast(entry.getValue().getStdout(), "\n") + "`";
                 builder.append(stdout).append("\n");
             }
             SlackAttachment attach = new SlackAttachment("Messages gathered at " + new Date(), "Messages gathered", builder.toString(),

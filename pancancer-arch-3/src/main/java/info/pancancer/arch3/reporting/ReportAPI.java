@@ -19,6 +19,7 @@ package info.pancancer.arch3.reporting;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
+import io.cloudbindle.youxia.listing.AbstractInstanceListing;
 import java.util.Map;
 
 /**
@@ -27,6 +28,12 @@ import java.util.Map;
  * @author dyuen
  */
 public interface ReportAPI {
+
+    Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(String cloudType);
+
+    Map<String, Map<String, String>> getJobInfo();
+
+    Map<String, Map<String, String>> getVMInfo();
 
     Map<ProvisionState, Long> getVMStateCounts();
 

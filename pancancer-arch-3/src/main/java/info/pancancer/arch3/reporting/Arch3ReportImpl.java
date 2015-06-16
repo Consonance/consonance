@@ -28,9 +28,14 @@ import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
+import io.cloudbindle.youxia.listing.AbstractInstanceListing;
+import io.cloudbindle.youxia.listing.ListingFactory;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.text.DecimalFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,13 +43,17 @@ import java.util.TreeMap;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 /**
- * The Arch3ReportImpl implements calls that are specific to arch3 for retrieving reporting. 
- * This means that this means that this class will need to be totally replaced if we swap out the queuing system
+ * The Arch3ReportImpl implements calls that are specific to arch3 for retrieving reporting. This means that this means that this class will
+ * need to be totally replaced if we swap out the queuing system
+ *
  * @author dyuen
  */
 public class Arch3ReportImpl implements ReportAPI {
 
     public static final int LOOP_LIMIT = 1000;
+    private static final int MINUTES_IN_HOUR = 60;
+    private static final int SECONDS_IN_MINUTE = 60;
+    private static final double MILLISECONDS_IN_SECOND = 1000.0;
 
     private final HierarchicalINIConfiguration settings;
     private final PostgreSQL db;
@@ -167,5 +176,49 @@ public class Arch3ReportImpl implements ReportAPI {
         map.put("jobs", "retrieves detailed information on jobs");
         map.put("gather", "gathers the last message sent by each worker and displays the last line of it");
         return map;
+    }
+
+    @Override
+    public Map<String, Map<String, String>> getJobInfo() {
+        Map<String, Map<String, String>> map = new TreeMap<>();
+        for (JobState state : JobState.values()) {
+            List<Job> jobs = db.getJobs(state);
+            Date now = new Date();
+            Timestamp currentTimestamp = new java.sql.Timestamp(now.getTime());
+            long time = currentTimestamp.getTime();
+            DecimalFormat df = new DecimalFormat("#.00");
+            for (Job job : jobs) {
+                Map<String, String> jobMap = new TreeMap<>();
+                jobMap.put("status", job.getState().toString());
+                jobMap.put("workflow", job.getWorkflow());
+                jobMap.put("workflow_version", job.getWorkflowVersion());
+                long lastSeen = job.getUpdateTs().getTime();
+                double secondsAgo = (time - lastSeen) / MILLISECONDS_IN_SECOND;
+                jobMap.put("last seen (seconds)", df.format(secondsAgo));
+                long firstSeen = job.getCreateTs().getTime();
+                double hoursAgo = (time - firstSeen) / (MILLISECONDS_IN_SECOND * SECONDS_IN_MINUTE * MINUTES_IN_HOUR);
+                jobMap.put("first seen(hours)", df.format(hoursAgo));
+                map.put(job.getUuid(), jobMap);
+            }
+
+        }
+        return map;
+    }
+
+    @Override
+    public Map<String, Map<String, String>> getVMInfo() {
+        throw new UnsupportedOperationException("Not supported yet."); // To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(String cloudType) {
+        AbstractInstanceListing listing;
+        if (cloudType.equalsIgnoreCase("AWS")) {
+            listing = ListingFactory.createAWSListing();
+
+        } else {
+            listing = ListingFactory.createOpenStackListing();
+        }
+        return listing.getInstances();
     }
 }
