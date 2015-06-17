@@ -69,9 +69,13 @@ public class SlackReportBot extends Base {
 
                 boolean validMessage = false;
                 // remove the '@' if necessary
-                String dmIdentifer = "<@" + session.sessionPersona().getId() + ">:";
+                String dmIdentifer = "<@" + session.sessionPersona().getId() + ">";
                 if (message.startsWith(dmIdentifer)) {
-                    message = message.replaceFirst(dmIdentifer, "");
+                    message = message.replaceFirst(dmIdentifer, "").trim();
+                    // trim automatically inserted colon in some chat clients
+                    if (message.startsWith(":")) {
+                        message = message.replaceFirst(":", "").trim();
+                    }
                     validMessage = true;
                 }
                 // remove plain user name if needed
