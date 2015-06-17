@@ -1,8 +1,5 @@
 package info.pancancer.arch3.worker;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
@@ -10,6 +7,7 @@ import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.util.Log;
+
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,10 +28,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 
 /**
  * This class represents a WorkerRunnable, in the Architecture 3 design.
@@ -88,6 +91,11 @@ public class WorkerRunnable implements Runnable {
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         this.maxRuns = maxRuns;
         settings = Utilities.parseConfig(configFile);
+        
+        //TODO: Dyanmically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
+        //FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>) ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
+        //appender.setFile("SomePath");
+        
         this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         if (this.queueName == null) {
             throw new NullPointerException(
