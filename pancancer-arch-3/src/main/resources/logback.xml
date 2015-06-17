@@ -6,11 +6,11 @@
   <appender name="FILE_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <!-- encoders are assigned the type
          ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
-    <file>/var/log/arch3.log</file>
+    <file>./arch3.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
     	<minIndex>1</minIndex>
     	<maxIndex>5</maxIndex>
-    	<fileNamePattern>/var/log/arch3_old/arch3.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+    	<fileNamePattern>./arch3.%d{YYYY-MM-dd}.%i.log.zip</fileNamePattern>
     	<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
     		<maxFileSize>2GB</maxFileSize>
    		</timeBasedFileNamingAndTriggeringPolicy>
