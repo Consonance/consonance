@@ -113,7 +113,7 @@ public class TestWorker {
         PowerMockito.mockStatic(Utilities.class);
         Mockito.when(Utilities.parseConfig(anyString())).thenReturn(new HierarchicalINIConfiguration());
         try {
-            WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+            WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
             fail("Execution should not have reached this point!");
         } catch (Exception e) {
             assertTrue(
@@ -135,7 +135,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
 
         testWorker.run();
         Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
@@ -152,7 +152,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
         testWorker.run();
         Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
         List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
@@ -168,7 +168,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, null);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
         try {
             testWorker.run();
             Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
@@ -204,7 +204,7 @@ public class TestWorker {
             public String call() {
                 LOG.debug("tester thread started");
                 try {
-                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--endless",
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.ini", "--uuid", "vm123456", "--endless",
                             "--pidFile", "/var/run/arch3_worker.pid" });
                 } catch (CancellationException | InterruptedException e) {
                     LOG.error("Exception caught: " + e.getMessage());
@@ -283,7 +283,7 @@ public class TestWorker {
             public String call() {
                 LOG.info("tester thread started");
                 try {
-                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--pidFile",
+                    Worker.main(new String[] { "--config", "src/test/resources/workerConfig.ini", "--uuid", "vm123456", "--pidFile",
                             "/var/run/arch3_worker.pid" });
                 } catch (CancellationException | InterruptedException e) {
                     LOG.error("Exception caught: " + e.getMessage());
@@ -348,7 +348,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        Worker.main(new String[] { "--config", "src/test/resources/workerConfig.json", "--uuid", "vm123456", "--max-runs", "1",
+        Worker.main(new String[] { "--config", "src/test/resources/workerConfig.ini", "--uuid", "vm123456", "--max-runs", "1",
                 "--pidFile", "/var/run/arch3_worker.pid" });
 
         Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
@@ -393,7 +393,7 @@ public class TestWorker {
         setupMockQueue(testDelivery);
 
         Worker.main(new String[] { "--uuid", "vm123456", "--pidFile", "/var/run/arch3_worker.pid", "--config",
-                "src/test/resources/workerConfig.json" });
+                "src/test/resources/workerConfig.ini" });
 
         Mockito.verify(mockAppender,Mockito.atLeastOnce()).doAppend(argCaptor.capture());
         List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
@@ -419,7 +419,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resource/workerConfig.json", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resource/workerConfig.ini", "vm123456", 1);
 
         testWorker.run();
 

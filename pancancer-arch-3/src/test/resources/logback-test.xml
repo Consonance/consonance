@@ -1,8 +1,5 @@
 <configuration>
 
-  <!-- Don't forget to create the log directory /var/log/arch3_old and give permission to write to it:
-  sudo mkdir /var/log/arch3_old
-  sudo chmod a+rw /var/log/arch3_old -->
   <appender name="FILE_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <!-- encoders are assigned the type
          ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
