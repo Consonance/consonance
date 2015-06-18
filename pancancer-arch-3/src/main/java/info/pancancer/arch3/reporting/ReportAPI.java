@@ -20,6 +20,7 @@ import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
 import io.cloudbindle.youxia.listing.AbstractInstanceListing;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -29,20 +30,87 @@ import java.util.Map;
  */
 public interface ReportAPI {
 
+    public enum Commands {
+        STATUS, INFO, PROVISIONED, JOBS, GATHER, YOUXIA;
+
+        @Override
+        public String toString() {
+            return this.name().toLowerCase(Locale.CANADA);
+        }
+    }
+
+    /**
+     * Get a listing of all instances known to youxia.
+     *
+     * @return
+     */
+    Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances();
+
+    /**
+     * Get a listing of all instances known to youxia for a particular cloud.
+     *
+     * @param cloudType
+     * @return
+     */
     Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(String cloudType);
 
+    /**
+     * Get information for all jobs in the system, separated by unique identifier.
+     *
+     * @return
+     */
     Map<String, Map<String, String>> getJobInfo();
 
+    /**
+     * Get information only on VMs in a specific set of states.
+     *
+     * @param states
+     * @return
+     */
+    Map<String, Map<String, String>> getVMInfo(ProvisionState[] states);
+
+    /**
+     * Get information for all provisions in the system, separated by unique identifier.
+     *
+     * This is hooked into youxia to only report on active instances
+     *
+     * @return
+     */
     Map<String, Map<String, String>> getVMInfo();
 
+    /**
+     * Get counts of VMs in the system sorted by state.
+     *
+     * @return
+     */
     Map<ProvisionState, Long> getVMStateCounts();
 
+    /**
+     * Get list of jobs by status.
+     *
+     * @return
+     */
     Map<JobState, Integer> getJobStateCounts();
 
+    /**
+     * Get the last Status message sent by all workers in the system.
+     *
+     * @return
+     */
     Map<String, Status> getLastStatus();
 
+    /**
+     * Get a map with all variables that are relevant in the system.
+     *
+     * @return
+     */
     Map<String, String> getEnvironmentMap();
 
+    /**
+     * Get a list of all possible commands to respond to.
+     *
+     * @return
+     */
     Map<String, String> getCommands();
 
 }

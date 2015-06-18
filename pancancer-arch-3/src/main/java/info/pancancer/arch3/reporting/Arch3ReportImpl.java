@@ -23,6 +23,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
+import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
@@ -37,8 +38,11 @@ import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
@@ -170,11 +174,13 @@ public class Arch3ReportImpl implements ReportAPI {
     @Override
     public Map<String, String> getCommands() {
         Map<String, String> map = new TreeMap<>();
-        map.put("status", "retrieves configuration and version information on arch3");
-        map.put("info", "retrieves detailed information on provisioned instances");
-        map.put("provisioned", "retrieves detailed information on provisioned instances");
-        map.put("jobs", "retrieves detailed information on jobs");
-        map.put("gather", "gathers the last message sent by each worker and displays the last line of it");
+        map.put(ReportAPI.Commands.STATUS.toString(), "retrieves configuration and version information on arch3");
+        map.put(ReportAPI.Commands.INFO.toString(), "retrieves high-level information on bot config");
+        map.put(ReportAPI.Commands.PROVISIONED.toString(), "retrieves detailed information on provisioned instances");
+        map.put(ReportAPI.Commands.JOBS.toString(), "retrieves detailed information on jobs");
+        map.put(ReportAPI.Commands.GATHER.toString(), "gathers the last message sent by each worker and displays the last line of it");
+        map.put(ReportAPI.Commands.YOUXIA.toString(),
+                "ask youxia for all information on instances known to the cloud APIs that are configured");
         return map;
     }
 
@@ -207,18 +213,69 @@ public class Arch3ReportImpl implements ReportAPI {
 
     @Override
     public Map<String, Map<String, String>> getVMInfo() {
-        throw new UnsupportedOperationException("Not supported yet."); // To change body of generated methods, choose Tools | Templates.
+        return this.getVMInfo(ProvisionState.values());
+    }
+
+    @Override
+    public Map<String, Map<String, String>> getVMInfo(ProvisionState[] states) {
+        Map<String, AbstractInstanceListing.InstanceDescriptor> youxiaInstances = this.getYouxiaInstances();
+        Set<String> activeIPAddresses = new HashSet<>();
+        // curate set of ip addresses for active instances
+        for (Entry<String, AbstractInstanceListing.InstanceDescriptor> entry : youxiaInstances.entrySet()) {
+            activeIPAddresses.add(entry.getValue().getIpAddress());
+            activeIPAddresses.add(entry.getValue().getPrivateIpAddress());
+        }
+        System.out.println("Set of active addresses: " + activeIPAddresses.toString());
+
+        Map<String, Map<String, String>> map = new TreeMap<>();
+        for (ProvisionState state : states) {
+            List<Provision> provisions = db.getProvisions(state);
+            Date now = new Date();
+            Timestamp currentTimestamp = new java.sql.Timestamp(now.getTime());
+            long time = currentTimestamp.getTime();
+            DecimalFormat df = new DecimalFormat("#.00");
+            for (Provision provision : provisions) {
+                System.out.println("Checking " + provision.getIpAddress());
+                if (!activeIPAddresses.contains(provision.getIpAddress())) {
+                    System.out.println("Excluding " + provision.getIpAddress() + " due to youxia filter");
+                    continue;
+                }
+                Map<String, String> jobMap = new TreeMap<>();
+                jobMap.put("ip_address", provision.getIpAddress());
+                jobMap.put("status", provision.getState().toString());
+                long lastSeen = provision.getUpdateTimestamp().getTime();
+                double secondsAgo = (time - lastSeen) / MILLISECONDS_IN_SECOND;
+                jobMap.put("last seen (seconds)", df.format(secondsAgo));
+                long firstSeen = provision.getCreateTimestamp().getTime();
+                double hoursAgo = (time - firstSeen) / (MILLISECONDS_IN_SECOND * SECONDS_IN_MINUTE * MINUTES_IN_HOUR);
+                jobMap.put("first seen (hours)", df.format(hoursAgo));
+                map.put(provision.getProvisionUUID(), jobMap);
+            }
+        }
+        return map;
+    }
+
+    @Override
+    public Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances() {
+        Map<String, AbstractInstanceListing.InstanceDescriptor> youxiaInstances = this.getYouxiaInstances("AWS");
+        youxiaInstances.putAll(this.getYouxiaInstances("OPENSTACK"));
+        return youxiaInstances;
     }
 
     @Override
     public Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(String cloudType) {
-        AbstractInstanceListing listing;
-        if (cloudType.equalsIgnoreCase("AWS")) {
-            listing = ListingFactory.createAWSListing();
+        try {
+            AbstractInstanceListing listing;
+            if (cloudType.equalsIgnoreCase("AWS")) {
+                listing = ListingFactory.createAWSListing();
 
-        } else {
-            listing = ListingFactory.createOpenStackListing();
+            } else {
+                listing = ListingFactory.createOpenStackListing();
+            }
+            return listing.getInstances();
+        } catch (Exception e) {
+            // return a blank listing is there is nothing
+            return new HashMap<>();
         }
-        return listing.getInstances();
     }
 }

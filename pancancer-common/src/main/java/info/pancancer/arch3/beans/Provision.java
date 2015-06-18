@@ -1,6 +1,7 @@
 package info.pancancer.arch3.beans;
 
 import info.pancancer.arch3.utils.Utilities;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.simple.JSONArray;
@@ -22,6 +23,8 @@ public class Provision {
      * This is the provision_uuid
      */
     private String provisionUUID = "";
+    private Timestamp createTimestamp;
+    private Timestamp updateTimestamp;
 
     public Provision(int cores, int memGb, int storageGb, List<String> ansiblePlaybooks) {
         this.cores = cores;
@@ -150,5 +153,33 @@ public class Provision {
      */
     public void setJobUUID(String jobUUID) {
         this.jobUUID = jobUUID;
+    }
+
+    /**
+     * @return the createTimestamp
+     */
+    public Timestamp getCreateTimestamp() {
+        return createTimestamp;
+    }
+
+    /**
+     * @param createTimestamp the createTimestamp to set
+     */
+    public void setCreateTimestamp(Timestamp createTimestamp) {
+        this.createTimestamp = createTimestamp;
+    }
+
+    /**
+     * @return the updateTimestamp
+     */
+    public Timestamp getUpdateTimestamp() {
+        return updateTimestamp;
+    }
+
+    /**
+     * @param updateTimestamp the updateTimestamp to set
+     */
+    public void setUpdateTimestamp(Timestamp updateTimestamp) {
+        this.updateTimestamp = updateTimestamp;
     }
 }
