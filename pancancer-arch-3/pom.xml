@@ -5,7 +5,7 @@
     <artifactId>pancancer-arch-3</artifactId>
 
     <parent>
-        <version>1.1-alpha.1.1</version>
+        <version>1.1-alpha.1.2</version>
         <groupId>io.cancer.collaboratory</groupId>
         <artifactId>sandbox</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -120,7 +120,7 @@
         <dependency>
             <groupId>io.cancer.collaboratory</groupId>
             <artifactId>pancancer-common</artifactId>
-            <version>1.1-alpha.1.1</version>
+            <version>1.1-alpha.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
