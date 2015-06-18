@@ -271,11 +271,13 @@ public class WorkerRunnable implements Runnable {
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
-
+            
+            String containerIDFile=" --cidfile=\"/home/"+this.userName+"/worker.cid\" ";
+            String dockerImage="pancancer/seqware_whitestar_pancancer:1.1.1";
             CommandLine cli = new CommandLine("docker");
-            cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-v",
+            cli.addArguments(new String[] { "run", "--rm", containerIDFile, "-h", "master", "-t", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-v",
                     job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini", "-v", "/datastore:/datastore", "-v",
-                    "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos", "pancancer/seqware_whitestar_pancancer:1.1.1",
+                    "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos", dockerImage,
                     "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
