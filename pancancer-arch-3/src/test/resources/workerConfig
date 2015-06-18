@@ -10,5 +10,5 @@ heartbeatRate = 60
 preworkerSleep = 5
 postworkerSleep = 5
 max-runs = 1
-hostUserName = sshorser
+hostUserName = someUser 
 endless = false
