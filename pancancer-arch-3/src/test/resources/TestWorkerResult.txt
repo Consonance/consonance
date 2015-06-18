@@ -1,0 +1,294 @@
+ WORKER VM UUID: 'vm123456'
+ WORKER IS PREPARING TO PULL JOB FROM QUEUE vm123456
+vm123456  received mockEnvelope
+ [x] Received JOBS REQUEST '{
+  "job_uuid" : "1234567890",
+  "workflow_name" : "HelloWorld",
+  "workflow_version" : "1.0-SNAPSHOT",
+  "workflow_path" : "/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0",
+  "job_hash" : "asdlk2390aso12jvrej",
+  "arguments" : {
+    "param1" : "value1",
+    "param2" : "value2",
+    "param3" : "help I'm trapped in an INI file"
+  }
+}' @ vm123456
+ WORKER LAUNCHING JOB
+INI is: param1=value1
+param2=value2
+param3=help I'm trapped in an INI file
+
+INI file: /tmp/seqware_tmpfile.ini
+starting heartbeat thread, will send heartbeat message ever 2.5 seconds.
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.ssh/gnos.pem:/home/$USER/.ssh/gnos.pem seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]
+Sleeping before executing workflow for 1000 ms.
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/schedulerLONG_NUMERIC_SEQUENCEout, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[0000/00/00 00:00:00] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/JOB_ID
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_start_0-runner.sh",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/schedulerLONG_NUMERIC_SEQUENCEout, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[0000/00/00 00:00:00] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/JOB_ID
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_start_0-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfi_file_in_0_1-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_mkdir_2-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_3-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_4-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfo_5-runner.sh",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Sleeping after exeuting workflow for 1000 ms.
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/schedulerLONG_NUMERIC_SEQUENCEout, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[0000/00/00 00:00:00] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/JOB_ID
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_start_0-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfi_file_in_0_1-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_mkdir_2-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_3-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_4-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfo_5-runner.sh
+[0000/00/00 00:00:00] | Setting workflow-run status to complete for: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowWatcher, --, --workflow-run-accession, 10]
+Workflow run 10 is now completed
+[--plugin, net.sourceforge.seqware.pipeline.plugins.WorkflowStatusChecker, --, --workflow-run-accession, 10]",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Docker execution result: Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/schedulerLONG_NUMERIC_SEQUENCEout, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[0000/00/00 00:00:00] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/JOB_ID
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_start_0-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfi_file_in_0_1-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_mkdir_2-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_3-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_4-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfo_5-runner.sh
+[0000/00/00 00:00:00] | Setting workflow-run status to complete for: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowWatcher, --, --workflow-run-accession, 10]
+Workflow run 10 is now completed
+[--plugin, net.sourceforge.seqware.pipeline.plugins.WorkflowStatusChecker, --, --workflow-run-accession, 10]
+Heartbeat shutting down.
+INI is: param1=value1
+param2=value2
+param3=help I'm trapped in an INI file
+
+INI file: /tmp/seqware_tmpfile.ini
+starting heartbeat thread, will send heartbeat message ever 2.5 seconds.
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Executing command: [docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.ssh/gnos.pem:/home/$USER/.ssh/gnos.pem seqware/seqware_whitestar_pancancer seqware bundle launch --dir /workflow --ini /ini --no-metadata]
+Sleeping before executing workflow for 1000 ms.
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/schedulerLONG_NUMERIC_SEQUENCEout, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[0000/00/00 00:00:00] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/JOB_ID
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_start_0-runner.sh",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/schedulerLONG_NUMERIC_SEQUENCEout, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[0000/00/00 00:00:00] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/JOB_ID
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_start_0-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfi_file_in_0_1-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_mkdir_2-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_3-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_4-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfo_5-runner.sh",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Sleeping after exeuting workflow for 1000 ms.
+Sending heartbeat message to seqware_results, with body: {"vmUuid": "vm123456",
+"jobUuid": "1234567890",
+"type": "job-message-type",
+"state": "RUNNING",
+"stderr": "",
+"stdout": "Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/schedulerLONG_NUMERIC_SEQUENCEout, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[0000/00/00 00:00:00] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/JOB_ID
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_start_0-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfi_file_in_0_1-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_mkdir_2-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_3-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_4-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfo_5-runner.sh
+[0000/00/00 00:00:00] | Setting workflow-run status to complete for: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowWatcher, --, --workflow-run-accession, 10]
+Workflow run 10 is now completed
+[--plugin, net.sourceforge.seqware.pipeline.plugins.WorkflowStatusChecker, --, --workflow-run-accession, 10]",
+"message": "job is running; IP address: 0.0.0.0"
+}
+
+Docker execution result: Performing launch of workflow 'HelloWorld' version '1.0-SNAPSHOT'
+[--plugin, net.sourceforge.seqware.pipeline.plugins.BundleManager, --, --install-dir-only, --bundle, /workflow, --out, /tmp/bundle_manager_LONG_NUMERIC_SEQUENCEout]
+Installing Bundle (Working Directory Only)
+Bundle: /workflow
+Added 'HelloWorld' (SWID: 1)
+Bundle Has Been Installed to the MetaDB and Provisioned to /workflow!
+[--plugin, io.seqware.pipeline.plugins.WorkflowScheduler, --, --workflow-accession, 1, --host, master, --out, /tmp/schedulerLONG_NUMERIC_SEQUENCEout, --i, /ini, --no-meta-db, --]
+Created workflow run with SWID: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowLauncher, --, --launch-scheduled, 10]
+[0000/00/00 00:00:00] | Number of submitted workflows: 1
+Working Run: 10
+Valid run by host check: 10
+Launching via new launcher: 10
+Using working directory: /datastore/JOB_ID
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_start_0-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfi_file_in_0_1-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_mkdir_2-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_3-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_bash_cp_4-runner.sh
+[0000/00/00 00:00:00] | Running command: bash /datastore/JOB_ID/generated-scripts/s10_pfo_5-runner.sh
+[0000/00/00 00:00:00] | Setting workflow-run status to complete for: 10
+[--plugin, io.seqware.pipeline.plugins.WorkflowWatcher, --, --workflow-run-accession, 10]
+Workflow run 10 is now completed
+[--plugin, net.sourceforge.seqware.pipeline.plugins.WorkflowStatusChecker, --, --workflow-run-accession, 10]
+Heartbeat shutting down.
+ WORKER FINISHING JOB
+vm123456 acknowledges mockEnvelope
+ 
+
+
+WORKER FOR VM UUID HAS FINISHED!!!: 'vm123456'
+
+

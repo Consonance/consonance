@@ -1,0 +1,12 @@
+ [x] Received JOBS REQUEST '{
+  "job_uuid" : "1234567890",
+  "workflow_name" : "HelloWorld",
+  "workflow_version" : "1.0-SNAPSHOT",
+  "workflow_path" : "/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0",
+  "job_hash" : "asdlk2390aso12jvrej",
+  "arguments" : {
+    "param1" : "value1",
+    "param2" : "value2",
+    "param3" : "help I'm trapped in an INI file"
+  }
+}' @ vm123456

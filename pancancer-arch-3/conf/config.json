@@ -1,0 +1,23 @@
+{
+  "command" : "echo foo",
+  "rabbitMQHost" : "localhost",
+  "rabbitMQUser" : "guest",
+  "rabbitMQPass" : "guest",
+  "rabbitMQQueueName" : "pancancer_arch_3",
+  "postgresHost" : "127.0.0.1",
+  "postgresUser" : "queue_user",
+  "postgresPass" : "queue",
+  "postgresDBName" : "queue_status",
+  "overallRuntimeMaxHours" : 400,
+  "overallIterationsMax" : 100,
+  "results" :  "pancancer_arch_3.json",
+  "report" : "pancancer_arch_3.report.log",
+  "time_until_vm_lost_minutes" : 120,
+  "time_until_workflow_lost_minutes" : 120,
+  "max_running_containers" : 5,
+  "max_random_time" : 10,
+  "min_random_time" : 2,
+  "check_previous_job_hash" : "true",
+  "max_seconds_before_lost" : 3600,
+  "youxia_deployer_parameters" : "--max-spot-price 1 --batch-size 1"
+}

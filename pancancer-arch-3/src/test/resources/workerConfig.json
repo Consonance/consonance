@@ -1,0 +1,12 @@
+{
+	"rabbitMQQueueName":"arch_3_worker",
+	"rabbitMQHost":"localhost",
+	"rabbitMQUser":"guest",
+	"rabbitMQPass":"guest",
+	"heartbeatRate":"2.5",
+	"preworkerSleep":"1",
+	"postworkerSleep":"1",
+	"max-runs":"1",
+	"hostUserName":"sshorser",
+	"endless":"false"
+}
