@@ -81,6 +81,16 @@ public class SlackRenderer {
                 builder.append(entry.getKey().toString()).append(": ").append(entry.getValue()).append("\n");
             }
 
+            builder.append("\n");
+            // determine the intersection of live vms with failed jobs on them
+            Map<String, Map<String, String>> vmInfo = reportAPI.getVMInfo(ProvisionState.FAILED);
+            if (vmInfo.isEmpty()) {
+                builder.append("There are no failed jobs on VMs that require attention\n");
+            } else {
+                builder.append("*There are failed jobs on VMs that require attention:*\n");
+                renderMapOfMaps(vmInfo, builder);
+            }
+
             return new FormattedMessage(builder.toString(), null);
 
         case YOUXIA:
@@ -115,23 +125,13 @@ public class SlackRenderer {
 
         case PROVISIONED:
             jobInfo = reportAPI.getVMInfo();
-            for (Entry<String, Map<String, String>> entry : jobInfo.entrySet()) {
-                builder.append("*").append(entry.getKey()).append("*\n");
-                for (Entry<String, String> innerEntry : entry.getValue().entrySet()) {
-                    builder.append(innerEntry.getKey()).append(" ").append(innerEntry.getValue()).append("\n");
-                }
-            }
+            renderMapOfMaps(jobInfo, builder);
             attach = new SlackAttachment("VM info from DB at " + new Date(), "VMs from DB", builder.toString(), null);
             return new FormattedMessage(null, attach);
 
         case JOBS:
             jobInfo = reportAPI.getJobInfo();
-            for (Entry<String, Map<String, String>> entry : jobInfo.entrySet()) {
-                builder.append("*").append(entry.getKey()).append("*\n");
-                for (Entry<String, String> innerEntry : entry.getValue().entrySet()) {
-                    builder.append(innerEntry.getKey()).append(" ").append(innerEntry.getValue()).append("\n");
-                }
-            }
+            renderMapOfMaps(jobInfo, builder);
             attach = new SlackAttachment("Job info from DB at " + new Date(), "Jobs from DB", builder.toString(), null);
             return new FormattedMessage(null, attach);
 
@@ -149,6 +149,15 @@ public class SlackRenderer {
             /** do nothing, not a valid command */
         }
         throw new RuntimeException("should not get here in the SlackRenderer");
+    }
+
+    private void renderMapOfMaps(Map<String, Map<String, String>> jobInfo, StringBuilder builder) {
+        for (Entry<String, Map<String, String>> entry : jobInfo.entrySet()) {
+            builder.append("*").append(entry.getKey()).append("*\n");
+            for (Entry<String, String> innerEntry : entry.getValue().entrySet()) {
+                builder.append(innerEntry.getKey()).append(" ").append(innerEntry.getValue()).append("\n");
+            }
+        }
     }
 
     public static class FormattedMessage {

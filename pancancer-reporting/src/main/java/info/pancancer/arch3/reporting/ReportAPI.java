@@ -31,7 +31,19 @@ import java.util.Map;
 public interface ReportAPI {
 
     public enum Commands {
-        STATUS, INFO, PROVISIONED, JOBS, GATHER, YOUXIA;
+        STATUS("retrieves configuration and version information on arch3"), INFO("retrieves high-level information on bot config"), PROVISIONED(
+                "retrieves detailed information on provisioned instances"), JOBS("retrieves detailed information on jobs"), GATHER(
+                "gathers the last message sent by each worker and displays the last line of it"), YOUXIA(
+                "ask youxia for all information on instances known to the cloud APIs that are configured");
+        private final String description;
+
+        Commands(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
 
         @Override
         public String toString() {
@@ -67,7 +79,7 @@ public interface ReportAPI {
      * @param states
      * @return
      */
-    Map<String, Map<String, String>> getVMInfo(ProvisionState[] states);
+    Map<String, Map<String, String>> getVMInfo(ProvisionState... states);
 
     /**
      * Get information for all provisions in the system, separated by unique identifier.
