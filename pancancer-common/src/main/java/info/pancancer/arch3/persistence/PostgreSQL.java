@@ -215,6 +215,41 @@ public class PostgreSQL {
         return list.toArray(new String[list.size()]);
     }
 
+    public List<Provision> getProvisions(ProvisionState status) {
+
+        List<Provision> provisions = new ArrayList<>();
+        Map<Object, Map<String, Object>> map;
+        if (status != null) {
+            map = this.runSelectStatement("select * from provision where status = ?", new KeyedHandler<>("provision_uuid"),
+                    status.toString());
+        } else {
+            map = this.runSelectStatement("select * from provision", new KeyedHandler<>("provision_uuid"));
+        }
+
+        for (Entry<Object, Map<String, Object>> entry : map.entrySet()) {
+
+            Provision p = new Provision();
+            p.setState(Enum.valueOf(ProvisionState.class, (String) entry.getValue().get("status")));
+            p.setJobUUID((String) entry.getValue().get("job_uuid"));
+            p.setProvisionUUID((String) entry.getValue().get("provision_uuid"));
+            p.setIpAddress((String) entry.getValue().get("ip_address"));
+            p.setCores((Integer) entry.getValue().get("cores"));
+            p.setMemGb((Integer) entry.getValue().get("mem_gb"));
+            p.setStorageGb((Integer) entry.getValue().get("storage_gb"));
+
+            // timestamp
+            Timestamp createTs = (Timestamp) entry.getValue().get("create_timestamp");
+            Timestamp updateTs = (Timestamp) entry.getValue().get("update_timestamp");
+            p.setCreateTimestamp(createTs);
+            p.setUpdateTimestamp(updateTs);
+
+            provisions.add(p);
+
+        }
+
+        return provisions;
+    }
+
     public List<Job> getJobs(JobState status) {
 
         List<Job> jobs = new ArrayList<>();

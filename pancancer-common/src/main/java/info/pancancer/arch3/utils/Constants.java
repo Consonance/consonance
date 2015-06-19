@@ -48,4 +48,7 @@ public class Constants {
     public static final String WORKER_ENDLESS = "worker.endless";
     public static final String WORKER_MAX_RUNS = "worker.max-runs";
 
+    public static final String REPORT_NAMESPACE = "report.namespace";
+    public static final String REPORT_TOKEN = "report.slack_token";
+
 }
