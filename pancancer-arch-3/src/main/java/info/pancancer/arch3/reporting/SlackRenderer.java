@@ -40,12 +40,35 @@ public class SlackRenderer {
     }
 
     public FormattedMessage convertToResult(String message) {
-        if (message.startsWith(Commands.STATUS.name())) {
+        String[] words = message.split(" ");
+
+        String firstWord = words[0];
+        Commands firstCommand;
+        try {
+            firstCommand = Commands.valueOf(firstWord);
+        } catch (IllegalArgumentException ex) {
             StringBuilder builder = new StringBuilder();
+            builder.append("Available commands are:\n");
+            for (Map.Entry<String, String> entry : reportAPI.getCommands().entrySet()) {
+                builder.append("`").append(entry.getKey()).append("` ");
+                builder.append(entry.getValue()).append("\n");
+            }
+            return new FormattedMessage(builder.toString(), null);
+        }
+
+        Map<String, AbstractInstanceListing.InstanceDescriptor> awsInstances;
+        Map<String, AbstractInstanceListing.InstanceDescriptor> osInstances;
+        StringBuilder builder = new StringBuilder();
+        SlackAttachment attach;
+        Map<String, Map<String, String>> jobInfo;
+
+        switch (firstCommand) {
+
+        case STATUS:
 
             builder.append("*Active VM counts via youxia*:\n");
-            Map<String, AbstractInstanceListing.InstanceDescriptor> awsInstances = reportAPI.getYouxiaInstances("AWS");
-            Map<String, AbstractInstanceListing.InstanceDescriptor> osInstances = reportAPI.getYouxiaInstances("OPENSTACK");
+            awsInstances = reportAPI.getYouxiaInstances("AWS");
+            osInstances = reportAPI.getYouxiaInstances("OPENSTACK");
             builder.append(awsInstances.size()).append(" instances managed on AWS \n");
             builder.append(osInstances.size()).append(" instances managed on OpenStack \n");
 
@@ -59,10 +82,10 @@ public class SlackRenderer {
             }
 
             return new FormattedMessage(builder.toString(), null);
-        } else if (message.startsWith(Commands.YOUXIA.name())) {
-            Map<String, AbstractInstanceListing.InstanceDescriptor> awsInstances = reportAPI.getYouxiaInstances("AWS");
-            Map<String, AbstractInstanceListing.InstanceDescriptor> osInstances = reportAPI.getYouxiaInstances("OPENSTACK");
-            StringBuilder builder = new StringBuilder();
+
+        case YOUXIA:
+            awsInstances = reportAPI.getYouxiaInstances("AWS");
+            osInstances = reportAPI.getYouxiaInstances("OPENSTACK");
             if (awsInstances.size() > 0) {
                 builder.append("*").append("Instances on AWS").append("*:\n");
                 for (Entry<String, AbstractInstanceListing.InstanceDescriptor> entry : awsInstances.entrySet()) {
@@ -81,59 +104,51 @@ public class SlackRenderer {
                     builder.append("private ip address").append(" ").append(entry.getValue().getPrivateIpAddress()).append(":\n");
                 }
             }
-            SlackAttachment attach = new SlackAttachment("Live cloud instance info described on " + new Date(), "Live instances",
-                    builder.toString(), null);
+            attach = new SlackAttachment("Live cloud instance info described on " + new Date(), "Live instances", builder.toString(), null);
             return new FormattedMessage(null, attach);
 
-        } else if (message.startsWith(Commands.INFO.name())) {
-            StringBuilder builder = new StringBuilder();
+        case INFO:
             for (Entry<String, String> entry : reportAPI.getEnvironmentMap().entrySet()) {
                 builder.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
             }
             return new FormattedMessage(builder.toString(), null);
-        } else if (message.startsWith(Commands.PROVISIONED.name())) {
-            Map<String, Map<String, String>> jobInfo = reportAPI.getVMInfo();
-            StringBuilder builder = new StringBuilder();
+
+        case PROVISIONED:
+            jobInfo = reportAPI.getVMInfo();
             for (Entry<String, Map<String, String>> entry : jobInfo.entrySet()) {
                 builder.append("*").append(entry.getKey()).append("*\n");
                 for (Entry<String, String> innerEntry : entry.getValue().entrySet()) {
                     builder.append(innerEntry.getKey()).append(" ").append(innerEntry.getValue()).append("\n");
                 }
             }
-            SlackAttachment attach = new SlackAttachment("VM info from DB at " + new Date(), "VMs from DB", builder.toString(), null);
+            attach = new SlackAttachment("VM info from DB at " + new Date(), "VMs from DB", builder.toString(), null);
             return new FormattedMessage(null, attach);
 
-        } else if (message.startsWith(Commands.JOBS.name())) {
-            Map<String, Map<String, String>> jobInfo = reportAPI.getJobInfo();
-            StringBuilder builder = new StringBuilder();
+        case JOBS:
+            jobInfo = reportAPI.getJobInfo();
             for (Entry<String, Map<String, String>> entry : jobInfo.entrySet()) {
                 builder.append("*").append(entry.getKey()).append("*\n");
                 for (Entry<String, String> innerEntry : entry.getValue().entrySet()) {
                     builder.append(innerEntry.getKey()).append(" ").append(innerEntry.getValue()).append("\n");
                 }
             }
-            SlackAttachment attach = new SlackAttachment("Job info from DB at " + new Date(), "Jobs from DB", builder.toString(), null);
+            attach = new SlackAttachment("Job info from DB at " + new Date(), "Jobs from DB", builder.toString(), null);
             return new FormattedMessage(null, attach);
-        } else if (message.startsWith(Commands.GATHER.name())) {
+
+        case GATHER:
             Map<String, Status> cache = reportAPI.getLastStatus();
-            StringBuilder builder = new StringBuilder();
             for (Map.Entry<String, Status> entry : cache.entrySet()) {
                 builder.append("*").append(entry.getKey()).append(" reports*:\n");
                 String stdout = "`" + StringUtils.substringAfterLast(entry.getValue().getStdout(), "\n") + "`";
                 builder.append(stdout).append("\n");
             }
-            SlackAttachment attach = new SlackAttachment("Messages gathered from queues at " + new Date(), "Messages gathered",
-                    builder.toString(), null);
+            attach = new SlackAttachment("Messages gathered from queues at " + new Date(), "Messages gathered", builder.toString(), null);
             return new FormattedMessage(null, attach);
-        } else {
-            StringBuilder builder = new StringBuilder();
-            builder.append("Available commands are:\n");
-            for (Map.Entry<String, String> entry : reportAPI.getCommands().entrySet()) {
-                builder.append("`").append(entry.getKey()).append("` ");
-                builder.append(entry.getValue()).append("\n");
-            }
-            return new FormattedMessage(builder.toString(), null);
+
+        default:
+            /** do nothing, not a valid command */
         }
+        throw new RuntimeException("should not get here in the SlackRenderer");
     }
 
     public static class FormattedMessage {
