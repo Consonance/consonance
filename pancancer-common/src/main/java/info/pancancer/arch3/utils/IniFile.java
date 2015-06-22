@@ -1,13 +1,13 @@
 package info.pancancer.arch3.utils;
 
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,7 +20,7 @@ public class IniFile {
 
     private final Pattern section = Pattern.compile("\\s*\\[([^]]*)\\]\\s*");
     private final Pattern keyValue = Pattern.compile("\\s*([^=]*)=(.*)");
-    private final Map<String, Map<String, String>> entries = new HashMap<>();
+    private final SortedMap<String, SortedMap<String, String>> entries = new TreeMap<>();
 
     public IniFile(String path) throws IOException {
         load(path);
@@ -39,9 +39,9 @@ public class IniFile {
                     if (m.matches()) {
                         String key = m.group(1).trim();
                         String value = m.group(2).trim();
-                        Map<String, String> kv = entries.get(section);
+                        SortedMap<String, String> kv = entries.get(section);
                         if (kv == null) {
-                            kv = new HashMap<>();
+                            kv = new TreeMap<>();
                             entries.put(section, kv);
                         }
                         kv.put(key, value);
@@ -83,7 +83,7 @@ public class IniFile {
         return Double.parseDouble(kv.get(key));
     }
 
-    public Map<String, Map<String, String>> getEntries() {
+    public SortedMap<String, SortedMap<String, String>> getEntries() {
         return entries;
     }
 }
