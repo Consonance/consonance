@@ -16,6 +16,7 @@ pancancer-arch-3/.idea
 .DS_Store
 pancancer-arch-3/PanCancerArch3.iml
 pancancer-arch-3/dependency-reduced-pom.xml
+pancancer-reporting/dependency-reduced-pom.xml
 pancancer-arch-3/pancancer_arch_3.json
 pancancer-arch-3/target
 
@@ -28,3 +29,4 @@ pancancer-arch-3/target
 
 # Ignore NetBeans files
 nbactions.xml
+/pancancer-reporting/target/

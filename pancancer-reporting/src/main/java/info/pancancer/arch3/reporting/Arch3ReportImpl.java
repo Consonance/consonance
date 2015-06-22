@@ -174,13 +174,9 @@ public class Arch3ReportImpl implements ReportAPI {
     @Override
     public Map<String, String> getCommands() {
         Map<String, String> map = new TreeMap<>();
-        map.put(ReportAPI.Commands.STATUS.toString(), "retrieves configuration and version information on arch3");
-        map.put(ReportAPI.Commands.INFO.toString(), "retrieves high-level information on bot config");
-        map.put(ReportAPI.Commands.PROVISIONED.toString(), "retrieves detailed information on provisioned instances");
-        map.put(ReportAPI.Commands.JOBS.toString(), "retrieves detailed information on jobs");
-        map.put(ReportAPI.Commands.GATHER.toString(), "gathers the last message sent by each worker and displays the last line of it");
-        map.put(ReportAPI.Commands.YOUXIA.toString(),
-                "ask youxia for all information on instances known to the cloud APIs that are configured");
+        for (Commands command : Commands.values()) {
+            map.put(command.toString(), command.getDescription());
+        }
         return map;
     }
 
@@ -217,7 +213,7 @@ public class Arch3ReportImpl implements ReportAPI {
     }
 
     @Override
-    public Map<String, Map<String, String>> getVMInfo(ProvisionState[] states) {
+    public Map<String, Map<String, String>> getVMInfo(ProvisionState... states) {
         Map<String, AbstractInstanceListing.InstanceDescriptor> youxiaInstances = this.getYouxiaInstances();
         Set<String> activeIPAddresses = new HashSet<>();
         // curate set of ip addresses for active instances
