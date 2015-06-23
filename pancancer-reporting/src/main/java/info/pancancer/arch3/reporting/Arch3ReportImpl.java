@@ -31,8 +31,12 @@ import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.listing.AbstractInstanceListing;
 import io.cloudbindle.youxia.listing.ListingFactory;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
@@ -168,6 +172,22 @@ public class Arch3ReportImpl implements ReportAPI {
         } catch (IllegalArgumentException | IllegalAccessException ex) {
             throw new RuntimeException(ex);
         }
+
+        try {
+            // stolen from stack overflow
+            URL whatismyip = new URL("http://checkip.amazonaws.com");
+            String ip;
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream(), StandardCharsets.UTF_8))) {
+                ip = in.readLine(); // you get the IP as a String
+            }
+            // reverse ip address
+            InetAddress addr = InetAddress.getByName(ip);
+            env.put("canonical_host_name", addr.getCanonicalHostName());
+            env.put("host_name", addr.getHostName());
+        } catch (IOException e) {
+            System.out.println("Could not lookup ip address of self");
+        }
+
         return env;
     }
 
