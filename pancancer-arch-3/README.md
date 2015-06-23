@@ -273,7 +273,7 @@ A code example on the command-line.
 * implement heartbeat
     * stderr/stdout in each heartbeat, a configurable number of tailed lines
 * test multiple types of failures and code appropriately 
-* Solomon wants a "workflow_path" added to the order -- DONE
+* Solomon wants a "workflow\_path" added to the order -- DONE
 * figure out impl/extends class strategy for the various components so they can be  swapped out with different implementations -- TODO, Solomon?
     * worker threads
     * workers that fail, are successful, etc

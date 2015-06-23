@@ -330,4 +330,22 @@ public class PostgreSQLIT {
         List<Job> jobs = postgres.getJobs(JobState.START);
         Assert.assertTrue("job stdout and stderr incorrect", jobs.get(0).getStdout().equals("oof") && jobs.get(0).getStderr().equals("oh"));
     }
+
+    /**
+     * Test of getProvisions method, of class PostgreSQL.
+     */
+    @Test
+    public void testGetProvisions() {
+        System.out.println("getProvisions");
+        Provision p = createProvision();
+        p.setIpAddress("9.9.9.9");
+        p.setState(ProvisionState.START);
+        postgres.createProvision(p);
+        p.setIpAddress("9.9.9.8");
+        p.setState(ProvisionState.SUCCESS);
+        postgres.createProvision(p);
+
+        List<Provision> result = postgres.getProvisions(ProvisionState.START);
+        Assert.assertTrue("found addresses, incorrect number " + result.size(), result.size() == 1);
+    }
 }
