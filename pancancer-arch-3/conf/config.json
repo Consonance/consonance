@@ -2,7 +2,7 @@
 rabbitMQHost = localhost
 rabbitMQUser = guest 
 rabbitMQPass = guest
-rabbitMQQueueName : pancancer_arch_3
+rabbitMQQueueName = pancancer_arch_3
 
 [database]
 postgresHost = 127.0.0.1
