@@ -48,8 +48,11 @@ public class Constants {
     public static final String WORKER_HOST_USER_NAME = "worker.hostUserName";
     public static final String WORKER_ENDLESS = "worker.endless";
     public static final String WORKER_MAX_RUNS = "worker.max-runs";
+    public static final String WORKER_SEQWARE_ENGINE = "worker.seqware-engine";
+    public static final String WORKER_SEQWARE_SETTINGS_FILE = "worker.seqware-settings-file";
 
     public static final String REPORT_NAMESPACE = "report.namespace";
     public static final String REPORT_TOKEN = "report.slack_token";
+    public static final String SEQWARE_WHITESTAR_ENGINE = "whitestar";
 
 }
