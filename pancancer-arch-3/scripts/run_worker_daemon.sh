@@ -14,7 +14,7 @@ fi
 set -e
 sudo touch $PID_FILE 
 sudo chown $USER $PID_FILE
-sudo -u $USER nohup java -cp pancancer-arch-3-*.jar info.pancancer.arch3.worker.Worker --config workerConfig.json --uuid `uuidgen` --pidFile $PID_FILE  </dev/null > $LOG_FILE 2>&1 &
+sudo -u $USER nohup java -cp pancancer-arch-3-*.jar info.pancancer.arch3.worker.Worker --config workerConfig.ini --uuid `uuidgen` --pidFile $PID_FILE  </dev/null > $LOG_FILE 2>&1 &
 PID=$!
 echo $PID > $PID_FILE
 echo "PID of worker daemon is $PID"
