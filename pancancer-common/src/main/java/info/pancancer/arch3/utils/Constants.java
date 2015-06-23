@@ -52,5 +52,6 @@ public class Constants {
 
     public static final String REPORT_NAMESPACE = "report.namespace";
     public static final String REPORT_TOKEN = "report.slack_token";
+    public static final String SEQWARE_WHITESTAR_ENGINE = "whitestar";
 
 }

@@ -192,7 +192,7 @@ public class WorkerRunnable implements Runnable {
                             workflowResult.setWorkflowStdout("everything is awesome");
                             workflowResult.setExitCode(0);
                         } else {
-                            String seqwareEngine = settings.getString(Constants.WORKER_SEQWARE_ENGINE);
+                            String seqwareEngine = settings.getString(Constants.WORKER_SEQWARE_ENGINE,Constants.SEQWARE_WHITESTAR_ENGINE);
                             String seqwareSettingsFile = settings.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE);
                             workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
                         }
@@ -287,14 +287,7 @@ public class WorkerRunnable implements Runnable {
             if (seqwareSettingsFile != null) {
                 args.addAll(Arrays.asList("-v", seqwareSettingsFile+":/home/seqware/.seqware/settings"));
             }
-
-            args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata"));
-
-            if (seqwareEngine != null) {
-                args.addAll(Arrays.asList("--engine", seqwareEngine));
-            } else {
-                args.addAll(Arrays.asList("--engine", "whitestar"));
-            }
+            args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata","--engine",seqwareEngine));
 
             String[] argsArray = new String[args.size()];
             cli.addArguments(args.toArray(argsArray));

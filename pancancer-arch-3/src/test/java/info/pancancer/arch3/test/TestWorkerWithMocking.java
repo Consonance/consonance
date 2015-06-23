@@ -164,9 +164,9 @@ public class TestWorkerWithMocking {
 
         testResults = cleanResults(testResults);
         //System.out.println("\n===============================\nTest Results: " + testResults);
-        //System.out.println(testResults);
-        String expectedDockerCommand = "docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.gnos:/home/$USER/.gnos -v /home/$USER/custom-seqware-settings:/home/seqware/.seqware/settings pancancer/seqware_whitestar_pancancer:1.1.1 seqware bundle launch --dir /workflow --ini /ini --no-metadata --engine whitestar-parallel";
-        //System.out.println(expectedDockerCommand);
+        System.out.println(testResults);
+        String expectedDockerCommand = "docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.gnos:/home/$USER/.gnos -v /home/$USER/custom-seqware-settings:/home/seqware/.seqware/settings pancancer/seqware_whitestar_pancancer:1.1.1 seqware bundle launch --dir /workflow --ini /ini --no-metadata --engine whitestar";
+        System.out.println(expectedDockerCommand);
         assertTrue("Check for docker command", testResults.contains(expectedDockerCommand));
         assertTrue("Check for sleep message in the following:" + testResults,
                 testResults.contains("Sleeping before executing workflow for 1000 ms."));
@@ -200,7 +200,7 @@ public class TestWorkerWithMocking {
         Mockito.when(config.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP)).thenReturn(1L);
         Mockito.when(config.getString(Constants.WORKER_ENDLESS)).thenReturn("1");
 
-        Mockito.when(config.getString(Constants.WORKER_SEQWARE_ENGINE)).thenReturn("whitestar-parallel");
+        Mockito.when(config.getString(Constants.WORKER_SEQWARE_ENGINE,Constants.SEQWARE_WHITESTAR_ENGINE)).thenReturn(Constants.SEQWARE_WHITESTAR_ENGINE);
         Mockito.when(config.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE)).thenReturn("/home/ubuntu/custom-seqware-settings");
         
         Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME, "ubuntu")).thenReturn("ubuntu");
