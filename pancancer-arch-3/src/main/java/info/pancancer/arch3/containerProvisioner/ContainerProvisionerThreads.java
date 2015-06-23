@@ -313,7 +313,9 @@ public class ContainerProvisionerThreads extends Base {
 
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
-                        runReaper(settings, status.getIpAddress());
+                        synchronized (ContainerProvisionerThreads.class) {
+                            runReaper(settings, status.getIpAddress());
+                        }
                         if (endless) {
                             Thread.sleep(MINUTE_IN_MILLISECONDS);
                         }
@@ -379,12 +381,11 @@ public class ContainerProvisionerThreads extends Base {
         String[] toArray = arguments.toArray(new String[arguments.size()]);
         LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
         // need to make sure reaper and deployer do not overlap
-        synchronized (ContainerProvisionerThreads.class) {
-            try {
-                Reaper.main(toArray);
-            } catch (Exception e) {
-                LOG.error("Youxia reaper threw the following exception", e);
-            }
+
+        try {
+            Reaper.main(toArray);
+        } catch (Exception e) {
+            LOG.error("Youxia reaper threw the following exception", e);
         }
     }
 }
