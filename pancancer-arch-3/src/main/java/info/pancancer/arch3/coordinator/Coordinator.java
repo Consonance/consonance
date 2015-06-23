@@ -103,8 +103,6 @@ public class Coordinator extends Base {
 
                 HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
 
-                PostgreSQL db = new PostgreSQL(settings);
-
                 queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 // read from
                 orderChannel = Utilities.setupQueue(settings, queueName + "_orders");
@@ -134,23 +132,8 @@ public class Coordinator extends Base {
                     // run the job
                     Order order = new Order().fromJSON(message);
 
-                    boolean checkPreviousRuns = true;
-                    String checkSetting = settings.getString(Constants.COORDINATOR_CHECK_JOB_HASH);
-                    if ("false".equalsIgnoreCase(checkSetting)) {
-                        checkPreviousRuns = false;
-                    }
-
-                    if ((checkPreviousRuns && !db.previouslyRun(order.getJob().getJobHash())) || !checkPreviousRuns) {
-
-                        requestVm(order.getProvision().toJSON());
-                        requestJob(order.getJob().toJSON());
-
-                    } else {
-
-                        log.info("\n\nSKIPPING JOB WITH HASH " + order.getJob().getJobHash()
-                                + " PREVIOUSLY SUBMITTED/FAILED/RUNNING/SUCCESSFUL\n");
-
-                    }
+                    requestVm(order.getProvision().toJSON());
+                    requestJob(order.getJob().toJSON());
 
                     log.info("acknowledging " + delivery.getEnvelope().toString());
                     orderChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);

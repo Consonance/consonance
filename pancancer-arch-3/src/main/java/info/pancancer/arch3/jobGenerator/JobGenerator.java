@@ -7,15 +7,19 @@ import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Order;
 import info.pancancer.arch3.beans.Provision;
+import info.pancancer.arch3.persistence.PostgreSQL;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.IniFile;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.tools.ant.DirectoryScanner;
@@ -113,7 +117,9 @@ public class JobGenerator extends Base {
         // check to see if new results are available and/or if the work queue is empty
         Order o = generateNewJob(iniFile, workflowName, workflowVersion, workflowPath);
         // enqueue new job
-        enqueueNewJobs(o.toJSON());
+        if (o != null) {
+            enqueueNewJobs(o.toJSON());
+        }
         try {
             // pause
             Thread.sleep(ONE_SECOND_IN_MILLISECONDS);
@@ -127,7 +133,7 @@ public class JobGenerator extends Base {
     // TODO: this will actually need to come from a file or web service
     private Order generateNewJob(String file, String workflowName, String workflowVersion, String workflowPath) {
 
-        Map<String, String> hm;
+        SortedMap<String, String> hm;
         if (file != null) {
             // TODO: this will come from a web service or file
             hm = parseIniFile(file);
@@ -135,13 +141,37 @@ public class JobGenerator extends Base {
                 log.info("KEY: " + e.getKey() + " VALUE: " + e.getValue());
             }
         } else {
-            hm = new HashMap<>();
+            hm = new TreeMap<>();
             hm.put("param1", "bar");
             hm.put("param2", "foo");
         }
 
+        String hashStr;
+        PostgreSQL db = new PostgreSQL(settings);
+
         Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
-        String hashStr = String.valueOf(mapJoiner.join(hm).hashCode());
+        String[] arr = this.settings.getStringArray(Constants.JOB_GENERATOR_FILTER_KEYS_IN_HASH);
+        if (arr.length > 0) {
+            System.out.println("Using ini hash filter set: " + Arrays.toString(arr));
+            Set<String> keys = new HashSet<>();
+            SortedMap<String, String> filteredMap = new TreeMap<>();
+            keys.addAll(Arrays.asList(arr));
+            for (Entry<String, String> entry : hm.entrySet()) {
+                if (keys.contains(entry.getKey())) {
+                    filteredMap.put(entry.getKey(), entry.getValue());
+                }
+            }
+            hm = filteredMap;
+        }
+        hashStr = String.valueOf(mapJoiner.join(hm).hashCode());
+
+        if (this.settings.getBoolean(Constants.JOB_GENERATOR_CHECK_JOB_HASH, Boolean.FALSE)) {
+            boolean runPreviously = db.previouslyRun(hashStr);
+            if (runPreviously) {
+                System.out.println("Skipping file (null if testing) due to hashcode: " + file);
+                return null;
+            }
+        }
 
         int cores = DEFAULT_NUM_CORES;
         int memGb = DEFAULT_MEMORY;
@@ -158,13 +188,13 @@ public class JobGenerator extends Base {
 
     }
 
-    private HashMap<String, String> parseIniFile(String iniFile) {
+    private SortedMap<String, String> parseIniFile(String iniFile) {
 
-        HashMap<String, String> iniHash = new HashMap<>();
+        SortedMap<String, String> iniHash = new TreeMap<>();
 
         try {
             IniFile ini = new IniFile(iniFile);
-            iniHash = (HashMap<String, String>) ini.getEntries().get("no-section");
+            iniHash = ini.getEntries().get("no-section");
 
         } catch (IOException e) {
             log.error(e.toString());
