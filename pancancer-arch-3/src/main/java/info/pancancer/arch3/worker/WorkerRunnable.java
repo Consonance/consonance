@@ -22,8 +22,11 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -188,7 +191,9 @@ public class WorkerRunnable implements Runnable {
                             workflowResult.setWorkflowStdout("everything is awesome");
                             workflowResult.setExitCode(0);
                         } else {
-                            workflowResult = launchJob(statusJSON, job);
+                            String seqwareEngine = settings.getString(Constants.WORKER_SEQWARE_ENGINE,Constants.SEQWARE_WHITESTAR_ENGINE);
+                            String seqwareSettingsFile = settings.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE);
+                            workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
                         }
 
                         // launchJob(job.getUuid(), job);
@@ -262,7 +267,7 @@ public class WorkerRunnable implements Runnable {
      *            - The job contains information about what workflow to execute, and how.
      * @return The complete stdout and stderr from the workflow execution will be returned.
      */
-    private WorkflowResult launchJob(String message, Job job) {
+    private WorkflowResult launchJob(String message, Job job, String seqwareEngine, String seqwareSettingsFile) {
         WorkflowResult workflowResult = null;
         ExecutorService exService = Executors.newFixedThreadPool(2);
         WorkflowRunner workflowRunner = new WorkflowRunner();
@@ -277,10 +282,16 @@ public class WorkerRunnable implements Runnable {
             CommandLine cli = new CommandLine("docker");
             cli.addArgument("run");
             cli.addArgument("--cidfile="+containerIDFile,false);
-            cli.addArguments(new String[] { "--rm", "-h", "master", "-t", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-v",
-                    job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini", "-v", "/datastore:/datastore", "-v",
-                    "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos", dockerImage,
-                    "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
+            List<String> args = new ArrayList<String>(Arrays.asList("--rm", "-h", "master", "-t", "-v",
+                    "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini",
+                    "-v", "/datastore:/datastore", "-v", "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos"));
+            if (seqwareSettingsFile != null) {
+                args.addAll(Arrays.asList("-v", seqwareSettingsFile+":/home/seqware/.seqware/settings"));
+            }
+            args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata","--engine",seqwareEngine));
+
+            String[] argsArray = new String[args.size()];
+            cli.addArguments(args.toArray(argsArray));
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);

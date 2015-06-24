@@ -81,6 +81,10 @@ public class TestWorkerWithMocking {
 
     private DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
 
+    // private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    // private PrintStream originalOutStream = new PrintStream(System.out);
+    // private PrintStream testPrintStream = new PrintStream(outStream);
+
     @Mock
     private Appender<LoggingEvent> mockAppender;
 
@@ -93,6 +97,7 @@ public class TestWorkerWithMocking {
     public void setUp() throws IOException {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(Utilities.class);
+        // System.setOut(testPrintStream);
 
         Mockito.when(mockAppender.getName()).thenReturn("MOCK");
         LOG.addAppender((Appender) mockAppender);
@@ -113,7 +118,8 @@ public class TestWorkerWithMocking {
 
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
-
+        // PumpStreamHandler streamHandler = new PumpStreamHandler(new CollectingLogOutputStream());
+        // mockExecutor.setStreamHandler(streamHandler);
         PowerMockito.whenNew(DefaultExecuteResultHandler.class).withNoArguments().thenReturn(this.handler);
         Mockito.doAnswer(new Answer<Object>() {
             @Override
@@ -134,19 +140,7 @@ public class TestWorkerWithMocking {
         }).when(mockExecutor).execute(any(CommandLine.class), any(ExecuteResultHandler.class));
         PowerMockito.whenNew(DefaultExecutor.class).withNoArguments().thenReturn(mockExecutor);
 
-        Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("seqware");
-        Mockito.when(config.getString(Constants.RABBIT_HOST)).thenReturn("localhost");
-        Mockito.when(config.getString(Constants.RABBIT_USERNAME)).thenReturn("guest");
-        Mockito.when(config.getString(Constants.RABBIT_PASSWORD)).thenReturn("guest");
-
-        Mockito.when(config.getString(Constants.WORKER_HEARTBEAT_RATE)).thenReturn("2.5");
-        Mockito.when(config.getString(Constants.WORKER_MAX_RUNS)).thenReturn("1");
-        Mockito.when(config.getLong(Constants.WORKER_PREWORKER_SLEEP, WorkerRunnable.DEFAULT_PRESLEEP)).thenReturn(1L);
-        Mockito.when(config.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP)).thenReturn(1L);
-        Mockito.when(config.getString(Constants.WORKER_ENDLESS)).thenReturn("1");
-
-        Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME)).thenReturn(System.getProperty("user.name"));
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
+        setupConfig();
 
         Job j = new Job();
         j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
@@ -165,7 +159,7 @@ public class TestWorkerWithMocking {
 
         PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
 
-        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig", "vm123456", 1);
+        WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
 
         testWorker.run();
         // String testResults = TestWorkerWithMocking.outBuffer.toString();// this.outStream.toString();
@@ -177,7 +171,7 @@ public class TestWorkerWithMocking {
         testResults = cleanResults(testResults);
         // System.out.println("\n===============================\nTest Results: " + testResults);
         System.out.println(testResults);
-        String expectedDockerCommand = "docker run --cidfile=\"/home/$USER/worker.cid\" --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.gnos:/home/$USER/.gnos pancancer/seqware_whitestar_pancancer:1.1.1 seqware bundle launch --dir /workflow --ini /ini --no-metadata";
+        String expectedDockerCommand = "docker run --cidfile=\"/home/$USER/worker.cid\" --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.gnos:/home/$USER/.gnos -v /home/$USER/custom-seqware-settings:/home/seqware/.seqware/settings pancancer/seqware_whitestar_pancancer:1.1.1 seqware bundle launch --dir /workflow --ini /ini --no-metadata --engine whitestar";
         System.out.println(expectedDockerCommand);
         assertTrue("Check for docker command", testResults.contains(expectedDockerCommand));
         assertTrue("Check for sleep message in the following:" + testResults,
@@ -197,11 +191,33 @@ public class TestWorkerWithMocking {
         String initalHeartbeat = new String(Files.readAllBytes(Paths.get("src/test/resources/testInitialHeartbeat.txt")));
         assertTrue("Check for an initial heart beat, found" + testResults, testResults.contains(initalHeartbeat));
 
+        // String workflowOutput = new String(Files.readAllBytes(Paths.get("src/test/resources/testFinalHeartbeat.txt")));
+        // assertTrue("Check for workflow output", testResults.contains(workflowOutput));
+
         assertTrue("check for stderr in heartbeat", testResults.contains("\"stderr\": \"123_err\","));
     }
 
+    private void setupConfig() {
+        Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("seqware");
+        Mockito.when(config.getString(Constants.RABBIT_HOST)).thenReturn("localhost");
+        Mockito.when(config.getString(Constants.RABBIT_USERNAME)).thenReturn("guest");
+        Mockito.when(config.getString(Constants.RABBIT_PASSWORD)).thenReturn("guest");
+
+        Mockito.when(config.getString(Constants.WORKER_HEARTBEAT_RATE)).thenReturn("2.5");
+        Mockito.when(config.getString(Constants.WORKER_MAX_RUNS)).thenReturn("1");
+        Mockito.when(config.getLong(Constants.WORKER_PREWORKER_SLEEP, WorkerRunnable.DEFAULT_PRESLEEP)).thenReturn(1L);
+        Mockito.when(config.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP)).thenReturn(1L);
+        Mockito.when(config.getString(Constants.WORKER_ENDLESS)).thenReturn("1");
+
+        Mockito.when(config.getString(Constants.WORKER_SEQWARE_ENGINE,Constants.SEQWARE_WHITESTAR_ENGINE)).thenReturn(Constants.SEQWARE_WHITESTAR_ENGINE);
+        Mockito.when(config.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE)).thenReturn("/home/ubuntu/custom-seqware-settings");
+        
+        Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME, "ubuntu")).thenReturn("ubuntu");
+        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
+    }
+
     private String cleanResults(String testResults) {
-        testResults = testResults.replaceAll("/home/[^ \\./]*/", "/home/\\$USER/");
+        testResults = testResults.replaceAll("/home/ubuntu/", "/home/\\$USER/");
         testResults = testResults.replaceAll("seqware_[0-9]+\\.ini", "seqware_tmpfile.ini");
         testResults = testResults.replaceAll("oozie-[a-z0-9\\-]+", "JOB_ID");
         testResults = testResults.replaceAll("\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}", "0000/00/00 00:00:00");

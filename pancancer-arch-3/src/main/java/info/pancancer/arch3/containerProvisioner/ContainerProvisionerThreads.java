@@ -47,6 +47,7 @@ public class ContainerProvisionerThreads extends Base {
     private static final int DEFAULT_THREADS = 3;
     private static final int MINUTE_IN_MILLISECONDS = 60 * 1000;
     private final OptionSpecBuilder testSpec;
+    protected static final Logger LOG = LoggerFactory.getLogger(ContainerProvisionerThreads.class);
 
     public static void main(String[] argv) throws Exception {
         ContainerProvisionerThreads containerProvisionerThreads = new ContainerProvisionerThreads(argv);
@@ -227,6 +228,8 @@ public class ContainerProvisionerThreads extends Base {
                                     Deployer.main(toArray);
                                 } catch (Exception e) {
                                     LOG.error("Youxia deployer threw the following exception", e);
+                                    // call the reaper to do cleanup when deployment fails
+                                    runReaper(settings, null);
                                 }
                             }
                             if (endless) {
@@ -310,30 +313,8 @@ public class ContainerProvisionerThreads extends Base {
 
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
-                        String param = settings.getString(Constants.PROVISION_YOUXIA_REAPER);
-                        CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
-                        List<String> arguments = new ArrayList<>();
-                        arguments.addAll(Arrays.asList(parse.getArguments()));
-                        arguments.add("--kill-list");
-                        // create a json file with the one targetted ip address
-                        Gson gson = new Gson();
-                        String[] successfulVMAddresses = db.getSuccessfulVMAddresses();
-                        LOG.info("Kill list contains: " + Arrays.asList(successfulVMAddresses));
-                        Path createTempFile = Files.createTempFile("target", "json");
-                        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(createTempFile.toFile()),
-                                StandardCharsets.UTF_8))) {
-                            gson.toJson(successfulVMAddresses, bw);
-                        }
-                        arguments.add(createTempFile.toAbsolutePath().toString());
-                        String[] toArray = arguments.toArray(new String[arguments.size()]);
-                        LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
-                        // need to make sure reaper and deployer do not overlap
                         synchronized (ContainerProvisionerThreads.class) {
-                            try {
-                                Reaper.main(toArray);
-                            } catch (Exception e) {
-                                LOG.error("Youxia reaper threw the following exception", e);
-                            }
+                            runReaper(settings, status.getIpAddress());
                         }
                         if (endless) {
                             Thread.sleep(MINUTE_IN_MILLISECONDS);
@@ -365,6 +346,46 @@ public class ContainerProvisionerThreads extends Base {
                 }
             }
             return null;
+        }
+    }
+
+    /**
+     * run the reaper
+     *
+     * @param settings
+     * @param ipAddress
+     *            specify an ip address (otherwise cleanup only failed deployments)
+     * @throws JsonIOException
+     * @throws IOException
+     */
+    private static void runReaper(HierarchicalINIConfiguration settings, String ipAddress) throws IOException {
+        String param = settings.getString(Constants.PROVISION_YOUXIA_REAPER);
+        CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
+        List<String> arguments = new ArrayList<>();
+        arguments.addAll(Arrays.asList(parse.getArguments()));
+        if (ipAddress != null) {
+            arguments.add("--kill-list");
+            // create a json file with the one targetted ip address
+            Gson gson = new Gson();
+            // we can't use this because unlike Amazon, OpenStack reuses private ip addresses (very quickly too)
+            // String[] successfulVMAddresses = db.getSuccessfulVMAddresses();
+            String[] successfulVMAddresses = new String[] { ipAddress };
+            LOG.info("Kill list contains: " + Arrays.asList(successfulVMAddresses));
+            Path createTempFile = Files.createTempFile("target", "json");
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(createTempFile.toFile()),
+                    StandardCharsets.UTF_8))) {
+                gson.toJson(successfulVMAddresses, bw);
+            }
+            arguments.add(createTempFile.toAbsolutePath().toString());
+        }
+        String[] toArray = arguments.toArray(new String[arguments.size()]);
+        LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
+        // need to make sure reaper and deployer do not overlap
+
+        try {
+            Reaper.main(toArray);
+        } catch (Exception e) {
+            LOG.error("Youxia reaper threw the following exception", e);
         }
     }
 }
