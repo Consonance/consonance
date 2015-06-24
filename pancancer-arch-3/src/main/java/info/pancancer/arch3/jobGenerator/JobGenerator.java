@@ -50,6 +50,7 @@ public class JobGenerator extends Base {
 
     public JobGenerator(String[] argv) throws IOException {
         super();
+
         this.iniDirSpec = super.parser.accepts("ini-dir").withOptionalArg().ofType(String.class);
         this.workflowNameSpec = super.parser.accepts("workflow-name").withOptionalArg().ofType(String.class).defaultsTo("DEWrapper");
         this.workflowVersionSpec = super.parser.accepts("workflow-version").withOptionalArg().ofType(String.class).defaultsTo("1.0.0");
