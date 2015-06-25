@@ -8,10 +8,7 @@ import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.util.Log;
 
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -40,7 +37,6 @@ import org.apache.commons.exec.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.cloudfront.model.Paths;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -153,7 +149,6 @@ public class WorkerRunnable implements Runnable {
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
             jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
-            // TODO: need threads that each read from orders and another that reads results
             while (max > 0 || endless) {
                 // log.debug("max is: "+max);
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
@@ -161,9 +156,6 @@ public class WorkerRunnable implements Runnable {
                 if (!endless) {
                     max--;
                 }
-
-                // loop once
-                // TODO: this will be configurable so it could process multiple jobs before exiting
 
                 // get the job order
                 // int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
@@ -189,8 +181,6 @@ public class WorkerRunnable implements Runnable {
                         String statusJSON = status.toJSON();
 
                         log.info(" WORKER LAUNCHING JOB");
-                        // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own
-                        // thread, harvesting STDERR/STDOUT periodically
                         WorkflowResult workflowResult = new WorkflowResult();
                         if (testMode) {
                             workflowResult.setWorkflowStdout("everything is awesome");
@@ -200,8 +190,6 @@ public class WorkerRunnable implements Runnable {
                             String seqwareSettingsFile = settings.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE);
                             workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
                         }
-
-                        // launchJob(job.getUuid(), job);
 
                         status = new Status(vmUuid, job.getUuid(), workflowResult.getExitCode() == 0 ? StatusState.SUCCESS
                                 : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE, "job is finished", getFirstNonLoopbackAddress()
@@ -254,12 +242,7 @@ public class WorkerRunnable implements Runnable {
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
         Path pathToINI = Files.createTempFile("seqware_", ".ini", attrs);
         log.info("INI file: " + pathToINI.toString());
-        /*try (BufferedWriter bw = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8))) {
-            bw.write(job.getIniStr());
-            bw.flush();
-        }*/
-        Files.write(pathToINI, job.getIniStr().getBytes()/*,StandardCharsets.UTF_8*/,StandardOpenOption.CREATE);
+        Files.write(pathToINI, job.getIniStr().getBytes(StandardCharsets.UTF_8),StandardOpenOption.CREATE);
         return pathToINI;
     }
 
@@ -285,11 +268,7 @@ public class WorkerRunnable implements Runnable {
 
             String containerIDFile = "/home/" + this.userName + "/worker.cid";
             String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
-            //CommandLine cli = new CommandLine("docker");
-            //cli.addArgument("run");
-            // TODO: Copy old cidfile to a different location.
-            // Maybe generate a small script that includes the copy cidfile and the main docker run command sto /tmp and then execute that.
-            ///cli.addArgument("--cidfile=" + containerIDFile, false);
+            
             List<String> args = new ArrayList<String>(Arrays.asList("--cidfile=\"" + containerIDFile+"\"", "-h", "master", "-t", "-v",
                     "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini",
                     "-v", "/datastore:/datastore", "-v", "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos"));
@@ -299,12 +278,8 @@ public class WorkerRunnable implements Runnable {
             args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata",
                     "--engine", seqwareEngine));
 
-            //String[] argsArray = new String[args.size()];
-            //cli.addArguments(args.toArray(argsArray));
-
             String runnerPath = this.writeDockerRunnerScript(args);
             CommandLine cli = new CommandLine(runnerPath);
-            //cli.addArgument(runnerPath);
             
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
@@ -314,7 +289,6 @@ public class WorkerRunnable implements Runnable {
             heartbeat.setVmUuid(this.vmUuid);
             heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString().substring(1));
             heartbeat.setStatusSource(workflowRunner);
-            // heartbeat.setMessageBody(heartbeatStatus.toJSON());
 
             long presleep = settings.getLong(Constants.WORKER_PREWORKER_SLEEP, WorkerRunnable.DEFAULT_PRESLEEP);
             long postsleep = settings.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP);
@@ -369,8 +343,7 @@ public class WorkerRunnable implements Runnable {
         
         Path runnerPath = Files.createTempFile("run_workflow_in_docker", ".sh");
         Files.setPosixFilePermissions(runnerPath, perms);
-        Files.write(runnerPath, script.getBytes()/*,StandardCharsets.UTF_8*/,StandardOpenOption.CREATE);
-        //Files.setAttribute(runnerPath, "execute", true);
+        Files.write(runnerPath,script.getBytes(StandardCharsets.UTF_8),StandardOpenOption.CREATE);
         
         String scriptPath = runnerPath.toFile().getAbsolutePath(); 
        
