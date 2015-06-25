@@ -281,8 +281,10 @@ public class WorkerRunnable implements Runnable {
             String dockerImage="pancancer/seqware_whitestar_pancancer:1.1.1";
             CommandLine cli = new CommandLine("docker");
             cli.addArgument("run");
+            //TODO: Copy old cidfile to a different location.
+            //Maybe write a small script that includes the copy cidfile and the main docker run command sto /tmp and then execute that. 
             cli.addArgument("--cidfile="+containerIDFile,false);
-            List<String> args = new ArrayList<String>(Arrays.asList("--rm", "-h", "master", "-t", "-v",
+            List<String> args = new ArrayList<String>(Arrays.asList("-h", "master", "-t", "-v",
                     "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini",
                     "-v", "/datastore:/datastore", "-v", "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos"));
             if (seqwareSettingsFile != null) {
