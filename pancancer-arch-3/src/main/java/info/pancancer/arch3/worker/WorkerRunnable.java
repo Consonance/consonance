@@ -19,12 +19,15 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -37,6 +40,7 @@ import org.apache.commons.exec.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.services.cloudfront.model.Paths;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -94,11 +98,12 @@ public class WorkerRunnable implements Runnable {
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         this.maxRuns = maxRuns;
         settings = Utilities.parseConfig(configFile);
-        
-        //TODO: Dyanmically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
-        //FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>) ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
-        //appender.setFile("SomePath");
-        
+
+        // TODO: Dyanmically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
+        // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)
+        // ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
+        // appender.setFile("SomePath");
+
         this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         if (this.queueName == null) {
             throw new NullPointerException(
@@ -191,7 +196,7 @@ public class WorkerRunnable implements Runnable {
                             workflowResult.setWorkflowStdout("everything is awesome");
                             workflowResult.setExitCode(0);
                         } else {
-                            String seqwareEngine = settings.getString(Constants.WORKER_SEQWARE_ENGINE,Constants.SEQWARE_WHITESTAR_ENGINE);
+                            String seqwareEngine = settings.getString(Constants.WORKER_SEQWARE_ENGINE, Constants.SEQWARE_WHITESTAR_ENGINE);
                             String seqwareSettingsFile = settings.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE);
                             workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
                         }
@@ -249,11 +254,12 @@ public class WorkerRunnable implements Runnable {
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
         Path pathToINI = Files.createTempFile("seqware_", ".ini", attrs);
         log.info("INI file: " + pathToINI.toString());
-        try (BufferedWriter bw = new BufferedWriter(
+        /*try (BufferedWriter bw = new BufferedWriter(
                 new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8))) {
             bw.write(job.getIniStr());
             bw.flush();
-        }
+        }*/
+        Files.write(pathToINI, job.getIniStr().getBytes()/*,StandardCharsets.UTF_8*/,StandardOpenOption.CREATE);
         return pathToINI;
     }
 
@@ -276,25 +282,30 @@ public class WorkerRunnable implements Runnable {
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
-            
-            String containerIDFile="\"/home/"+this.userName+"/worker.cid\"";
-            String dockerImage="pancancer/seqware_whitestar_pancancer:1.1.1";
-            CommandLine cli = new CommandLine("docker");
-            cli.addArgument("run");
-            //TODO: Copy old cidfile to a different location.
-            //Maybe write a small script that includes the copy cidfile and the main docker run command sto /tmp and then execute that. 
-            cli.addArgument("--cidfile="+containerIDFile,false);
-            List<String> args = new ArrayList<String>(Arrays.asList("-h", "master", "-t", "-v",
+
+            String containerIDFile = "/home/" + this.userName + "/worker.cid";
+            String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
+            //CommandLine cli = new CommandLine("docker");
+            //cli.addArgument("run");
+            // TODO: Copy old cidfile to a different location.
+            // Maybe generate a small script that includes the copy cidfile and the main docker run command sto /tmp and then execute that.
+            ///cli.addArgument("--cidfile=" + containerIDFile, false);
+            List<String> args = new ArrayList<String>(Arrays.asList("--cidfile=\"" + containerIDFile+"\"", "-h", "master", "-t", "-v",
                     "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini",
                     "-v", "/datastore:/datastore", "-v", "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos"));
             if (seqwareSettingsFile != null) {
-                args.addAll(Arrays.asList("-v", seqwareSettingsFile+":/home/seqware/.seqware/settings"));
+                args.addAll(Arrays.asList("-v", seqwareSettingsFile + ":/home/seqware/.seqware/settings"));
             }
-            args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata","--engine",seqwareEngine));
+            args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata",
+                    "--engine", seqwareEngine));
 
-            String[] argsArray = new String[args.size()];
-            cli.addArguments(args.toArray(argsArray));
+            //String[] argsArray = new String[args.size()];
+            //cli.addArguments(args.toArray(argsArray));
 
+            String runnerPath = this.writeDockerRunnerScript(args);
+            CommandLine cli = new CommandLine(runnerPath);
+            //cli.addArgument(runnerPath);
+            
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
             heartbeat.setReportingChannel(resultsChannel);
@@ -309,7 +320,7 @@ public class WorkerRunnable implements Runnable {
             long postsleep = settings.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP);
             long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * presleep;
             long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * postsleep;
-
+            
             workflowRunner.setCli(cli);
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
@@ -334,6 +345,38 @@ public class WorkerRunnable implements Runnable {
             exService.shutdownNow();
         }
         return workflowResult;
+    }
+
+    private String writeDockerRunnerScript(List<String> dockerArgs) throws IOException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_z");
+        String timestampStr = sdf.format(new Date());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("#! /bin/bash\n");
+        sb.append("[[ -f /home/" + this.userName + "/worker.cid ]] && mv /home/" + this.userName + "/worker.cid  /home/" + this.userName + "/worker." + timestampStr + ".cid \n");
+        sb.append("docker run ");
+        for (String arg : dockerArgs) {
+            sb.append(arg).append(" ");
+        }
+        sb.append(" && cat /home/"+this.userName+"/worker.cid >> /home/"+this.userName+"/successful_container_cids");
+        sb.append(" && echo \\n >> /home/"+this.userName+"/successful_container_cids");
+        sb.append("\n");
+
+        String script = sb.toString();
+        
+        EnumSet<PosixFilePermission> perms = EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
+                PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OTHERS_READ, PosixFilePermission.GROUP_READ);
+        
+        Path runnerPath = Files.createTempFile("run_workflow_in_docker", ".sh");
+        Files.setPosixFilePermissions(runnerPath, perms);
+        Files.write(runnerPath, script.getBytes()/*,StandardCharsets.UTF_8*/,StandardOpenOption.CREATE);
+        //Files.setAttribute(runnerPath, "execute", true);
+        
+        String scriptPath = runnerPath.toFile().getAbsolutePath(); 
+       
+        this.log.info("Script at "+scriptPath+" was written, with contents: \n"+script);
+        
+        return scriptPath;
     }
 
     /**
