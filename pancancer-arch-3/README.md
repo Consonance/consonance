@@ -208,7 +208,7 @@ A code example on the command-line.
 * improve logging
 * cleanup of queue and DB handles
 * reporting tool that shows a summary of the DB contents including Donor/Project
-* implement heartbeat
+* implement heartbeat --done
     * stderr/stdout in each heartbeat, a configurable number of tailed lines
 * test multiple types of failures and code appropriately 
 * Solomon wants a "workflow\_path" added to the order -- DONE
@@ -229,5 +229,5 @@ A code example on the command-line.
 * really great logging/reporting that's human readable
 * ability to turn off the VMProvisioner in case a human makes the worker nodes -- DONE
 * log files loaded into the ELK stack for visualization
-* Docker container for the system, integration with Architecture Setup 3.0
-* need job queues with different names based on the workflow and version they target, this will make it easier to run multiple workflow types at the same time
+* Docker container for the system, integration with Architecture Setup 3.0 --DONE
+* need job queues with different names based on the workflow and version they target, this will make it easier to run multiple workflow types at the same time -- n/a
