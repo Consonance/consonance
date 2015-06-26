@@ -13,9 +13,7 @@ Just a Java maven project so do the following:
 
 ## Dependencies
 
-Eventually we will want everything in a single (or series) of Docker containers. This
-will make it much easy to redistribute but, for the time being, these can be installed
-on your development host directly.
+For cloud shepherds, please start with the document at [pancancer_launcher](https://github.com/ICGC-TCGA-PanCancer/pancancer_launcher).
 
 I'm focused on development on a Mac using HomeBrew, you will need to setup
 the dependencies using whatever system is appropriate for your environment.
@@ -97,12 +95,7 @@ Drop the DB if you need to clear it out:
     dropdb queue_status
     createdb queue_status
 
-## Testing Locally
-
-The following will let you test on a local box. This simulates a multiple machine/VM
-setup on a single box just using Java and RabbitMQ.  Eventually, this will just
-be one of multiple possible backends configured by the settings file. This single-machine,
-pure Java running example will be used for integration and other tests.
+## Components
 
 You should also create a ~/.youxia/config file. See https://github.com/CloudBindle/youxia#configuration for an example. 
 
@@ -149,9 +142,7 @@ If you need to create a worker, use the following Ansible playbook https://githu
 
 ### Checking Results
 
-Log into the DB and do:
-
-    queue_status=# select * from provision; select job_id, status, job_uuid, provision_uuid, job_hash from job;
+See [reporting](../pancancer-reporting/README.md)
 
 ### Upgrade SOP
 
@@ -163,61 +154,6 @@ Step-by-step:
 2. Spin up a new set of these components (you may have the option of using the [pancancer launcher](https://github.com/ICGC-TCGA-PanCancer/pancancer_launcher) , if so use the instructions there). Remember to use a new managed\_tag in your ~/.youxia/config in order to prevent clashes where your two clusters attempt to manage each others nodes. 
 3. Create a cron task in order to run the JobGenerator in your new cluster
 4. When all tasks drain from your old cluster, terminate the launcher and any failed nodes via the AWS console or OpenStack's dashboard. 
-
-
-## Testing on AWS
-
-WORK IN PROGRESS
-
-In this test I will create a single node for running this framework and associated daemons and a single worker node that actually runs the worker thread and performs some docker workflow run.
-
-### Job Generator
-
-This generates actual job orders using INI files provided by Adam's centralized decider and some command line options.
-
-The first step is to use Adam's command line tool to generate one or more INI files.  See https://github.com/ICGC-TCGA-PanCancer/central-decider-client for details on how to use this.  It's not difficult but you need to follow these steps to have INI files for the next step below.
-
-Now that you have INI files, the next step is to run this command line tool.  It will parse the INI files and generate a job with them and other information it takes from the command line.  It then submits the job "order" to the order message queue.
-
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir <directories_with_ini_files> --workflow-name <workflow_name> --workflow-version <workflow_version> --workflow-path <workflow_path> 
-    
-    # for example:
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir ini --workflow-name DEWrapper --workflow-version 1.0.1-SNAPSHOT --workflow-path /workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.1-SNAPSHOT_SeqWare_1.1.0
-    # alternatively for hello world
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.jobGenerator.JobGeneratorDEWorkflow --config conf/config.json --ini-dir /home/ubuntu/gitroot/central-decider-client/ini --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflow/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0
-    
-
-### Coordinator
-
-This consumes the jobs and prepares messages for the VM and Job Queues.
-
-It then monitors the results queue to see when jobs fail or finish.
-
-Finally, for failed or finished workflows, it informs the Container provisioner about finished
-VMs that can be terminated.
-
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.coordinator.Coordinator --config conf/config.json
-
-### Container Provisioner
-
-This will spin up (fake) containers that will launch Workers.
-
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.containerProvisioner.ContainerProvisionerThreads --config conf/config.json
-
-### Worker
-
-The ContainerProvisioner above is actually pulling jobs using embedded worker threads (this will not be the case for production, instead the above will just launch VMs).  The below can be started on another VM and will compete for jobs from the job queue.  If you run on a different box than the above components make sure the conf/config.json is updated to point to the correct `rabbitMQHost`.
-
-    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 50f20496-c221-4c25-b09b-839511e76df4
-
-You can generate a UUID here: https://www.guidgenerator.com/online-guid-generator.aspx
-
-### Checking Results
-
-Log into the DB and do:
-
-    queue_status=# select * from provision; select job_id, status, job_uuid, provision_uuid, job_hash from job;
-
 
 
 ## Cleanup
