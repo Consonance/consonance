@@ -114,7 +114,7 @@ public class Arch3ReportImpl implements ReportAPI {
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
                 int messagesToCache = db.getJobs(JobState.RUNNING).size();
-                Map<String, Status> cache = new HashMap<>();
+                Map<String, Status> cache = new TreeMap<>();
 
                 int loop = 0;
                 do {
