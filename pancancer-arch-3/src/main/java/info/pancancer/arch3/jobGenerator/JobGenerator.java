@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import joptsimple.ArgumentAcceptingOptionSpec;
+import joptsimple.OptionSpecBuilder;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.tools.ant.DirectoryScanner;
 
@@ -42,6 +43,7 @@ public class JobGenerator extends Base {
     private final ArgumentAcceptingOptionSpec<String> workflowVersionSpec;
     private final ArgumentAcceptingOptionSpec<String> workflowPathSpec;
     private final ArgumentAcceptingOptionSpec<Integer> totalJobSpec;
+    private final OptionSpecBuilder forceSpec;
 
     public static void main(String[] argv) throws IOException {
         JobGenerator jg = new JobGenerator(argv);
@@ -51,13 +53,17 @@ public class JobGenerator extends Base {
     public JobGenerator(String[] argv) throws IOException {
         super();
 
-        this.iniDirSpec = super.parser.accepts("ini-dir").withOptionalArg().ofType(String.class);
-        this.workflowNameSpec = super.parser.accepts("workflow-name").withOptionalArg().ofType(String.class).defaultsTo("DEWrapper");
-        this.workflowVersionSpec = super.parser.accepts("workflow-version").withOptionalArg().ofType(String.class).defaultsTo("1.0.0");
-        this.workflowPathSpec = super.parser.accepts("workflow-path").withOptionalArg().ofType(String.class)
-                .defaultsTo("/workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0");
-        this.totalJobSpec = super.parser.accepts("total-jobs").requiredUnless(iniDirSpec, this.endlessSpec).withRequiredArg()
-                .ofType(Integer.class).defaultsTo(Integer.MAX_VALUE);
+        this.iniDirSpec = super.parser.accepts("ini-dir", "schedule a batch of ini files from this directory").withOptionalArg()
+                .ofType(String.class);
+        this.workflowNameSpec = super.parser.accepts("workflow-name", "track the name of workflows").withOptionalArg().ofType(String.class)
+                .defaultsTo("DEWrapper");
+        this.workflowVersionSpec = super.parser.accepts("workflow-version", "track the version of workflows").withOptionalArg()
+                .ofType(String.class).defaultsTo("1.0.0");
+        this.workflowPathSpec = super.parser.accepts("workflow-path", "Schedule workflows at this path on the container host")
+                .withOptionalArg().ofType(String.class).defaultsTo("/workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0");
+        this.totalJobSpec = super.parser.accepts("total-jobs", "Schedule a specific number of test workflows")
+                .requiredUnless(iniDirSpec, this.endlessSpec).withRequiredArg().ofType(Integer.class).defaultsTo(Integer.MAX_VALUE);
+        this.forceSpec = super.parser.accepts("force", "Force job generation even if hashing is activated");
 
         parseOptions(argv);
 
@@ -134,17 +140,17 @@ public class JobGenerator extends Base {
     // TODO: this will actually need to come from a file or web service
     private Order generateNewJob(String file, String workflowName, String workflowVersion, String workflowPath) {
 
-        SortedMap<String, String> hm;
+        SortedMap<String, String> iniFileEntries;
         if (file != null) {
             // TODO: this will come from a web service or file
-            hm = parseIniFile(file);
-            for (Entry<String, String> e : hm.entrySet()) {
+            iniFileEntries = parseIniFile(file);
+            for (Entry<String, String> e : iniFileEntries.entrySet()) {
                 log.info("KEY: " + e.getKey() + " VALUE: " + e.getValue());
             }
         } else {
-            hm = new TreeMap<>();
-            hm.put("param1", "bar");
-            hm.put("param2", "foo");
+            iniFileEntries = new TreeMap<>();
+            iniFileEntries.put("param1", "bar");
+            iniFileEntries.put("param2", "foo");
         }
 
         String hashStr;
@@ -152,25 +158,33 @@ public class JobGenerator extends Base {
 
         Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
         String[] arr = this.settings.getStringArray(Constants.JOB_GENERATOR_FILTER_KEYS_IN_HASH);
+        SortedMap<String, String> filteredIniFileEntries = iniFileEntries;
         if (arr.length > 0) {
             System.out.println("Using ini hash filter set: " + Arrays.toString(arr));
             Set<String> keys = new HashSet<>();
             SortedMap<String, String> filteredMap = new TreeMap<>();
             keys.addAll(Arrays.asList(arr));
-            for (Entry<String, String> entry : hm.entrySet()) {
+            for (Entry<String, String> entry : iniFileEntries.entrySet()) {
                 if (keys.contains(entry.getKey())) {
                     filteredMap.put(entry.getKey(), entry.getValue());
                 }
             }
-            hm = filteredMap;
+            filteredIniFileEntries = filteredMap;
         }
-        hashStr = String.valueOf(mapJoiner.join(hm).hashCode());
+        // don't use a real hashcode here, they can duplicate
+        // just use the value of the filtered map
+        hashStr = String.valueOf(mapJoiner.join(filteredIniFileEntries));
 
         if (this.settings.getBoolean(Constants.JOB_GENERATOR_CHECK_JOB_HASH, Boolean.FALSE)) {
             boolean runPreviously = db.previouslyRun(hashStr);
             if (runPreviously) {
-                System.out.println("Skipping file (null if testing) due to hashcode: " + file);
-                return null;
+                if (this.options.has(this.forceSpec)) {
+                    System.out.println("Forcing scheduling, but would have skipped file (null if testing) due to hash: " + file);
+                } else {
+                    System.out.println("Skipping file (null if testing) due to hash: " + file);
+                    return null;
+
+                }
             }
         }
 
@@ -181,7 +195,7 @@ public class JobGenerator extends Base {
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order();
-        newOrder.setJob(new Job(workflowName, workflowVersion, workflowPath, hashStr, hm));
+        newOrder.setJob(new Job(workflowName, workflowVersion, workflowPath, hashStr, iniFileEntries));
         newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
         newOrder.getProvision().setJobUUID(newOrder.getJob().getUuid());
 
