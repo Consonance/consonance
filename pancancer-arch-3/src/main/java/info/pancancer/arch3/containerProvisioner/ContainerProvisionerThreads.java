@@ -363,21 +363,24 @@ public class ContainerProvisionerThreads extends Base {
         CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
         List<String> arguments = new ArrayList<>();
         arguments.addAll(Arrays.asList(parse.getArguments()));
+
+        arguments.add("--kill-list");
+        // create a json file with the one targetted ip address
+        Gson gson = new Gson();
+        // we can't use the full set of database records because unlike Amazon, OpenStack reuses private ip addresses (very quickly too)
+        // String[] successfulVMAddresses = db.getSuccessfulVMAddresses();
+        String[] successfulVMAddresses = new String[] {};
         if (ipAddress != null) {
-            arguments.add("--kill-list");
-            // create a json file with the one targetted ip address
-            Gson gson = new Gson();
-            // we can't use this because unlike Amazon, OpenStack reuses private ip addresses (very quickly too)
-            // String[] successfulVMAddresses = db.getSuccessfulVMAddresses();
-            String[] successfulVMAddresses = new String[] { ipAddress };
-            LOG.info("Kill list contains: " + Arrays.asList(successfulVMAddresses));
-            Path createTempFile = Files.createTempFile("target", "json");
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(createTempFile.toFile()),
-                    StandardCharsets.UTF_8))) {
-                gson.toJson(successfulVMAddresses, bw);
-            }
-            arguments.add(createTempFile.toAbsolutePath().toString());
+            successfulVMAddresses = new String[] { ipAddress };
         }
+        LOG.info("Kill list contains: " + Arrays.asList(successfulVMAddresses));
+        Path createTempFile = Files.createTempFile("target", "json");
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(createTempFile.toFile()),
+                StandardCharsets.UTF_8))) {
+            gson.toJson(successfulVMAddresses, bw);
+        }
+        arguments.add(createTempFile.toAbsolutePath().toString());
+
         String[] toArray = arguments.toArray(new String[arguments.size()]);
         LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
         // need to make sure reaper and deployer do not overlap
