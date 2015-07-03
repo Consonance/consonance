@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -251,7 +252,7 @@ public class Coordinator extends Base {
         }
 
         @Override
-        public Void call() throws IOException {
+        public Void call() throws IOException, TimeoutException {
             Channel resultsChannel = null;
             try {
 

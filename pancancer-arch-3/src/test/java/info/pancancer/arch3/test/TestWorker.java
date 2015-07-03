@@ -100,8 +100,6 @@ public class TestWorker {
         Mockito.when(mockRunner.call()).thenReturn(result);
         PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
 
-        // Ensure that the real heartbeat uses a mock channel.
-        heartbeat.setReportingChannel(mockChannel);
         // Always return this heartbeat object.
         PowerMockito.whenNew(WorkerHeartbeat.class).withNoArguments().thenReturn(heartbeat);
     }

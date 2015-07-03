@@ -1,6 +1,7 @@
 package info.pancancer.arch3.worker;
 
 import com.google.gson.Gson;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -361,7 +362,9 @@ public class WorkerRunnable implements Runnable {
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
-            heartbeat.setReportingChannel(resultsChannel);
+            // channels should not be shared between threads https://www.rabbitmq.com/api-guide.html#channel-threads
+            // heartbeat.setReportingChannel(resultsChannel);
+            heartbeat.setSettings(settings);
             heartbeat.setSecondsDelay(settings.getDouble(Constants.WORKER_HEARTBEAT_RATE, WorkerHeartbeat.DEFAULT_DELAY));
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
@@ -451,11 +454,23 @@ public class WorkerRunnable implements Runnable {
     private void finishJob(String message) {
         log.info("Publishing worker results to results channel " + this.resultsQueueName + ": " + message);
         try {
-            resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-                    message.getBytes(StandardCharsets.UTF_8));
-            resultsChannel.waitForConfirms();
+            boolean success = false;
+            do {
+                try {
+                    resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
+                            message.getBytes(StandardCharsets.UTF_8));
+                    resultsChannel.waitForConfirms();
+                    success = true;
+                } catch (AlreadyClosedException e) {
+                    // retry indefinitely if the connection is down
+                    log.error("could not send closed message, retrying", e);
+                    Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);
+                }
+            } while (!success);
+
         } catch (IOException | InterruptedException e) {
             log.error(e.toString());
         }
+        log.info("Finished job report, let's call it a day");
     }
 }

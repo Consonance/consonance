@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -64,7 +65,7 @@ public class Utilities {
      * @param settings
      * @throws IOException
      */
-    public static void clearState(HierarchicalINIConfiguration settings) throws IOException {
+    public static void clearState(HierarchicalINIConfiguration settings) throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
