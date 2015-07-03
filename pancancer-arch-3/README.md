@@ -136,13 +136,19 @@ If you need to create a worker, use the following Ansible playbook https://githu
 
 #### Test Mode Worker
 
-    The test mode worker simply consumes a job and sends back results without running anything. This is used to test the basic lifecycle of our components. 
+The test mode worker simply consumes a job and sends back results without running anything. This is used to test the basic lifecycle of our components. 
 
     java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.worker.Worker --config conf/config.json --uuid 1234 --test
 
 ### Checking Results
 
 See [reporting](../pancancer-reporting/README.md)
+
+#### Requeuing Jobs
+
+This tool allows you to export ini files belonging to failed and lost jobs given their IDs. Use then when you have identified transient errors with workflow runs or when a lost job really has been lost (i.e. a worker host has gone down) 
+
+    java -cp target/pancancer-arch-3-*.jar info.pancancer.arch3.util.LostJobExporter 
 
 ### Upgrade SOP
 
