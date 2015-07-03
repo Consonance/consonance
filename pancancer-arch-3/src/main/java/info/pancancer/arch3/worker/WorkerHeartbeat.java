@@ -42,33 +42,33 @@ public class WorkerHeartbeat implements Runnable {
 
             // byte[] stdOut = this.getMessageBody().getBytes(StandardCharsets.UTF_8);
             try {
-                Status heartbeatStatus = new Status();
-                heartbeatStatus.setJobUuid(this.jobUuid);
-                heartbeatStatus.setMessage("job is running; IP address: " + networkID);
-                heartbeatStatus.setState(StatusState.RUNNING);
-                heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
-                heartbeatStatus.setVmUuid(this.vmUuid);
-                heartbeatStatus.setIpAddress(networkID);
+                try {
+                    Status heartbeatStatus = new Status();
+                    heartbeatStatus.setJobUuid(this.jobUuid);
+                    heartbeatStatus.setMessage("job is running; IP address: " + networkID);
+                    heartbeatStatus.setState(StatusState.RUNNING);
+                    heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
+                    heartbeatStatus.setVmUuid(this.vmUuid);
+                    heartbeatStatus.setIpAddress(networkID);
 
-                // String stdOut = this.statusSource.getStdOut();
-                Lock lock = new ReentrantLock();
-                lock.lock();
-                String stdOut = this.statusSource.getStdOut(stdoutSnipSize);
-                String stdErr = this.statusSource.getStdErr();
-                lock.unlock();
-                heartbeatStatus.setStdout(stdOut);
-                heartbeatStatus.setStderr(stdErr);
-                String heartBeatMessage = heartbeatStatus.toJSON();
-                LOG.debug("Sending heartbeat message to " + queueName + ", with body: " + heartBeatMessage);
-                reportingChannel.basicPublish(queueName, queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-                        heartBeatMessage.getBytes(StandardCharsets.UTF_8));
-                Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
-            } catch (IOException e) {
-                LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);
-                // TODO: Should the thread die if this happens? Should the exception be rethrown?
-                // For now, we'll just end the thread.
-                // return;
-                Thread.currentThread().interrupt();
+                    // String stdOut = this.statusSource.getStdOut();
+                    Lock lock = new ReentrantLock();
+                    lock.lock();
+                    String stdOut = this.statusSource.getStdOut(stdoutSnipSize);
+                    String stdErr = this.statusSource.getStdErr();
+                    lock.unlock();
+                    heartbeatStatus.setStdout(stdOut);
+                    heartbeatStatus.setStderr(stdErr);
+                    String heartBeatMessage = heartbeatStatus.toJSON();
+                    LOG.debug("Sending heartbeat message to " + queueName + ", with body: " + heartBeatMessage);
+                    reportingChannel.basicPublish(queueName, queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
+                            heartBeatMessage.getBytes(StandardCharsets.UTF_8));
+                    Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
+                } catch (IOException e) {
+                    LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);
+                    // retry after a ten minutes, do not die simply because the launcher is unavailable, it may come back
+                    Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 LOG.info("Heartbeat shutting down.");

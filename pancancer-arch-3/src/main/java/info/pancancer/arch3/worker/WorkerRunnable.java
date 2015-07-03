@@ -205,6 +205,12 @@ public class WorkerRunnable implements Runnable {
                         String statusJSON = status.toJSON();
 
                         log.info(" WORKER LAUNCHING JOB");
+
+                        // greedy acknowledge, it will be easier to deal with lost jobs than zombie workers in hostile OpenStack
+                        // environments
+                        log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
+                        jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+
                         // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own
                         // thread, harvesting STDERR/STDOUT periodically
                         WorkflowResult workflowResult = new WorkflowResult();
@@ -232,8 +238,6 @@ public class WorkerRunnable implements Runnable {
                     } else {
                         log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                     }
-                    log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
-                    jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } else {
                     log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                 }
@@ -344,7 +348,7 @@ public class WorkerRunnable implements Runnable {
             String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
             CommandLine cli = new CommandLine("docker");
             cli.addArgument("run");
-            List<String> args = new ArrayList<String>(Arrays.asList("--rm", "-h", "master", "-t", "-v",
+            List<String> args = new ArrayList<>(Arrays.asList("--rm", "-h", "master", "-t", "-v",
                     "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini",
                     "-v", "/datastore:/datastore", "-v", "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos"));
             if (seqwareSettingsFile != null) {
