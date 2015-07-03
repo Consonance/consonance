@@ -181,10 +181,11 @@ public class Coordinator extends Base {
 
                 vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
+                vmChannel.waitForConfirms();
 
                 log.info(" + MESSAGE SENT!\n" + message + "\n");
 
-            } catch (IOException ex) {
+            } catch (IOException | InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
 

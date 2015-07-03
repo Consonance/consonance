@@ -225,7 +225,8 @@ public class JobGenerator extends Base {
 
             this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
                     job.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException ex) {
+            jchannel.waitForConfirms();
+        } catch (IOException | InterruptedException ex) {
             log.error(ex.toString());
         }
 

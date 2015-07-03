@@ -210,6 +210,8 @@ public class WorkerRunnable implements Runnable {
                         // environments
                         log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
                         jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                        // we need to close the channel after acknowledgement to avoid reserving an additional job
+                        jobChannel.close();
 
                         // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own
                         // thread, harvesting STDERR/STDOUT periodically
@@ -248,10 +250,6 @@ public class WorkerRunnable implements Runnable {
             if (resultsChannel != null) {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
-            }
-            if (jobChannel != null) {
-                jobChannel.close();
-                jobChannel.getConnection().close();
             }
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
@@ -344,6 +342,7 @@ public class WorkerRunnable implements Runnable {
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
+            resultsChannel.waitForConfirms();
 
             String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
             CommandLine cli = new CommandLine("docker");
@@ -454,7 +453,8 @@ public class WorkerRunnable implements Runnable {
         try {
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
+            resultsChannel.waitForConfirms();
+        } catch (IOException | InterruptedException e) {
             log.error(e.toString());
         }
     }

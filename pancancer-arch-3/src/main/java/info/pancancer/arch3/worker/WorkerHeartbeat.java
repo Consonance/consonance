@@ -63,6 +63,8 @@ public class WorkerHeartbeat implements Runnable {
                     LOG.debug("Sending heartbeat message to " + queueName + ", with body: " + heartBeatMessage);
                     reportingChannel.basicPublish(queueName, queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                             heartBeatMessage.getBytes(StandardCharsets.UTF_8));
+                    reportingChannel.waitForConfirms();
+
                     Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
                 } catch (IOException e) {
                     LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);
