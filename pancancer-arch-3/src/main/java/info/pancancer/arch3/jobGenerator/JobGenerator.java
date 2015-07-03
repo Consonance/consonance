@@ -16,10 +16,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionSpecBuilder;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -140,7 +140,7 @@ public class JobGenerator extends Base {
     // TODO: this will actually need to come from a file or web service
     private Order generateNewJob(String file, String workflowName, String workflowVersion, String workflowPath) {
 
-        SortedMap<String, String> iniFileEntries;
+        Map<String, String> iniFileEntries;
         if (file != null) {
             // TODO: this will come from a web service or file
             iniFileEntries = parseIniFile(file);
@@ -148,7 +148,7 @@ public class JobGenerator extends Base {
                 log.info("KEY: " + e.getKey() + " VALUE: " + e.getValue());
             }
         } else {
-            iniFileEntries = new TreeMap<>();
+            iniFileEntries = new LinkedHashMap<>();
             iniFileEntries.put("param1", "bar");
             iniFileEntries.put("param2", "foo");
         }
@@ -158,11 +158,11 @@ public class JobGenerator extends Base {
 
         Joiner.MapJoiner mapJoiner = Joiner.on(',').withKeyValueSeparator("=");
         String[] arr = this.settings.getStringArray(Constants.JOB_GENERATOR_FILTER_KEYS_IN_HASH);
-        SortedMap<String, String> filteredIniFileEntries = iniFileEntries;
+        Map<String, String> filteredIniFileEntries = iniFileEntries;
         if (arr.length > 0) {
             System.out.println("Using ini hash filter set: " + Arrays.toString(arr));
             Set<String> keys = new HashSet<>();
-            SortedMap<String, String> filteredMap = new TreeMap<>();
+            Map<String, String> filteredMap = new LinkedHashMap<>();
             keys.addAll(Arrays.asList(arr));
             for (Entry<String, String> entry : iniFileEntries.entrySet()) {
                 if (keys.contains(entry.getKey())) {
@@ -203,9 +203,9 @@ public class JobGenerator extends Base {
 
     }
 
-    private SortedMap<String, String> parseIniFile(String iniFile) {
+    private Map<String, String> parseIniFile(String iniFile) {
 
-        SortedMap<String, String> iniHash = new TreeMap<>();
+        Map<String, String> iniHash = new LinkedHashMap<>();
 
         try {
             IniFile ini = new IniFile(iniFile);
