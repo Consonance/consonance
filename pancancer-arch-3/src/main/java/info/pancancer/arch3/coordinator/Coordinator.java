@@ -351,6 +351,7 @@ public class Coordinator extends Base {
 
                 // checks the jobs in the database and sees if any have become "lost"
                 List<Job> jobs = db.getJobs(JobState.RUNNING);
+                jobs.addAll(db.getJobs(JobState.LOST));
 
                 // how long before we call something lost?
                 long secBeforeLost = settings.getLong(Constants.COORDINATOR_SECONDS_BEFORE_LOST);
@@ -360,15 +361,20 @@ public class Coordinator extends Base {
                     Timestamp updateTs = job.getUpdateTs();
 
                     long diff = nowTs.getTime() - updateTs.getTime();
-                    long diffSec = diff / Base.ONE_SECOND_IN_MILLISECONDS;
+                    long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);
 
                     log.error("DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
 
+                    JobState state = job.getState();
                     // if this is true need to mark the job as lost!
-                    if (diffSec > secBeforeLost) {
+                    if (state == JobState.RUNNING && diffSec > secBeforeLost) {
                         // it must be lost
-                        log.error("JOB " + job.getUuid() + " NOT SEEN IN " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
+                        log.error("Running job " + job.getUuid() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
                         db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
+                    } else if (state == JobState.LOST && diffSec < secBeforeLost) {
+                        log.error("Lost job " + job.getUuid() + " found anew at " + diffSec + " > " + secBeforeLost
+                                + " MARKING AS RUNNING!");
+                        db.updateJob(job.getUuid(), job.getVmUuid(), JobState.RUNNING);
                     }
 
                 }
