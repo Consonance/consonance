@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 /**
@@ -114,7 +115,7 @@ public class Arch3ReportImpl implements ReportAPI {
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
                 int messagesToCache = db.getJobs(JobState.RUNNING).size();
-                Map<String, Status> cache = new HashMap<>();
+                Map<String, Status> cache = new TreeMap<>();
 
                 int loop = 0;
                 do {
@@ -143,7 +144,7 @@ public class Arch3ReportImpl implements ReportAPI {
                         resultsChannel.close();
                         resultsChannel.getConnection().close();
                     }
-                } catch (IOException ex) {
+                } catch (IOException | TimeoutException ex) {
                     System.err.println("Could not close channel");
                 }
             }

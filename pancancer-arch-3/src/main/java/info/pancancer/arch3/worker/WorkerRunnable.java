@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,9 +35,16 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -64,6 +72,7 @@ public class WorkerRunnable implements Runnable {
     private boolean endless = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
+    private static final int FIVE_SECONDS_IN_MS = 5000;
 
     /**
      * Create a new Worker.
@@ -129,7 +138,20 @@ public class WorkerRunnable implements Runnable {
         try {
 
             // the VM UUID
-            log.info(" WORKER VM UUID: '" + vmUuid + "'");
+            log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
+            HttpClient client = new HttpClient();
+            client.setConnectionTimeout(FIVE_SECONDS_IN_MS);
+            if (vmUuid == null) {
+                tryOpenStackMetadata(client);
+            }
+            if (vmUuid == null) {
+                tryAWSMetadata(client);
+            }
+            if (vmUuid == null) {
+                // crash horribly, there is no id for this worker
+                throw new RuntimeException("Could not determine cloud id");
+            }
+            log.info(" WORKER VM UUID will  be: '" + vmUuid + "'");
 
             // read from
             jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
@@ -217,12 +239,57 @@ public class WorkerRunnable implements Runnable {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
             }
+/*
             if (jobChannel != null) {
                 jobChannel.close();
                 jobChannel.getConnection().close();
             }
+*/
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
+        }
+    }
+
+    private void tryAWSMetadata(HttpClient client) {
+        String responseBody;
+        // if no OpenStack uuid is found, grab a normal instance_id from AWS
+        String awsURL = "http://169.254.169.254/2014-11-05/meta-data/instance-id";
+        HttpMethod method = new GetMethod(awsURL);
+        try {
+            client.executeMethod(method);
+            responseBody = method.getResponseBodyAsString();
+            if (responseBody != null && method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                vmUuid = responseBody;
+                log.info(" WORKER VM UUID overriden using AWS meta-data as: '" + vmUuid + "'");
+            }
+        } catch (HttpException he) {
+            System.err.println("Http error connecting to '" + awsURL + "'");
+        } catch (IOException ioe) {
+            System.err.println("Unable to connect to '" + awsURL + "'");
+        }
+    }
+
+    private void tryOpenStackMetadata(HttpClient client) {
+        String responseBody;
+        String openStackURL = "http://169.254.169.254/openstack/latest/meta_data.json";
+        // try to pull OpenStack uuid (while openstack provides an instance-id, unlike amazon, its useless)
+        HttpMethod method = new GetMethod(openStackURL);
+        try {
+            client.executeMethod(method);
+            responseBody = method.getResponseBodyAsString();
+            if (method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                Gson gson = new Gson();
+                Map<String, String> map = (Map<String, String>) gson.fromJson(responseBody, Object.class);
+                String uuid = map.get("uuid");
+                if (uuid != null) {
+                    vmUuid = uuid;
+                    log.info(" WORKER VM UUID overriden using OpenStack meta-data as: '" + vmUuid + "'");
+                }
+            }
+        } catch (HttpException he) {
+            System.err.println("Http error connecting to '" + openStackURL + "'");
+        } catch (IOException ioe) {
+            System.err.println("Unable to connect to '" + openStackURL + "'");
         }
     }
 
@@ -265,6 +332,7 @@ public class WorkerRunnable implements Runnable {
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
+            resultsChannel.waitForConfirms();
 
             String containerIDFile = "/home/" + this.userName + "/worker.cid";
             String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
@@ -283,7 +351,9 @@ public class WorkerRunnable implements Runnable {
             
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
-            heartbeat.setReportingChannel(resultsChannel);
+            // channels should not be shared between threads https://www.rabbitmq.com/api-guide.html#channel-threads
+            // heartbeat.setReportingChannel(resultsChannel);
+            heartbeat.setSettings(settings);
             heartbeat.setSecondsDelay(settings.getDouble(Constants.WORKER_HEARTBEAT_RATE, WorkerHeartbeat.DEFAULT_DELAY));
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
@@ -294,7 +364,7 @@ public class WorkerRunnable implements Runnable {
             long postsleep = settings.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP);
             long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * presleep;
             long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * postsleep;
-            
+
             workflowRunner.setCli(cli);
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
@@ -403,10 +473,23 @@ public class WorkerRunnable implements Runnable {
     private void finishJob(String message) {
         log.info("Publishing worker results to results channel " + this.resultsQueueName + ": " + message);
         try {
-            resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-                    message.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
+            boolean success = false;
+            do {
+                try {
+                    resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
+                            message.getBytes(StandardCharsets.UTF_8));
+                    resultsChannel.waitForConfirms();
+                    success = true;
+                } catch (AlreadyClosedException e) {
+                    // retry indefinitely if the connection is down
+                    log.error("could not send closed message, retrying", e);
+                    Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);
+                }
+            } while (!success);
+
+        } catch (IOException | InterruptedException e) {
             log.error(e.toString());
         }
+        log.info("Finished job report, let's call it a day");
     }
 }

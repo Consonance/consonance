@@ -21,6 +21,7 @@ import info.pancancer.arch3.jobGenerator.JobGenerator;
 import info.pancancer.arch3.utils.ITUtilities;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,7 +33,7 @@ import org.junit.Test;
 public class WorkerIT {
 
     @BeforeClass
-    public static void setup() throws IOException {
+    public static void setup() throws IOException, TimeoutException {
         ITUtilities.clearState();
     }
 

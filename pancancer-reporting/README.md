@@ -3,6 +3,14 @@
 There are two methods of reporting, they should not be used concurrently
 Note that both require a valid config file (in these examples, at ~/.arch3/config ). 
 
+The parameters needed in that file are as follows:
+
+    [report]
+    # defines what name the bot will respond to
+    namespace = 
+    # given by slack's bot integration
+    slack_token = 
+
 ### Traditional CLI
 
 A standard CLI utility for Linux is provided
@@ -30,4 +38,6 @@ A standard CLI utility for Linux is provided
 You can also communicate with our reporting tools as a SlackBot. This is our recommended approach. 
 
     java -cp target/pancancer-reporting-*.jar  info.pancancer.arch3.reportbot.SlackReportBot --endless --config ~/.arch3/config
+    
+    
     

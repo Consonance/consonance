@@ -16,6 +16,8 @@ public class Base {
 
     public static final int FIVE_SECOND_IN_MILLISECONDS = 5000;
     public static final int ONE_SECOND_IN_MILLISECONDS = 1000;
+    public static final long TEN_MINUTES_IN_MILLISECONDS = 600000;
+    public static final long ONE_MINUTE_IN_MILLISECONDS = 60000;
     public static final int DEFAULT_DISKSPACE = 1024;
     public static final int DEFAULT_MEMORY = 128;
     public static final int DEFAULT_NUM_CORES = 8;

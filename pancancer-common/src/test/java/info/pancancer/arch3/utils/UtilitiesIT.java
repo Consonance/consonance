@@ -19,6 +19,7 @@ package info.pancancer.arch3.utils;
 import com.rabbitmq.client.Channel;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
@@ -59,7 +60,7 @@ public class UtilitiesIT {
      * @throws java.io.IOException
      */
     @Test
-    public void testSetupQueue() throws IOException {
+    public void testSetupQueue() throws IOException, TimeoutException {
         Utilities instance = new Utilities();
         Channel result = Utilities.setupQueue(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
@@ -72,7 +73,7 @@ public class UtilitiesIT {
      * @throws java.io.IOException
      */
     @Test
-    public void testSetupMultiQueue() throws IOException {
+    public void testSetupMultiQueue() throws IOException, TimeoutException {
         Utilities instance = new Utilities();
         Channel result = Utilities.setupExchange(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());

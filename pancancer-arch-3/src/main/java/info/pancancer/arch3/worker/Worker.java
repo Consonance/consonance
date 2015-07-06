@@ -32,8 +32,8 @@ public class Worker extends Base {
         this.maxRunsSpec = parser
                 .accepts("max-runs", "The maximum number of workflows to execute. If \"--endless\" is set, this number will be ignored.")
                 .withOptionalArg().ofType(Integer.class).defaultsTo(1);
-        // UUID should be required: if the user doesn't specify it, there's no other way for the VM to get a UUID
-        this.uuidSpec = parser.accepts("uuid", "The UUID of this VM.").withRequiredArg().required().ofType(String.class).required();
+        // UUID is now optional, we can read cloud init
+        this.uuidSpec = parser.accepts("uuid", "The UUID of this VM.").withRequiredArg().ofType(String.class);
         this.pidFileSpec = parser.accepts("pidFile", "Path to lock file.").withRequiredArg().ofType(String.class)
                 .defaultsTo("/var/run/arch3_worker.pid");
         super.parseOptions(argv);

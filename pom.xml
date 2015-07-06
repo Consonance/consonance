@@ -13,14 +13,14 @@
     <artifactId>sandbox</artifactId>
     <packaging>pom</packaging>
     <groupId>io.cancer.collaboratory</groupId>
-    <version>1.1-alpha.5-SNAPSHOT</version>
+    <version>1.1-beta.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:CancerCollaboratory/sandbox.git</github.url>
         <skipITs>true</skipITs>
-        <youxia.version>1.1.0-rc.1</youxia.version>
+        <youxia.version>1.1.0-rc.2</youxia.version>
         <cobertura.version>2.1.1</cobertura.version>
         <seqware.version>1.1.1</seqware.version>
     </properties>
@@ -44,6 +44,16 @@
     <dependencyManagement>
         <!-- need to unify shared dependency versions -->
         <dependencies>
+            <dependency>
+                <groupId>com.rabbitmq</groupId>
+                <artifactId>amqp-client</artifactId>
+                <version>3.5.3</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.9</version>
+            </dependency>
             <dependency>
                 <groupId>io.cloudbindle</groupId>
                 <artifactId>youxia-common</artifactId>
