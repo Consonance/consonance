@@ -40,6 +40,7 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,7 +141,12 @@ public class WorkerRunnable implements Runnable {
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
             HttpClient client = new HttpClient();
-            client.setConnectionTimeout(FIVE_SECONDS_IN_MS);
+            //HttpClient.setConnectionTimeout is deprecated!
+            //client.setConnectionTimeout(FIVE_SECONDS_IN_MS);
+            HttpConnectionManagerParams connParams = new HttpConnectionManagerParams();
+            connParams.setConnectionTimeout(FIVE_SECONDS_IN_MS);
+            client.getHttpConnectionManager().setParams(connParams);
+            
             if (vmUuid == null) {
                 tryOpenStackMetadata(client);
             }
@@ -279,7 +285,7 @@ public class WorkerRunnable implements Runnable {
             responseBody = method.getResponseBodyAsString();
             if (method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 Gson gson = new Gson();
-                Map<String, String> map = (Map<String, String>) gson.fromJson(responseBody, Object.class);
+                Map<String, String> map = (Map<String, String>) gson.fromJson(responseBody, Map.class);
                 String uuid = map.get("uuid");
                 if (uuid != null) {
                     vmUuid = uuid;
