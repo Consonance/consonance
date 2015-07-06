@@ -5,7 +5,7 @@
     <artifactId>pancancer-common</artifactId>
 
     <parent>
-        <version>1.1-beta.1</version>
+        <version>1.1-beta.2-SNAPSHOT</version>
         <groupId>io.cancer.collaboratory</groupId>
         <artifactId>sandbox</artifactId>
         <relativePath>../pom.xml</relativePath>
