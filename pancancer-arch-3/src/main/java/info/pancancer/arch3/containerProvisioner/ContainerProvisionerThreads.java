@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 import joptsimple.OptionSpecBuilder;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
@@ -97,7 +98,7 @@ public class ContainerProvisionerThreads extends Base {
         }
 
         @Override
-        public Void call() throws IOException {
+        public Void call() throws IOException, TimeoutException {
             Channel vmChannel = null;
             try {
 

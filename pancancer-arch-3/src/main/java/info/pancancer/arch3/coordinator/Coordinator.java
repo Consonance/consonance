@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -181,10 +182,11 @@ public class Coordinator extends Base {
 
                 vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
+                vmChannel.waitForConfirms();
 
                 log.info(" + MESSAGE SENT!\n" + message + "\n");
 
-            } catch (IOException ex) {
+            } catch (IOException | InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
 
@@ -250,7 +252,7 @@ public class Coordinator extends Base {
         }
 
         @Override
-        public Void call() throws IOException {
+        public Void call() throws IOException, TimeoutException {
             Channel resultsChannel = null;
             try {
 
@@ -349,6 +351,7 @@ public class Coordinator extends Base {
 
                 // checks the jobs in the database and sees if any have become "lost"
                 List<Job> jobs = db.getJobs(JobState.RUNNING);
+                jobs.addAll(db.getJobs(JobState.LOST));
 
                 // how long before we call something lost?
                 long secBeforeLost = settings.getLong(Constants.COORDINATOR_SECONDS_BEFORE_LOST);
@@ -358,15 +361,20 @@ public class Coordinator extends Base {
                     Timestamp updateTs = job.getUpdateTs();
 
                     long diff = nowTs.getTime() - updateTs.getTime();
-                    long diffSec = diff / Base.ONE_SECOND_IN_MILLISECONDS;
+                    long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);
 
                     log.error("DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
 
+                    JobState state = job.getState();
                     // if this is true need to mark the job as lost!
-                    if (diffSec > secBeforeLost) {
+                    if (state == JobState.RUNNING && diffSec > secBeforeLost) {
                         // it must be lost
-                        log.error("JOB " + job.getUuid() + " NOT SEEN IN " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
+                        log.error("Running job " + job.getUuid() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
                         db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
+                    } else if (state == JobState.LOST && diffSec < secBeforeLost) {
+                        log.error("Lost job " + job.getUuid() + " found anew at " + diffSec + " > " + secBeforeLost
+                                + " MARKING AS RUNNING!");
+                        db.updateJob(job.getUuid(), job.getVmUuid(), JobState.RUNNING);
                     }
 
                 }

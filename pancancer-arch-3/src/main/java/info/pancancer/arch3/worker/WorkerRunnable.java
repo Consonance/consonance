@@ -1,6 +1,7 @@
 package info.pancancer.arch3.worker;
 
 import com.google.gson.Gson;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
@@ -210,6 +211,8 @@ public class WorkerRunnable implements Runnable {
                         // environments
                         log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
                         jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                        // we need to close the channel after acknowledgement to avoid reserving an additional job
+                        jobChannel.close();
 
                         // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own
                         // thread, harvesting STDERR/STDOUT periodically
@@ -248,10 +251,6 @@ public class WorkerRunnable implements Runnable {
             if (resultsChannel != null) {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
-            }
-            if (jobChannel != null) {
-                jobChannel.close();
-                jobChannel.getConnection().close();
             }
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
@@ -344,6 +343,7 @@ public class WorkerRunnable implements Runnable {
             Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
+            resultsChannel.waitForConfirms();
 
             String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
             CommandLine cli = new CommandLine("docker");
@@ -362,7 +362,9 @@ public class WorkerRunnable implements Runnable {
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
-            heartbeat.setReportingChannel(resultsChannel);
+            // channels should not be shared between threads https://www.rabbitmq.com/api-guide.html#channel-threads
+            // heartbeat.setReportingChannel(resultsChannel);
+            heartbeat.setSettings(settings);
             heartbeat.setSecondsDelay(settings.getDouble(Constants.WORKER_HEARTBEAT_RATE, WorkerHeartbeat.DEFAULT_DELAY));
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
@@ -452,10 +454,23 @@ public class WorkerRunnable implements Runnable {
     private void finishJob(String message) {
         log.info("Publishing worker results to results channel " + this.resultsQueueName + ": " + message);
         try {
-            resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-                    message.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
+            boolean success = false;
+            do {
+                try {
+                    resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
+                            message.getBytes(StandardCharsets.UTF_8));
+                    resultsChannel.waitForConfirms();
+                    success = true;
+                } catch (AlreadyClosedException e) {
+                    // retry indefinitely if the connection is down
+                    log.error("could not send closed message, retrying", e);
+                    Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);
+                }
+            } while (!success);
+
+        } catch (IOException | InterruptedException e) {
             log.error(e.toString());
         }
+        log.info("Finished job report, let's call it a day");
     }
 }

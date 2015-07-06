@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -47,7 +48,7 @@ public class PostgreSQLIT {
     private PostgreSQL postgres;
 
     @BeforeClass
-    public static void setup() throws IOException {
+    public static void setup() throws IOException, TimeoutException {
         ITUtilities.clearState();
     }
 

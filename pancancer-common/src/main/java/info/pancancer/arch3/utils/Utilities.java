@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -64,7 +65,7 @@ public class Utilities {
      * @param settings
      * @throws IOException
      */
-    public static void clearState(HierarchicalINIConfiguration settings) throws IOException {
+    public static void clearState(HierarchicalINIConfiguration settings) throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
@@ -81,9 +82,11 @@ public class Utilities {
         factory.setHost(server);
         factory.setUsername(user);
         factory.setPassword(pass);
+        factory.setAutomaticRecoveryEnabled(true);
         Connection connection = factory.newConnection();
         channel = connection.createChannel();
         channel.basicQos(1);
+        channel.confirmSelect();
 
         String prefix = settings.getString(Constants.RABBIT_QUEUE_NAME);
         String[] queues = { prefix + "_jobs", prefix + "_orders", prefix + "_vms", prefix + "_for_CleanupJobs", prefix + "_for_CleanupVMs" };
@@ -110,10 +113,12 @@ public class Utilities {
             factory.setHost(server);
             factory.setUsername(user);
             factory.setPassword(pass);
+            factory.setAutomaticRecoveryEnabled(true);
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
             channel.basicQos(1);
             channel.queueDeclare(queue, true, false, false, null);
+            channel.confirmSelect();
             // channel.queueDeclarePassive(queue);
 
         } catch (Exception ex) {
@@ -138,9 +143,11 @@ public class Utilities {
             factory.setHost(server);
             factory.setUsername(user);
             factory.setPassword(pass);
+            factory.setAutomaticRecoveryEnabled(true);
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
             channel.exchangeDeclare(queue, "fanout", true, false, null);
+            channel.confirmSelect();
 
         } catch (Exception ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
