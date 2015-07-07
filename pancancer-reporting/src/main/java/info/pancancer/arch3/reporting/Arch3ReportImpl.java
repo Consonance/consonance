@@ -132,7 +132,7 @@ public class Arch3ReportImpl implements ReportAPI {
 
                 return cache;
 
-            } catch (IOException | ShutdownSignalException | InterruptedException | ConsumerCancelledException ex) {
+            } catch (IOException | ShutdownSignalException | InterruptedException | TimeoutException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             } finally {
                 try {

@@ -9,6 +9,7 @@ import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Utilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -42,11 +43,10 @@ public class WorkerHeartbeat implements Runnable {
         LOG.info("starting heartbeat thread, will send heartbeat message ever " + secondsDelay + " seconds.");
         while (!Thread.currentThread().interrupted()) {
 
-            Channel reportingChannel = Utilities.setupExchange(settings, this.queueName);
-
             // byte[] stdOut = this.getMessageBody().getBytes(StandardCharsets.UTF_8);
             try {
                 try {
+                    Channel reportingChannel = Utilities.setupExchange(settings, this.queueName);
                     Status heartbeatStatus = new Status();
                     heartbeatStatus.setJobUuid(this.jobUuid);
                     heartbeatStatus.setMessage("job is running; IP address: " + networkID);
@@ -70,7 +70,7 @@ public class WorkerHeartbeat implements Runnable {
                     reportingChannel.waitForConfirms();
 
                     Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
-                } catch (IOException | AlreadyClosedException e) {
+                } catch (IOException | TimeoutException | AlreadyClosedException e) {
                     LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);
                     // retry after a minute, do not die simply because the launcher is unavailable, it may come back
                     Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);

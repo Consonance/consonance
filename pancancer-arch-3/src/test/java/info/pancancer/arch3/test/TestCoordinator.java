@@ -17,6 +17,7 @@ import java.sql.DriverManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolingDataSource;
@@ -72,7 +73,7 @@ public class TestCoordinator {
     private static StringBuffer outBuffer = new StringBuffer();
 
     @Before
-    public void setup() throws IOException {
+    public void setup() throws IOException, IOException, TimeoutException {
         MockitoAnnotations.initMocks(this);
 
         outBuffer = new StringBuffer();
