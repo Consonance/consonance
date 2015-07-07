@@ -245,12 +245,6 @@ public class WorkerRunnable implements Runnable {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
             }
-/*
-            if (jobChannel != null) {
-                jobChannel.close();
-                jobChannel.getConnection().close();
-            }
-*/
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -340,7 +334,10 @@ public class WorkerRunnable implements Runnable {
                     message.getBytes(StandardCharsets.UTF_8));
             resultsChannel.waitForConfirms();
 
-            String containerIDFile = "/home/" + this.userName + "/worker.cid";
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_z");
+            String timestampStr = sdf.format(new Date());
+
+            String containerIDFile = "/home/" + this.userName + "/worker_"+timestampStr+".cid";
             String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
             
             List<String> args = new ArrayList<String>(Arrays.asList("--cidfile=\"" + containerIDFile+"\"", "-h", "master", "-t", "-v",
@@ -398,12 +395,9 @@ public class WorkerRunnable implements Runnable {
     }
 
     private String writeDockerRunnerScript(List<String> dockerArgs) throws IOException {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_z");
-        String timestampStr = sdf.format(new Date());
 
         StringBuilder sb = new StringBuilder();
         sb.append("#! /bin/bash\n");
-        sb.append("[[ -f /home/" + this.userName + "/worker.cid ]] && mv /home/" + this.userName + "/worker.cid  /home/" + this.userName + "/worker." + timestampStr + ".cid \n");
         sb.append("docker run ");
         for (String arg : dockerArgs) {
             sb.append(arg).append(" ");
