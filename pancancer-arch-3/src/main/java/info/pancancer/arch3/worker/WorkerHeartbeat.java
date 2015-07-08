@@ -3,14 +3,18 @@ package info.pancancer.arch3.worker;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
+
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Utilities;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +44,8 @@ public class WorkerHeartbeat implements Runnable {
     @Override
     public void run() {
         LOG.info("starting heartbeat thread, will send heartbeat message ever " + secondsDelay + " seconds.");
+        Channel reportingChannel = Utilities.setupExchange(settings, this.queueName);
         while (!Thread.currentThread().interrupted()) {
-
-            Channel reportingChannel = Utilities.setupExchange(settings, this.queueName);
 
             // byte[] stdOut = this.getMessageBody().getBytes(StandardCharsets.UTF_8);
             try {
@@ -76,8 +79,27 @@ public class WorkerHeartbeat implements Runnable {
                     Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);
                 }
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
                 LOG.info("Heartbeat shutting down.");
+                if (reportingChannel.getConnection().isOpen()) {
+                    try {
+                        reportingChannel.getConnection().close();
+                    } catch (IOException e1) {
+                        LOG.error("Error closing reportingChannel connection: " + e1.getMessage(), e1);
+                    }
+                }
+                if (reportingChannel.isOpen()) {
+                    try {
+                        reportingChannel.close();
+                    } catch (IOException e1) {
+                        LOG.error("Error (IOException) closing reportingChannel: " + e1.getMessage(), e1);
+                    } catch (TimeoutException e1) {
+                        LOG.error("Error (TimeoutException) closing reportingChannel: " + e1.getMessage(), e1);
+                    }
+                }
+                LOG.debug("reporting channel open: "+reportingChannel.isOpen());
+                LOG.debug("reporting channel connection open: "+reportingChannel.getConnection().isOpen());
+
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -138,7 +160,8 @@ public class WorkerHeartbeat implements Runnable {
     }
 
     /**
-     * @param settings the settings to set
+     * @param settings
+     *            the settings to set
      */
     public void setSettings(HierarchicalINIConfiguration settings) {
         this.settings = settings;
