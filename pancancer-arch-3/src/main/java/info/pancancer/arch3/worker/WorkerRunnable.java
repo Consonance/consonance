@@ -61,7 +61,6 @@ public class WorkerRunnable implements Runnable {
     protected final Logger log = LoggerFactory.getLogger(getClass());
     private HierarchicalINIConfiguration settings = null;
     private Channel resultsChannel = null;
-    private Channel jobChannel = null;
     private String queueName = null;
     private String jobQueueName;
     private String resultsQueueName;
@@ -74,6 +73,7 @@ public class WorkerRunnable implements Runnable {
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
     private static final int FIVE_SECONDS_IN_MS = 5000;
+    private String networkAddress;
 
     /**
      * Create a new Worker.
@@ -106,6 +106,17 @@ public class WorkerRunnable implements Runnable {
      *            - Should the worker try to run a new job if the last job ended in failure.
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
+        log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
+                + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
+
+        try {
+            this.networkAddress = getFirstNonLoopbackAddress().toString().substring(1);
+        } catch (SocketException e) {
+            // TODO Auto-generated catch block
+            log.error("Could not get network address: " + e.getMessage(), e);
+            throw new RuntimeException("Could not get network address: " + e.getMessage());
+        }
+
         this.maxRuns = maxRuns;
         settings = Utilities.parseConfig(configFile);
 
@@ -142,7 +153,6 @@ public class WorkerRunnable implements Runnable {
         int max = maxRuns;
 
         try {
-
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
             HttpClient client = new HttpClient();
@@ -159,39 +169,33 @@ public class WorkerRunnable implements Runnable {
             }
             log.info(" WORKER VM UUID will  be: '" + this.vmUuid + "'");
 
-            // read from
-            jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
-            if (jobChannel == null) {
-                throw new NullPointerException(
-                        "jobChannel is null for queue: "
-                                + this.jobQueueName
-                                + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
-            }
-
             // write to
             // TODO: Add some sort of "local debug" mode so that developers working on their local
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
             resultsChannel = Utilities.setupExchange(settings, this.resultsQueueName);
 
-            QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-            jobChannel.basicConsume(this.jobQueueName, false, consumer);
-
             while ((max > 0 || this.endless) && !this.workflowFailed) {
-                // log.debug("max is: "+max);
+                log.debug(max + " remaining jobs will be executed");
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
-
                 if (!endless) {
                     max--;
                 }
 
-                // get the job order
-                // int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
-                // System.out.println("THERE ARE CURRENTLY "+messages+" JOBS QUEUED!");
+                // jobChannel needs to be created inside the loop because it is closed inside the loop, and it is closed inside this loop to
+                // prevent pre-fetching.
+                Channel jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
+                if (jobChannel == null) {
+                    throw new NullPointerException(
+                            "jobChannel is null for queue: "
+                                    + this.jobQueueName
+                                    + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
+                }
+                QueueingConsumer consumer = new QueueingConsumer(jobChannel);
+                jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 log.info(vmUuid + "  received " + delivery.getEnvelope().toString());
-                // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 if (delivery.getBody() != null) {
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     if (message.trim().length() > 0) {
@@ -200,10 +204,8 @@ public class WorkerRunnable implements Runnable {
 
                         Job job = new Job().fromJSON(message);
 
-                        // TODO: this will obviously get much more complicated when integrated with Docker
-                        // launch VM
                         Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE,
-                                "job is starting", getFirstNonLoopbackAddress().toString().substring(1));
+                                "job is starting", this.networkAddress);
                         status.setStderr("");
                         status.setStdout("");
                         String statusJSON = status.toJSON();
@@ -216,9 +218,9 @@ public class WorkerRunnable implements Runnable {
                         jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                         // we need to close the channel after acknowledgement to avoid reserving an additional job
                         jobChannel.close();
+                        // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
+                        jobChannel.getConnection().close();
 
-                        // TODO: this is where I would create an INI file and run the local command to run a seqware workflow, in it's own
-                        // thread, harvesting STDERR/STDOUT periodically
                         WorkflowResult workflowResult = new WorkflowResult();
                         if (testMode) {
                             workflowResult.setWorkflowStdout("everything is awesome");
@@ -229,11 +231,8 @@ public class WorkerRunnable implements Runnable {
                             workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
                         }
 
-                        // launchJob(job.getUuid(), job);
-
                         status = new Status(vmUuid, job.getUuid(), workflowResult.getExitCode() == 0 ? StatusState.SUCCESS
-                                : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE, "job is finished", getFirstNonLoopbackAddress()
-                                .toString().substring(1));
+                                : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE, "job is finished", networkAddress);
                         status.setStderr(workflowResult.getWorkflowStdErr());
                         status.setStdout(workflowResult.getWorkflowStdout());
                         statusJSON = status.toJSON();
@@ -258,18 +257,8 @@ public class WorkerRunnable implements Runnable {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
             }
-            if (jobChannel != null) {
-                if (jobChannel.isOpen()) {
-                    jobChannel.close();
-                }
-                if (jobChannel.getConnection().isOpen()) {
-                    jobChannel.getConnection().close();
-                }
-            }
             log.debug("result channel open: " + resultsChannel.isOpen());
             log.debug("result channel connection open: " + resultsChannel.getConnection().isOpen());
-            log.debug("job channel open: " + jobChannel.isOpen());
-            log.debug("job channel connection open: " + jobChannel.getConnection().isOpen());
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -309,6 +298,7 @@ public class WorkerRunnable implements Runnable {
             responseBody = method.getResponseBodyAsString();
             if (method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 Gson gson = new Gson();
+                // Suppress the warning because there's no way to fix it... stupid type erasure :(
                 @SuppressWarnings("unchecked")
                 Map<String, String> map = (Map<String, String>) gson.fromJson(responseBody, Map.class);
                 uuid = map.get("uuid");
@@ -392,7 +382,7 @@ public class WorkerRunnable implements Runnable {
             heartbeat.setSecondsDelay(settings.getDouble(Constants.WORKER_HEARTBEAT_RATE, WorkerHeartbeat.DEFAULT_DELAY));
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
-            heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString().substring(1));
+            heartbeat.setNetworkID(this.networkAddress);
             heartbeat.setStatusSource(workflowRunner);
 
             long presleep = settings.getLong(Constants.WORKER_PREWORKER_SLEEP, WorkerRunnable.DEFAULT_PRESLEEP);
