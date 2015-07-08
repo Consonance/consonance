@@ -64,6 +64,7 @@ public class Utilities {
      *
      * @param settings
      * @throws IOException
+     * @throws java.util.concurrent.TimeoutException
      */
     public static void clearState(HierarchicalINIConfiguration settings) throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
@@ -99,7 +100,7 @@ public class Utilities {
         }
     }
 
-    public static Channel setupQueue(HierarchicalINIConfiguration settings, String queue) {
+    public static Channel setupQueue(HierarchicalINIConfiguration settings, String queue) throws IOException, TimeoutException {
 
         String server = settings.getString(Constants.RABBIT_HOST);
         String user = settings.getString(Constants.RABBIT_USERNAME);
@@ -121,7 +122,7 @@ public class Utilities {
             channel.confirmSelect();
             // channel.queueDeclarePassive(queue);
 
-        } catch (Exception ex) {
+        } catch (IOException | TimeoutException ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
             LOG.error("Error setting up queue connections to queue:" + queue + " on host: " + server + "; error is: " + ex.getMessage(), ex);
         }
@@ -129,7 +130,7 @@ public class Utilities {
 
     }
 
-    public static Channel setupExchange(HierarchicalINIConfiguration settings, String queue) {
+    public static Channel setupExchange(HierarchicalINIConfiguration settings, String queue) throws IOException, TimeoutException {
 
         String server = settings.getString(Constants.RABBIT_HOST);
         String user = settings.getString(Constants.RABBIT_USERNAME);
@@ -149,20 +150,20 @@ public class Utilities {
             channel.exchangeDeclare(queue, "fanout", true, false, null);
             channel.confirmSelect();
 
-        } catch (Exception ex) {
+        } catch (IOException | TimeoutException ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
             LOG.error("Error setting up queue connections: " + ex.getMessage(), ex);
-            throw new RuntimeException(ex);
+            throw ex;
         }
         return channel;
     }
 
-    public static String setupQueueOnExchange(Channel channel, String queue, String suffix) {
+    public static String setupQueueOnExchange(Channel channel, String queue, String suffix) throws IOException {
         try {
             return channel.queueDeclare(queue + "_for_" + suffix, true, false, false, null).getQueue();
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             LOG.error("Error setting up queue on exchange: " + ex.getMessage(), ex);
-            throw new RuntimeException(ex);
+            throw ex;
         }
     }
 

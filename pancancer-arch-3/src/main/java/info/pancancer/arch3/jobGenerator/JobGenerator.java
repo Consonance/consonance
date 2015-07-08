@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionSpecBuilder;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -78,9 +79,12 @@ public class JobGenerator extends Base {
         // CONFIG
         queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         log.info("QUEUE NAME: " + queueName);
-
-        // SETUP QUEUE
-        this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
+        try {
+            // SETUP QUEUE
+            this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
+        } catch (TimeoutException ex) {
+            throw new RuntimeException(ex);
+        }
 
         if (options.has(iniDirSpec)) {
             // read an array of files

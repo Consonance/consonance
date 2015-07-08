@@ -49,6 +49,7 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
+import java.util.concurrent.TimeoutException;
 
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
         DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class })
@@ -81,10 +82,6 @@ public class TestWorkerWithMocking {
 
     private DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
 
-    // private ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    // private PrintStream originalOutStream = new PrintStream(System.out);
-    // private PrintStream testPrintStream = new PrintStream(outStream);
-
     @Mock
     private Appender<LoggingEvent> mockAppender;
 
@@ -94,10 +91,9 @@ public class TestWorkerWithMocking {
     private static ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException, TimeoutException {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(Utilities.class);
-        // System.setOut(testPrintStream);
 
         Mockito.when(mockAppender.getName()).thenReturn("MOCK");
         LOG.addAppender((Appender) mockAppender);
@@ -118,8 +114,7 @@ public class TestWorkerWithMocking {
 
     @Test
     public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
-        // PumpStreamHandler streamHandler = new PumpStreamHandler(new CollectingLogOutputStream());
-        // mockExecutor.setStreamHandler(streamHandler);
+
         PowerMockito.whenNew(DefaultExecuteResultHandler.class).withNoArguments().thenReturn(this.handler);
         Mockito.doAnswer(new Answer<Object>() {
             @Override
@@ -169,10 +164,10 @@ public class TestWorkerWithMocking {
         String testResults = this.appendEventsIntoString(tmpList);
 
         testResults = cleanResults(testResults);
-        // System.out.println("\n===============================\nTest Results: " + testResults);
-        System.out.println(testResults);
+        //System.out.println("\n===============================\nTest Results: " + testResults);
+        //System.out.println(testResults);
         String expectedDockerCommand = "docker run --cidfile=\"/home/$USER/worker.cid\" -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.gnos:/home/$USER/.gnos -v /home/$USER/custom-seqware-settings:/home/seqware/.seqware/settings pancancer/seqware_whitestar_pancancer:1.1.1 seqware bundle launch --dir /workflow --ini /ini --no-metadata --engine whitestar";
-        System.out.println(expectedDockerCommand);
+        //System.out.println(expectedDockerCommand);
         assertTrue("Check for docker command", testResults.contains(expectedDockerCommand));
         assertTrue("Check for sleep message in the following:" + testResults,
                 testResults.contains("Sleeping before executing workflow for 1000 ms."));
@@ -190,9 +185,6 @@ public class TestWorkerWithMocking {
 
         String initalHeartbeat = new String(Files.readAllBytes(Paths.get("src/test/resources/testInitialHeartbeat.txt")));
         assertTrue("Check for an initial heart beat, found" + testResults, testResults.contains(initalHeartbeat));
-
-        // String workflowOutput = new String(Files.readAllBytes(Paths.get("src/test/resources/testFinalHeartbeat.txt")));
-        // assertTrue("Check for workflow output", testResults.contains(workflowOutput));
 
         assertTrue("check for stderr in heartbeat", testResults.contains("\"stderr\": \"123_err\","));
     }
@@ -224,6 +216,7 @@ public class TestWorkerWithMocking {
         testResults = testResults.replaceAll("bundle_manager\\d+", "bundle_manager_LONG_NUMERIC_SEQUENCE");
         testResults = testResults.replaceAll("scheduler\\d+out", "schedulerLONG_NUMERIC_SEQUENCEout");
         testResults = testResults.replaceAll("IP address: /[^\"]*", "IP address: 0.0.0.0");
+        testResults = testResults.replaceAll("worker_[_0-9A-Za-z]*.cid","worker.cid");
         return testResults;
     }
 }
