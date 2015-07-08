@@ -70,6 +70,7 @@ public class WorkerRunnable implements Runnable {
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
     private static final int FIVE_SECONDS_IN_MS = 5000;
+    private static final int ONE_MINUTE_IN_MS = 60000;
 
     /**
      * Create a new Worker.
@@ -139,7 +140,7 @@ public class WorkerRunnable implements Runnable {
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
             HttpClient client = new HttpClient();
-            client.setConnectionTimeout(FIVE_SECONDS_IN_MS);
+            client.setConnectionTimeout(ONE_MINUTE_IN_MS);
             if (vmUuid == null) {
                 tryOpenStackMetadata(client);
             }
