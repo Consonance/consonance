@@ -43,10 +43,24 @@ public class WorkerHeartbeat implements Runnable {
 
     @Override
     public void run() {
-        LOG.info("starting heartbeat thread, will send heartbeat message ever " + secondsDelay + " seconds.");
-        Channel reportingChannel = Utilities.setupExchange(settings, this.queueName);
-        while (!Thread.currentThread().interrupted()) {
 
+        Channel reportingChannel = null;
+        try {
+            try {
+                reportingChannel = Utilities.setupExchange(settings, this.queueName);
+            } catch (IOException | TimeoutException | AlreadyClosedException e) {
+                LOG.error("Exception caught! Queue channel could not be opened, waiting. Exception is: " + e.getMessage(), e);
+                // retry after a minute, do not die simply because the launcher is unavailable, it may come back
+                Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.info("Caught interrupt signal, heartbeat shutting down.", e);
+            return;
+        }
+
+        LOG.info("starting heartbeat thread, will send heartbeat message ever " + secondsDelay + " seconds.");
+        while (!Thread.interrupted()) {
             // byte[] stdOut = this.getMessageBody().getBytes(StandardCharsets.UTF_8);
             try {
                 try {
@@ -72,7 +86,7 @@ public class WorkerHeartbeat implements Runnable {
                             heartBeatMessage.getBytes(StandardCharsets.UTF_8));
                     reportingChannel.waitForConfirms();
 
-                    Thread.sleep((long) (Base.ONE_SECOND_IN_MILLISECONDS));
+                    Thread.sleep(Base.ONE_SECOND_IN_MILLISECONDS);
                 } catch (IOException | AlreadyClosedException e) {
                     LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);
                     // retry after a minute, do not die simply because the launcher is unavailable, it may come back
