@@ -254,10 +254,22 @@ public class WorkerRunnable implements Runnable {
             }
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
-            if (resultsChannel != null) {
+            if (resultsChannel != null && resultsChannel.isOpen()) {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
             }
+            if (jobChannel != null) {
+                if (jobChannel.isOpen()) {
+                    jobChannel.close();
+                }
+                if (jobChannel.getConnection().isOpen()) {
+                    jobChannel.getConnection().close();
+                }
+            }
+            log.debug("result channel open: " + resultsChannel.isOpen());
+            log.debug("result channel connection open: " + resultsChannel.getConnection().isOpen());
+            log.debug("job channel open: " + jobChannel.isOpen());
+            log.debug("job channel connection open: " + jobChannel.getConnection().isOpen());
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -416,6 +428,11 @@ public class WorkerRunnable implements Runnable {
         } finally {
             exService.shutdownNow();
         }
+
+        if (workflowResult == null || (workflowResult != null && workflowResult.getExitCode() != 0)) {
+            this.workflowFailed = true;
+        }
+
         return workflowResult;
     }
 
