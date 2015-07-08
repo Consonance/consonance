@@ -5,6 +5,7 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
@@ -12,6 +13,7 @@ import info.pancancer.arch3.beans.StatusState;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.util.Log;
+
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -36,6 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.httpclient.HttpClient;
@@ -67,6 +70,7 @@ public class WorkerRunnable implements Runnable {
     private String userName;
     private boolean testMode;
     private boolean endless = false;
+    private boolean workflowFailed = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
     private static final int FIVE_SECONDS_IN_MS = 5000;
@@ -95,9 +99,11 @@ public class WorkerRunnable implements Runnable {
      * @param maxRuns
      *            - The maximum number of workflows this Worker should execute.
      * @param testMode
-     *            the value of testMode
+     *            - Should this worker run in testMode (seqware job will not actually be launched)
      * @param endless
-     *            have the worker pick up new jobs as the current job finishes successfully
+     *            - have the worker pick up new jobs as the current job finishes successfully
+     * @param continueOnFailure
+     *            - Should the worker try to run a new job if the last job ended in failure.
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         this.maxRuns = maxRuns;
@@ -124,6 +130,7 @@ public class WorkerRunnable implements Runnable {
         if (this.endless) {
             log.info("The \"--endless\" flag was set, this worker will run endlessly!");
         }
+
         this.vmUuid = vmUuid;
         this.maxRuns = maxRuns;
         this.testMode = testMode;
@@ -140,17 +147,17 @@ public class WorkerRunnable implements Runnable {
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
             HttpClient client = new HttpClient();
             client.setConnectionTimeout(FIVE_SECONDS_IN_MS);
-            if (vmUuid == null) {
-                tryOpenStackMetadata(client);
+            if (this.vmUuid == null) {
+                this.vmUuid = tryOpenStackMetadata(client);
             }
-            if (vmUuid == null) {
-                tryAWSMetadata(client);
+            if (this.vmUuid == null) {
+                this.vmUuid = tryAWSMetadata(client);
             }
-            if (vmUuid == null) {
+            if (this.vmUuid == null) {
                 // crash horribly, there is no id for this worker
                 throw new RuntimeException("Could not determine cloud id");
             }
-            log.info(" WORKER VM UUID will  be: '" + vmUuid + "'");
+            log.info(" WORKER VM UUID will  be: '" + this.vmUuid + "'");
 
             // read from
             jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
@@ -170,17 +177,13 @@ public class WorkerRunnable implements Runnable {
             QueueingConsumer consumer = new QueueingConsumer(jobChannel);
             jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
-            // TODO: need threads that each read from orders and another that reads results
-            while (max > 0 || endless) {
+            while ((max > 0 || this.endless) && !this.workflowFailed) {
                 // log.debug("max is: "+max);
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
 
                 if (!endless) {
                     max--;
                 }
-
-                // loop once
-                // TODO: this will be configurable so it could process multiple jobs before exiting
 
                 // get the job order
                 // int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
@@ -246,6 +249,9 @@ public class WorkerRunnable implements Runnable {
                 }
             }
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
+            if (this.workflowFailed) {
+                log.error("The last workflow executed by this Worker did not complete successfully. No more workflows will be attempted. Please check the logs and fix any problems before trying another workflow.");
+            }
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
             if (resultsChannel != null) {
@@ -257,8 +263,9 @@ public class WorkerRunnable implements Runnable {
         }
     }
 
-    private void tryAWSMetadata(HttpClient client) {
+    private String tryAWSMetadata(HttpClient client) {
         String responseBody;
+        String uuid = null;
         // if no OpenStack uuid is found, grab a normal instance_id from AWS
         String awsURL = "http://169.254.169.254/2014-11-05/meta-data/instance-id";
         HttpMethod method = new GetMethod(awsURL);
@@ -266,18 +273,22 @@ public class WorkerRunnable implements Runnable {
             client.executeMethod(method);
             responseBody = method.getResponseBodyAsString();
             if (responseBody != null && method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                vmUuid = responseBody;
-                log.info(" WORKER VM UUID overriden using AWS meta-data as: '" + vmUuid + "'");
+                uuid = responseBody;
+                log.info(" WORKER VM UUID overriden using AWS meta-data as: '" + uuid + "'");
             }
         } catch (HttpException he) {
             System.err.println("Http error connecting to '" + awsURL + "'");
         } catch (IOException ioe) {
             System.err.println("Unable to connect to '" + awsURL + "'");
         }
+        return uuid;
     }
 
-    private void tryOpenStackMetadata(HttpClient client) {
+    private String tryOpenStackMetadata(HttpClient client) {
+        // TODO: According to George, there might be some environments where openstack metadata is available on a mounted drive rather than
+        // a special URL.
         String responseBody;
+        String uuid = null;
         String openStackURL = "http://169.254.169.254/openstack/latest/meta_data.json";
         // try to pull OpenStack uuid (while openstack provides an instance-id, unlike amazon, its useless)
         HttpMethod method = new GetMethod(openStackURL);
@@ -286,11 +297,11 @@ public class WorkerRunnable implements Runnable {
             responseBody = method.getResponseBodyAsString();
             if (method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 Gson gson = new Gson();
-                Map<String, String> map = (Map<String, String>) gson.fromJson(responseBody, Object.class);
-                String uuid = map.get("uuid");
+                @SuppressWarnings("unchecked")
+                Map<String, String> map = (Map<String, String>) gson.fromJson(responseBody, Map.class);
+                uuid = map.get("uuid");
                 if (uuid != null) {
-                    vmUuid = uuid;
-                    log.info(" WORKER VM UUID overriden using OpenStack meta-data as: '" + vmUuid + "'");
+                    log.info(" WORKER VM UUID overriden using OpenStack meta-data as: '" + uuid + "'");
                 }
             }
         } catch (HttpException he) {
@@ -298,6 +309,7 @@ public class WorkerRunnable implements Runnable {
         } catch (IOException ioe) {
             System.err.println("Unable to connect to '" + openStackURL + "'");
         }
+        return uuid;
     }
 
     /**
@@ -370,7 +382,6 @@ public class WorkerRunnable implements Runnable {
             heartbeat.setVmUuid(this.vmUuid);
             heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString().substring(1));
             heartbeat.setStatusSource(workflowRunner);
-            // heartbeat.setMessageBody(heartbeatStatus.toJSON());
 
             long presleep = settings.getLong(Constants.WORKER_PREWORKER_SLEEP, WorkerRunnable.DEFAULT_PRESLEEP);
             long postsleep = settings.getLong(Constants.WORKER_POSTWORKER_SLEEP, WorkerRunnable.DEFAULT_POSTSLEEP);
@@ -380,13 +391,15 @@ public class WorkerRunnable implements Runnable {
             workflowRunner.setCli(cli);
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
-            // submit both
+            // Submit both
+            @SuppressWarnings("unused")
+            // We will never actually do submit.get(), because the heartbeat should keep running until it is terminated by
+            // exService.shutdownNow().
             Future<?> submit = exService.submit(heartbeat);
             Future<WorkflowResult> workflowResultFuture = exService.submit(workflowRunner);
             // make sure both are complete
             workflowResult = workflowResultFuture.get();
             // don't get the heartbeat if the workflow is complete already
-
             log.info("Docker execution result: " + workflowResult.getWorkflowStdout());
         } catch (SocketException e) {
             // This comes from trying to get the IP address.
@@ -394,9 +407,12 @@ public class WorkerRunnable implements Runnable {
         } catch (IOException e) {
             // This could be caused by a problem writing the file, or publishing a message to the queue.
             log.error(e.getMessage(), e);
-        } catch (ExecutionException | InterruptedException e) {
-            // This comes from trying to get the workflow execution result.
+        } catch (ExecutionException e) {
             log.error("Error executing workflow: " + e.getMessage(), e);
+            this.workflowFailed = true;
+        } catch (InterruptedException e) {
+            log.error("Workflow may have been interrupted: " + e.getMessage(), e);
+            this.workflowFailed = true;
         } finally {
             exService.shutdownNow();
         }
