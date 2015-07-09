@@ -78,7 +78,6 @@
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
-            <version>3.5.3</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -221,12 +220,6 @@
                     <artifactId>httpcore</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>3.1</version>
-            <type>jar</type>
         </dependency>
     </dependencies>
 

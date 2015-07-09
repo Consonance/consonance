@@ -373,7 +373,7 @@ public class TestWorker {
             fail("this line should not have been reached");
         } catch (Exception e) {
             LOG.error(e.getMessage());
-            assertTrue(e.getMessage().contains("Missing required option(s) [config]"));
+            assertTrue(e.getMessage().contains("Missing required option(s) [config, uuid]"));
         }
 
     }

@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,16 +34,9 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
@@ -73,7 +65,6 @@ public class WorkerRunnable implements Runnable {
     private boolean endless = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
-    private static final int FIVE_SECONDS_IN_MS = 5000;
 
     /**
      * Create a new Worker.
@@ -100,6 +91,8 @@ public class WorkerRunnable implements Runnable {
      *            - The maximum number of workflows this Worker should execute.
      * @param testMode
      *            the value of testMode
+     * @param endless
+     *            have the worker pick up new jobs as the current job finishes successfully
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         this.maxRuns = maxRuns;
@@ -140,24 +133,6 @@ public class WorkerRunnable implements Runnable {
 
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
-            HttpClient client = new HttpClient();
-            //HttpClient.setConnectionTimeout is deprecated!
-            //client.setConnectionTimeout(FIVE_SECONDS_IN_MS);
-            HttpConnectionManagerParams connParams = new HttpConnectionManagerParams();
-            connParams.setConnectionTimeout(FIVE_SECONDS_IN_MS);
-            client.getHttpConnectionManager().setParams(connParams);
-            
-            if (vmUuid == null) {
-                tryOpenStackMetadata(client);
-            }
-            if (vmUuid == null) {
-                tryAWSMetadata(client);
-            }
-            if (vmUuid == null) {
-                // crash horribly, there is no id for this worker
-                throw new RuntimeException("Could not determine cloud id");
-            }
-            log.info(" WORKER VM UUID will  be: '" + vmUuid + "'");
 
             // read from
             jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
@@ -209,6 +184,14 @@ public class WorkerRunnable implements Runnable {
                         String statusJSON = status.toJSON();
 
                         log.info(" WORKER LAUNCHING JOB");
+
+                        // greedy acknowledge, it will be easier to deal with lost jobs than zombie workers in hostile OpenStack
+                        // environments
+                        log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
+                        jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                        // we need to close the channel after acknowledgement to avoid reserving an additional job
+                        jobChannel.close();
+
                         WorkflowResult workflowResult = new WorkflowResult();
                         if (testMode) {
                             workflowResult.setWorkflowStdout("everything is awesome");
@@ -247,49 +230,6 @@ public class WorkerRunnable implements Runnable {
             }
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
-        }
-    }
-
-    private void tryAWSMetadata(HttpClient client) {
-        String responseBody;
-        // if no OpenStack uuid is found, grab a normal instance_id from AWS
-        String awsURL = "http://169.254.169.254/2014-11-05/meta-data/instance-id";
-        HttpMethod method = new GetMethod(awsURL);
-        try {
-            client.executeMethod(method);
-            responseBody = method.getResponseBodyAsString();
-            if (responseBody != null && method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                vmUuid = responseBody;
-                log.info(" WORKER VM UUID overriden using AWS meta-data as: '" + vmUuid + "'");
-            }
-        } catch (HttpException he) {
-            System.err.println("Http error connecting to '" + awsURL + "'");
-        } catch (IOException ioe) {
-            System.err.println("Unable to connect to '" + awsURL + "'");
-        }
-    }
-
-    private void tryOpenStackMetadata(HttpClient client) {
-        String responseBody;
-        String openStackURL = "http://169.254.169.254/openstack/latest/meta_data.json";
-        // try to pull OpenStack uuid (while openstack provides an instance-id, unlike amazon, its useless)
-        HttpMethod method = new GetMethod(openStackURL);
-        try {
-            client.executeMethod(method);
-            responseBody = method.getResponseBodyAsString();
-            if (method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                Gson gson = new Gson();
-                Map<String, String> map = (Map<String, String>) gson.fromJson(responseBody, Map.class);
-                String uuid = map.get("uuid");
-                if (uuid != null) {
-                    vmUuid = uuid;
-                    log.info(" WORKER VM UUID overriden using OpenStack meta-data as: '" + vmUuid + "'");
-                }
-            }
-        } catch (HttpException he) {
-            System.err.println("Http error connecting to '" + openStackURL + "'");
-        } catch (IOException ioe) {
-            System.err.println("Unable to connect to '" + openStackURL + "'");
         }
     }
 
