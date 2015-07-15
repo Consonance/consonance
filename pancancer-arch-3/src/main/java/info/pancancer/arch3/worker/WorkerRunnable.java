@@ -1,11 +1,5 @@
 package info.pancancer.arch3.worker;
 
-import com.google.gson.Gson;
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
-
 import info.pancancer.arch3.Base;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.Status;
@@ -33,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,13 +34,13 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
 
 /**
  * This class represents a WorkerRunnable, in the Architecture 3 design.
@@ -141,7 +134,6 @@ public class WorkerRunnable implements Runnable {
         if (this.endless) {
             log.info("The \"--endless\" flag was set, this worker will run endlessly!");
         }
-
         this.vmUuid = vmUuid;
         this.maxRuns = maxRuns;
         this.testMode = testMode;
@@ -155,20 +147,6 @@ public class WorkerRunnable implements Runnable {
         try {
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
-            HttpClient client = new HttpClient();
-            client.setConnectionTimeout(FIVE_SECONDS_IN_MS);
-            if (this.vmUuid == null) {
-                this.vmUuid = tryOpenStackMetadata(client);
-            }
-            if (this.vmUuid == null) {
-                this.vmUuid = tryAWSMetadata(client);
-            }
-            if (this.vmUuid == null) {
-                // crash horribly, there is no id for this worker
-                throw new RuntimeException("Could not determine cloud id");
-            }
-            log.info(" WORKER VM UUID will  be: '" + this.vmUuid + "'");
-
             // write to
             // TODO: Add some sort of "local debug" mode so that developers working on their local
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
@@ -178,6 +156,7 @@ public class WorkerRunnable implements Runnable {
             while ((max > 0 || this.endless) && !this.workflowFailed) {
                 log.debug(max + " remaining jobs will be executed");
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
+
                 if (!endless) {
                     max--;
                 }
@@ -262,56 +241,6 @@ public class WorkerRunnable implements Runnable {
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
-    }
-
-    private String tryAWSMetadata(HttpClient client) {
-        String responseBody;
-        String uuid = null;
-        // if no OpenStack uuid is found, grab a normal instance_id from AWS
-        String awsURL = "http://169.254.169.254/2014-11-05/meta-data/instance-id";
-        HttpMethod method = new GetMethod(awsURL);
-        try {
-            client.executeMethod(method);
-            responseBody = method.getResponseBodyAsString();
-            if (responseBody != null && method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                uuid = responseBody;
-                log.info(" WORKER VM UUID overriden using AWS meta-data as: '" + uuid + "'");
-            }
-        } catch (HttpException he) {
-            System.err.println("Http error connecting to '" + awsURL + "'");
-        } catch (IOException ioe) {
-            System.err.println("Unable to connect to '" + awsURL + "'");
-        }
-        return uuid;
-    }
-
-    private String tryOpenStackMetadata(HttpClient client) {
-        // TODO: According to George, there might be some environments where openstack metadata is available on a mounted drive rather than
-        // a special URL.
-        String responseBody;
-        String uuid = null;
-        String openStackURL = "http://169.254.169.254/openstack/latest/meta_data.json";
-        // try to pull OpenStack uuid (while openstack provides an instance-id, unlike amazon, its useless)
-        HttpMethod method = new GetMethod(openStackURL);
-        try {
-            client.executeMethod(method);
-            responseBody = method.getResponseBodyAsString();
-            if (method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                Gson gson = new Gson();
-                // Suppress the warning because there's no way to fix it... stupid type erasure :(
-                @SuppressWarnings("unchecked")
-                Map<String, String> map = (Map<String, String>) gson.fromJson(responseBody, Map.class);
-                uuid = map.get("uuid");
-                if (uuid != null) {
-                    log.info(" WORKER VM UUID overriden using OpenStack meta-data as: '" + uuid + "'");
-                }
-            }
-        } catch (HttpException he) {
-            System.err.println("Http error connecting to '" + openStackURL + "'");
-        } catch (IOException ioe) {
-            System.err.println("Unable to connect to '" + openStackURL + "'");
-        }
-        return uuid;
     }
 
     /**
@@ -402,6 +331,7 @@ public class WorkerRunnable implements Runnable {
             // make sure both are complete
             workflowResult = workflowResultFuture.get();
             // don't get the heartbeat if the workflow is complete already
+
             log.info("Docker execution result: " + workflowResult.getWorkflowStdout());
         } catch (SocketException e) {
             // This comes from trying to get the IP address.
