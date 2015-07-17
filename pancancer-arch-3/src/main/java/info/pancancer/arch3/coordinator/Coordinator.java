@@ -351,9 +351,10 @@ public class Coordinator extends Base {
 
                 // checks the jobs in the database and sees if any have become "lost"
                 List<Job> jobs = db.getJobs(JobState.RUNNING);
-                jobs.addAll(db.getJobs(JobState.LOST));
 
                 // how long before we call something lost?
+                // it is tempting to un-lose jobs here, but the problem is that we only have the update timestamp and that is modified when
+                // jobs are lost, meaning they instantly flip back
                 long secBeforeLost = settings.getLong(Constants.COORDINATOR_SECONDS_BEFORE_LOST);
 
                 for (Job job : jobs) {
@@ -363,7 +364,7 @@ public class Coordinator extends Base {
                     long diff = nowTs.getTime() - updateTs.getTime();
                     long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);
 
-                    log.error("DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
+                    log.info(job.getUuid() + " DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
 
                     JobState state = job.getState();
                     // if this is true need to mark the job as lost!
@@ -371,10 +372,6 @@ public class Coordinator extends Base {
                         // it must be lost
                         log.error("Running job " + job.getUuid() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
                         db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
-                    } else if (state == JobState.LOST && diffSec < secBeforeLost) {
-                        log.error("Lost job " + job.getUuid() + " found anew at " + diffSec + " > " + secBeforeLost
-                                + " MARKING AS RUNNING!");
-                        db.updateJob(job.getUuid(), job.getVmUuid(), JobState.RUNNING);
                     }
 
                 }

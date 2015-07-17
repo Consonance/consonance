@@ -220,10 +220,14 @@ public class PostgreSQL {
         List<Provision> provisions = new ArrayList<>();
         Map<Object, Map<String, Object>> map;
         if (status != null) {
-            map = this.runSelectStatement("select * from provision where status = ?", new KeyedHandler<>("provision_uuid"),
-                    status.toString());
+            map = this
+                    .runSelectStatement(
+                            "select * from provision where provision_id in (select max(provision_id) from provision group by ip_address) and status = ?",
+                            new KeyedHandler<>("provision_uuid"), status.toString());
         } else {
-            map = this.runSelectStatement("select * from provision", new KeyedHandler<>("provision_uuid"));
+            map = this.runSelectStatement(
+                    "select * from provision where provision_id in (select max(provision_id) from provision group by ip_address)",
+                    new KeyedHandler<>("provision_uuid"));
         }
 
         for (Entry<Object, Map<String, Object>> entry : map.entrySet()) {
