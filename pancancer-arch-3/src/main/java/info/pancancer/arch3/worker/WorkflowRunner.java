@@ -106,6 +106,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             resultHandler.waitFor();
             result.setWorkflowStdout(outputStream.getAllLinesAsString());
             result.setWorkflowStdErr(errorStream.getAllLinesAsString());
+            LOG.debug("Exit code: "+resultHandler.getExitValue());
             result.setExitCode(resultHandler.getExitValue());
             if (this.postworkDelay > 0) {
                 LOG.info("Sleeping after executing workflow for " + this.postworkDelay + " ms.");
