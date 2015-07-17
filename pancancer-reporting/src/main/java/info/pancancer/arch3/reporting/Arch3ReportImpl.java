@@ -244,6 +244,7 @@ public class Arch3ReportImpl implements ReportAPI {
         }
         System.out.println("Set of active addresses: " + activeIPAddresses.toString());
 
+        // this map is provision_uuid -> keys -> values
         Map<String, Map<String, String>> map = new TreeMap<>();
         for (ProvisionState state : states) {
             List<Provision> provisions = db.getProvisions(state);
