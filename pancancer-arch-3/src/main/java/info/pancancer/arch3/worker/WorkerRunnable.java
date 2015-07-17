@@ -1,13 +1,5 @@
 package info.pancancer.arch3.worker;
 
-import info.pancancer.arch3.Base;
-import info.pancancer.arch3.beans.Job;
-import info.pancancer.arch3.beans.Status;
-import info.pancancer.arch3.beans.StatusState;
-import info.pancancer.arch3.utils.Constants;
-import info.pancancer.arch3.utils.Utilities;
-import io.cloudbindle.youxia.util.Log;
-
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -42,6 +34,14 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 
+import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.beans.StatusState;
+import info.pancancer.arch3.utils.Constants;
+import info.pancancer.arch3.utils.Utilities;
+import io.cloudbindle.youxia.util.Log;
+
 /**
  * This class represents a WorkerRunnable, in the Architecture 3 design.
  *
@@ -54,7 +54,6 @@ public class WorkerRunnable implements Runnable {
     protected final Logger log = LoggerFactory.getLogger(getClass());
     private HierarchicalINIConfiguration settings = null;
     private Channel resultsChannel = null;
-    private Channel jobChannel = null;
     private String queueName = null;
     private String jobQueueName;
     private String resultsQueueName;
@@ -63,8 +62,11 @@ public class WorkerRunnable implements Runnable {
     private String userName;
     private boolean testMode;
     private boolean endless = false;
+    private boolean workflowFailed = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
+    private static final int FIVE_SECONDS_IN_MS = 5000;
+    private String networkAddress;
 
     /**
      * Create a new Worker.
@@ -90,9 +92,9 @@ public class WorkerRunnable implements Runnable {
      * @param maxRuns
      *            - The maximum number of workflows this Worker should execute.
      * @param testMode
-     *            the value of testMode
+     *            - Should this worker run in testMode (seqware job will not actually be launched)
      * @param endless
-     *            have the worker pick up new jobs as the current job finishes successfully
+     *            - have the worker pick up new jobs as the current job finishes successfully
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         this.maxRuns = maxRuns;
@@ -130,43 +132,34 @@ public class WorkerRunnable implements Runnable {
         int max = maxRuns;
 
         try {
-
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
-
-            // read from
-            jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
-            if (jobChannel == null) {
-                throw new NullPointerException(
-                        "jobChannel is null for queue: "
-                                + this.jobQueueName
-                                + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
-            }
-
             // write to
             // TODO: Add some sort of "local debug" mode so that developers working on their local
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
             resultsChannel = Utilities.setupExchange(settings, this.resultsQueueName);
 
-            QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-            jobChannel.basicConsume(this.jobQueueName, false, consumer);
-
-            while (max > 0 || endless) {
-                // log.debug("max is: "+max);
+            while ((max > 0 || this.endless) && !this.workflowFailed) {
+                log.debug(max + " remaining jobs will be executed");
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
 
                 if (!endless) {
                     max--;
                 }
 
-                // get the job order
-                // int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
-                // System.out.println("THERE ARE CURRENTLY "+messages+" JOBS QUEUED!");
+                // jobChannel needs to be created inside the loop because it is closed inside the loop, and it is closed inside this loop to
+                // prevent pre-fetching.
+                Channel jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
+                if (jobChannel == null) {
+                    throw new NullPointerException("jobChannel is null for queue: " + this.jobQueueName
+                            + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
+                }
+                QueueingConsumer consumer = new QueueingConsumer(jobChannel);
+                jobChannel.basicConsume(this.jobQueueName, false, consumer);
 
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 log.info(vmUuid + "  received " + delivery.getEnvelope().toString());
-                // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 if (delivery.getBody() != null) {
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     if (message.trim().length() > 0) {
@@ -175,10 +168,8 @@ public class WorkerRunnable implements Runnable {
 
                         Job job = new Job().fromJSON(message);
 
-                        // TODO: this will obviously get much more complicated when integrated with Docker
-                        // launch VM
                         Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE,
-                                "job is starting", getFirstNonLoopbackAddress().toString().substring(1));
+                                "job is starting", this.networkAddress);
                         status.setStderr("");
                         status.setStdout("");
                         String statusJSON = status.toJSON();
@@ -189,8 +180,10 @@ public class WorkerRunnable implements Runnable {
                         // environments
                         log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
                         jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                        // we need to close the channel after acknowledgement to avoid reserving an additional job
+                        // we need to close the channel IMMEDIATELY to complete the ACK.
                         jobChannel.close();
+                        // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
+                        jobChannel.getConnection().close();
 
                         WorkflowResult workflowResult = new WorkflowResult();
                         if (testMode) {
@@ -202,9 +195,9 @@ public class WorkerRunnable implements Runnable {
                             workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
                         }
 
-                        status = new Status(vmUuid, job.getUuid(), workflowResult.getExitCode() == 0 ? StatusState.SUCCESS
-                                : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE, "job is finished", getFirstNonLoopbackAddress()
-                                .toString().substring(1));
+                        status = new Status(vmUuid, job.getUuid(),
+                                workflowResult.getExitCode() == 0 ? StatusState.SUCCESS : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE,
+                                "job is finished", networkAddress);
                         status.setStderr(workflowResult.getWorkflowStdErr());
                         status.setStdout(workflowResult.getWorkflowStdout());
                         statusJSON = status.toJSON();
@@ -215,19 +208,31 @@ public class WorkerRunnable implements Runnable {
                     } else {
                         log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                     }
-                    log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
-                    jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                    // we need to close the channel *conditionally*
+                    if (jobChannel.isOpen()) {
+                        jobChannel.close();
+                    }
+                    // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
+                    if (jobChannel.getConnection().isOpen()) {
+                        jobChannel.getConnection().close();
+                    }
                 } else {
                     log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                 }
             }
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
+            if (this.workflowFailed) {
+                log.error(
+                        "The last workflow executed by this Worker did not complete successfully. No more workflows will be attempted. Please check the logs and fix any problems before trying another workflow.");
+            }
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
-            if (resultsChannel != null) {
+            if (resultsChannel != null && resultsChannel.isOpen()) {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
             }
+            log.debug("result channel open: " + resultsChannel.isOpen());
+            log.debug("result channel connection open: " + resultsChannel.getConnection().isOpen());
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -249,7 +254,7 @@ public class WorkerRunnable implements Runnable {
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
         Path pathToINI = Files.createTempFile("seqware_", ".ini", attrs);
         log.info("INI file: " + pathToINI.toString());
-        Files.write(pathToINI, job.getIniStr().getBytes(StandardCharsets.UTF_8),StandardOpenOption.CREATE);
+        Files.write(pathToINI, job.getIniStr().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
         return pathToINI;
     }
 
@@ -277,10 +282,10 @@ public class WorkerRunnable implements Runnable {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_z");
             String timestampStr = sdf.format(new Date());
 
-            String containerIDFile = "/home/" + this.userName + "/worker_"+timestampStr+".cid";
+            String containerIDFile = "/home/" + this.userName + "/worker_" + timestampStr + ".cid";
             String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
-            
-            List<String> args = new ArrayList<String>(Arrays.asList("--cidfile=\"" + containerIDFile+"\"", "-h", "master", "-t", "-v",
+
+            List<String> args = new ArrayList<String>(Arrays.asList("--cidfile=\"" + containerIDFile + "\"", "-h", "master", "-t", "-v",
                     "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini",
                     "-v", "/datastore:/datastore", "-v", "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos"));
             if (seqwareSettingsFile != null) {
@@ -291,7 +296,7 @@ public class WorkerRunnable implements Runnable {
 
             String runnerPath = this.writeDockerRunnerScript(args);
             CommandLine cli = new CommandLine(runnerPath);
-            
+
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
             // channels should not be shared between threads https://www.rabbitmq.com/api-guide.html#channel-threads
@@ -311,7 +316,10 @@ public class WorkerRunnable implements Runnable {
             workflowRunner.setCli(cli);
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
-            // submit both
+            // Submit both
+            @SuppressWarnings("unused")
+            // We will never actually do submit.get(), because the heartbeat should keep running until it is terminated by
+            // exService.shutdownNow().
             Future<?> submit = exService.submit(heartbeat);
             Future<WorkflowResult> workflowResultFuture = exService.submit(workflowRunner);
             // make sure both are complete
@@ -325,12 +333,20 @@ public class WorkerRunnable implements Runnable {
         } catch (IOException e) {
             // This could be caused by a problem writing the file, or publishing a message to the queue.
             log.error(e.getMessage(), e);
-        } catch (ExecutionException | InterruptedException e) {
-            // This comes from trying to get the workflow execution result.
+        } catch (ExecutionException e) {
             log.error("Error executing workflow: " + e.getMessage(), e);
+            this.workflowFailed = true;
+        } catch (InterruptedException e) {
+            log.error("Workflow may have been interrupted: " + e.getMessage(), e);
+            this.workflowFailed = true;
         } finally {
             exService.shutdownNow();
         }
+
+        if (workflowResult == null || (workflowResult != null && workflowResult.getExitCode() != 0)) {
+            this.workflowFailed = true;
+        }
+
         return workflowResult;
     }
 
@@ -342,23 +358,23 @@ public class WorkerRunnable implements Runnable {
         for (String arg : dockerArgs) {
             sb.append(arg).append(" ");
         }
-        sb.append(" && cat /home/"+this.userName+"/worker.cid >> /home/"+this.userName+"/successful_container_cids");
-        sb.append(" && echo \\n >> /home/"+this.userName+"/successful_container_cids");
+        sb.append(" && cat /home/" + this.userName + "/worker.cid >> /home/" + this.userName + "/successful_container_cids");
+        sb.append(" && echo \\n >> /home/" + this.userName + "/successful_container_cids");
         sb.append("\n");
 
         String script = sb.toString();
-        
+
         EnumSet<PosixFilePermission> perms = EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
                 PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OTHERS_READ, PosixFilePermission.GROUP_READ);
-        
+
         Path runnerPath = Files.createTempFile("run_workflow_in_docker", ".sh");
         Files.setPosixFilePermissions(runnerPath, perms);
-        Files.write(runnerPath,script.getBytes(StandardCharsets.UTF_8),StandardOpenOption.CREATE);
-        
-        String scriptPath = runnerPath.toFile().getAbsolutePath(); 
-       
-        this.log.info("Script at "+scriptPath+" was written, with contents: \n"+script);
-        
+        Files.write(runnerPath, script.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+
+        String scriptPath = runnerPath.toFile().getAbsolutePath();
+
+        this.log.info("Script at " + scriptPath + " was written, with contents: \n" + script);
+
         return scriptPath;
     }
 

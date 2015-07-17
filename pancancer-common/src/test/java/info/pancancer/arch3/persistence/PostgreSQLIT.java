@@ -345,8 +345,21 @@ public class PostgreSQLIT {
         p.setIpAddress("9.9.9.8");
         p.setState(ProvisionState.SUCCESS);
         postgres.createProvision(p);
+        // make sure we get the latest one
+        p.setIpAddress("1.1.1.1");
+        p.setState(ProvisionState.FAILED);
+        postgres.createProvision(p);
+        p.setIpAddress("1.1.1.1");
+        p.setState(ProvisionState.RUNNING);
+        postgres.createProvision(p);
 
         List<Provision> result = postgres.getProvisions(ProvisionState.START);
-        Assert.assertTrue("found addresses, incorrect number " + result.size(), result.size() == 1);
+        Assert.assertTrue("found START addresses, incorrect number " + result.size(), result.size() == 1);
+
+        result = postgres.getProvisions(ProvisionState.FAILED);
+        Assert.assertTrue("found FAILED addresses, incorrect number " + result.size(), result.isEmpty());
+
+        result = postgres.getProvisions(ProvisionState.RUNNING);
+        Assert.assertTrue("found RUNNING addresses, incorrect number " + result.size(), result.size() == 1);
     }
 }

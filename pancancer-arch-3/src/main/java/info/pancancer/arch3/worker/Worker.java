@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import joptsimple.ArgumentAcceptingOptionSpec;
-import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpecBuilder;
 
@@ -21,14 +20,11 @@ public class Worker extends Base {
     private final ArgumentAcceptingOptionSpec<Integer> maxRunsSpec;
     private final ArgumentAcceptingOptionSpec<String> uuidSpec;
     private final ArgumentAcceptingOptionSpec<String> pidFileSpec;
-    private static OptionParser optParser;
 
     private Worker(String[] argv) throws IOException {
         super();
         this.testSpec = super.parser.accepts("test", "In test mode, worker simply completes successfully");
         this.configSpec = parser.accepts("config", "Specify a config file").withRequiredArg().required().ofType(String.class);
-        // TODO: Implement the "endless" logic for the worker? Or change the command-line parser to not accept "--endless" for Worker, which
-        // requires changes in Base.
         this.maxRunsSpec = parser
                 .accepts("max-runs", "The maximum number of workflows to execute. If \"--endless\" is set, this number will be ignored.")
                 .withOptionalArg().ofType(Integer.class).defaultsTo(1);

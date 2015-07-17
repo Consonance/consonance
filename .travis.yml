@@ -5,6 +5,7 @@ sudo: false
 language: java
 jdk: 
   - oraclejdk7
+  - oraclejdk8
 
 before_script: 
   - psql -c "create user queue_user with password 'queue' createdb;" -U postgres

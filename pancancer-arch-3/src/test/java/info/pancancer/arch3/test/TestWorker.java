@@ -352,7 +352,7 @@ public class TestWorker {
         testResults = cleanResults(testResults);
 
         String begining = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_Start.txt")));
-        assertTrue("check begining of output", testResults.contains(begining));
+        assertTrue("check begining of output: " + testResults, testResults.contains(begining));
 
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
         assertTrue("check ending of output", testResults.contains(ending));
