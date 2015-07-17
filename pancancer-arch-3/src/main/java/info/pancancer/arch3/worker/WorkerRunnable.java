@@ -165,10 +165,8 @@ public class WorkerRunnable implements Runnable {
                 // prevent pre-fetching.
                 Channel jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
                 if (jobChannel == null) {
-                    throw new NullPointerException(
-                            "jobChannel is null for queue: "
-                                    + this.jobQueueName
-                                    + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
+                    throw new NullPointerException("jobChannel is null for queue: " + this.jobQueueName
+                            + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
                 }
                 QueueingConsumer consumer = new QueueingConsumer(jobChannel);
                 jobChannel.basicConsume(this.jobQueueName, false, consumer);
@@ -195,7 +193,7 @@ public class WorkerRunnable implements Runnable {
                         // environments
                         log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
                         jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                        // we need to close the channel after acknowledgement to avoid reserving an additional job
+                        // we need to close the channel IMMEDIATELY to complete the ACK.
                         jobChannel.close();
                         // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
                         jobChannel.getConnection().close();
@@ -210,8 +208,9 @@ public class WorkerRunnable implements Runnable {
                             workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
                         }
 
-                        status = new Status(vmUuid, job.getUuid(), workflowResult.getExitCode() == 0 ? StatusState.SUCCESS
-                                : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE, "job is finished", networkAddress);
+                        status = new Status(vmUuid, job.getUuid(),
+                                workflowResult.getExitCode() == 0 ? StatusState.SUCCESS : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE,
+                                "job is finished", networkAddress);
                         status.setStderr(workflowResult.getWorkflowStdErr());
                         status.setStdout(workflowResult.getWorkflowStdout());
                         statusJSON = status.toJSON();
@@ -222,13 +221,22 @@ public class WorkerRunnable implements Runnable {
                     } else {
                         log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                     }
+                    // we need to close the channel *conditionally*
+                    if (jobChannel.isOpen()) {
+                        jobChannel.close();
+                    }
+                    // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
+                    if (jobChannel.getConnection().isOpen()) {
+                        jobChannel.getConnection().close();
+                    }
                 } else {
                     log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                 }
             }
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
             if (this.workflowFailed) {
-                log.error("The last workflow executed by this Worker did not complete successfully. No more workflows will be attempted. Please check the logs and fix any problems before trying another workflow.");
+                log.error(
+                        "The last workflow executed by this Worker did not complete successfully. No more workflows will be attempted. Please check the logs and fix any problems before trying another workflow.");
             }
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
