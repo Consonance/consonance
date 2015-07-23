@@ -49,7 +49,9 @@ public class WorkerIT {
         File file = FileUtils.getFile("src", "test", "resources", "config");
         File iniDir = FileUtils.getFile("ini");
         // prime the coordinator with an order
-        JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
+        JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath(), "--workflow-name",
+                "DEWrapper", "--workflow-version", "1.0.0", "--workflow-path",
+                "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
         // prime the worker with a job
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
         Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test", "--pidFile",

@@ -57,7 +57,9 @@ public class CoordinatorIT {
         File file = FileUtils.getFile("src", "test", "resources", "config");
         File iniDir = FileUtils.getFile("ini");
         // prime the pump with a job
-        JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath() });
+        JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath(), "--workflow-name",
+                "DEWrapper", "--workflow-version", "1.0.0", "--workflow-path",
+                "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
         // note that without a worker running in parallel, the results job will time out
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
     }
