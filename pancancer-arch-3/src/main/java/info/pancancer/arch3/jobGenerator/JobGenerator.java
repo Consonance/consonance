@@ -57,11 +57,11 @@ public class JobGenerator extends Base {
         this.iniDirSpec = super.parser.accepts("ini-dir", "schedule a batch of ini files from this directory").withOptionalArg()
                 .ofType(String.class);
         this.workflowNameSpec = super.parser.accepts("workflow-name", "track the name of workflows").withOptionalArg().ofType(String.class)
-                .defaultsTo("DEWrapper");
+                .required();
         this.workflowVersionSpec = super.parser.accepts("workflow-version", "track the version of workflows").withOptionalArg()
-                .ofType(String.class).defaultsTo("1.0.0");
+                .ofType(String.class).required();
         this.workflowPathSpec = super.parser.accepts("workflow-path", "Schedule workflows at this path on the container host")
-                .withOptionalArg().ofType(String.class).defaultsTo("/workflow/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0");
+                .withOptionalArg().ofType(String.class).required();
         this.totalJobSpec = super.parser.accepts("total-jobs", "Schedule a specific number of test workflows")
                 .requiredUnless(iniDirSpec, this.endlessSpec).withRequiredArg().ofType(Integer.class).defaultsTo(Integer.MAX_VALUE);
         this.forceSpec = super.parser.accepts("force", "Force job generation even if hashing is activated");
