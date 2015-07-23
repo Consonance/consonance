@@ -1,6 +1,17 @@
 package info.pancancer.arch3.worker;
 
+import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.beans.StatusState;
+import info.pancancer.arch3.utils.Constants;
+import info.pancancer.arch3.utils.Utilities;
+import io.cloudbindle.youxia.util.Log;
+
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -8,15 +19,12 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -33,14 +41,6 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
-
-import info.pancancer.arch3.Base;
-import info.pancancer.arch3.beans.Job;
-import info.pancancer.arch3.beans.Status;
-import info.pancancer.arch3.beans.StatusState;
-import info.pancancer.arch3.utils.Constants;
-import info.pancancer.arch3.utils.Utilities;
-import io.cloudbindle.youxia.util.Log;
 
 /**
  * This class represents a WorkerRunnable, in the Architecture 3 design.
@@ -97,6 +97,17 @@ public class WorkerRunnable implements Runnable {
      *            - have the worker pick up new jobs as the current job finishes successfully
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
+        log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
+                + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
+
+        try {
+            this.networkAddress = getFirstNonLoopbackAddress().toString().substring(1);
+        } catch (SocketException e) {
+            // TODO Auto-generated catch block
+            log.error("Could not get network address: " + e.getMessage(), e);
+            throw new RuntimeException("Could not get network address: " + e.getMessage());
+        }
+
         this.maxRuns = maxRuns;
         settings = Utilities.parseConfig(configFile);
 
@@ -294,8 +305,9 @@ public class WorkerRunnable implements Runnable {
             args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata",
                     "--engine", seqwareEngine));
 
-            String runnerPath = this.writeDockerRunnerScript(args);
-            CommandLine cli = new CommandLine(runnerPath);
+            // String runnerPath = this.writeDockerRunnerScript(args);
+            CommandLine cli = new CommandLine("docker run");
+            cli.addArguments(args.toArray(new String[args.size()]));
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
@@ -305,7 +317,7 @@ public class WorkerRunnable implements Runnable {
             heartbeat.setSecondsDelay(settings.getDouble(Constants.WORKER_HEARTBEAT_RATE, WorkerHeartbeat.DEFAULT_DELAY));
             heartbeat.setJobUuid(job.getUuid());
             heartbeat.setVmUuid(this.vmUuid);
-            heartbeat.setNetworkID(getFirstNonLoopbackAddress().toString().substring(1));
+            heartbeat.setNetworkID(this.networkAddress);
             heartbeat.setStatusSource(workflowRunner);
 
             long presleep = settings.getLong(Constants.WORKER_PREWORKER_SLEEP, WorkerRunnable.DEFAULT_PRESLEEP);
@@ -327,6 +339,10 @@ public class WorkerRunnable implements Runnable {
             // don't get the heartbeat if the workflow is complete already
 
             log.info("Docker execution result: " + workflowResult.getWorkflowStdout());
+
+            // Now that the work is finished, we have to manage the CID files.
+            this.copyCID(containerIDFile, workflowResult.getExitCode());
+
         } catch (SocketException e) {
             // This comes from trying to get the IP address.
             log.error(e.getMessage(), e);
@@ -350,32 +366,36 @@ public class WorkerRunnable implements Runnable {
         return workflowResult;
     }
 
-    private String writeDockerRunnerScript(List<String> dockerArgs) throws IOException {
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("#! /bin/bash\n");
-        sb.append("docker run ");
-        for (String arg : dockerArgs) {
-            sb.append(arg).append(" ");
+    private void copyCID(String containerIDFile, int exitCode) {
+        try {
+            Path p = Paths.get(new URI("file://"+containerIDFile));
+            File f = p.toFile();
+            Reader in = new FileReader(f);
+            try (BufferedReader reader = new BufferedReader(in)) {
+                String buffer = reader.readLine();
+                // Now we have to append the CID to the success file or failure file, dependning on the exit code.
+                if (exitCode == 0) {
+                    Path pathToSuccessfulCID = Paths.get(new URI("/home/ubuntu/successful_container_cids"));
+                    OutputStream outStream = Files.newOutputStream(pathToSuccessfulCID, StandardOpenOption.APPEND,
+                            StandardOpenOption.CREATE);
+                    outStream.write(buffer.getBytes());
+                    outStream.close();
+                } else {
+                    Path pathToUnsuccessfulCID = Paths.get(new URI("/home/ubuntu/unsuccessful_container_cids"));
+                    OutputStream outStream = Files.newOutputStream(pathToUnsuccessfulCID, StandardOpenOption.APPEND,
+                            StandardOpenOption.CREATE);
+                    outStream.write(buffer.getBytes());
+                    outStream.close();
+                }
+            }
+        } catch (URISyntaxException e) {
+            log.error("Bad URI for container ID file: " + e.getMessage(), e);
+        } catch (FileNotFoundException e) {
+            log.error("Could not find container ID file: " + e.getMessage(), e);
+        } catch (IOException e) {
+            log.error("Error reading container ID file: " + e.getMessage(), e);
         }
-        sb.append(" && cat /home/" + this.userName + "/worker.cid >> /home/" + this.userName + "/successful_container_cids");
-        sb.append(" && echo \\n >> /home/" + this.userName + "/successful_container_cids");
-        sb.append("\n");
 
-        String script = sb.toString();
-
-        EnumSet<PosixFilePermission> perms = EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
-                PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OTHERS_READ, PosixFilePermission.GROUP_READ);
-
-        Path runnerPath = Files.createTempFile("run_workflow_in_docker", ".sh");
-        Files.setPosixFilePermissions(runnerPath, perms);
-        Files.write(runnerPath, script.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
-
-        String scriptPath = runnerPath.toFile().getAbsolutePath();
-
-        this.log.info("Script at " + scriptPath + " was written, with contents: \n" + script);
-
-        return scriptPath;
     }
 
     /**
