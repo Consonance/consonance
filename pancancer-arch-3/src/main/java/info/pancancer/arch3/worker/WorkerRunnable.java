@@ -1,10 +1,10 @@
 package info.pancancer.arch3.worker;
 
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.net.Inet4Address;
@@ -74,7 +74,7 @@ public class WorkerRunnable implements Runnable {
     private boolean workflowFailed = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
-    //private static final int FIVE_SECONDS_IN_MS = 5000;
+    // private static final int FIVE_SECONDS_IN_MS = 5000;
     private String networkAddress;
 
     /**
@@ -316,7 +316,7 @@ public class WorkerRunnable implements Runnable {
 
             // String runnerPath = this.writeDockerRunnerScript(args);
             CommandLine cli = new CommandLine("docker run");
-            cli.addArguments(args.toArray(new String[args.size()]),false);
+            cli.addArguments(args.toArray(new String[args.size()]), false);
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
@@ -377,24 +377,25 @@ public class WorkerRunnable implements Runnable {
 
     private void copyCID(String containerIDFile, int exitCode) {
         try {
-            Path p = Paths.get(new URI("file://"+containerIDFile));
-            File f = p.toFile();
-            Reader in = new FileReader(f);
+            // Path p = Paths.get(new URI("file://"+containerIDFile));
+            // File f = p.toFile();
+            Reader in = new InputStreamReader(new FileInputStream(containerIDFile), StandardCharsets.UTF_8);
             try (BufferedReader reader = new BufferedReader(in)) {
                 String buffer = reader.readLine();
-                // Now we have to append the CID to the success file or failure file, dependning on the exit code.
-                if (exitCode == 0) {
-                    Path pathToSuccessfulCID = Paths.get(new URI("/home/ubuntu/successful_container_cids"));
-                    OutputStream outStream = Files.newOutputStream(pathToSuccessfulCID, StandardOpenOption.APPEND,
-                            StandardOpenOption.CREATE);
-                    outStream.write(buffer.getBytes());
-                    outStream.close();
-                } else {
-                    Path pathToUnsuccessfulCID = Paths.get(new URI("/home/ubuntu/unsuccessful_container_cids"));
-                    OutputStream outStream = Files.newOutputStream(pathToUnsuccessfulCID, StandardOpenOption.APPEND,
-                            StandardOpenOption.CREATE);
-                    outStream.write(buffer.getBytes());
-                    outStream.close();
+                if (buffer != null) { // Now we have to append the CID to the success file or failure file, dependning on the exit code.
+                    if (exitCode == 0) {
+                        Path pathToSuccessfulCID = Paths.get(new URI("/home/ubuntu/successful_container_cids"));
+                        OutputStream outStream = Files.newOutputStream(pathToSuccessfulCID, StandardOpenOption.APPEND,
+                                StandardOpenOption.CREATE);
+                        outStream.write(buffer.getBytes(StandardCharsets.UTF_8));
+                        outStream.close();
+                    } else {
+                        Path pathToUnsuccessfulCID = Paths.get(new URI("/home/ubuntu/unsuccessful_container_cids"));
+                        OutputStream outStream = Files.newOutputStream(pathToUnsuccessfulCID, StandardOpenOption.APPEND,
+                                StandardOpenOption.CREATE);
+                        outStream.write(buffer.getBytes(StandardCharsets.UTF_8));
+                        outStream.close();
+                    }
                 }
             }
         } catch (URISyntaxException e) {
