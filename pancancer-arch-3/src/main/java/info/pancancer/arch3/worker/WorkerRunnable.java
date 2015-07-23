@@ -1,30 +1,31 @@
 package info.pancancer.arch3.worker;
 
-import info.pancancer.arch3.Base;
-import info.pancancer.arch3.beans.Job;
-import info.pancancer.arch3.beans.Status;
-import info.pancancer.arch3.beans.StatusState;
-import info.pancancer.arch3.utils.Constants;
-import info.pancancer.arch3.utils.Utilities;
-import io.cloudbindle.youxia.util.Log;
-
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -41,6 +42,14 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+
+import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.beans.StatusState;
+import info.pancancer.arch3.utils.Constants;
+import info.pancancer.arch3.utils.Utilities;
+import io.cloudbindle.youxia.util.Log;
 
 /**
  * This class represents a WorkerRunnable, in the Architecture 3 design.
@@ -65,7 +74,7 @@ public class WorkerRunnable implements Runnable {
     private boolean workflowFailed = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
-    private static final int FIVE_SECONDS_IN_MS = 5000;
+    //private static final int FIVE_SECONDS_IN_MS = 5000;
     private String networkAddress;
 
     /**
@@ -307,7 +316,7 @@ public class WorkerRunnable implements Runnable {
 
             // String runnerPath = this.writeDockerRunnerScript(args);
             CommandLine cli = new CommandLine("docker run");
-            cli.addArguments(args.toArray(new String[args.size()]));
+            cli.addArguments(args.toArray(new String[args.size()]),false);
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
