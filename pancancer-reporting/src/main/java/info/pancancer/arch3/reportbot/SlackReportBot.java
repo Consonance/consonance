@@ -82,7 +82,13 @@ public class SlackReportBot extends Base {
                 if (message.startsWith(namespace)) {
                     validMessage = true;
                     message = message.replaceFirst(namespace, "").trim();
+                    System.out.println("message was *" + message + "* ");
+                    // remove extra colon that the Mac client adds
+                    if (message.startsWith(":")) {
+                        message = message.substring(1).trim();
+                    }
                 }
+
                 if (validMessage) {
                     ReportAPI reportAPI = ReportAPIFactory.makeReportAPI(settings, db);
                     SlackRenderer renderer = new SlackRenderer(reportAPI);
