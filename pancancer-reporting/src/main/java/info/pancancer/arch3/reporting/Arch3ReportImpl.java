@@ -277,6 +277,7 @@ public class Arch3ReportImpl implements ReportAPI {
     public Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances() {
         Map<String, AbstractInstanceListing.InstanceDescriptor> youxiaInstances = this.getYouxiaInstances("AWS");
         youxiaInstances.putAll(this.getYouxiaInstances("OPENSTACK"));
+        youxiaInstances.putAll(this.getYouxiaInstances("Azure"));
         return youxiaInstances;
     }
 
@@ -286,6 +287,9 @@ public class Arch3ReportImpl implements ReportAPI {
             AbstractInstanceListing listing;
             if (cloudType.equalsIgnoreCase("AWS")) {
                 listing = ListingFactory.createAWSListing();
+
+            } else if (cloudType.equalsIgnoreCase("Azure")) {
+                listing = ListingFactory.createAzureListing();
 
             } else {
                 listing = ListingFactory.createOpenStackListing();
