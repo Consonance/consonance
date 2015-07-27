@@ -30,6 +30,10 @@ import java.util.Map;
  */
 public interface ReportAPI {
 
+    public enum CloudTypes {
+        AWS, AZURE, OPENSTACK
+    }
+
     public enum Commands {
         STATUS("retrieves configuration and version information on arch3"), INFO("retrieves high-level information on bot config"), PROVISIONED(
                 "retrieves detailed information on provisioned instances"), JOBS("retrieves detailed information on jobs"), GATHER(
@@ -64,7 +68,7 @@ public interface ReportAPI {
      * @param cloudType
      * @return
      */
-    Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(String cloudType);
+    Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(CloudTypes cloudType);
 
     /**
      * Get information for all jobs in the system, separated by unique identifier.

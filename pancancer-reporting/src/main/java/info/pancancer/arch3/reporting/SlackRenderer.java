@@ -20,6 +20,7 @@ import com.ullink.slack.simpleslackapi.SlackAttachment;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.reporting.ReportAPI.CloudTypes;
 import info.pancancer.arch3.reporting.ReportAPI.Commands;
 import io.cloudbindle.youxia.listing.AbstractInstanceListing;
 import java.util.Date;
@@ -58,6 +59,7 @@ public class SlackRenderer {
 
         Map<String, AbstractInstanceListing.InstanceDescriptor> awsInstances;
         Map<String, AbstractInstanceListing.InstanceDescriptor> osInstances;
+        Map<String, AbstractInstanceListing.InstanceDescriptor> azureInstances;
         StringBuilder builder = new StringBuilder();
         SlackAttachment attach;
         Map<String, Map<String, String>> jobInfo;
@@ -67,10 +69,12 @@ public class SlackRenderer {
         case STATUS:
 
             builder.append("*Active VM counts via youxia*:\n");
-            awsInstances = reportAPI.getYouxiaInstances("AWS");
-            osInstances = reportAPI.getYouxiaInstances("OPENSTACK");
+            awsInstances = reportAPI.getYouxiaInstances(CloudTypes.AWS);
+            osInstances = reportAPI.getYouxiaInstances(CloudTypes.OPENSTACK);
+            azureInstances = reportAPI.getYouxiaInstances(CloudTypes.AZURE);
             builder.append(awsInstances.size()).append(" instances managed on AWS \n");
             builder.append(osInstances.size()).append(" instances managed on OpenStack \n");
+            builder.append(azureInstances.size()).append(" instances managed on Azure \n");
 
             builder.append("*Historical VM counts*:\n");
             for (Entry<ProvisionState, Long> entry : reportAPI.getVMStateCounts().entrySet()) {
@@ -94,26 +98,20 @@ public class SlackRenderer {
             return new FormattedMessage(builder.toString(), null);
 
         case YOUXIA:
-            awsInstances = reportAPI.getYouxiaInstances("AWS");
-            osInstances = reportAPI.getYouxiaInstances("OPENSTACK");
+            awsInstances = reportAPI.getYouxiaInstances(CloudTypes.AWS);
+            osInstances = reportAPI.getYouxiaInstances(CloudTypes.OPENSTACK);
+            azureInstances = reportAPI.getYouxiaInstances(CloudTypes.AZURE);
+
             if (awsInstances.size() > 0) {
-                builder.append("*").append("Instances on AWS").append("*:\n");
-                for (Entry<String, AbstractInstanceListing.InstanceDescriptor> entry : awsInstances.entrySet()) {
-                    builder.append("*").append(entry.getKey()).append("*:\n");
-                    builder.append("ip address").append(" ").append(entry.getValue().getIpAddress()).append(":\n");
-                    builder.append("private ip address").append(" ").append(entry.getValue().getPrivateIpAddress()).append(":\n");
-                    builder.append("spot instance").append(" ").append(entry.getValue().isSpotInstance()).append(":\n");
-                }
+                renderInstances("AWS", builder, awsInstances);
             }
-            // this sucks, make this better
-            if (osInstances.size() > 0) {
-                builder.append("*").append("Instances on OpenStack").append("*:\n");
-                for (Entry<String, AbstractInstanceListing.InstanceDescriptor> entry : osInstances.entrySet()) {
-                    builder.append("*").append(entry.getKey()).append("*:\n");
-                    builder.append("ip address").append(" ").append(entry.getValue().getIpAddress()).append(":\n");
-                    builder.append("private ip address").append(" ").append(entry.getValue().getPrivateIpAddress()).append(":\n");
-                }
+            if (awsInstances.size() > 0) {
+                renderInstances("OpenStack", builder, osInstances);
             }
+            if (awsInstances.size() > 0) {
+                renderInstances("Azure", builder, azureInstances);
+            }
+
             attach = new SlackAttachment("Live cloud instance info described on " + new Date(), "Live instances", builder.toString(), null);
             return new FormattedMessage(null, attach);
 
@@ -149,6 +147,17 @@ public class SlackRenderer {
             /** do nothing, not a valid command */
         }
         throw new RuntimeException("should not get here in the SlackRenderer");
+    }
+
+    private void renderInstances(String description, StringBuilder builder,
+            Map<String, AbstractInstanceListing.InstanceDescriptor> instances) {
+        builder.append("*").append("Instances on ").append(description).append("*:\n");
+        for (Entry<String, AbstractInstanceListing.InstanceDescriptor> entry : instances.entrySet()) {
+            builder.append("*").append(entry.getKey()).append("*:\n");
+            builder.append("ip address").append(" ").append(entry.getValue().getIpAddress()).append(":\n");
+            builder.append("private ip address").append(" ").append(entry.getValue().getPrivateIpAddress()).append(":\n");
+            builder.append("spot instance").append(" ").append(entry.getValue().isSpotInstance()).append(":\n");
+        }
     }
 
     private void renderMapOfMaps(Map<String, Map<String, String>> jobInfo, StringBuilder builder) {
