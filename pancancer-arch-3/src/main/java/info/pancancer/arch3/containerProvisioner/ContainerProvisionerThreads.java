@@ -117,7 +117,7 @@ public class ContainerProvisionerThreads extends Base {
 
                 // TODO: need threads that each read from orders and another that reads results
                 do {
-                    LOG.info("CHECKING FOR NEW VM ORDER!");
+                    LOG.debug("CHECKING FOR NEW VM ORDER!");
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
                         continue;
@@ -286,7 +286,7 @@ public class ContainerProvisionerThreads extends Base {
                 // TODO: need threads that each read from orders and another that reads results
                 do {
 
-                    LOG.info("CHECKING FOR VMs TO REAP!");
+                    LOG.debug("CHECKING FOR VMs TO REAP!");
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
