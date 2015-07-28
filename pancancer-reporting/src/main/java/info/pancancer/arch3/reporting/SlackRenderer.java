@@ -20,7 +20,7 @@ import com.ullink.slack.simpleslackapi.SlackAttachment;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
-import info.pancancer.arch3.reporting.ReportAPI.CloudTypes;
+import info.pancancer.arch3.CloudTypes;
 import info.pancancer.arch3.reporting.ReportAPI.Commands;
 import io.cloudbindle.youxia.listing.AbstractInstanceListing;
 import java.util.Date;

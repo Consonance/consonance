@@ -16,6 +16,7 @@
  */
 package info.pancancer.arch3.reporting;
 
+import info.pancancer.arch3.CloudTypes;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
@@ -30,9 +31,6 @@ import java.util.Map;
  */
 public interface ReportAPI {
 
-    public enum CloudTypes {
-        AWS, AZURE, OPENSTACK
-    }
 
     public enum Commands {
         STATUS("retrieves configuration and version information on arch3"), INFO("retrieves high-level information on bot config"), PROVISIONED(

@@ -27,6 +27,7 @@ import info.pancancer.arch3.reporting.ReportAPIFactory;
 import info.pancancer.arch3.reporting.SlackRenderer;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
+import io.cloudbindle.youxia.util.Log;
 import java.io.IOException;
 import java.util.Locale;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -59,7 +60,7 @@ public class SlackReportBot extends Base {
         session.addMessagePostedListener(new SlackMessagePostedListener() {
             @Override
             public void onEvent(SlackMessagePosted event, SlackSession session) {
-                System.out.println(event.toString());
+                Log.debug(event.toString());
                 String namespace = settings.getString(Constants.REPORT_NAMESPACE).toUpperCase(Locale.CANADA);
                 if (event.getSender().getUserName().equalsIgnoreCase(namespace)) {
                     return;
@@ -82,7 +83,7 @@ public class SlackReportBot extends Base {
                 if (message.startsWith(namespace)) {
                     validMessage = true;
                     message = message.replaceFirst(namespace, "").trim();
-                    System.out.println("message was *" + message + "* ");
+                    Log.info("message was *" + message + "* ");
                     // remove extra colon that the Mac client adds
                     if (message.startsWith(":")) {
                         message = message.substring(1).trim();

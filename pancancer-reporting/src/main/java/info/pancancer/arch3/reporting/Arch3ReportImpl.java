@@ -27,7 +27,7 @@ import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
-import info.pancancer.arch3.reporting.ReportAPI.CloudTypes;
+import info.pancancer.arch3.CloudTypes;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.listing.AbstractInstanceListing;
