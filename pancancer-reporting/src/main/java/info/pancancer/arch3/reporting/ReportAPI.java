@@ -16,6 +16,7 @@
  */
 package info.pancancer.arch3.reporting;
 
+import info.pancancer.arch3.CloudTypes;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
@@ -29,6 +30,7 @@ import java.util.Map;
  * @author dyuen
  */
 public interface ReportAPI {
+
 
     public enum Commands {
         STATUS("retrieves configuration and version information on arch3"), INFO("retrieves high-level information on bot config"), PROVISIONED(
@@ -64,7 +66,7 @@ public interface ReportAPI {
      * @param cloudType
      * @return
      */
-    Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(String cloudType);
+    Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(CloudTypes cloudType);
 
     /**
      * Get information for all jobs in the system, separated by unique identifier.

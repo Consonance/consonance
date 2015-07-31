@@ -171,6 +171,7 @@
                                 <mainClass>info.pancancer.arch3.reportbot.SlackReportBot</mainClass>
                             </manifestEntries>
                         </transformer>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     </transformers>
                 </configuration>
                 <executions>

@@ -27,6 +27,7 @@ import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
+import info.pancancer.arch3.CloudTypes;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.listing.AbstractInstanceListing;
@@ -275,17 +276,22 @@ public class Arch3ReportImpl implements ReportAPI {
 
     @Override
     public Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances() {
-        Map<String, AbstractInstanceListing.InstanceDescriptor> youxiaInstances = this.getYouxiaInstances("AWS");
-        youxiaInstances.putAll(this.getYouxiaInstances("OPENSTACK"));
+        Map<String, AbstractInstanceListing.InstanceDescriptor> youxiaInstances = new HashMap<>();
+        for (CloudTypes type : CloudTypes.values()) {
+            youxiaInstances.putAll(this.getYouxiaInstances(type));
+        }
         return youxiaInstances;
     }
 
     @Override
-    public Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(String cloudType) {
+    public Map<String, AbstractInstanceListing.InstanceDescriptor> getYouxiaInstances(CloudTypes cloudType) {
         try {
             AbstractInstanceListing listing;
-            if (cloudType.equalsIgnoreCase("AWS")) {
+            if (cloudType == CloudTypes.AWS) {
                 listing = ListingFactory.createAWSListing();
+
+            } else if (cloudType == CloudTypes.AZURE) {
+                listing = ListingFactory.createAzureListing();
 
             } else {
                 listing = ListingFactory.createOpenStackListing();

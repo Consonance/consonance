@@ -117,7 +117,7 @@ public class ContainerProvisionerThreads extends Base {
 
                 // TODO: need threads that each read from orders and another that reads results
                 do {
-                    LOG.info("CHECKING FOR NEW VM ORDER!");
+                    LOG.debug("CHECKING FOR NEW VM ORDER!");
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
                         continue;
@@ -230,12 +230,12 @@ public class ContainerProvisionerThreads extends Base {
                                 } catch (Exception e) {
                                     LOG.error("Youxia deployer threw the following exception", e);
                                     // call the reaper to do cleanup when deployment fails
-                                    runReaper(settings, null);
+                                    runReaper(settings, null, null);
                                 }
                             }
-                            if (endless) {
-                                Thread.sleep(MINUTE_IN_MILLISECONDS);
-                            }
+                        }
+                        if (endless) {
+                            Thread.sleep(MINUTE_IN_MILLISECONDS);
                         }
                     }
                 } while (endless);
@@ -286,7 +286,7 @@ public class ContainerProvisionerThreads extends Base {
                 // TODO: need threads that each read from orders and another that reads results
                 do {
 
-                    LOG.info("CHECKING FOR VMs TO REAP!");
+                    LOG.debug("CHECKING FOR VMs TO REAP!");
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
@@ -311,11 +311,10 @@ public class ContainerProvisionerThreads extends Base {
                             LOG.info("No max_running_containers specified, skipping provision ");
                             continue;
                         }
-
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         db.finishContainer(status.getVmUuid());
                         synchronized (ContainerProvisionerThreads.class) {
-                            runReaper(settings, status.getIpAddress());
+                            runReaper(settings, status.getIpAddress(), status.getVmUuid());
                         }
                         if (endless) {
                             Thread.sleep(MINUTE_IN_MILLISECONDS);
@@ -359,7 +358,7 @@ public class ContainerProvisionerThreads extends Base {
      * @throws JsonIOException
      * @throws IOException
      */
-    private static void runReaper(HierarchicalINIConfiguration settings, String ipAddress) throws IOException {
+    private static void runReaper(HierarchicalINIConfiguration settings, String ipAddress, String vmName) throws IOException {
         String param = settings.getString(Constants.PROVISION_YOUXIA_REAPER);
         CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
         List<String> arguments = new ArrayList<>();
@@ -372,7 +371,7 @@ public class ContainerProvisionerThreads extends Base {
         // String[] successfulVMAddresses = db.getSuccessfulVMAddresses();
         String[] successfulVMAddresses = new String[] {};
         if (ipAddress != null) {
-            successfulVMAddresses = new String[] { ipAddress };
+            successfulVMAddresses = new String[] { ipAddress, vmName };
         }
         LOG.info("Kill list contains: " + Arrays.asList(successfulVMAddresses));
         Path createTempFile = Files.createTempFile("target", "json");
