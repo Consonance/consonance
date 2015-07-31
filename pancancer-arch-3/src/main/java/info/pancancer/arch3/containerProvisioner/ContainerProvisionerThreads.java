@@ -233,9 +233,9 @@ public class ContainerProvisionerThreads extends Base {
                                     runReaper(settings, null, null);
                                 }
                             }
-                            if (endless) {
-                                Thread.sleep(MINUTE_IN_MILLISECONDS);
-                            }
+                        }
+                        if (endless) {
+                            Thread.sleep(MINUTE_IN_MILLISECONDS);
                         }
                     }
                 } while (endless);
