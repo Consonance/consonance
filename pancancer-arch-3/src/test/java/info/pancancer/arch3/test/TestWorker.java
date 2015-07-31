@@ -224,7 +224,7 @@ public class TestWorker {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(500);
+                    Thread.sleep(1500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
@@ -303,7 +303,7 @@ public class TestWorker {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(500);
+                    Thread.sleep(1500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
