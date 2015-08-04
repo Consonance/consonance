@@ -3,7 +3,7 @@
     <appender name="FILE_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- encoders are assigned the type
         ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
-        <file>./arch3_test.log</file>
+        <file>${FULL_LOGGING_PATH}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <maxHistory>5</maxHistory>
             <fileNamePattern>./arch3_old/arch3_test.%d{YYYY-MM-dd}.%i.log.zip</fileNamePattern>
