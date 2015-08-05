@@ -6,7 +6,7 @@
         <file>${FULL_LOGGING_PATH}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <maxHistory>7</maxHistory>
-            <fileNamePattern>./arch3.%d{YYYY-MM-dd}.%i.log.zip</fileNamePattern>
+            <fileNamePattern>${FULL_LOGGING_PATH}.%d{YYYY-MM-dd}.%i.zip</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>2GB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
