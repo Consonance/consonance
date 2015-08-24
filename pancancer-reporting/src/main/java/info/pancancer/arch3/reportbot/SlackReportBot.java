@@ -40,6 +40,7 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 public class SlackReportBot extends Base {
 
     public static final int SLEEP_IN_MILLISECONDS = 5000;
+    public static final int TEN_MINUTES_IN_MILLISECONDS = 600000;
 
     public static void main(String[] argv) throws Exception {
         SlackReportBot bot = new SlackReportBot(argv);
@@ -101,10 +102,31 @@ public class SlackReportBot extends Base {
                 }
             }
         });
-        session.connect();
 
+        int retries = 0;
+        boolean retry = false;
         do {
-            Thread.sleep(SLEEP_IN_MILLISECONDS);
+            try {
+                session.connect();
+                do {
+                    Thread.sleep(SLEEP_IN_MILLISECONDS);
+                } while (options.has(this.endlessSpec));
+            } catch (Exception e) {
+                Log.error("SlackBot connection issue", e);
+                long waitTime = Math.min(getWaitTimeExp(retries), TEN_MINUTES_IN_MILLISECONDS);
+                System.out.print(waitTime + "\n");
+                // Wait for the result.
+                Thread.sleep(waitTime);
+            }
         } while (options.has(this.endlessSpec));
+    }
+
+    /*
+     * Returns the next wait interval, in milliseconds, using an exponential backoff algorithm. Taken from AWS.
+     */
+    public static long getWaitTimeExp(int retryCount) {
+        final long convertToMilliseconds = 100L;
+        long waitTime = ((long) Math.pow(2, retryCount) * convertToMilliseconds);
+        return waitTime;
     }
 }
