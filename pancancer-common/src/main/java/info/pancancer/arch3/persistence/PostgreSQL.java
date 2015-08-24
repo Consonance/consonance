@@ -296,7 +296,8 @@ public class PostgreSQL {
 
     public boolean previouslyRun(String hash) {
         Object[] runSelectStatement = this.runSelectStatement(
-                "select * from job where job_hash = ? and status = '" + JobState.SUCCESS.toString() + "'", new ArrayHandler(), hash);
+                "select * from job where job_hash = ? and status !='" + JobState.FAILED.toString() + "' and status != '" + JobState.LOST
+                        + "'", new ArrayHandler(), hash);
         return (runSelectStatement.length > 0);
     }
 
