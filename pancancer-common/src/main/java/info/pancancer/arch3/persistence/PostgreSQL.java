@@ -6,7 +6,6 @@ import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -21,7 +20,6 @@ import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
-import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.ArrayHandler;
@@ -39,7 +37,6 @@ import org.slf4j.LoggerFactory;
 public class PostgreSQL {
 
     protected static final Logger LOG = LoggerFactory.getLogger(PostgreSQL.class);
-    private QueryRunner run = new QueryRunner();
     private String url;
     private Properties props;
     private PoolingDataSource<PoolableConnection> dataSource = null;
@@ -112,39 +109,30 @@ public class PostgreSQL {
     }
 
     private <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
-        Connection conn = null;
         try {
-            conn = dataSource.getConnection();
-            return run.query(conn, query, handler, params);
+            QueryRunner run = new QueryRunner(dataSource);
+            return run.query(query, handler, params);
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            DbUtils.closeQuietly(conn);
         }
     }
 
     private <T> T runInsertStatement(String query, ResultSetHandler<T> handler, Object... params) {
-        Connection conn = null;
         try {
-            conn = dataSource.getConnection();
-            return run.insert(conn, query, handler, params);
+            QueryRunner run = new QueryRunner(dataSource);
+            return run.insert(query, handler, params);
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            DbUtils.closeQuietly(conn);
         }
     }
 
     private boolean runUpdateStatement(String query, Object... params) {
-        Connection conn = null;
         try {
-            conn = dataSource.getConnection();
-            run.update(conn, query, params);
+            QueryRunner run = new QueryRunner(dataSource);
+            run.update(query, params);
             return true;
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            DbUtils.closeQuietly(conn);
         }
     }
 
