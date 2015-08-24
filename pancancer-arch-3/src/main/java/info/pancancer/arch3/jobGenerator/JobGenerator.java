@@ -78,7 +78,7 @@ public class JobGenerator extends Base {
 
         // CONFIG
         queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
-        log.info("QUEUE NAME: " + queueName);
+        log.info("queue name: " + queueName);
         try {
             // SETUP QUEUE
             this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
@@ -123,7 +123,7 @@ public class JobGenerator extends Base {
     private void generateAndQueueJob(String iniFile, String workflowName, String workflowVersion, String workflowPath) {
         // keep track of the iterations
         currIterations++;
-        log.info("\nGENERATING NEW JOBS, iteration " + currIterations + "\n");
+        log.info("\ngenerating new jobs, iteration " + currIterations + "\n");
         // TODO: this is fake, in a real program this is being read from JSONL file or web service
         // check to see if new results are available and/or if the work queue is empty
         Order o = generateNewJob(iniFile, workflowName, workflowVersion, workflowPath);
@@ -149,7 +149,7 @@ public class JobGenerator extends Base {
             // TODO: this will come from a web service or file
             iniFileEntries = parseIniFile(file);
             for (Entry<String, String> e : iniFileEntries.entrySet()) {
-                log.info("KEY: " + e.getKey() + " VALUE: " + e.getValue());
+                log.info("key: " + e.getKey() + " value: " + e.getValue());
             }
         } else {
             iniFileEntries = new LinkedHashMap<>();
