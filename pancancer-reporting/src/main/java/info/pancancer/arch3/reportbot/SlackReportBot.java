@@ -40,7 +40,6 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 public class SlackReportBot extends Base {
 
     public static final int SLEEP_IN_MILLISECONDS = 5000;
-    public static final int TEN_MINUTES_IN_MILLISECONDS = 600000;
 
     public static void main(String[] argv) throws Exception {
         SlackReportBot bot = new SlackReportBot(argv);
