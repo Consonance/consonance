@@ -267,11 +267,28 @@ public class PostgreSQLIT {
      */
     @Test
     public void testPreviouslyRun() {
+        // pending should return true
         Job createJob = createJob();
         createJob.setState(JobState.PENDING);
         createJob.setJobHash("test_hash");
         postgres.createJob(createJob);
         boolean result = postgres.previouslyRun("test_hash");
+        assertEquals(true, result);
+
+        // failed should not return true
+        createJob = createJob();
+        createJob.setState(JobState.FAILED);
+        createJob.setJobHash("test_hash2");
+        postgres.createJob(createJob);
+        result = postgres.previouslyRun("test_hash2");
+        assertEquals(false, result);
+
+        // success should return true
+        createJob = createJob();
+        createJob.setState(JobState.SUCCESS);
+        createJob.setJobHash("test_hash3");
+        postgres.createJob(createJob);
+        result = postgres.previouslyRun("test_hash3");
         assertEquals(true, result);
     }
 

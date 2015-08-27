@@ -33,6 +33,7 @@ public class Constants {
     public static final String RABBIT_QUEUE_NAME = "rabbit.rabbitMQQueueName";
 
     public static final String PROVISION_MAX_RUNNING_CONTAINERS = "provision.max_running_containers";
+    public static final String PROVISION_REAP_FAILED_WORKERS = "provision.reap_failed_workers";
     public static final String PROVISION_YOUXIA_DEPLOYER = "provision.youxia_deployer_parameters";
     public static final String PROVISION_YOUXIA_REAPER = "provision.youxia_reaper_parameters";
 

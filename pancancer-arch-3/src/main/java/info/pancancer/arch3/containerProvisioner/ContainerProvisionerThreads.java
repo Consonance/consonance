@@ -283,6 +283,8 @@ public class ContainerProvisionerThreads extends Base {
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
 
+                boolean reapFailedWorkers = settings.getBoolean(Constants.PROVISION_REAP_FAILED_WORKERS, false);
+
                 // TODO: need threads that each read from orders and another that reads results
                 do {
 
@@ -304,28 +306,27 @@ public class ContainerProvisionerThreads extends Base {
                         db.updateJobMessage(status.getJobUuid(), status.getStdout(), status.getStderr());
                     }
 
-                    // now update that DB record to be exited
-                    // this is acutally finishing the VM and not the work
-                    if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
-                        if (!settings.containsKey(Constants.PROVISION_MAX_RUNNING_CONTAINERS)) {
-                            LOG.info("No max_running_containers specified, skipping provision ");
-                            continue;
+                    if (Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                        // now update that DB record to be exited
+                        // this is acutally finishing the VM and not the work
+                        if ((status.getState() == StatusState.SUCCESS)
+                        // allow reaping of failed workers if this is turned on
+                                || (reapFailedWorkers && status.getState() == StatusState.FAILED)) {
+                            // this is where it reaps, the job status message also contains the UUID for the VM
+                            db.finishContainer(status.getVmUuid());
+                            synchronized (ContainerProvisionerThreads.class) {
+                                runReaper(settings, status.getIpAddress(), status.getVmUuid());
+                            }
+                            if (endless) {
+                                Thread.sleep(MINUTE_IN_MILLISECONDS);
+                            }
+                        } else if (status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
+                                || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING) {
+                            // deal with running, failed, pending, provisioning
+                            // convert from provision state to statestate
+                            ProvisionState provisionState = ProvisionState.valueOf(status.getState().toString());
+                            db.updateProvisionByJobUUID(status.getJobUuid(), status.getVmUuid(), provisionState, status.getIpAddress());
                         }
-                        // this is where it reaps, the job status message also contains the UUID for the VM
-                        db.finishContainer(status.getVmUuid());
-                        synchronized (ContainerProvisionerThreads.class) {
-                            runReaper(settings, status.getIpAddress(), status.getVmUuid());
-                        }
-                        if (endless) {
-                            Thread.sleep(MINUTE_IN_MILLISECONDS);
-                        }
-                    } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
-                            || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING)
-                            && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
-                        // deal with running, failed, pending, provisioning
-                        // convert from provision state to statestate
-                        ProvisionState provisionState = ProvisionState.valueOf(status.getState().toString());
-                        db.updateProvisionByJobUUID(status.getJobUuid(), status.getVmUuid(), provisionState, status.getIpAddress());
                     }
                     resultsChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);

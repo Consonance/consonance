@@ -60,4 +60,42 @@ public class JobGeneratorIT {
                 "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
     }
 
+    /**
+     * Test of main method, of class JobGenerator.
+     *
+     * @throws java.lang.Exception
+     */
+    @Test
+    public void testForcedOperation() throws Exception {
+        File file = FileUtils.getFile("src", "test", "resources", "config");
+        File iniDir = FileUtils.getFile("ini");
+        JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath(), "--workflow-name",
+                "DEWrapper", "--workflow-version", "1.0.0", "--workflow-path",
+                "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0", "--force" });
+    }
+
+    /**
+     * Test of main method, of class JobGenerator.
+     *
+     * @throws java.lang.Exception
+     */
+    @Test
+    public void testTestOperation() throws Exception {
+        File file = FileUtils.getFile("src", "test", "resources", "config");
+        JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--total-jobs", "5", "--workflow-name", "DEWrapper",
+                "--workflow-version", "1.0.0", "--workflow-path", "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
+    }
+
+    /**
+     * Test of main method, of class JobGenerator.
+     *
+     * @throws java.lang.Exception
+     */
+    @Test
+    public void testTestingWithHashingOperation() throws Exception {
+        File file = FileUtils.getFile("src", "test", "resources", "config.check_hash");
+        JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--total-jobs", "5", "--workflow-name", "DEWrapper",
+                "--workflow-version", "1.0.0", "--workflow-path", "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
+    }
+
 }
