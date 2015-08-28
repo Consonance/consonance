@@ -27,6 +27,12 @@ max_seconds_before_lost = 10
 # to configure hashing, you can enable the value below
 # the job generator will skip ini files that are already known to the coordinator
 # check_previous_job_hash = true
+
 # you can configure a subset of the ini values to use for a hash code rather than all values
 # job_filter_hash_keys = project_code, test
+
+# you can configure a job limit to limit the number of outstanding orders and jobs in the system
+# at a given time. This allows the system to get to new jobs faster at the cost of needing 
+# submit new jobs more frequently
+# job_limit = 100
 
