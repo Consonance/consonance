@@ -1,6 +1,7 @@
 package info.pancancer.arch3.jobGenerator;
 
 import com.google.common.base.Joiner;
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import info.pancancer.arch3.Base;
@@ -48,7 +49,7 @@ public class JobGenerator extends Base {
 
     public static void main(String[] argv) throws IOException {
         JobGenerator jg = new JobGenerator(argv);
-        jg.log.info("MASTER FINISHED, EXITING!");
+        jg.log.info("master finished, exiting!");
     }
 
     public JobGenerator(String[] argv) throws IOException {
@@ -82,6 +83,8 @@ public class JobGenerator extends Base {
         try {
             // SETUP QUEUE
             this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
+            Channel setupQueue = Utilities.setupQueue(settings, queueName + "_jobs");
+            setupQueue.getConnection().close(FIVE_SECOND_IN_MILLISECONDS);
         } catch (TimeoutException ex) {
             throw new RuntimeException(ex);
         }
@@ -97,7 +100,16 @@ public class JobGenerator extends Base {
             String[] files = scanner.getIncludedFiles();
 
             // LOOP, ADDING JOBS EVERY FEW MINUTES
+            int jobLimit = this.settings.getInt(Constants.JOB_GENERATOR_JOB_LIMIT, Integer.MAX_VALUE);
             for (String file : files) {
+
+                AMQP.Queue.DeclareOk orderQueuePassive = this.jchannel.queueDeclarePassive(queueName + "_orders");
+                AMQP.Queue.DeclareOk jobQueuePassive = this.jchannel.queueDeclarePassive(queueName + "_jobs");
+                int totalSubmittedJobs = orderQueuePassive.getMessageCount() + jobQueuePassive.getMessageCount();
+                if (totalSubmittedJobs > jobLimit) {
+                    log.warn("Number of jobs and orders (" + totalSubmittedJobs + ") is greater than the limit, ending " + jobLimit);
+                    break;
+                }
                 generateAndQueueJob(iniDir + "/" + file, workflowName, workflowVersion, workflowPath);
             }
         } else if (options.has(endlessSpec) || options.has(totalJobSpec)) {
@@ -111,9 +123,7 @@ public class JobGenerator extends Base {
         }
 
         try {
-
             jchannel.getConnection().close(FIVE_SECOND_IN_MILLISECONDS);
-
         } catch (IOException ex) {
             log.error(ex.toString());
         }
@@ -225,7 +235,6 @@ public class JobGenerator extends Base {
     private void enqueueNewJobs(String job) {
 
         try {
-            log.info("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
 
             this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
                     job.getBytes(StandardCharsets.UTF_8));
