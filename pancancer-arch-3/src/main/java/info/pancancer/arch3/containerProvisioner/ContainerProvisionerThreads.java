@@ -317,9 +317,6 @@ public class ContainerProvisionerThreads extends Base {
                             synchronized (ContainerProvisionerThreads.class) {
                                 runReaper(settings, status.getIpAddress(), status.getVmUuid());
                             }
-                            if (endless) {
-                                Thread.sleep(MINUTE_IN_MILLISECONDS);
-                            }
                         } else if (status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
                                 || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING) {
                             // deal with running, failed, pending, provisioning
