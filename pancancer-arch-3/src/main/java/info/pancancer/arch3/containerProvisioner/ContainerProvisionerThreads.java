@@ -47,6 +47,8 @@ public class ContainerProvisionerThreads extends Base {
 
     private static final int DEFAULT_THREADS = 3;
     private static final int MINUTE_IN_MILLISECONDS = 60 * 1000;
+    private static final int TWO_MINUTE_IN_MILLISECONDS = 2 * 60 * 1000;
+
     private final OptionSpecBuilder testSpec;
     protected static final Logger LOG = LoggerFactory.getLogger(ContainerProvisionerThreads.class);
 
@@ -235,7 +237,8 @@ public class ContainerProvisionerThreads extends Base {
                             }
                         }
                         if (endless) {
-                            Thread.sleep(MINUTE_IN_MILLISECONDS);
+			    // lengthen time to allow cleanup queue to purge
+                            Thread.sleep(TWO_MINUTE_IN_MILLISECONDS);
                         }
                     }
                 } while (endless);
