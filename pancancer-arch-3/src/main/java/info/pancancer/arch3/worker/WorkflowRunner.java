@@ -83,12 +83,6 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
 
         DefaultExecutor executor = new DefaultExecutor();
 
-        /*
-         * CommandLine cli = new CommandLine("docker"); cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t" ,"-v",
-         * "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v",pathToINI + ":/ini", "-v",
-         * "/datastore:/datastore", "-v","/home/"+this.userName+"/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem",
-         * "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
-         */
         LOG.info("Executing command: " + this.cli.toString().replace(",", ""));
 
         DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
@@ -113,7 +107,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 Thread.sleep(this.postworkDelay);
             }
         } catch (ExecuteException e) {
-            LOG.error(e.getMessage(), e);
+            LOG.error("Error executing workflow in docker: "+e.getMessage(), e);
             result.setWorkflowStdout(this.getStdErr());
         } catch (InterruptedException | IOException e) {
             LOG.error(e.getMessage(), e);

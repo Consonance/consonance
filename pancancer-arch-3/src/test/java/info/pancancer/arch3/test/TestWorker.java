@@ -426,6 +426,9 @@ public class TestWorker {
         assertTrue("check begining of output", testResults.contains(begining));
 
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
+        
+        System.out.println(ending);
+        System.out.println(testResults);
         assertTrue("check ending of output", testResults.contains(ending));
 
         assertTrue("Check for \"docker\" command", testResults.contains("Docker execution result: Mock Workflow Response"));

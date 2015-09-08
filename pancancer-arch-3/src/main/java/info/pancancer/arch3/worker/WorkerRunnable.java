@@ -1,30 +1,31 @@
 package info.pancancer.arch3.worker;
 
-import info.pancancer.arch3.Base;
-import info.pancancer.arch3.beans.Job;
-import info.pancancer.arch3.beans.Status;
-import info.pancancer.arch3.beans.StatusState;
-import info.pancancer.arch3.utils.Constants;
-import info.pancancer.arch3.utils.Utilities;
-import io.cloudbindle.youxia.util.Log;
-
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -41,6 +42,14 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
+
+import info.pancancer.arch3.Base;
+import info.pancancer.arch3.beans.Job;
+import info.pancancer.arch3.beans.Status;
+import info.pancancer.arch3.beans.StatusState;
+import info.pancancer.arch3.utils.Constants;
+import info.pancancer.arch3.utils.Utilities;
+import io.cloudbindle.youxia.util.Log;
 
 /**
  * This class represents a WorkerRunnable, in the Architecture 3 design.
@@ -65,7 +74,7 @@ public class WorkerRunnable implements Runnable {
     private boolean workflowFailed = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
-    private static final int FIVE_SECONDS_IN_MS = 5000;
+    // private static final int FIVE_SECONDS_IN_MS = 5000;
     private String networkAddress;
 
     /**
@@ -95,8 +104,6 @@ public class WorkerRunnable implements Runnable {
      *            - Should this worker run in testMode (seqware job will not actually be launched)
      * @param endless
      *            - have the worker pick up new jobs as the current job finishes successfully
-     * @param continueOnFailure
-     *            - Should the worker try to run a new job if the last job ended in failure.
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
@@ -267,11 +274,7 @@ public class WorkerRunnable implements Runnable {
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
         Path pathToINI = Files.createTempFile("seqware_", ".ini", attrs);
         log.info("INI file: " + pathToINI.toString());
-        try (BufferedWriter bw = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8))) {
-            bw.write(job.getIniStr());
-            bw.flush();
-        }
+        Files.write(pathToINI, job.getIniStr().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
         return pathToINI;
     }
 
@@ -296,10 +299,13 @@ public class WorkerRunnable implements Runnable {
                     message.getBytes(StandardCharsets.UTF_8));
             resultsChannel.waitForConfirms();
 
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_z");
+            String timestampStr = sdf.format(new Date());
+
+            String containerIDFile = "/home/" + this.userName + "/worker_" + timestampStr + ".cid";
             String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
-            CommandLine cli = new CommandLine("docker");
-            cli.addArgument("run");
-            List<String> args = new ArrayList<>(Arrays.asList("--rm", "-h", "master", "-t", "-v",
+
+            List<String> args = new ArrayList<String>(Arrays.asList("--cidfile=\"" + containerIDFile + "\"", "-h", "master", "-t", "-v",
                     "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini",
                     "-v", "/datastore:/datastore", "-v", "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos"));
             if (seqwareSettingsFile != null) {
@@ -308,8 +314,9 @@ public class WorkerRunnable implements Runnable {
             args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata",
                     "--engine", seqwareEngine));
 
-            String[] argsArray = new String[args.size()];
-            cli.addArguments(args.toArray(argsArray));
+            // String runnerPath = this.writeDockerRunnerScript(args);
+            CommandLine cli = new CommandLine("docker run");
+            cli.addArguments(args.toArray(new String[args.size()]), false);
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
@@ -341,6 +348,10 @@ public class WorkerRunnable implements Runnable {
             // don't get the heartbeat if the workflow is complete already
 
             log.info("Docker execution result: " + workflowResult.getWorkflowStdout());
+
+            // Now that the work is finished, we have to manage the CID files.
+            this.copyCID(containerIDFile, workflowResult.getExitCode());
+
         } catch (SocketException e) {
             // This comes from trying to get the IP address.
             log.error(e.getMessage(), e);
@@ -362,6 +373,39 @@ public class WorkerRunnable implements Runnable {
         }
 
         return workflowResult;
+    }
+
+    private void copyCID(String containerIDFile, int exitCode) {
+        try {
+            // Path p = Paths.get(new URI("file://"+containerIDFile));
+            // File f = p.toFile();
+            Reader in = new InputStreamReader(new FileInputStream(containerIDFile), StandardCharsets.UTF_8);
+            try (BufferedReader reader = new BufferedReader(in)) {
+                String buffer = reader.readLine();
+                if (buffer != null) { // Now we have to append the CID to the success file or failure file, dependning on the exit code.
+                    if (exitCode == 0) {
+                        Path pathToSuccessfulCID = Paths.get(new URI("/home/ubuntu/successful_container_cids"));
+                        OutputStream outStream = Files.newOutputStream(pathToSuccessfulCID, StandardOpenOption.APPEND,
+                                StandardOpenOption.CREATE);
+                        outStream.write(buffer.getBytes(StandardCharsets.UTF_8));
+                        outStream.close();
+                    } else {
+                        Path pathToUnsuccessfulCID = Paths.get(new URI("/home/ubuntu/unsuccessful_container_cids"));
+                        OutputStream outStream = Files.newOutputStream(pathToUnsuccessfulCID, StandardOpenOption.APPEND,
+                                StandardOpenOption.CREATE);
+                        outStream.write(buffer.getBytes(StandardCharsets.UTF_8));
+                        outStream.close();
+                    }
+                }
+            }
+        } catch (URISyntaxException e) {
+            log.error("Bad URI for container ID file: " + e.getMessage(), e);
+        } catch (FileNotFoundException e) {
+            log.error("Could not find container ID file: " + e.getMessage(), e);
+        } catch (IOException e) {
+            log.error("Error reading container ID file: " + e.getMessage(), e);
+        }
+
     }
 
     /**
