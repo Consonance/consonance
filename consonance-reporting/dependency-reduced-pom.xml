@@ -43,7 +43,7 @@
           <transformers>
             <transformer>
               <manifestEntries>
-                <mainClass>info.pancancer.arch3.reportbot.SlackReportBot</mainClass>
+                <mainClass>info.consonance.arch.reportbot.SlackReportBot</mainClass>
               </manifestEntries>
             </transformer>
             <transformer />
