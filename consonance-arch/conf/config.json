@@ -2,7 +2,7 @@
 rabbitMQHost = localhost
 rabbitMQUser = guest 
 rabbitMQPass = guest
-rabbitMQQueueName = pancancer_arch_3
+rabbitMQQueueName = consonance_arch
 
 [database]
 postgresHost = 127.0.0.1
@@ -11,7 +11,7 @@ postgresPass = queue
 postgresDBName = queue_status
   
 [generator]
-results = pancancer_arch_3.json
+results = consonance_arch.json
 
 
 [provision]

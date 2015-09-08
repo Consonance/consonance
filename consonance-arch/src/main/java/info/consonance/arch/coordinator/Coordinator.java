@@ -5,7 +5,7 @@ import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
-import info.consonance.arch.beans.*;
+import info.consonance.arch.beans.StatusState;
 import info.consonance.arch.persistence.PostgreSQL;
 import info.consonance.arch.Base;
 import info.consonance.arch.beans.Job;
@@ -14,7 +14,6 @@ import info.consonance.arch.beans.JobState;
 import info.consonance.arch.beans.Order;
 import info.consonance.arch.beans.Status;
 import info.consonance.arch.utils.Constants;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;

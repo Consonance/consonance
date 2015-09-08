@@ -20,6 +20,8 @@ consonance-daemon/dependency-reduced-pom.xml
 consonance-reporting/dependency-reduced-pom.xml
 consonance-daemon/target
 
+consonance-arch/arch3_test.log
+
 # Ignore Eclipse files
 *.classpath
 *.project
