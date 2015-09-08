@@ -237,7 +237,7 @@ public class ContainerProvisionerThreads extends Base {
                             }
                         }
                         if (endless) {
-			    // lengthen time to allow cleanup queue to purge
+                            // lengthen time to allow cleanup queue to purge
                             Thread.sleep(TWO_MINUTE_IN_MILLISECONDS);
                         }
                     }
@@ -312,11 +312,17 @@ public class ContainerProvisionerThreads extends Base {
                     if (Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // now update that DB record to be exited
                         // this is acutally finishing the VM and not the work
-                        if ((status.getState() == StatusState.SUCCESS)
-                        // allow reaping of failed workers if this is turned on
-                                || (reapFailedWorkers && status.getState() == StatusState.FAILED)) {
+                        if (status.getState() == StatusState.SUCCESS) {
+                            // finishing the container means a success status
                             // this is where it reaps, the job status message also contains the UUID for the VM
                             db.finishContainer(status.getVmUuid());
+                            synchronized (ContainerProvisionerThreads.class) {
+                                runReaper(settings, status.getIpAddress(), status.getVmUuid());
+                            }
+                        } else if (reapFailedWorkers && status.getState() == StatusState.FAILED) {
+                            // reaped failed workers need to be set to the failed state
+                            ProvisionState provisionState = ProvisionState.FAILED;
+                            db.updateProvisionByJobUUID(status.getJobUuid(), status.getVmUuid(), provisionState, status.getIpAddress());
                             synchronized (ContainerProvisionerThreads.class) {
                                 runReaper(settings, status.getIpAddress(), status.getVmUuid());
                             }
