@@ -20,7 +20,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:Consonance/consonance.git</github.url>
         <skipITs>true</skipITs>
-        <youxia.version>1.1.0-rc.4</youxia.version>
+        <youxia.version>1.1.0-rc.5</youxia.version>
         <cobertura.version>2.1.1</cobertura.version>
         <seqware.version>1.1.1</seqware.version>
     </properties>
@@ -251,15 +251,15 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.1</version>
                     <configuration>
-                        <source>1.7</source>
-                        <target>1.7</target>
+                        <source>1.8</source>
+                        <target>1.8</target>
                         <showDeprecation>true</showDeprecation>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.12.1</version>
+                    <version>2.16</version>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
                     </configuration>

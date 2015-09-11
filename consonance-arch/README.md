@@ -28,7 +28,7 @@ You will also need `/usr/local/sbin/rabbitmqadmin` installed, see https://www.ra
 
     wget -O - -q http://localhost:15672/cli/rabbitmqadmin > /usr/local/sbin/rabbitmqadmin
 
-Finally, for multi-host setups you need to create and user a user:
+Finally, for multi-host setups you need to create and endUser a endUser:
 
     sudo rabbitmqctl add_user queue_user queue
     sudo rabbitmqctl set_permissions queue_user ".*" ".*" ".*"
@@ -66,7 +66,7 @@ Now launch it:
 
     postgres -D /usr/local/var/postgres
 
-Now create a user:
+Now create a endUser:
 
     # using 'queue' as the password by default
     boconnor@odm-boconnor ~$ createuser -P -s -e queue_user
@@ -185,7 +185,7 @@ When running SeqWare in a docker container, there are tricky aspects to running 
 
 A code example on the command-line. 
 
-    user@host:~/testing/arena$ docker run --rm -h master -it -v /var/run/docker.sock:/var/run/docker.sock seqware/seqware_whitestar_pancancer /bin/bash
+    endUser@host:~/testing/arena$ docker run --rm -h master -it -v /var/run/docker.sock:/var/run/docker.sock seqware/seqware_whitestar_pancancer /bin/bash
     seqware@master:~/pancancer-bag$ pwd                                   (this is within the first container) 
     /home/seqware/pancancer-bag
     seqware@master:~/pancancer-bag$ docker run -i -t  -v `pwd`/shared_workspace/inputs:/workflow_data -v `pwd`/test:/root/test seqware/pancancer_upload_download /bin/bash
@@ -197,7 +197,7 @@ A code example on the command-line.
     ls: cannot access test: No such file or directory
     seqware@master:~/pancancer-bag$ exit                                  (this exits the second container)
     exit
-    user@host:~/testing/arena$ ls /home/seqware/pancancer-bag/test        (this is where the file ended up on the host)
+    endUser@host:~/testing/arena$ ls /home/seqware/pancancer-bag/test        (this is where the file ended up on the host)
     oogly
 
 ## TODO

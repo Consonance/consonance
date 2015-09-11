@@ -58,7 +58,8 @@ public class JobGeneratorIT {
         File iniDir = FileUtils.getFile("ini");
         JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath(), "--workflow-name",
                 "DEWrapper", "--workflow-version", "1.0.0", "--workflow-path",
-                "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
+                "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0",
+                "--flavour","m1.xlarge"});
     }
 
     /**
@@ -72,7 +73,8 @@ public class JobGeneratorIT {
         File iniDir = FileUtils.getFile("ini");
         JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath(), "--workflow-name",
                 "DEWrapper", "--workflow-version", "1.0.0", "--workflow-path",
-                "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0", "--force" });
+                "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0", "--force" ,
+                "--flavour","m1.xlarge"});
     }
 
     /**
@@ -84,7 +86,8 @@ public class JobGeneratorIT {
     public void testTestOperation() throws Exception {
         File file = FileUtils.getFile("src", "test", "resources", "config");
         JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--total-jobs", "5", "--workflow-name", "DEWrapper",
-                "--workflow-version", "1.0.0", "--workflow-path", "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
+                "--workflow-version", "1.0.0", "--workflow-path", "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0",
+                "--flavour","m1.xlarge"});
     }
 
     /**
@@ -96,7 +99,8 @@ public class JobGeneratorIT {
     public void testTestingWithHashingOperation() throws Exception {
         File file = FileUtils.getFile("src", "test", "resources", "config.check_hash");
         JobGenerator.main(new String[] { "--config", file.getAbsolutePath(), "--total-jobs", "5", "--workflow-name", "DEWrapper",
-                "--workflow-version", "1.0.0", "--workflow-path", "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
+                "--workflow-version", "1.0.0", "--workflow-path", "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" ,
+                "--flavour","m1.xlarge"});
     }
 
 }
