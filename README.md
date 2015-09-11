@@ -6,3 +6,7 @@
 ## Release Process
 
 Use the standard mvn release:prepare and mvn release:perform procedures
+
+## Git branch structure
+
+This repository uses a standard hubflow directory structure except for a second develop branch which is used for developing the Collaboratory variant of Consonance. 
