@@ -4,14 +4,13 @@ notifications:
 sudo: false
 language: java
 jdk: 
-  - oraclejdk7
   - oraclejdk8
 
 before_script: 
   - psql -c "create user queue_user with password 'queue' createdb;" -U postgres
   - psql -c "ALTER USER queue_user WITH superuser;" -U postgres
   - psql -c 'create database queue_status with owner = queue_user;' -U postgres
-  - export PGPASSWORD='queue'; psql -h 127.0.0.1 -U queue_user  queue_status -f  pancancer-arch-3/sql/schema.sql
+  - export PGPASSWORD='queue'; psql -h 127.0.0.1 -U queue_user  queue_status -f  consonance-arch/sql/schema.sql
   - mkdir ~/.youxia
   - cp .travis/youxia_config ~/.youxia/config
 
