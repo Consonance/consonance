@@ -7,26 +7,28 @@
 *.jar
 *.war
 *.ear
+*.iml
+.idea
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-pancancer-arch-3/.idea
+consonance-daemon/.idea
 
 .DS_Store
-pancancer-arch-3/PanCancerArch3.iml
-pancancer-arch-3/dependency-reduced-pom.xml
-pancancer-reporting/dependency-reduced-pom.xml
-pancancer-arch-3/pancancer_arch_3.json
-pancancer-arch-3/target
+consonance-daemon/dependency-reduced-pom.xml
+consonance-reporting/dependency-reduced-pom.xml
+consonance-daemon/target
+
+consonance-arch/arch3_test.log
 
 # Ignore Eclipse files
 *.classpath
 *.project
 *.settings
-/pancancer-common/target/
-/target/
+/consonance-common/target/
+**/target/
 
 # Ignore NetBeans files
 nbactions.xml
-/pancancer-reporting/target/
+/consonance-reporting/target/

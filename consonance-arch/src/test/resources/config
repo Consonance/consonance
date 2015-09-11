@@ -1,0 +1,25 @@
+[rabbit]
+rabbitMQHost = localhost
+rabbitMQUser = guest
+rabbitMQPass = guest
+rabbitMQQueueName = consonance_arch
+
+[database]
+postgresHost = 127.0.0.1
+postgresUser = queue_user
+postgresPass = queue
+postgresDBName = queue_status
+  
+[generator]
+results = consonance_arch.json
+youxia_deployer_parameters = --max-spot-price 1 --batch-size 1
+check_previous_job_hash = false
+
+
+[provision]
+max_running_containers = 5
+
+
+  
+[coordinator]
+max_seconds_before_lost = 10
