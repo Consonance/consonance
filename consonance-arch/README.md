@@ -13,7 +13,7 @@ Just a Java maven project so do the following:
 
 ## Dependencies
 
-For cloud shepherds, please start with the document at [pancancer_launcher](https://github.com/ICGC-TCGA-PanCancer/pancancer_launcher).
+For cloud shepherds, please start with the document at [pancancer\_launcher](https://github.com/ICGC-TCGA-PanCancer/pancancer_launcher).
 
 I'm focused on development on a Mac using HomeBrew, you will need to setup
 the dependencies using whatever system is appropriate for your environment.
@@ -103,11 +103,11 @@ You should also create a ~/.youxia/config file. See https://github.com/CloudBind
 
 This generates job orders, 5 in this case. If you leave off the `--total-jobs` option it will submit jobs on an infinite loop.
 
-    java -cp target/consonance_arch-*.jar JobGenerator --config conf/config.json --total-jobs 5 --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0
+    java -cp target/consonance-arch-*.jar info.consonance.arch.jobGenerator.JobGenerator --config conf/config.json --total-jobs 5 --workflow-name HelloWorld --workflow-version 1.0-SNAPSHOT --workflow-path /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0 --user Player1 --flavour m1.xlarge
 
 To generate a real job from an ini file in the directory real\_test:
 
-    java -cp target/consonance_arch-*.jar JobGenerator --workflow-name DEWrapper --workflow-version 1.0.2 --workflow-path /workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.2_SeqWare_1.1.0 --config conf/config.json  --ini-dir real_test/
+    java -cp target/consonance-arch-*.jar info.consonance.arch.jobGenerator.JobGenerator --config conf/config.json --workflow-name DEWrapper --workflow-version 1.0.2 --workflow-path /workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.2_SeqWare_1.1.0 --user Player1 --flavour m1.xlarge --ini-dir real_test/
 
 Note that the job generator supports hashing to prevent submission of ini files already known to the system. See the [config file](conf/config.json) for details. Note that jobs have to be processed by the coordinator before this check will function.  
 
@@ -120,25 +120,25 @@ It then monitors the results queue to see when jobs fail or finish.
 Finally, for failed or finished workflows, it informs the Container provisioner about finished
 VMs that can be terminated.
 
-    java -cp target/consonance_arch-*.jar Coordinator --config conf/config.json [--endless]
+    java -cp target/consonance-arch-*.jar info.consonance.arch.coordinator.Coordinator --config conf/config.json [--endless]
 
 ### Container Provisioner
 
 This will spin up containers that will launch Workers.
 
-    java -cp target/consonance_arch-*.jar ContainerProvisionerThreads --config conf/config.json [--endless]
+    java -cp target/consonance-arch-*.jar ContainerProvisionerThreads --config conf/config.json [--endless]
 
 ### Worker
 
 If you need to create a worker, use the following Ansible playbook https://github.com/ICGC-TCGA-PanCancer/container-host-bag
 
-    java -cp target/consonance_arch-*.jar Worker --config conf/config.json --uuid 1234 [--endless]
+    java -cp target/consonance-arch-*.jar info.consonance.arch.worker.Worker --config conf/config.json --uuid 1234 [--endless]
 
 #### Test Mode Worker
 
 The test mode worker simply consumes a job and sends back results without running anything. This is used to test the basic lifecycle of our components. 
 
-    java -cp target/consonance_arch-*.jar Worker --config conf/config.json --uuid 1234 --test
+    java -cp target/consonance-arch-*.jar info.consonance.arch.worker.Worker --config conf/config.json --uuid 1234 --test
 
 ### Checking Results
 
@@ -148,7 +148,7 @@ See [reporting](../pancancer-reporting/README.md)
 
 This tool allows you to export ini files belonging to failed and lost jobs given their IDs. Use then when you have identified transient errors with workflow runs or when a lost job really has been lost (i.e. a worker host has gone down) 
 
-    java -cp target/consonance_arch-*.jar LostJobExporter
+    java -cp target/consonance-arch-*.jar LostJobExporter
 
 ### Upgrade SOP
 

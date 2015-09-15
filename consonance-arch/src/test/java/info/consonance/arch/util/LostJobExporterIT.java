@@ -97,7 +97,7 @@ public class LostJobExporterIT {
 
     private Job createJob(String uuid, JobState state) {
         Utilities u = new Utilities();
-        String hashStr = u.digest(uuid);
+        String hashStr = uuid;
         HashMap<String, String> hm = new HashMap<>();
         hm.put("param1", "bar");
         hm.put("param2", "foo");

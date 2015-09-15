@@ -7,11 +7,6 @@ import info.consonance.arch.persistence.PostgreSQL;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -33,14 +28,10 @@ public class Utilities {
     protected static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
     // TODO: These really should be refactored out to an enum
     // message types
-    public static final String VM_MESSAGE_TYPE = "vm-message-type";
     public static final String JOB_MESSAGE_TYPE = "job-message-type";
 
-    private final ArrayList<JSONObject> resultsArr = new ArrayList<>();
-
     public static JSONObject parseJSONStr(String jsonStr) {
-        JSONObject data = null;
-
+        JSONObject data;
         JSONParser parser = new JSONParser();
         try {
             data = (JSONObject) parser.parse(jsonStr);
@@ -53,8 +44,7 @@ public class Utilities {
 
     public static HierarchicalINIConfiguration parseConfig(String path) {
         try {
-            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(path);
-            return config;
+            return new HierarchicalINIConfiguration(path);
         } catch (ConfigurationException ex) {
             throw new RuntimeException(ex);
         }
@@ -63,7 +53,7 @@ public class Utilities {
     /**
      * Clears database state and known queues for testing.
      *
-     * @param settings
+     * @param settings consonance config file
      * @throws IOException
      * @throws java.util.concurrent.TimeoutException
      */
@@ -101,6 +91,14 @@ public class Utilities {
         }
     }
 
+    /**
+     * Setup a queue
+     * @param settings consonance config file
+     * @param queue name of queue to setup
+     * @return channel for the queue
+     * @throws IOException
+     * @throws TimeoutException
+     */
     public static Channel setupQueue(HierarchicalINIConfiguration settings, String queue) throws IOException, TimeoutException {
 
         String server = settings.getString(Constants.RABBIT_HOST);
@@ -131,13 +129,34 @@ public class Utilities {
 
     }
 
-    public static Channel setupExchange(HierarchicalINIConfiguration settings, String queue) throws IOException, TimeoutException {
+    /**
+     * Setup an exchange
+     * @param settings consonance config file
+     * @param exchange name of the exchange
+     * @return a reference to the channel for the exchange
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    public static Channel setupExchange(HierarchicalINIConfiguration settings, String exchange) throws IOException, TimeoutException {
+        return setupExchange(settings, exchange, "fanout");
+    }
+
+    /**
+     * Setup an exchange
+     * @param settings consonance config file
+     * @param exchange name of the exchange
+     * @param exchangeType type of the exchange, looks like it can be direct or fanout, not sure if there are more
+     * @return a reference to the channel for the exchange
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    public static Channel setupExchange(HierarchicalINIConfiguration settings, String exchange, String exchangeType) throws IOException, TimeoutException {
 
         String server = settings.getString(Constants.RABBIT_HOST);
         String user = settings.getString(Constants.RABBIT_USERNAME);
         String pass = settings.getString(Constants.RABBIT_PASSWORD);
 
-        Channel channel = null;
+        Channel channel;
 
         try {
 
@@ -148,12 +167,12 @@ public class Utilities {
             factory.setAutomaticRecoveryEnabled(true);
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
-            channel.exchangeDeclare(queue, "fanout", true, false, null);
+            channel.exchangeDeclare(exchange, exchangeType, true, false, null);
             channel.confirmSelect();
 
         } catch (IOException | TimeoutException ex) {
             // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            LOG.error("Error setting up queue connections: " + ex.getMessage(), ex);
+            LOG.error("Error setting up exchange connections: " + ex.getMessage(), ex);
             throw ex;
         }
         return channel;
@@ -172,9 +191,6 @@ public class Utilities {
         return parseJSONStr(job);
     }
 
-    public ArrayList<JSONObject> getResultsArr() {
-        return resultsArr;
-    }
 
     /**
      *
@@ -187,22 +203,5 @@ public class Utilities {
      */
     public static int randInRangeInc(int min, int max) {
         return min + (int) (Math.random() * ((1 + max) - min));
-    }
-
-    public String digest(String plaintext) {
-        String result = null;
-        MessageDigest m;
-        try {
-            m = MessageDigest.getInstance("MD5");
-            m.reset();
-            m.update(plaintext.getBytes(StandardCharsets.UTF_8));
-            byte[] digest = m.digest();
-            BigInteger bigInt = new BigInteger(1, digest);
-            final int radix = 16;
-            result = bigInt.toString(radix);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
     }
 }

@@ -44,7 +44,6 @@ import org.junit.Test;
  * @author dyuen
  */
 public class PostgreSQLIT {
-    private File configFile;
     private PostgreSQL postgres;
 
     @BeforeClass
@@ -58,7 +57,7 @@ public class PostgreSQLIT {
 
     @Before
     public void setUp() throws IOException {
-        this.configFile = FileUtils.getFile("src", "test", "resources", "config");
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         this.postgres = new PostgreSQL(parseConfig);
 
@@ -219,14 +218,13 @@ public class PostgreSQLIT {
         int storageGb = 1024;
         ArrayList<String> a = new ArrayList<>();
         a.add("ansible_playbook_path");
-        Provision p = new Provision(cores, memGb, storageGb, a);
-        return p;
+        return new Provision(cores, memGb, storageGb, a);
     }
 
     public Job createJob() {
         String uuid = UUID.randomUUID().toString().toLowerCase();
         Utilities u = new Utilities();
-        String hashStr = u.digest(uuid);
+        String hashStr = uuid;
         HashMap<String, String> hm = new HashMap<>();
         hm.put("param1", "bar");
         hm.put("param2", "foo");

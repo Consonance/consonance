@@ -19,7 +19,9 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by boconnor on 15-04-18.
  *
  * This consumes the jobs and prepares messages for the VM and Job Queues.
  *
@@ -43,7 +44,8 @@ import org.slf4j.LoggerFactory;
  *
  * This needs to have a new thread that periodically checks on the DB table for Jobs to identify jobs that are lost/failed
  *
- *
+ * @author boconnor
+ * @author dyuen
  */
 public class Coordinator extends Base {
 
@@ -85,13 +87,15 @@ public class Coordinator extends Base {
      */
     private static class CoordinatorOrders implements Callable<Void> {
 
-        private Channel jobChannel = null;
         private Channel vmChannel = null;
         private Channel orderChannel = null;
         private String queueName = null;
         private final boolean endless;
         private String configFile = null;
         private final Logger log = LoggerFactory.getLogger(getClass());
+        private Channel jobChannel = null;
+
+        private Set<String> existingJobQueues = new HashSet<>();
 
         public CoordinatorOrders(String config, boolean endless) throws InterruptedException {
             this.endless = endless;
@@ -108,8 +112,11 @@ public class Coordinator extends Base {
                 // read from
                 orderChannel = Utilities.setupQueue(settings, queueName + "_orders");
                 // write to
-                jobChannel = Utilities.setupQueue(settings, queueName + "_jobs"); // TODO: actually this one needs to be built on demand
-                                                                                  // with
+
+                // create the job exchange
+                String exchange = queueName + "_job_exchange";
+                jobChannel = Utilities.setupExchange(settings, exchange, "direct");
+
                 // full
                 // info
                 // write to
@@ -134,7 +141,7 @@ public class Coordinator extends Base {
                     Order order = new Order().fromJSON(message);
 
                     requestVm(order.getProvision().toJSON());
-                    requestJob(order.getJob().toJSON());
+                    publishJob(settings, exchange, order.getJob().toJSON());
 
                     log.info("acknowledging " + delivery.getEnvelope().toString());
                     orderChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
@@ -171,7 +178,7 @@ public class Coordinator extends Base {
          */
         private String requestVm(String message) {
 
-            // TODO: should save information to persistant storage
+            // TODO: should save information to persistent storage
 
             try {
 
@@ -195,49 +202,42 @@ public class Coordinator extends Base {
         }
 
         /**
-         * This sends a Job message to the job queue.
+         * This sends a Job message to the job exchange.
          *
-         * @param message
+         * @param settings consonance config file
+         * @param message a particular job to schedule
          * @return
          */
-        private String requestJob(String message) {
-
-            StringBuilder result = new StringBuilder();
+        private String publishJob(HierarchicalINIConfiguration settings, String exchangeName, String message) {
 
             try {
+                log.info(" + sending job order! " + queueName + "_jobs");
 
-                // TODO: future feature...
-                // So this is strange, why does the queue name have all this info in it? It's
-                // because we may have orders for the same workflow that actually need different resources
-                // Channel vmchannel = u.setupQueue(settings,
-                // queueName+"_job_requests_"+workflowName+"_"+workflowVersion+"_"+cores+"_"+memGb+"_"+storageGb);
-
-                log.info(" + SENDING JOB ORDER! " + queueName + "_jobs");
-
-                int messages = jobChannel.queueDeclarePassive(queueName + "_jobs").getMessageCount();
-                log.info("  + JOB QUEUE SIZE: " + messages);
-
-                jobChannel.basicPublish("", queueName + "_jobs", MessageProperties.PERSISTENT_TEXT_PLAIN,
-                        message.getBytes(StandardCharsets.UTF_8));
-
-                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
                 PostgreSQL db = new PostgreSQL(settings);
                 Job newJob = new Job().fromJSON(message);
                 newJob.setState(JobState.PENDING);
                 db.createJob(newJob);
+                final String routingKey = newJob.getFlavour();
+                // see if a particular queue type exist yet
+                if (!existingJobQueues.contains(routingKey)){
+                    existingJobQueues.add(routingKey);
+                    final String finalQueueName = Utilities.setupQueueOnExchange(jobChannel, queueName + "_jobs", newJob.getFlavour());
+                    jobChannel.queueBind(finalQueueName, exchangeName, newJob.getFlavour());
+                }
+                jobChannel.basicPublish(exchangeName, newJob.getFlavour() , MessageProperties.PERSISTENT_TEXT_PLAIN,
+                        message.getBytes(StandardCharsets.UTF_8));
 
-                log.info(" + MESSAGE SENT!\n" + message + "\n");
-
+                log.info(" + message sent!\n" + message + "\n");
+                return message;
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
-            return result.toString();
         }
 
     }
 
     /**
-     * This dequeues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
+     * This de-queues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
      *
      * This looks like a duplicate class from ContainerProvisionerThreads.
      */

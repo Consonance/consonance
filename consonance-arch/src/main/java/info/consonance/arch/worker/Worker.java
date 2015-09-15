@@ -20,6 +20,7 @@ public class Worker extends Base {
     private final ArgumentAcceptingOptionSpec<Integer> maxRunsSpec;
     private final ArgumentAcceptingOptionSpec<String> uuidSpec;
     private final ArgumentAcceptingOptionSpec<String> pidFileSpec;
+    private final ArgumentAcceptingOptionSpec<String> flavourOverride;
 
     private Worker(String[] argv) throws IOException {
         super();
@@ -32,6 +33,7 @@ public class Worker extends Base {
         this.uuidSpec = parser.accepts("uuid", "The UUID of this VM.").withRequiredArg().ofType(String.class).required();
         this.pidFileSpec = parser.accepts("pidFile", "Path to lock file.").withRequiredArg().ofType(String.class)
                 .defaultsTo("/var/run/arch3_worker.pid");
+        this.flavourOverride =  parser.accepts("flavour", "Overrides detection of instance type.").withRequiredArg().ofType(String.class);
         super.parseOptions(argv);
     }
 
@@ -57,7 +59,7 @@ public class Worker extends Base {
             });
         }
         WorkerRunnable workerRunnable = new WorkerRunnable(options.valueOf(worker.configSpec), options.valueOf(worker.uuidSpec),
-                options.valueOf(worker.maxRunsSpec), options.has(worker.testSpec), options.has(worker.endlessSpec));
+                options.valueOf(worker.maxRunsSpec), options.has(worker.testSpec), options.has(worker.endlessSpec), options.valueOf(worker.flavourOverride));
         workerRunnable.run();
         worker.log.info("Exiting.");
     }

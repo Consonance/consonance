@@ -298,14 +298,14 @@ public class ContainerProvisionerThreads extends Base {
                 HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
 
                 String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
-                final String resultQueueName = queueName + "_results";
+                final String exchangeName = queueName + "_results";
 
                 // read from
-                resultsChannel = Utilities.setupExchange(settings, resultQueueName);
+                resultsChannel = Utilities.setupExchange(settings, exchangeName);
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
                 String resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupVMs");
-                resultsChannel.queueBind(resultsQueue, resultQueueName, "");
+                resultsChannel.queueBind(resultsQueue, exchangeName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
