@@ -34,6 +34,8 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,10 +64,8 @@ public class WorkerRunnable implements Runnable {
     private String userName;
     private boolean testMode;
     private boolean endless = false;
-    private boolean workflowFailed = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
-    private static final int FIVE_SECONDS_IN_MS = 5000;
     private String networkAddress;
 
     /**
@@ -95,8 +95,6 @@ public class WorkerRunnable implements Runnable {
      *            - Should this worker run in testMode (seqware job will not actually be launched)
      * @param endless
      *            - have the worker pick up new jobs as the current job finishes successfully
-     * @param continueOnFailure
-     *            - Should the worker try to run a new job if the last job ended in failure.
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
         log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
@@ -153,7 +151,7 @@ public class WorkerRunnable implements Runnable {
             // created by the Coordinator.
             resultsChannel = Utilities.setupExchange(settings, this.resultsQueueName);
 
-            while ((max > 0 || this.endless) && !this.workflowFailed) {
+            while (max > 0 || this.endless) {
                 log.debug(max + " remaining jobs will be executed");
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
 
@@ -232,12 +230,24 @@ public class WorkerRunnable implements Runnable {
                 } else {
                     log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                 }
+
+                if (endless){
+                    log.info("attempting to reset workspace");
+                    DefaultExecutor executor = new DefaultExecutor();
+                    DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+                    // attempt a cleanup
+                    CommandLine cli = new CommandLine("sudo");
+                    List<String> args = new ArrayList<>(Arrays.asList("rm", "-rf", "/datastore/*"));
+                    cli.addArguments(args.toArray(new String[args.size()]));
+                    executor.execute(cli, resultHandler);
+                    // Use the result handler for non-blocking call, so this way we should be able to get updates of
+                    // stdout and stderr while the command is running.
+                    resultHandler.waitFor();
+                    log.info("exit code for cleanup: "  + resultHandler.getExitValue());
+                }
             }
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
-            if (this.workflowFailed) {
-                log.error(
-                        "The last workflow executed by this Worker did not complete successfully. No more workflows will be attempted. Please check the logs and fix any problems before trying another workflow.");
-            }
+
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
             if (resultsChannel != null && resultsChannel.isOpen()) {
@@ -349,16 +359,10 @@ public class WorkerRunnable implements Runnable {
             log.error(e.getMessage(), e);
         } catch (ExecutionException e) {
             log.error("Error executing workflow: " + e.getMessage(), e);
-            this.workflowFailed = true;
         } catch (InterruptedException e) {
             log.error("Workflow may have been interrupted: " + e.getMessage(), e);
-            this.workflowFailed = true;
         } finally {
             exService.shutdownNow();
-        }
-
-        if (workflowResult == null || (workflowResult != null && workflowResult.getExitCode() != 0)) {
-            this.workflowFailed = true;
         }
 
         return workflowResult;
