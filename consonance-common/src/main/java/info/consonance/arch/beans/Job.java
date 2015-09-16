@@ -29,6 +29,7 @@ public class Job {
     private String jobHash;
     private String messageType;
     private Map<String, String> ini = new HashMap<>();
+    private Map<String, String> extraFiles = new HashMap<>();
     private Timestamp createTs;
     private Timestamp updateTs;
     private String stdout;
@@ -107,6 +108,24 @@ public class Job {
     @JsonProperty("arguments")
     public Map<String, String> getIni() {
         return ini;
+    }
+
+    @JsonProperty("extra_files")
+    public Map<String, String> getExtraFiles() {
+        return extraFiles;
+    }
+
+    @JsonIgnore
+    public String getExtraFilesStr() {
+        StringBuilder sb = new StringBuilder();
+        for (String key : this.extraFiles.keySet()) {
+            sb.append(key).append("=").append(this.extraFiles.get(key)).append("\n");
+        }
+        return (sb.toString());
+    }
+
+    public void setExtraFiles(Map<String, String> ini) {
+        this.extraFiles = ini;
     }
 
     @JsonIgnore

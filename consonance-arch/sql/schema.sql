@@ -52,6 +52,7 @@ CREATE TABLE job (
     ini text,
     end_user text, 
     flavour text,
+    extra_files jsonb,
     stdout text,
     stderr text,
     update_timestamp timestamp default current_timestamp,
