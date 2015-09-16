@@ -3,10 +3,6 @@ package info.consonance.arch.test;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.StatusLine;
-import org.apache.commons.httpclient.methods.GetMethod;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,9 +18,10 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteResultHandler;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.StatusLine;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

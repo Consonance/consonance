@@ -19,13 +19,22 @@ package info.consonance.arch.worker;
 import info.consonance.arch.coordinator.Coordinator;
 import info.consonance.arch.jobGenerator.JobGenerator;
 import info.consonance.arch.utils.ITUtilities;
-
+import static org.mockito.Matchers.any;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.StatusLine;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
 
 /**
  *
@@ -38,6 +47,17 @@ public class WorkerIT {
         ITUtilities.clearState();
     }
 
+    @Mock
+    private GetMethod mockMethod;
+    
+    @Mock
+    private HttpClient mockClient;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+    
     /**
      * Test of main method, of class JobGenerator.
      *
@@ -55,6 +75,16 @@ public class WorkerIT {
                         "--flavour","m1.xlarge"});
         // prime the worker with a job
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
+        
+        StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
+        Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
+        Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
+        
+        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn((GetMethod) mockMethod);
+        Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
+        PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
+
+        
         Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test", "--pidFile",
                 "/var/run/arch3_worker.pid" });
     }
