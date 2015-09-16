@@ -42,10 +42,10 @@ import org.powermock.api.mockito.PowerMockito;
  */
 public class WorkerIT {
 
-    @BeforeClass
-    public static void setup() throws IOException, TimeoutException {
-        ITUtilities.clearState();
-    }
+//    @BeforeClass
+//    public static void setup() throws IOException, TimeoutException {
+//        ITUtilities.clearState();
+//    }
 
     @Mock
     private GetMethod mockMethod;
@@ -55,6 +55,7 @@ public class WorkerIT {
 
     @Before
     public void setUp() throws Exception {
+        ITUtilities.clearState();
         MockitoAnnotations.initMocks(this);
     }
     
@@ -67,6 +68,17 @@ public class WorkerIT {
     public void testTestModeOperation() throws Exception {
         File file = FileUtils.getFile("src", "test", "resources", "config");
         File iniDir = FileUtils.getFile("ini");
+
+        //Need to mock HTTP responses because the unit tests may not run in a place where there is a metadata service available.
+        StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
+        Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
+        Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
+        
+        PowerMockito.whenNew(GetMethod.class).withArguments("http://169.254.169.254/latest/meta-data/instance-type").thenReturn((GetMethod) mockMethod);
+        Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
+        PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
+
+        
         // prime the coordinator with an order
         JobGenerator
                 .main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath(), "--workflow-name", "DEWrapper",
@@ -76,17 +88,8 @@ public class WorkerIT {
         // prime the worker with a job
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
         
-        StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
-        Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
-        Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
-        
-        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn((GetMethod) mockMethod);
-        Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
-        PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
-
-        
         Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test", "--pidFile",
-                "/var/run/arch3_worker.pid" });
+                "/var/run/arch3_worker.pid" ,"--flavour", "cherry"});
     }
 
 }
