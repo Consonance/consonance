@@ -117,37 +117,6 @@ public class TestCoordinator {
 
     }
 
-    // @Test
-    // public void testCoordinator() throws InterruptedException, Exception {
-    // setupMockDB();
-    // setupConfig(true);
-    // byte[] body = setupMessage();
-    // Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
-    // setupMockQueue(testDelivery);
-    //
-    // // try {
-    // File file = FileUtils.getFile("src", "test", "resources", "config.json");
-    // Coordinator testCoordinator = new Coordinator(new String[] { "--config", file.getAbsolutePath() });
-    // testCoordinator.doWork();
-    // System.out.println(outBuffer.toString());
-    // // fail("Should not have reached here.");
-    // // } catch (Exception e) {
-    // // //
-    // // assertTrue(outBuffer.toString().contains("invalid database address: jdbc:postgresql://localhost/dbname"));
-    // // }
-    // }
-
-    private void setupMockDB() throws Exception {
-        PowerMockito.mockStatic(DriverManager.class);
-        Mockito.when(DriverManager.getConnection(anyString(), any(Properties.class))).thenReturn(mockDBConnection);
-
-        Mockito.when(mockRunner.query(any(Connection.class), anyString(), any(ResultSetHandler.class), anyVararg())).thenReturn(
-                new HashMap());
-        PowerMockito.whenNew(QueryRunner.class).withNoArguments().thenReturn(mockRunner);
-        PowerMockito.whenNew(PoolingDataSource.class).withAnyArguments().thenReturn(poolingDataSource);
-        Mockito.when(poolingDataSource.getConnection()).thenReturn(mockDBConnection);
-    }
-
     private byte[] setupMessage() {
         Job j = new Job();
         j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");

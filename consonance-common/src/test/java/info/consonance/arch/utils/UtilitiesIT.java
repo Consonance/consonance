@@ -91,16 +91,5 @@ public class UtilitiesIT {
         assertTrue("randomly generated value not in range", result >= min && result <= max);
     }
 
-    /**
-     * Test of digest method, of class Utilities.
-     */
-    @Test
-    public void testDigest() {
-        String plaintext = "";
-        Utilities instance = new Utilities();
-        String expResult = "d41d8cd98f00b204e9800998ecf8427e";
-        String result = instance.digest(plaintext);
-        assertEquals(expResult, result);
-    }
 
 }

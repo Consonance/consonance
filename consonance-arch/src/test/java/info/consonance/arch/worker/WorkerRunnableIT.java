@@ -16,11 +16,22 @@
  */
 package info.consonance.arch.worker;
 
+import static org.mockito.Matchers.any;
+
 import java.io.File;
 import java.net.InetAddress;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.StatusLine;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
 
 /**
  *
@@ -28,6 +39,17 @@ import org.junit.Test;
  */
 public class WorkerRunnableIT {
 
+    @Mock
+    private GetMethod mockMethod;
+    
+    @Mock
+    private HttpClient mockClient;
+    
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+    
     /**
      * Test of getFirstNonLoopbackAddress method, of class WorkerRunnable.
      *
@@ -35,6 +57,15 @@ public class WorkerRunnableIT {
      */
     @Test
     public void testGetFirstNonLoopbackAddress() throws Exception {
+        StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
+        Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
+        Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
+        
+        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn((GetMethod) mockMethod);
+        Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
+        PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
+
+        
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         WorkerRunnable instance = new WorkerRunnable(configFile.getAbsolutePath(), "test", 1);
         InetAddress result = instance.getFirstNonLoopbackAddress();

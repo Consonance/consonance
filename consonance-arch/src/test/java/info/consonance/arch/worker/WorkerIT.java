@@ -16,28 +16,54 @@
  */
 package info.consonance.arch.worker;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+
+import java.io.File;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.StatusLine;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.FileUtils;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 import info.consonance.arch.coordinator.Coordinator;
 import info.consonance.arch.jobGenerator.JobGenerator;
 import info.consonance.arch.utils.ITUtilities;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-import org.apache.commons.io.FileUtils;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /**
  *
  * @author dyuen
  */
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore( {"javax.management.*"}) 
 public class WorkerIT {
 
-    @BeforeClass
-    public static void setup() throws IOException, TimeoutException {
+//    @BeforeClass
+//    public static void setup() throws IOException, TimeoutException {
+//        ITUtilities.clearState();
+//    }
+
+    @Mock
+    private GetMethod mockMethod;
+    
+    @Mock
+    private HttpClient mockClient;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
         ITUtilities.clearState();
     }
-
+    
     /**
      * Test of main method, of class JobGenerator.
      *
@@ -47,15 +73,29 @@ public class WorkerIT {
     public void testTestModeOperation() throws Exception {
         File file = FileUtils.getFile("src", "test", "resources", "config");
         File iniDir = FileUtils.getFile("ini");
+
+        //Need to mock HTTP responses because the unit tests may not run in a place where there is a metadata service available.
+        StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
+        Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
+        Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
+        
+        //PowerMockito.whenNew(GetMethod.class).withArguments("http://169.254.169.254/latest/meta-data/instance-type").thenReturn((GetMethod) mockMethod);
+        PowerMockito.whenNew(GetMethod.class).withArguments(anyString()).thenReturn((GetMethod) mockMethod);
+        Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
+        PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
+
+        
         // prime the coordinator with an order
         JobGenerator
                 .main(new String[] { "--config", file.getAbsolutePath(), "--ini", iniDir.getAbsolutePath(), "--workflow-name", "DEWrapper",
                         "--workflow-version", "1.0.0", "--workflow-path",
-                        "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" });
+                        "/workflows/Workflow_Bundle_DEWrapperWorkflow_1.0.0_SeqWare_1.1.0" ,
+                        "--flavour","m1.xlarge"});
         // prime the worker with a job
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
+        
         Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test", "--pidFile",
-                "/var/run/arch3_worker.pid" });
+                "/var/run/arch3_worker.pid" ,"--flavour", "cherry"});
     }
 
 }

@@ -1,10 +1,12 @@
 package info.consonance.arch.containerProvisioner;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
+import info.consonance.arch.beans.Job;
 import info.consonance.arch.persistence.PostgreSQL;
 import info.consonance.arch.utils.Constants;
 import info.consonance.arch.utils.Utilities;
@@ -18,6 +20,7 @@ import info.consonance.arch.beans.StatusState;
 import io.cloudbindle.youxia.deployer.Deployer;
 import io.cloudbindle.youxia.reaper.Reaper;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -26,7 +29,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -37,16 +42,17 @@ import java.util.concurrent.TimeoutException;
 import joptsimple.OptionSpecBuilder;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by boconnor on 15-04-18.
+ * @author boconnor
+ * @author dyuen
  */
 public class ContainerProvisionerThreads extends Base {
 
     private static final int DEFAULT_THREADS = 3;
-    private static final int MINUTE_IN_MILLISECONDS = 60 * 1000;
     private static final int TWO_MINUTE_IN_MILLISECONDS = 2 * 60 * 1000;
 
     private final OptionSpecBuilder testSpec;
@@ -85,7 +91,7 @@ public class ContainerProvisionerThreads extends Base {
     }
 
     /**
-     * This dequeues the VM requests from the VM queue and stages them in the DB as pending so I can keep a count of what's
+     * This de-queues the VM requests from the VM queue and stages them in the DB as pending so I can keep a count of what's
      * running/pending/finished.
      */
     private static class ProcessVMOrders implements Callable<Void> {
@@ -138,9 +144,7 @@ public class ContainerProvisionerThreads extends Base {
                     vmChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);
 
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
+            } catch (IOException | InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 throw new RuntimeException(ex);
             } finally {
                 if (vmChannel != null) {
@@ -188,8 +192,10 @@ public class ContainerProvisionerThreads extends Base {
                     // System.out.println("CHECKING RUNNING VMs");
 
                     // read from DB
-                    long numberRunningContainers = db.getJobs(JobState.PENDING).size();
-                    long numberPendingContainers = db.getJobs(JobState.RUNNING).size();
+                    final List<Job> pendingJobs = db.getJobs(JobState.PENDING);
+                    long numberRunningContainers = pendingJobs.size();
+                    final List<Job> runningJobs = db.getJobs(JobState.RUNNING);
+                    long numberPendingContainers = runningJobs.size();
 
                     if (testMode) {
                         LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
@@ -211,18 +217,38 @@ public class ContainerProvisionerThreads extends Base {
                         }
                     } else {
                         long requiredVMs = numberRunningContainers + numberPendingContainers;
+                        // determine mix of VMs required
+                        Map<String, Integer> clientTypes = new HashMap<>();
+                        for(Job j : pendingJobs){
+                            clientTypes.merge(j.getFlavour(), 1, (k,v) -> (v+1));
+                        }
+                        for(Job j : runningJobs){
+                            clientTypes.merge(j.getFlavour(), 1, (k,v) -> (v+1));
+                        }
+
                         // cap the number of VMs
-                        LOG.info("  Desire for " + requiredVMs + " VMs");
+                        LOG.info("  Desire for " + clientTypes + " VMs");
                         requiredVMs = Math
                                 .min(requiredVMs, settings.getLong(Constants.PROVISION_MAX_RUNNING_CONTAINERS, Integer.MAX_VALUE));
-                        LOG.info("  Capped at " + requiredVMs + " VMs");
+                        // cap the types of VMs
+                        final long localRequiredVMs = requiredVMs;
+                        while(clientTypes.size() > requiredVMs){
+                            clientTypes.replaceAll((k,v) -> clientTypes.size() > localRequiredVMs? (v-1) : v);
+                        }
+                        LOG.info("  Capped at " + clientTypes + " VMs");
                         if (requiredVMs > 0) {
+                            // serialize clientTypes
+                            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                            final String required = gson.toJson(clientTypes);
+                            final File tempFile = Files.createTempFile("neededVMs", "json").toFile();
+                            FileUtils.write(tempFile, required);
+
                             String param = settings.getString(Constants.PROVISION_YOUXIA_DEPLOYER);
                             CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
                             List<String> arguments = new ArrayList<>();
                             arguments.addAll(Arrays.asList(parse.getArguments()));
-                            arguments.add("--total-nodes-num");
-                            arguments.add(String.valueOf(requiredVMs));
+                            arguments.add("--instance-types ");
+                            arguments.add(tempFile.getAbsolutePath());
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
                             LOG.info("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
                             // need to make sure reaper and deployer do not overlap
@@ -272,14 +298,14 @@ public class ContainerProvisionerThreads extends Base {
                 HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
 
                 String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
-                final String resultQueueName = queueName + "_results";
+                final String exchangeName = queueName + "_results";
 
                 // read from
-                resultsChannel = Utilities.setupExchange(settings, resultQueueName);
+                resultsChannel = Utilities.setupExchange(settings, exchangeName);
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
                 String resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupVMs");
-                resultsChannel.queueBind(resultsQueue, resultQueueName, "");
+                resultsChannel.queueBind(resultsQueue, exchangeName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
@@ -297,7 +323,6 @@ public class ContainerProvisionerThreads extends Base {
                     if (delivery == null) {
                         continue;
                     }
-                    // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     LOG.info(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
 
@@ -311,7 +336,7 @@ public class ContainerProvisionerThreads extends Base {
 
                     if (Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // now update that DB record to be exited
-                        // this is acutally finishing the VM and not the work
+                        // this is actually finishing the VM and not the work
                         if (status.getState() == StatusState.SUCCESS) {
                             // finishing the container means a success status
                             // this is where it reaps, the job status message also contains the UUID for the VM
@@ -337,10 +362,7 @@ public class ContainerProvisionerThreads extends Base {
                     resultsChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);
 
-            } catch (IOException ex) {
-                LOG.error("CleanupVMs threw the following exception", ex);
-                throw new RuntimeException(ex);
-            } catch (InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
+            } catch (IOException | InterruptedException | ShutdownSignalException | ConsumerCancelledException ex) {
                 LOG.error("CleanupVMs threw the following exception", ex);
                 throw new RuntimeException(ex);
             } catch (Exception ex) {
@@ -359,10 +381,9 @@ public class ContainerProvisionerThreads extends Base {
     /**
      * run the reaper
      *
-     * @param settings
+     * @param settings represents a standard properties file
      * @param ipAddress
      *            specify an ip address (otherwise cleanup only failed deployments)
-     * @throws JsonIOException
      * @throws IOException
      */
     private static void runReaper(HierarchicalINIConfiguration settings, String ipAddress, String vmName) throws IOException {
@@ -372,7 +393,7 @@ public class ContainerProvisionerThreads extends Base {
         arguments.addAll(Arrays.asList(parse.getArguments()));
 
         arguments.add("--kill-list");
-        // create a json file with the one targetted ip address
+        // create a json file with the one targeted ip address
         Gson gson = new Gson();
         // we can't use the full set of database records because unlike Amazon, OpenStack reuses private ip addresses (very quickly too)
         // String[] successfulVMAddresses = db.getSuccessfulVMAddresses();

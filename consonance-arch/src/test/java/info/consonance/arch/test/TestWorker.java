@@ -29,6 +29,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.StatusLine;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang3.StringUtils;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -80,7 +83,13 @@ public class TestWorker {
 
     @Captor
     private ArgumentCaptor<LoggingEvent> argCaptor;
-
+    
+    @Mock
+    private GetMethod mockMethod;
+    
+    @Mock
+    private HttpClient mockClient;
+    
     @Before
     public void setup() throws IOException, Exception {
         MockitoAnnotations.initMocks(this);
@@ -91,6 +100,8 @@ public class TestWorker {
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
         Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupQueueOnExchange(any(Channel.class), anyString(),anyString())).thenReturn("consonance_arch_jobs");
+        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString(),anyString())).thenReturn(mockChannel);
         Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
         WorkflowResult result = new WorkflowResult();
@@ -102,6 +113,14 @@ public class TestWorker {
 
         // Always return this heartbeat object.
         PowerMockito.whenNew(WorkerHeartbeat.class).withNoArguments().thenReturn(heartbeat);
+        
+        StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
+        Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
+        Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
+        
+        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn((GetMethod) mockMethod);
+        Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
+        PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
     }
 
     @Test
@@ -171,6 +190,7 @@ public class TestWorker {
             List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
             String testResults = this.appendEventsIntoString(tmpList);
 
+            System.out.println(testResults);
             assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
         } catch (Exception e) {
             e.printStackTrace();
@@ -257,7 +277,7 @@ public class TestWorker {
     @Test
     public void testWorker_endlessFromConfig() throws Exception {
         HierarchicalINIConfiguration configObj = new HierarchicalINIConfiguration();
-        configObj.addProperty("rabbit.rabbitMQQueueName", "seqware");
+        configObj.addProperty("rabbit.rabbitMQQueueName", "consonance_arch");
         configObj.addProperty("rabbit.rabbitMQHost", "localhost");
         configObj.addProperty("rabbit.rabbitMQUser", "guest");
         configObj.addProperty("rabbit.rabbitMQPass", "guest");
@@ -462,7 +482,7 @@ public class TestWorker {
     private void setupConfig() {
         HierarchicalINIConfiguration configObj = new HierarchicalINIConfiguration();
 
-        configObj.addProperty("rabbit.rabbitMQQueueName", "seqware");
+        configObj.addProperty("rabbit.rabbitMQQueueName", "consonance_arch");
         configObj.addProperty("worker.heartbeatRate", "2.5");
         configObj.addProperty("worker.preworkerSleep", "1");
         configObj.addProperty("worker.postworkerSleep", "1");
