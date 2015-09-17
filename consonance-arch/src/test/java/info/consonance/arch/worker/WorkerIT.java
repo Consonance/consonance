@@ -16,30 +16,35 @@
  */
 package info.consonance.arch.worker;
 
-import info.consonance.arch.coordinator.Coordinator;
-import info.consonance.arch.jobGenerator.JobGenerator;
-import info.consonance.arch.utils.ITUtilities;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+
 import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.StatusLine;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import info.consonance.arch.coordinator.Coordinator;
+import info.consonance.arch.jobGenerator.JobGenerator;
+import info.consonance.arch.utils.ITUtilities;
 
 /**
  *
  * @author dyuen
  */
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore( {"javax.management.*"}) 
 public class WorkerIT {
 
 //    @BeforeClass
@@ -55,8 +60,8 @@ public class WorkerIT {
 
     @Before
     public void setUp() throws Exception {
-        ITUtilities.clearState();
         MockitoAnnotations.initMocks(this);
+        ITUtilities.clearState();
     }
     
     /**
@@ -74,7 +79,8 @@ public class WorkerIT {
         Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
         Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
         
-        PowerMockito.whenNew(GetMethod.class).withArguments("http://169.254.169.254/latest/meta-data/instance-type").thenReturn((GetMethod) mockMethod);
+        //PowerMockito.whenNew(GetMethod.class).withArguments("http://169.254.169.254/latest/meta-data/instance-type").thenReturn((GetMethod) mockMethod);
+        PowerMockito.whenNew(GetMethod.class).withArguments(anyString()).thenReturn((GetMethod) mockMethod);
         Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
         PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
 
