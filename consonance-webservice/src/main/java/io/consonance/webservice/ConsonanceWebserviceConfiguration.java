@@ -21,23 +21,6 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
     @NotEmpty
     private String template;
 
-    @NotEmpty
-    private String defaultName = "Stranger";
-
-    @NotEmpty
-    private String quayClientID;
-
-    @NotEmpty
-    private String githubClientID;
-
-    @NotEmpty
-    private String quayRedirectURI;
-
-    @NotEmpty
-    private String githubRedirectURI;
-
-    @NotEmpty
-    private String githubClientSecret;
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -59,49 +42,7 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
         this.template = template;
     }
 
-    @JsonProperty
-    public String getDefaultName() {
-        return defaultName;
-    }
 
-    @JsonProperty
-    public void setDefaultName(String name) {
-        this.defaultName = name;
-    }
-
-    /**
-     * @return the quayClientID
-     */
-    @JsonProperty
-    public String getQuayClientID() {
-        return quayClientID;
-    }
-
-    /**
-     * @param quayClientID
-     *            the quayClientID to set
-     */
-    @JsonProperty
-    public void setQuayClientID(String quayClientID) {
-        this.quayClientID = quayClientID;
-    }
-
-    /**
-     * @return the quayRedirectURI
-     */
-    @JsonProperty
-    public String getQuayRedirectURI() {
-        return quayRedirectURI;
-    }
-
-    /**
-     * @param quayRedirectURI
-     *            the quayRedirectURI to set
-     */
-    @JsonProperty
-    public void setQuayRedirectURI(String quayRedirectURI) {
-        this.quayRedirectURI = quayRedirectURI;
-    }
 
     /**
      * @param database
@@ -121,54 +62,5 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
         this.httpClient = httpClient;
     }
 
-    /**
-     * @return the githubClientID
-     */
-    @JsonProperty
-    public String getGithubClientID() {
-        return githubClientID;
-    }
 
-    /**
-     * @param githubClientID
-     *            the githubClientID to set
-     */
-    @JsonProperty
-    public void setGithubClientID(String githubClientID) {
-        this.githubClientID = githubClientID;
-    }
-
-    /**
-     * @return the githubRedirectURI
-     */
-    @JsonProperty
-    public String getGithubRedirectURI() {
-        return githubRedirectURI;
-    }
-
-    /**
-     * @param githubRedirectURI
-     *            the githubRedirectURI to set
-     */
-    @JsonProperty
-    public void setGithubRedirectURI(String githubRedirectURI) {
-        this.githubRedirectURI = githubRedirectURI;
-    }
-
-    /**
-     * @return the githubClientSecret
-     */
-    @JsonProperty
-    public String getGithubClientSecret() {
-        return githubClientSecret;
-    }
-
-    /**
-     * @param githubClientSecret
-     *            the githubClientSecret to set
-     */
-    @JsonProperty
-    public void setGithubClientSecret(String githubClientSecret) {
-        this.githubClientSecret = githubClientSecret;
-    }
 }

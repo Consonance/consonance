@@ -1,3 +1,5 @@
+template: Funky
+
 httpClient:
   timeout: 5500ms
   connectionTimeout: 5500ms
@@ -13,13 +15,13 @@ database:
   driverClass: org.postgresql.Driver
 
   # the username
-  user: webservice
+  user: queue_user 
 
   # the password
-  password: iAMs00perSecrEET
+  password: queue
 
   # the JDBC URL
-  url: jdbc:postgresql://localhost:5432/webservice
+  url: jdbc:postgresql://localhost:5432/queue_status
 
   # any properties specific to your JDBC driver:
   properties:
