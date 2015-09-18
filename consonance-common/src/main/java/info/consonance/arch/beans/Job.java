@@ -7,6 +7,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -20,6 +25,10 @@ import java.util.UUID;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Job {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="job_id")
+    private long jobId;
     private JobState state = JobState.START;
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
@@ -251,5 +260,10 @@ public class Job {
      */
     public void setStderr(String stderr) {
         this.stderr = stderr;
+    }
+
+    @JsonProperty("job_id")
+    public long getJobId() {
+        return jobId;
     }
 }

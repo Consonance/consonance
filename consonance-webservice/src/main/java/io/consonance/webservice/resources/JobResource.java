@@ -17,8 +17,8 @@
 package io.consonance.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import io.consonance.webservice.core.WorkflowRun;
-import io.consonance.webservice.jdbi.WorkflowRunDAO;
+import info.consonance.arch.beans.Job;
+import io.consonance.webservice.jdbi.JobDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -43,10 +43,10 @@ import org.apache.http.HttpStatus;
 @Path("/workflowRun")
 @Api(value = "/workflowRun", tags = "workflowRun")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowRunResource {
-    private final WorkflowRunDAO dao;
+public class JobResource {
+    private final JobDAO dao;
 
-    public WorkflowRunResource(WorkflowRunDAO dao) {
+    public JobResource(JobDAO dao) {
         this.dao = dao;
     }
 
@@ -54,23 +54,23 @@ public class WorkflowRunResource {
     @Path("/listOwned")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all workflow runs owned by the logged-in user", notes = "List the workflow runs owned by the user", response = WorkflowRun.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<WorkflowRun> listOwnedWorkflowRuns() {
+    @ApiOperation(value = "List all workflow runs owned by the logged-in user", notes = "List the workflow runs owned by the user", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    public List<Job> listOwnedWorkflowRuns() {
         throw new UnsupportedOperationException();
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all known workflow runs", notes = "List all workflow runs", response = WorkflowRun.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<WorkflowRun> listWorkflowRuns() {
+    @ApiOperation(value = "List all known workflow runs", notes = "List all workflow runs", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    public List<Job> listWorkflowRuns() {
         return dao.findAll();
     }
 
     @POST
     @ApiOperation(value = "Schedule a new workflow run")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_METHOD_NOT_ALLOWED, message = "Invalid input") })
-    public WorkflowRun addWorkflowRun(@ApiParam(value = "Workflow run that needs to be added to the store", required = true) WorkflowRun run) {
+    public Job addWorkflowRun(@ApiParam(value = "Workflow run that needs to be added to the store", required = true) Job job) {
         throw new UnsupportedOperationException();
     }
 

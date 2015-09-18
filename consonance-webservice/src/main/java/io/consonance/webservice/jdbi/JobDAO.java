@@ -16,7 +16,7 @@
  */
 package io.consonance.webservice.jdbi;
 
-import io.consonance.webservice.core.WorkflowRun;
+import info.consonance.arch.beans.Job;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
 import org.hibernate.SessionFactory;
@@ -25,20 +25,20 @@ import org.hibernate.SessionFactory;
  *
  * @author dyuen
  */
-public class WorkflowRunDAO extends AbstractDAO<WorkflowRun> {
-    public WorkflowRunDAO(SessionFactory factory) {
+public class JobDAO extends AbstractDAO<Job> {
+    public JobDAO(SessionFactory factory) {
         super(factory);
     }
 
-    public WorkflowRun findById(Long id) {
+    public Job findById(Long id) {
         return get(id);
     }
 
-    public long create(WorkflowRun workflowRun) {
-        return persist(workflowRun).getId();
+    public long create(Job job) {
+        return persist(job).getJobId();
     }
 
-    public List<WorkflowRun> findAll() {
+    public List<Job> findAll() {
         return list(namedQuery("io.consonance.webservice.core.WorkflowRun.findAll"));
     }
 }

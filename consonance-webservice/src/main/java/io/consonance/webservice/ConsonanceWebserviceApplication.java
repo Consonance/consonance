@@ -16,10 +16,10 @@
  */
 package io.consonance.webservice;
 
-import io.consonance.webservice.core.WorkflowRun;
-import io.consonance.webservice.jdbi.WorkflowRunDAO;
+import info.consonance.arch.beans.Job;
+import io.consonance.webservice.jdbi.JobDAO;
 import io.consonance.webservice.resources.TemplateHealthCheck;
-import io.consonance.webservice.resources.WorkflowRunResource;
+import io.consonance.webservice.resources.JobResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
@@ -48,7 +48,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
     }
 
     private final HibernateBundle<ConsonanceWebserviceConfiguration> hibernate = new HibernateBundle<ConsonanceWebserviceConfiguration>(
-            WorkflowRun.class) {
+            Job.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(ConsonanceWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -87,10 +87,10 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
 
-        final WorkflowRunDAO dao = new WorkflowRunDAO(hibernate.getSessionFactory());
+        final JobDAO dao = new JobDAO(hibernate.getSessionFactory());
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
-        environment.jersey().register(new WorkflowRunResource(dao));
+        environment.jersey().register(new JobResource(dao));
 
         // swagger stuff
 
