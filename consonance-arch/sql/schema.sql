@@ -50,6 +50,8 @@ CREATE TABLE job (
     workflow_version text,
     job_hash text,
     ini text,
+    end_user text, 
+    flavour text,
     stdout text,
     stderr text,
     update_timestamp timestamp default current_timestamp,

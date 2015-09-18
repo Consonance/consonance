@@ -14,7 +14,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Created by boconnor on 2015-04-22.
+ * @author boconnor
+ * @author dyuen
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Job {
@@ -32,6 +33,8 @@ public class Job {
     private Timestamp updateTs;
     private String stdout;
     private String stderr;
+    private String endUser;
+    private String flavour = null;
 
     public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini) {
         this.workflow = workflow;
@@ -51,7 +54,6 @@ public class Job {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
         } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             return null;
         }
@@ -73,6 +75,24 @@ public class Job {
             return null;
         }
 
+    }
+
+    @JsonProperty
+    public String getEndUser() {
+        return endUser;
+    }
+
+    public void setEndUser(String endUser) {
+        this.endUser = endUser;
+    }
+
+    @JsonProperty
+    public String getFlavour() {
+        return flavour;
+    }
+
+    public void setFlavour(String flavour) {
+        this.flavour = flavour;
     }
 
     @JsonProperty("job_uuid")

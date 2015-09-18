@@ -5,7 +5,10 @@ import java.util.UUID;
 import org.json.simple.JSONObject;
 
 /**
- * This is an Order which represents a request which gets processed by the Co-ordinator. Created by boconnor on 2015-04-22.
+ * This is an Order which represents a request which gets processed by the Co-ordinator
+ *
+ * @author boconnor
+ * @author dyuen
  */
 public class Order {
 

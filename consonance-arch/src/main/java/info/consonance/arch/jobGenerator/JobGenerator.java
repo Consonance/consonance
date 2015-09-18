@@ -22,29 +22,28 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionSpecBuilder;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.tools.ant.DirectoryScanner;
 
 /**
- * Created by boconnor on 15-04-18.
- *
  * takes a --config option pointed to a config .json file
+ *
+ * @author boconnor
+ * @author dyuen
  */
 public class JobGenerator extends Base {
 
+    private final String flavour;
+    private final String user;
     // variables
     private HierarchicalINIConfiguration settings = null;
     private Channel jchannel = null;
     private String queueName = null;
     private int currIterations = 0;
 
-    private final ArgumentAcceptingOptionSpec<String> iniDirSpec;
-    private final ArgumentAcceptingOptionSpec<String> workflowNameSpec;
-    private final ArgumentAcceptingOptionSpec<String> workflowVersionSpec;
-    private final ArgumentAcceptingOptionSpec<String> workflowPathSpec;
-    private final ArgumentAcceptingOptionSpec<Integer> totalJobSpec;
     private final OptionSpecBuilder forceSpec;
 
     public static void main(String[] argv) throws IOException {
@@ -55,16 +54,26 @@ public class JobGenerator extends Base {
     public JobGenerator(String[] argv) throws IOException {
         super();
 
-        this.iniDirSpec = super.parser.accepts("ini-dir", "schedule a batch of ini files from this directory").withOptionalArg()
-                .ofType(String.class);
-        this.workflowNameSpec = super.parser.accepts("workflow-name", "track the name of workflows").withOptionalArg().ofType(String.class)
-                .required();
-        this.workflowVersionSpec = super.parser.accepts("workflow-version", "track the version of workflows").withOptionalArg()
-                .ofType(String.class).required();
-        this.workflowPathSpec = super.parser.accepts("workflow-path", "Schedule workflows at this path on the container host")
+        ArgumentAcceptingOptionSpec<String> iniDirSpec = super.parser
+                .accepts("ini-dir", "schedule a batch of ini files from this directory").withRequiredArg().ofType(String.class);
+        ArgumentAcceptingOptionSpec<String> workflowNameSpec = super.parser.accepts("workflow-name", "track the name of workflows")
                 .withOptionalArg().ofType(String.class).required();
-        this.totalJobSpec = super.parser.accepts("total-jobs", "Schedule a specific number of test workflows")
-                .requiredUnless(iniDirSpec, this.endlessSpec).withRequiredArg().ofType(Integer.class).defaultsTo(Integer.MAX_VALUE);
+        ArgumentAcceptingOptionSpec<String> workflowVersionSpec = super.parser.accepts("workflow-version", "track the version of workflows")
+                .withOptionalArg().ofType(String.class).required();
+        ArgumentAcceptingOptionSpec<String> workflowPathSpec = super.parser
+                .accepts("workflow-path", "Schedule workflows at this path on the container host").withRequiredArg().ofType(String.class)
+                .required();
+        ArgumentAcceptingOptionSpec<Integer> totalJobSpec = super.parser
+                .accepts("total-jobs", "Schedule a specific number of test workflows").requiredUnless(iniDirSpec, this.endlessSpec)
+                .withRequiredArg().ofType(Integer.class).defaultsTo(Integer.MAX_VALUE);
+
+        ArgumentAcceptingOptionSpec<String> userSpec = super.parser
+                .accepts("user", "Designate a user for the jobs submitted in this batch").withRequiredArg().ofType(String.class)
+                .defaultsTo("Player");
+        ArgumentAcceptingOptionSpec<String> flavourSpec = super.parser
+                .accepts("flavour", "Designate a specific flavour for the jobs submitted in this batch").withRequiredArg().ofType(String.class)
+                .required();
+
         this.forceSpec = super.parser.accepts("force", "Force job generation even if hashing is activated");
 
         parseOptions(argv);
@@ -73,6 +82,9 @@ public class JobGenerator extends Base {
         String workflowName = options.valueOf(workflowNameSpec);
         String workflowVersion = options.valueOf(workflowVersionSpec);
         String workflowPath = options.valueOf(workflowPathSpec);
+        this.user = options.valueOf(userSpec);
+        this.flavour = options.valueOf(flavourSpec);
+
 
         // UTILS OBJECT
         settings = Utilities.parseConfig(configFile);
@@ -86,7 +98,6 @@ public class JobGenerator extends Base {
         } catch (TimeoutException ex) {
             throw new RuntimeException(ex);
         }
-
         if (options.has(iniDirSpec)) {
             // read an array of files
             log.info("scanning: " + iniDir);
@@ -112,9 +123,7 @@ public class JobGenerator extends Base {
         }
 
         try {
-
             jchannel.getConnection().close(FIVE_SECOND_IN_MILLISECONDS);
-
         } catch (IOException ex) {
             log.error(ex.toString());
         }
@@ -125,7 +134,7 @@ public class JobGenerator extends Base {
         // keep track of the iterations
         currIterations++;
         log.info("\ngenerating new jobs, iteration " + currIterations + "\n");
-        // TODO: this is fake, in a real program this is being read from JSONL file or web service
+        // TODO: this is fake, in a real program this is being read from JSON file or web service
         // check to see if new results are available and/or if the work queue is empty
         Order o = generateNewJob(iniFile, workflowName, workflowVersion, workflowPath);
         // enqueue new job
@@ -188,7 +197,6 @@ public class JobGenerator extends Base {
                 } else {
                     System.out.println("Skipping file (null if testing) due to hash: " + file);
                     return null;
-
                 }
             }
         }
@@ -200,26 +208,23 @@ public class JobGenerator extends Base {
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order();
-        newOrder.setJob(new Job(workflowName, workflowVersion, workflowPath, hashStr, iniFileEntries));
+        final Job job = new Job(workflowName, workflowVersion, workflowPath, hashStr, iniFileEntries);
+        job.setFlavour(flavour);
+        job.setEndUser(user);
+        newOrder.setJob(job);
         newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
         newOrder.getProvision().setJobUUID(newOrder.getJob().getUuid());
-
         return newOrder;
-
     }
 
     private Map<String, String> parseIniFile(String iniFile) {
-
         Map<String, String> iniHash = new LinkedHashMap<>();
-
         try {
             IniFile ini = new IniFile(iniFile);
             iniHash = ini.getEntries().get("no-section");
-
         } catch (IOException e) {
             log.error(e.toString());
         }
-
         return iniHash;
     }
 
@@ -227,7 +232,6 @@ public class JobGenerator extends Base {
 
         try {
             log.info("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
-
             this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
                     job.getBytes(StandardCharsets.UTF_8));
             jchannel.waitForConfirms();
