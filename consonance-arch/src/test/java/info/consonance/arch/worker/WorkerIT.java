@@ -55,8 +55,9 @@ public class WorkerIT {
                         "--flavour","m1.xlarge"});
         // prime the worker with a job
         Coordinator.main(new String[] { "--config", file.getAbsolutePath() });
+        // note that the specified flavour below needs to match the flavour above
         Worker.main(new String[] { "--config", file.getAbsolutePath(), "--uuid", "12345", "--test", "--pidFile",
-                "/var/run/arch3_worker.pid" });
+                "/var/run/arch3_worker.pid", "--flavour","m1.xlarge" });
     }
 
 }
