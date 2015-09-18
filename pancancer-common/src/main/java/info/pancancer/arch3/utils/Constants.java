@@ -42,6 +42,7 @@ public class Constants {
     public static final String JOB_GENERATOR_RESULTS_FILE = "generator.results";
     public static final String JOB_GENERATOR_CHECK_JOB_HASH = "generator.check_previous_job_hash";
     public static final String JOB_GENERATOR_FILTER_KEYS_IN_HASH = "generator.job_filter_hash_keys";
+    public static final String JOB_GENERATOR_JOB_LIMIT = "generator.job_limit";
 
     public static final String WORKER_POSTWORKER_SLEEP = "worker.postworkerSleep";
     public static final String WORKER_PREWORKER_SLEEP = "worker.preworkerSleep";
