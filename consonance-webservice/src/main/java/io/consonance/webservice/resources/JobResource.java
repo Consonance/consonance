@@ -35,13 +35,13 @@ import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 
 /**
- * The token resource handles operations with workflow runs. Workflows runs are scheduled and can be queried to get information on the
- * current state of the workflow. run status.
+ * The token resource handles operations with jobs. Jobs are scheduled and can be queried to get information on the
+ * current state of the job.
  *
  * @author dyuen
  */
-@Path("/workflowRun")
-@Api(value = "/workflowRun", tags = "workflowRun")
+@Path("/job")
+@Api(value = "/job", tags = "job")
 @Produces(MediaType.APPLICATION_JSON)
 public class JobResource {
     private final JobDAO dao;
@@ -54,7 +54,7 @@ public class JobResource {
     @Path("/listOwned")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all workflow runs owned by the logged-in user", notes = "List the workflow runs owned by the user", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    @ApiOperation(value = "List all jobs owned by the logged-in user", notes = "List the jobs owned by the user", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
     public List<Job> listOwnedWorkflowRuns() {
         throw new UnsupportedOperationException();
     }
@@ -62,7 +62,7 @@ public class JobResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all known workflow runs", notes = "List all workflow runs", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    @ApiOperation(value = "List all known jobs", notes = "List all jobs", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
     public List<Job> listWorkflowRuns() {
         return dao.findAll();
     }
