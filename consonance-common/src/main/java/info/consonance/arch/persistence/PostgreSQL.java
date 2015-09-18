@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbcp2.ConnectionFactory;
@@ -33,7 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by boconnor on 2015-04-22.
+ * @author oconnor
+ * @author dyuen
  */
 public class PostgreSQL {
 
@@ -96,12 +98,12 @@ public class PostgreSQL {
 
     public long getDesiredNumberOfVMs() {
         return runSelectStatement("select count(*) from provision where status = '" + ProvisionState.PENDING + "' or status = '"
-                + ProvisionState.RUNNING + "'", new ScalarHandler<Long>());
+                + ProvisionState.RUNNING + "'", new ScalarHandler<>());
     }
 
     public String getPendingProvisionUUID() {
         return runSelectStatement("select provision_uuid from provision where status = '" + ProvisionState.PENDING + "' limit 1",
-                new ScalarHandler<String>());
+                new ScalarHandler<>());
     }
 
     public void clearDatabase() {
@@ -172,7 +174,7 @@ public class PostgreSQL {
     }
 
     public long getProvisionCount(ProvisionState status) {
-        return this.runSelectStatement("select count(*) from provision where status = ?", new ScalarHandler<Long>(), status.toString());
+        return this.runSelectStatement("select count(*) from provision where status = ?", new ScalarHandler<>(), status.toString());
     }
 
     public Integer createProvision(Provision p) {
@@ -185,21 +187,20 @@ public class PostgreSQL {
 
     public String createJob(Job j) {
         JSONObject jsonIni = new JSONObject(j.getIni());
+        JSONObject jsonExtraFiles = new JSONObject(j.getExtraFiles());
         Map<Object, Map<String, Object>> map = this.runInsertStatement(
-                "INSERT INTO job (status, job_uuid, workflow, workflow_version, job_hash, ini) VALUES (?,?,?,?,?,?)", new KeyedHandler<>(
-                        "job_uuid"), j.getState().toString(), j.getUuid(), j.getWorkflow(), j.getWorkflowVersion(), j.getJobHash(), jsonIni
-                        .toJSONString());
+                "INSERT INTO job (status, job_uuid, workflow, workflow_version, job_hash, ini, extra_files) VALUES (?,?,?,?,?,?,?::jsonb)",
+                new KeyedHandler<>("job_uuid"), j.getState().toString(), j.getUuid(), j.getWorkflow(), j.getWorkflowVersion(),
+                j.getJobHash(), jsonIni.toJSONString(), jsonExtraFiles.toJSONString());
         return (String) map.entrySet().iterator().next().getKey();
     }
 
     public String[] getSuccessfulVMAddresses() {
         Map<String, Map<String, Object>> runSelectStatement = runSelectStatement(
-                "select provision_id, ip_address from provision where status = '" + ProvisionState.SUCCESS + "'", new KeyedHandler<String>(
+                "select provision_id, ip_address from provision where status = '" + ProvisionState.SUCCESS + "'", new KeyedHandler<>(
                         "provision_id"));
-        List<String> list = new ArrayList<>();
-        for (Entry<String, Map<String, Object>> entry : runSelectStatement.entrySet()) {
-            list.add((String) entry.getValue().get("ip_address"));
-        }
+        List<String> list = runSelectStatement.entrySet().stream().map(entry -> (String) entry.getValue().get("ip_address"))
+                .collect(Collectors.toList());
         return list.toArray(new String[list.size()]);
     }
 
@@ -218,8 +219,8 @@ public class PostgreSQL {
                     new KeyedHandler<>("provision_uuid"));
         }
 
+        //TODO: this can be done more cleanly with a custom row processor
         for (Entry<Object, Map<String, Object>> entry : map.entrySet()) {
-
             Provision p = new Provision();
             p.setState(Enum.valueOf(ProvisionState.class, (String) entry.getValue().get("status")));
             p.setJobUUID((String) entry.getValue().get("job_uuid"));
@@ -252,6 +253,7 @@ public class PostgreSQL {
             map = this.runSelectStatement("select * from job", new KeyedHandler<>("job_uuid"));
         }
 
+        //TODO: this can be done more cleanly with a custom row processor
         for (Entry<Object, Map<String, Object>> entry : map.entrySet()) {
 
             Job j = new Job();
@@ -262,12 +264,10 @@ public class PostgreSQL {
             j.setJobHash((String) entry.getValue().get("job_hash"));
             j.setStdout((String) entry.getValue().get("stdout"));
             j.setStderr((String) entry.getValue().get("stderr"));
-            JSONObject iniJson = Utilities.parseJSONStr((String) entry.getValue().get("ini"));
-            HashMap<String, String> ini = new HashMap<>();
-            for (Object key : iniJson.keySet()) {
-                ini.put((String) key, (String) iniJson.get(key));
-            }
+            final Map<String, String> ini = convertJSON(entry, "ini");
             j.setIni(ini);
+            final Map<String, String> extraFiles = convertJSON(entry, "extra_files");
+            j.setExtraFiles(extraFiles);
 
             // timestamp
             Timestamp createTs = (Timestamp) entry.getValue().get("create_timestamp");
@@ -280,6 +280,15 @@ public class PostgreSQL {
         }
 
         return jobs;
+    }
+
+    private Map<String, String> convertJSON(Entry<Object, Map<String, Object>> entry, String columnName) {
+        JSONObject iniJson = Utilities.parseJSONStr(entry.getValue().get(columnName).toString());
+        HashMap<String, String> ini = new HashMap<>();
+        for (Object key : iniJson.keySet()) {
+            ini.put((String) key, (String) iniJson.get(key));
+        }
+        return ini;
     }
 
     public boolean previouslyRun(String hash) {

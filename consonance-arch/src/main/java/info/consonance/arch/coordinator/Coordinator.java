@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  *
  * It then monitors the results queue to see when jobs fail or finish.
  *
- * Finally, for failed or finished workflows, it informats the VM about finished VMs that can be terminated.
+ * Finally, for failed or finished workflows, it informs the VM about finished VMs that can be terminated.
  *
  * TODO:
  *
@@ -287,7 +287,7 @@ public class Coordinator extends Base {
                     Status status = new Status().fromJSON(message);
 
                     // now update that DB record to be exited
-                    // this is acutally finishing the VM and not the work
+                    // this is actually finishing the VM and not the work
                     if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         LOG.info("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
