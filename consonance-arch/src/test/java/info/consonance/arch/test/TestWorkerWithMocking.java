@@ -1,19 +1,12 @@
 package info.consonance.arch.test;
 
-import ch.qos.logback.classic.spi.LoggingEvent;
-import ch.qos.logback.core.Appender;
-import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
-import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.ShutdownSignalException;
-import info.consonance.arch.beans.Job;
-import info.consonance.arch.utils.Utilities;
-import info.consonance.arch.worker.WorkerRunnable;
-import info.consonance.arch.worker.WorkflowRunner;
-import info.consonance.arch.utils.Constants;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.StatusLine;
+import org.apache.commons.httpclient.methods.GetMethod;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,20 +16,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteResultHandler;
 import org.apache.commons.lang3.StringUtils;
-import static org.junit.Assert.assertTrue;
+import org.apache.http.HttpStatus;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -48,6 +41,22 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.QueueingConsumer.Delivery;
+import com.rabbitmq.client.ShutdownSignalException;
+
+import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.core.Appender;
+import info.consonance.arch.beans.Job;
+import info.consonance.arch.utils.Constants;
+import info.consonance.arch.utils.Utilities;
+import info.consonance.arch.worker.WorkerRunnable;
+import info.consonance.arch.worker.WorkflowRunner;
 
 @PrepareForTest({ QueueingConsumer.class, Utilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
         DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class })
@@ -75,6 +84,12 @@ public class TestWorkerWithMocking {
     @Mock
     private BasicProperties mockProperties;
 
+    @Mock
+    private GetMethod mockMethod;
+    
+    @Mock
+    private HttpClient mockClient;
+    
     @Spy
     private DefaultExecutor mockExecutor = new DefaultExecutor();
 
@@ -89,7 +104,7 @@ public class TestWorkerWithMocking {
     private static ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
     @Before
-    public void setUp() throws IOException, TimeoutException {
+    public void setUp() throws IOException, TimeoutException, Exception {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(Utilities.class);
 
@@ -99,7 +114,17 @@ public class TestWorkerWithMocking {
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
         Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(Utilities.setupQueueOnExchange(any(Channel.class), anyString(),anyString())).thenReturn("consonance_arch_jobs");
+        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString(),anyString())).thenReturn(mockChannel);
         Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+
+        StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
+        Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
+        Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
+        
+        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn((GetMethod) mockMethod);
+        Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
+        PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
     }
 
     private String appendEventsIntoString(List<LoggingEvent> events) {
@@ -165,7 +190,8 @@ public class TestWorkerWithMocking {
         // System.out.println("\n===============================\nTest Results: " + testResults);
         // System.out.println(testResults);
         String expectedDockerCommand = "docker run --rm -h master -t -v /var/run/docker.sock:/var/run/docker.sock -v /workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0:/workflow -v /tmp/seqware_tmpfile.ini:/ini -v /datastore:/datastore -v /home/$USER/.gnos:/home/$USER/.gnos -v /home/$USER/custom-seqware-settings:/home/seqware/.seqware/settings pancancer/seqware_whitestar_pancancer:1.1.1 seqware bundle launch --dir /workflow --ini /ini --no-metadata --engine whitestar";
-        // System.out.println(expectedDockerCommand);
+        System.out.println("expected results: "+expectedDockerCommand);
+        //System.out.println(testResults);
         assertTrue("Check for docker command, got " + testResults, testResults.contains(expectedDockerCommand));
         assertTrue("Check for sleep message in the following:" + testResults,
                 testResults.contains("Sleeping before executing workflow for 1000 ms."));
@@ -188,7 +214,7 @@ public class TestWorkerWithMocking {
     }
 
     private void setupConfig() {
-        Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("seqware");
+        Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("consonance_arch");
         Mockito.when(config.getString(Constants.RABBIT_HOST)).thenReturn("localhost");
         Mockito.when(config.getString(Constants.RABBIT_USERNAME)).thenReturn("guest");
         Mockito.when(config.getString(Constants.RABBIT_PASSWORD)).thenReturn("guest");

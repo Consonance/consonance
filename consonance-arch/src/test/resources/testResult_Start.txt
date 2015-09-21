@@ -1,4 +1,6 @@
  [x] Received JOBS REQUEST '{
+  "state" : "START",
+  "job_id" : 0,
   "job_uuid" : "1234567890",
   "workflow_name" : "HelloWorld",
   "workflow_version" : "1.0-SNAPSHOT",

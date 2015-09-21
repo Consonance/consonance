@@ -34,6 +34,11 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,11 +67,10 @@ public class WorkerRunnable implements Runnable {
     private String userName;
     private boolean testMode;
     private boolean endless = false;
-    private boolean workflowFailed = false;
     public static final int DEFAULT_PRESLEEP = 1;
     public static final int DEFAULT_POSTSLEEP = 1;
-    private static final int FIVE_SECONDS_IN_MS = 5000;
     private String networkAddress;
+    private String flavour = null;
 
     /**
      * Create a new Worker.
@@ -79,26 +83,20 @@ public class WorkerRunnable implements Runnable {
      *            - The maximum number of workflows this Worker should execute.
      */
     public WorkerRunnable(String configFile, String vmUuid, int maxRuns) {
-        this(configFile, vmUuid, maxRuns, false, false);
+        this(configFile, vmUuid, maxRuns, false, false, null);
     }
 
     /**
      * Create a new Worker.
      *
-     * @param configFile
-     *            - The name of the configuration file to read.
-     * @param vmUuid
-     *            - The UUID of the VM on which this worker is running.
-     * @param maxRuns
-     *            - The maximum number of workflows this Worker should execute.
-     * @param testMode
-     *            - Should this worker run in testMode (seqware job will not actually be launched)
-     * @param endless
-     *            - have the worker pick up new jobs as the current job finishes successfully
-     * @param continueOnFailure
-     *            - Should the worker try to run a new job if the last job ended in failure.
+     * @param configFile The name of the configuration file to read.
+     * @param vmUuid The UUID of the VM on which this worker is running.
+     * @param maxRuns The maximum number of workflows this Worker should execute.
+     * @param testMode Should this worker run in testMode (seqware job will not actually be launched)
+     * @param endless have the worker pick up new jobs as the current job finishes successfully
+     * @param flavourOverride override detection of instance type
      */
-    public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless) {
+    public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
         log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
                 + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
@@ -113,7 +111,7 @@ public class WorkerRunnable implements Runnable {
         this.maxRuns = maxRuns;
         settings = Utilities.parseConfig(configFile);
 
-        // TODO: Dyanmically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
+        // TODO: Dynamically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
         // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)
         // ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
         // appender.setFile("SomePath");
@@ -130,13 +128,14 @@ public class WorkerRunnable implements Runnable {
          * If the user specified "--endless" on the CLI, then this.endless=true Else: check to see if "endless" is in the config file, and
          * if it is, parse the value of it and use that. If not in the config file, then use "false".
          */
-        this.endless = endless ? endless : settings.getBoolean(Constants.WORKER_ENDLESS, false);
+        this.endless = endless || settings.getBoolean(Constants.WORKER_ENDLESS, false);
         if (this.endless) {
             log.info("The \"--endless\" flag was set, this worker will run endlessly!");
         }
         this.vmUuid = vmUuid;
         this.maxRuns = maxRuns;
         this.testMode = testMode;
+        this.flavour = flavourOverride;
     }
 
     @Override
@@ -145,15 +144,41 @@ public class WorkerRunnable implements Runnable {
         int max = maxRuns;
 
         try {
+            // worker will need to pull from a specific queue
+            // for aws: curl http://169.254.169.254/latest/meta-data/instance-type
+            // for openstack: curl http://169.254.169.254/latest/meta-data/instance-type
+
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
+
+            HttpClient client = new HttpClient();
+            // make really sure that we get a flavour
+            while (flavour == null) {
+                String responseBody;
+                // if no OpenStack uuid is found, grab a normal instance_id from AWS
+                String instanceTypeURL = "http://169.254.169.254/latest/meta-data/instance-type";
+                HttpMethod method = new GetMethod(instanceTypeURL);
+                try {
+                    client.executeMethod(method);
+                    responseBody = method.getResponseBodyAsString();
+                    if (responseBody != null && method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                        flavour = responseBody;
+                        log.info(" flavour chosen using cloud ini meta-data as: '" + flavour + "'");
+                    }
+                } catch (HttpException he) {
+                    Log.warn("Http error connecting to '" + instanceTypeURL + "'");
+                } catch (IOException ioe) {
+                    Log.warn("Unable to connect to '" + instanceTypeURL + "'");
+                }
+            }
+
             // write to
             // TODO: Add some sort of "local debug" mode so that developers working on their local
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
             resultsChannel = Utilities.setupExchange(settings, this.resultsQueueName);
 
-            while ((max > 0 || this.endless) && !this.workflowFailed) {
+            while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
 
@@ -163,13 +188,19 @@ public class WorkerRunnable implements Runnable {
 
                 // jobChannel needs to be created inside the loop because it is closed inside the loop, and it is closed inside this loop to
                 // prevent pre-fetching.
-                Channel jobChannel = Utilities.setupQueue(settings, this.jobQueueName);
+
+                // create the job exchange
+                String exchange = queueName + "_job_exchange";
+                Channel jobChannel = Utilities.setupExchange(settings, exchange, "direct");
                 if (jobChannel == null) {
                     throw new NullPointerException("jobChannel is null for queue: " + this.jobQueueName
                             + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
                 }
+                final String finalQueueName = Utilities.setupQueueOnExchange(jobChannel, queueName + "_jobs", flavour);
+                jobChannel.queueBind(finalQueueName, exchange,flavour);
+
                 QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-                jobChannel.basicConsume(this.jobQueueName, false, consumer);
+                jobChannel.basicConsume(finalQueueName, false, consumer);
 
                 QueueingConsumer.Delivery delivery = consumer.nextDelivery();
                 log.info(vmUuid + "  received " + delivery.getEnvelope().toString());
@@ -234,18 +265,14 @@ public class WorkerRunnable implements Runnable {
                 }
             }
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
-            if (this.workflowFailed) {
-                log.error(
-                        "The last workflow executed by this Worker did not complete successfully. No more workflows will be attempted. Please check the logs and fix any problems before trying another workflow.");
-            }
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
             if (resultsChannel != null && resultsChannel.isOpen()) {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
             }
-            log.debug("result channel open: " + resultsChannel.isOpen());
-            log.debug("result channel connection open: " + resultsChannel.getConnection().isOpen());
+            log.debug("result channel open: " + (resultsChannel != null ? resultsChannel.isOpen() : null));
+            log.debug("result channel connection open: " + (resultsChannel != null ? resultsChannel.getConnection().isOpen() : null));
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -349,16 +376,10 @@ public class WorkerRunnable implements Runnable {
             log.error(e.getMessage(), e);
         } catch (ExecutionException e) {
             log.error("Error executing workflow: " + e.getMessage(), e);
-            this.workflowFailed = true;
         } catch (InterruptedException e) {
             log.error("Workflow may have been interrupted: " + e.getMessage(), e);
-            this.workflowFailed = true;
         } finally {
             exService.shutdownNow();
-        }
-
-        if (workflowResult == null || (workflowResult != null && workflowResult.getExitCode() != 0)) {
-            this.workflowFailed = true;
         }
 
         return workflowResult;

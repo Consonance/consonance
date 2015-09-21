@@ -1,5 +1,5 @@
 {
-	"rabbitMQQueueName":"seqware",
+	"rabbitMQQueueName":"consonance_arch",
 	"rabbitMQHost":"localhost",
 	"rabbitMQUser":"guest",
 	"rabbitMQPass":"guest",

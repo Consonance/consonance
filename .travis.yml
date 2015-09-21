@@ -23,7 +23,7 @@ script:
   - mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
 
 addons:
-  postgresql: "9.3"
+  postgresql: "9.4"
 
 services:
   - rabbitmq

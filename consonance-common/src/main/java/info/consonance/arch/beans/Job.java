@@ -7,6 +7,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -14,11 +21,17 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Created by boconnor on 2015-04-22.
+ * @author boconnor
+ * @author dyuen
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@ApiModel(value="Job", description="Describes jobs running in Consonance")
 public class Job {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="job_id")
+    private long jobId;
     private JobState state = JobState.START;
     private String uuid = UUID.randomUUID().toString().toLowerCase();
     private String workflow;
@@ -28,10 +41,13 @@ public class Job {
     private String jobHash;
     private String messageType;
     private Map<String, String> ini = new HashMap<>();
+    private Map<String, String> extraFiles = new HashMap<>();
     private Timestamp createTs;
     private Timestamp updateTs;
     private String stdout;
     private String stderr;
+    private String endUser;
+    private String flavour = null;
 
     public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini) {
         this.workflow = workflow;
@@ -51,7 +67,6 @@ public class Job {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
         } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             return null;
         }
@@ -75,7 +90,28 @@ public class Job {
 
     }
 
+    @JsonProperty
+    @ApiModelProperty(value = "indicates the user that scheduled a job", required=true)
+    public String getEndUser() {
+        return endUser;
+    }
+
+    public void setEndUser(String endUser) {
+        this.endUser = endUser;
+    }
+
+    @JsonProperty
+    @ApiModelProperty(value = "indicates the flavour of VM for a job", required=true)
+    public String getFlavour() {
+        return flavour;
+    }
+
+    public void setFlavour(String flavour) {
+        this.flavour = flavour;
+    }
+
     @JsonProperty("job_uuid")
+    @ApiModelProperty(value = "consonance will assign a uuid to jobs")
     public String getUuid() {
         return uuid;
     }
@@ -85,8 +121,28 @@ public class Job {
     }
 
     @JsonProperty("arguments")
+    @ApiModelProperty(value = "seqware containers use ini files, deprecated")
     public Map<String, String> getIni() {
         return ini;
+    }
+
+    @JsonProperty("extra_files")
+    @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
+    public Map<String, String> getExtraFiles() {
+        return extraFiles;
+    }
+
+    @JsonIgnore
+    public String getExtraFilesStr() {
+        StringBuilder sb = new StringBuilder();
+        for (String key : this.extraFiles.keySet()) {
+            sb.append(key).append("=").append(this.extraFiles.get(key)).append("\n");
+        }
+        return (sb.toString());
+    }
+
+    public void setExtraFiles(Map<String, String> ini) {
+        this.extraFiles = ini;
     }
 
     @JsonIgnore
@@ -103,6 +159,7 @@ public class Job {
     }
 
     @JsonProperty("job_hash")
+    @ApiModelProperty(value = "can be used to group user-submitted jobs for reporting purposes")
     public String getJobHash() {
         return jobHash;
     }
@@ -112,6 +169,7 @@ public class Job {
     }
 
     @JsonProperty("workflow_version")
+    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     public String getWorkflowVersion() {
         return workflowVersion;
     }
@@ -121,6 +179,7 @@ public class Job {
     }
 
     @JsonProperty("workflow_name")
+    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     public String getWorkflow() {
         return workflow;
     }
@@ -129,8 +188,8 @@ public class Job {
         this.workflow = workflow;
     }
 
-    // Not sure what this was for, ignore it for now.
-    @JsonIgnore
+    @JsonProperty
+    @ApiModelProperty(value = "the state of the job ")
     public JobState getState() {
         return state;
     }
@@ -140,6 +199,7 @@ public class Job {
     }
 
     @JsonProperty("workflow_path")
+    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     public String getWorkflowPath() {
         return workflowPath;
     }
@@ -149,6 +209,7 @@ public class Job {
     }
 
     @JsonProperty("message_type")
+    @ApiModelProperty(value = "used by consonance internally")
     public String getMessageType() {
         return messageType;
     }
@@ -158,6 +219,7 @@ public class Job {
     }
 
     @JsonProperty("create_ts")
+    @ApiModelProperty(value = "the time a job was submitted")
     public Timestamp getCreateTs() {
         return createTs;
     }
@@ -167,6 +229,7 @@ public class Job {
     }
 
     @JsonProperty("update_ts")
+    @ApiModelProperty(value = "the last time we saw a job")
     public Timestamp getUpdateTs() {
         return updateTs;
     }
@@ -176,6 +239,7 @@ public class Job {
     }
 
     @JsonProperty("vmuuid")
+    @ApiModelProperty(value = "the cloud instance-id assigned to run a job")
     public String getVmUuid() {
         return vmUuid;
     }
@@ -187,6 +251,7 @@ public class Job {
     /**
      * @return the stdout
      */
+    @ApiModelProperty(value = "stdout from the job run")
     public String getStdout() {
         return stdout;
     }
@@ -202,6 +267,7 @@ public class Job {
     /**
      * @return the stderr
      */
+    @ApiModelProperty(value = "stderr from the job run")
     public String getStderr() {
         return stderr;
     }
@@ -212,5 +278,11 @@ public class Job {
      */
     public void setStderr(String stderr) {
         this.stderr = stderr;
+    }
+
+    @JsonProperty("job_id")
+    @ApiModelProperty(value = "job id")
+    public long getJobId() {
+        return jobId;
     }
 }
