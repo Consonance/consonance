@@ -19,17 +19,13 @@ package io.consonance.arch.worker;
 import io.consonance.arch.coordinator.Coordinator;
 import io.consonance.arch.jobGenerator.JobGenerator;
 import io.consonance.arch.utils.ITUtilities;
+import org.apache.commons.io.FileUtils;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
-
-import io.consonance.arch.coordinator.Coordinator;
-import io.consonance.arch.jobGenerator.JobGenerator;
-import io.consonance.arch.utils.ITUtilities;
-import org.apache.commons.io.FileUtils;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /**
  *

@@ -8,9 +8,15 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Order;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.persistence.PostgreSQL;
+import io.consonance.arch.utils.Constants;
 import io.consonance.arch.utils.IniFile;
 import io.consonance.arch.utils.Utilities;
-import io.consonance.arch.utils.Constants;
+import joptsimple.ArgumentAcceptingOptionSpec;
+import joptsimple.OptionSpecBuilder;
+import joptsimple.util.KeyValuePair;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.apache.tools.ant.DirectoryScanner;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,16 +30,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
-
-import io.consonance.arch.beans.Provision;
-import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Utilities;
-import joptsimple.ArgumentAcceptingOptionSpec;
-import joptsimple.OptionSpecBuilder;
-import joptsimple.util.KeyValuePair;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.apache.tools.ant.DirectoryScanner;
 
 /**
  * Submits orders into the queue system.

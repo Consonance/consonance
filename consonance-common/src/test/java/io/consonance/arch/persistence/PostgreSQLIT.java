@@ -17,19 +17,7 @@
 package io.consonance.arch.persistence;
 
 import io.consonance.arch.beans.Job;
-import io.consonance.arch.beans.Provision;
-import io.consonance.arch.beans.ProvisionState;
-import io.consonance.arch.utils.ITUtilities;
 import io.consonance.arch.beans.JobState;
-import io.consonance.arch.utils.Utilities;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeoutException;
-
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
 import io.consonance.arch.utils.ITUtilities;
@@ -39,10 +27,19 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *

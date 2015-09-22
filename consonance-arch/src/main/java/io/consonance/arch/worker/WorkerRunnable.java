@@ -1,12 +1,25 @@
 package io.consonance.arch.worker;
 
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.QueueingConsumer;
+import io.cloudbindle.youxia.util.Log;
 import io.consonance.arch.Base;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.utils.Constants;
 import io.consonance.arch.utils.Utilities;
-import io.cloudbindle.youxia.util.Log;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -31,23 +44,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import io.consonance.arch.utils.Constants;
-import io.consonance.arch.utils.Utilities;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.rabbitmq.client.AlreadyClosedException;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.QueueingConsumer;
 
 /**
  * This class represents a WorkerRunnable, in the Architecture 3 design.

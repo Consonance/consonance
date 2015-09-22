@@ -20,23 +20,18 @@ import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
 import com.ullink.slack.simpleslackapi.listeners.SlackMessagePostedListener;
+import io.cloudbindle.youxia.util.Log;
 import io.consonance.arch.Base;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.reporting.ReportAPI;
 import io.consonance.arch.reporting.ReportAPIFactory;
 import io.consonance.arch.reporting.SlackRenderer;
-import io.consonance.arch.utils.Utilities;
-import io.consonance.arch.utils.Constants;
-import io.cloudbindle.youxia.util.Log;
-import java.io.IOException;
-import java.util.Locale;
-
-import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.reporting.ReportAPI;
-import io.consonance.arch.reporting.ReportAPIFactory;
 import io.consonance.arch.utils.Constants;
 import io.consonance.arch.utils.Utilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+
+import java.io.IOException;
+import java.util.Locale;
 
 /**
  * This responds to Slack events and translates them into reporting calls.

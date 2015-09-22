@@ -17,18 +17,16 @@
 package io.consonance.arch.reporting;
 
 import com.ullink.slack.simpleslackapi.SlackAttachment;
+import io.cloudbindle.youxia.listing.AbstractInstanceListing;
 import io.consonance.arch.CloudTypes;
+import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.ProvisionState;
 import io.consonance.arch.beans.Status;
-import io.consonance.arch.beans.JobState;
-import io.cloudbindle.youxia.listing.AbstractInstanceListing;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import io.consonance.arch.CloudTypes;
-import io.consonance.arch.beans.ProvisionState;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * THe SlackRenderer takes generic data from the report API and formats it for output to Slack.

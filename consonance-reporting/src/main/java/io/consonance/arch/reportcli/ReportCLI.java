@@ -17,21 +17,17 @@
 package io.consonance.arch.reportcli;
 
 import com.google.common.base.Joiner;
-import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.Base;
+import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.reporting.ReportAPI;
 import io.consonance.arch.reporting.ReportAPIFactory;
 import io.consonance.arch.reporting.SlackRenderer;
 import io.consonance.arch.utils.Utilities;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-
-import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.reporting.ReportAPI;
-import io.consonance.arch.reporting.ReportAPIFactory;
-import io.consonance.arch.utils.Utilities;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 /**
  * This allows for ad-hoc reporting, should not be used at the same time as the ReportBot

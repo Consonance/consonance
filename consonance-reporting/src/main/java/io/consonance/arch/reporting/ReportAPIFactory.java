@@ -17,7 +17,6 @@
 package io.consonance.arch.reporting;
 
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.persistence.PostgreSQL;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 /**

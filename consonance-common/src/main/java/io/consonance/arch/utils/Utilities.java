@@ -4,12 +4,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import io.consonance.arch.persistence.PostgreSQL;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
-import io.consonance.arch.persistence.PostgreSQL;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -19,6 +13,10 @@ import org.json.simple.parser.ParseException;
 import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * A kitchen sink of utility methods.

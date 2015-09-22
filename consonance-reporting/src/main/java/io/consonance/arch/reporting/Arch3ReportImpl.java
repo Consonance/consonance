@@ -20,6 +20,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
+import io.cloudbindle.youxia.listing.AbstractInstanceListing;
+import io.cloudbindle.youxia.listing.ListingFactory;
 import io.consonance.arch.Base;
 import io.consonance.arch.CloudTypes;
 import io.consonance.arch.beans.Job;
@@ -30,8 +32,8 @@ import io.consonance.arch.beans.Status;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.Constants;
 import io.consonance.arch.utils.Utilities;
-import io.cloudbindle.youxia.listing.AbstractInstanceListing;
-import io.cloudbindle.youxia.listing.ListingFactory;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -50,9 +52,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
-
-import io.consonance.arch.persistence.PostgreSQL;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 /**
  * The Arch3ReportImpl implements calls that are specific to arch3 for retrieving reporting. This means that this means that this class will

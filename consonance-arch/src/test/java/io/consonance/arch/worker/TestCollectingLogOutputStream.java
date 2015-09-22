@@ -16,9 +16,11 @@
  */
 package io.consonance.arch.worker;
 
-import java.util.List;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  *

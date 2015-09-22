@@ -1,10 +1,11 @@
 package io.consonance.arch.utils;
 
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.io.FileUtils;
 
 /**
  * Utility methods for testing.

@@ -18,8 +18,8 @@ package io.consonance.webservice;
 
 import io.consonance.arch.beans.Job;
 import io.consonance.webservice.jdbi.JobDAO;
-import io.consonance.webservice.resources.TemplateHealthCheck;
 import io.consonance.webservice.resources.JobResource;
+import io.consonance.webservice.resources.TemplateHealthCheck;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
@@ -31,11 +31,12 @@ import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
-import java.util.EnumSet;
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
+import java.util.EnumSet;
 
 /**
  *

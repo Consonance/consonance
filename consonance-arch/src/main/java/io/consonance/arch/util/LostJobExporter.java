@@ -1,18 +1,5 @@
 package io.consonance.arch.util;
 
-import io.consonance.arch.beans.Job;
-import io.consonance.arch.beans.JobState;
-import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.Base;
-import io.consonance.arch.utils.Utilities;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import io.consonance.arch.Base;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
@@ -21,6 +8,14 @@ import io.consonance.arch.utils.Utilities;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This can export ini files belonging to lost or failed jobs.

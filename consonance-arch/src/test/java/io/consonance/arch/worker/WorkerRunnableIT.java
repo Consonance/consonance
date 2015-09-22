@@ -16,11 +16,12 @@
  */
 package io.consonance.arch.worker;
 
-import java.io.File;
-import java.net.InetAddress;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.File;
+import java.net.InetAddress;
 
 /**
  *

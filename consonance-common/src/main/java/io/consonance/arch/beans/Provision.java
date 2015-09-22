@@ -1,13 +1,12 @@
 package io.consonance.arch.beans;
 
 import io.consonance.arch.utils.Utilities;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.consonance.arch.utils.Utilities;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 /**
  * This represents a message sent to the Container/VM queue. Created by boconnor on 2015-04-22.

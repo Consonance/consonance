@@ -1,12 +1,13 @@
 package io.consonance.arch.worker;
 
+import org.apache.commons.exec.LogOutputStream;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.apache.commons.exec.LogOutputStream;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * A log output stream to use with Apache Exec.

@@ -1,6 +1,5 @@
 package io.consonance.arch;
 
-import java.io.IOException;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -8,6 +7,8 @@ import joptsimple.OptionSet;
 import joptsimple.OptionSpecBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * Created by boconnor on 15-04-18.

@@ -22,20 +22,17 @@ import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.ITUtilities;
 import io.consonance.arch.utils.Utilities;
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.concurrent.TimeoutException;
-
-import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.ITUtilities;
-import io.consonance.arch.utils.Utilities;
 import joptsimple.OptionException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.concurrent.TimeoutException;
 
 /**
  *

@@ -26,13 +26,14 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import java.util.List;
+import org.apache.http.HttpStatus;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import org.apache.http.HttpStatus;
+import java.util.List;
 
 /**
  * The token resource handles operations with jobs. Jobs are scheduled and can be queried to get information on the

@@ -18,8 +18,9 @@ package io.consonance.webservice.jdbi;
 
 import io.consonance.arch.beans.Job;
 import io.dropwizard.hibernate.AbstractDAO;
-import java.util.List;
 import org.hibernate.SessionFactory;
+
+import java.util.List;
 
 /**
  *

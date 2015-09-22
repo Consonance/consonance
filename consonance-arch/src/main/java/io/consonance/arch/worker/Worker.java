@@ -1,13 +1,14 @@
 package io.consonance.arch.worker;
 
 import io.consonance.arch.Base;
+import joptsimple.ArgumentAcceptingOptionSpec;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpecBuilder;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import joptsimple.ArgumentAcceptingOptionSpec;
-import joptsimple.OptionSet;
-import joptsimple.OptionSpecBuilder;
 
 /**
  * Wraps WorkerRunnable which does not have a command-line interface.

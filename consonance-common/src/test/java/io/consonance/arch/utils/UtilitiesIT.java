@@ -17,16 +17,17 @@
 package io.consonance.arch.utils;
 
 import com.rabbitmq.client.Channel;
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  *

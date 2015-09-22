@@ -6,19 +6,26 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
-import io.consonance.arch.beans.Job;
-import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Constants;
-import io.consonance.arch.utils.Utilities;
-import io.consonance.arch.worker.WorkerRunnable;
+import io.cloudbindle.youxia.deployer.Deployer;
+import io.cloudbindle.youxia.reaper.Reaper;
 import io.consonance.arch.Base;
+import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
-import io.cloudbindle.youxia.deployer.Deployer;
-import io.cloudbindle.youxia.reaper.Reaper;
+import io.consonance.arch.persistence.PostgreSQL;
+import io.consonance.arch.utils.Constants;
+import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.worker.WorkerRunnable;
+import joptsimple.OptionSpecBuilder;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -39,17 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
-
-import io.consonance.arch.beans.Provision;
-import io.consonance.arch.beans.ProvisionState;
-import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Utilities;
-import joptsimple.OptionSpecBuilder;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author boconnor

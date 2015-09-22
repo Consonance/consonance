@@ -1,10 +1,9 @@
 package io.consonance.arch.beans;
 
 import io.consonance.arch.utils.Utilities;
-import java.util.UUID;
-
-import io.consonance.arch.utils.Utilities;
 import org.json.simple.JSONObject;
+
+import java.util.UUID;
 
 /**
  * This is an Order which represents a request which gets processed by the Co-ordinator
