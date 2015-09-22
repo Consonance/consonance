@@ -16,7 +16,7 @@
  */
 package io.consonance.webservice;
 
-import info.consonance.arch.beans.Job;
+import io.consonance.arch.beans.Job;
 import io.consonance.webservice.jdbi.JobDAO;
 import io.consonance.webservice.resources.TemplateHealthCheck;
 import io.consonance.webservice.resources.JobResource;

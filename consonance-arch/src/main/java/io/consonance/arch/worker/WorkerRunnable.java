@@ -1,9 +1,9 @@
 package io.consonance.arch.worker;
 
-import info.consonance.arch.Base;
-import info.consonance.arch.beans.Job;
-import info.consonance.arch.beans.Status;
-import info.consonance.arch.beans.StatusState;
+import io.consonance.arch.Base;
+import io.consonance.arch.beans.Job;
+import io.consonance.arch.beans.Status;
+import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.utils.Constants;
 import io.consonance.arch.utils.Utilities;
 import io.cloudbindle.youxia.util.Log;

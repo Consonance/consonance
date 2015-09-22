@@ -16,10 +16,10 @@
  */
 package io.consonance.arch.reporting;
 
-import info.consonance.arch.beans.Status;
-import info.consonance.arch.CloudTypes;
-import info.consonance.arch.beans.JobState;
-import info.consonance.arch.beans.ProvisionState;
+import io.consonance.arch.beans.Status;
+import io.consonance.arch.CloudTypes;
+import io.consonance.arch.beans.JobState;
+import io.consonance.arch.beans.ProvisionState;
 import io.cloudbindle.youxia.listing.AbstractInstanceListing;
 import java.util.Locale;
 import java.util.Map;

@@ -16,7 +16,7 @@
  */
 package io.consonance.arch.jobGenerator;
 
-import info.consonance.arch.utils.ITUtilities;
+import io.consonance.arch.utils.ITUtilities;
 
 import java.io.File;
 import java.io.IOException;

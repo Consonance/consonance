@@ -6,11 +6,11 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
-import info.consonance.arch.beans.Job;
-import info.consonance.arch.coordinator.Coordinator;
+import io.consonance.arch.beans.Job;
+import io.consonance.arch.coordinator.Coordinator;
 import io.consonance.arch.persistence.PostgreSQL;
-import info.consonance.arch.utils.Constants;
-import info.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.Constants;
+import io.consonance.arch.utils.Utilities;
 
 import java.io.IOException;
 import java.sql.Connection;

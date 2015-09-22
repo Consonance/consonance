@@ -17,8 +17,8 @@
 package io.consonance.arch.util;
 
 import com.google.common.io.Files;
-import info.consonance.arch.beans.Job;
-import info.consonance.arch.beans.JobState;
+import io.consonance.arch.beans.Job;
+import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.ITUtilities;
 import io.consonance.arch.utils.Utilities;

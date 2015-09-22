@@ -4,10 +4,10 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 
-import info.consonance.arch.Base;
-import info.consonance.arch.beans.Status;
-import info.consonance.arch.beans.StatusState;
-import info.consonance.arch.utils.Utilities;
+import io.consonance.arch.Base;
+import io.consonance.arch.beans.Status;
+import io.consonance.arch.beans.StatusState;
+import io.consonance.arch.utils.Utilities;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

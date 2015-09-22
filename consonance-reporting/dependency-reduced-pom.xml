@@ -43,7 +43,7 @@
           <transformers>
             <transformer>
               <manifestEntries>
-                <mainClass>info.consonance.arch.reportbot.SlackReportBot</mainClass>
+                <mainClass>io.consonance.arch.reportbot.SlackReportBot</mainClass>
               </manifestEntries>
             </transformer>
             <transformer />

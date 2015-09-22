@@ -168,7 +168,7 @@
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                             <manifestEntries>
-                                <mainClass>info.consonance.arch.reportbot.SlackReportBot</mainClass>
+                                <mainClass>io.consonance.arch.reportbot.SlackReportBot</mainClass>
                             </manifestEntries>
                         </transformer>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />

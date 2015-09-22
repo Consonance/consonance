@@ -18,10 +18,10 @@ package io.consonance.arch.reportcli;
 
 import com.google.common.base.Joiner;
 import io.consonance.arch.persistence.PostgreSQL;
-import info.consonance.arch.Base;
+import io.consonance.arch.Base;
 import io.consonance.arch.reporting.ReportAPI;
 import io.consonance.arch.reporting.ReportAPIFactory;
-import info.consonance.arch.reporting.SlackRenderer;
+import io.consonance.arch.reporting.SlackRenderer;
 import io.consonance.arch.utils.Utilities;
 import java.io.IOException;
 import java.util.List;

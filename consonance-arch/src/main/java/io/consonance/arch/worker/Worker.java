@@ -1,6 +1,6 @@
 package io.consonance.arch.worker;
 
-import info.consonance.arch.Base;
+import io.consonance.arch.Base;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

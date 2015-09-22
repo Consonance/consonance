@@ -17,7 +17,7 @@
 package io.consonance.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import info.consonance.arch.beans.Job;
+import io.consonance.arch.beans.Job;
 import io.consonance.webservice.jdbi.JobDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;

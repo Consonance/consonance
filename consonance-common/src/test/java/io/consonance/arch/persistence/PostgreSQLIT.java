@@ -16,11 +16,11 @@
  */
 package io.consonance.arch.persistence;
 
-import info.consonance.arch.beans.Job;
+import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
 import io.consonance.arch.utils.ITUtilities;
-import info.consonance.arch.beans.JobState;
+import io.consonance.arch.beans.JobState;
 import io.consonance.arch.utils.Utilities;
 import java.io.File;
 import java.io.IOException;
