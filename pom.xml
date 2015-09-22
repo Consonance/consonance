@@ -77,7 +77,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>2.5.0</version>
+                <version>2.5.3</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -88,6 +88,16 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-dbcp2</artifactId>
+                <version>2.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>2.3</version>
             </dependency>
             <dependency>
                 <groupId>commons-logging</groupId>
@@ -167,18 +177,6 @@
             <scope>provided</scope>
             <type>pom</type>
         </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-dbcp2</artifactId>
-            <version>2.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
-            <version>2.3</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <repositories>
@@ -229,6 +227,8 @@
         <module>consonance-arch</module>
         <module>consonance-reporting</module>
         <module>consonance-webservice</module>
+        <module>consonance-client</module>
+        <module>swagger-java-client</module>
     </modules>
 
     <licenses>
