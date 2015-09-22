@@ -91,7 +91,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         final JobDAO dao = new JobDAO(hibernate.getSessionFactory());
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
-        environment.jersey().register(new JobResource(dao));
+        environment.jersey().register(new JobResource(dao, configuration.getConsonanceConfig()));
 
         // swagger stuff
 

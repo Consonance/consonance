@@ -22,6 +22,9 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
     @NotEmpty
     private String template;
 
+    @NotEmpty
+    private String consonanceConfig;
+
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -41,6 +44,16 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
     @JsonProperty
     public void setTemplate(String template) {
         this.template = template;
+    }
+
+    @JsonProperty
+    public String getConsonanceConfig() {
+        return template;
+    }
+
+    @JsonProperty
+    public void setConsonanceConfig(String consonanceConfig) {
+        this.consonanceConfig = consonanceConfig;
     }
 
 

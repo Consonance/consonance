@@ -14,6 +14,8 @@ import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -26,6 +28,16 @@ import java.util.UUID;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel(value="Job", description="Describes jobs running in Consonance")
+@NamedQueries({
+        @NamedQuery(
+                name = "io.consonance.arch.beans.core.Job.findAll",
+                query = "SELECT j FROM Job j"
+        ),
+        @NamedQuery(
+                name = "io.consonance.arch.beans.core.Job.findAllByUser",
+                query = "SELECT j FROM Job j where endUser LIKE :endUser"
+        )
+})
 public class Job {
 
     @Id

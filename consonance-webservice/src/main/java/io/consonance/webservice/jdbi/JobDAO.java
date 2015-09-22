@@ -40,6 +40,10 @@ public class JobDAO extends AbstractDAO<Job> {
     }
 
     public List<Job> findAll() {
-        return list(namedQuery("io.consonance.webservice.core.WorkflowRun.findAll"));
+        return list(namedQuery("io.consonance.arch.beans.core.Job.findAll"));
+    }
+
+    public List<Job> findAll(String endUser) {
+        return list(namedQuery("io.consonance.arch.beans.core.Job.findAllByUser").setString("endUser",endUser));
     }
 }
