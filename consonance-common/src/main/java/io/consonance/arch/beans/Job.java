@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.slf4j.Logger;
@@ -25,7 +25,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -48,7 +47,8 @@ import java.util.UUID;
                 query = "SELECT j FROM Job j where endUser LIKE :endUser"
         )
 })
-public class Job {
+@JsonNaming(PropertyNamingStrategy.LowerCaseWithUnderscoresStrategy.class)
+public class Job extends BaseBean{
 
     private static Logger log = LoggerFactory.getLogger(Job.class);
 
@@ -104,21 +104,18 @@ public class Job {
     @CollectionTable(name="extra_files", joinColumns=@JoinColumn(name="job_id"))
     @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
     private Map<String, String> extraFiles = new HashMap<>();
-    @ApiModelProperty(value = "the time a job was submitted")
-    @Column(name="create_timestamp")
-    private Timestamp createTs;
-    @ApiModelProperty(value = "the last time we saw a job")
-    @Column(name="update_timestamp")
-    private Timestamp updateTs;
+
     @ApiModelProperty(value = "stdout from the job run")
     @Column(columnDefinition="text")
     private String stdout;
     @ApiModelProperty(value = "stderr from the job run")
     @Column(columnDefinition="text")
     private String stderr;
+    @JsonProperty("container_image_descriptor")
     @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
     @Column(name="container_image_descriptor",columnDefinition="text")
     private String containerImageDescriptor;
+    @JsonProperty("container_runtime_descriptor")
     @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
     @Column(name="container_runtime_descriptor",columnDefinition="text")
     private String containerRuntimeDescriptor;
@@ -141,18 +138,11 @@ public class Job {
         super();
     }
 
-    public String toJSON() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        try {
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
+    /**
+     * This sucks, can't figure out how to do this with generics.
+     * @param json
+     * @return
+     */
     public Job fromJSON(String json) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
@@ -167,6 +157,7 @@ public class Job {
             return null;
         }
     }
+
 
     public String getEndUser() {
         return endUser;
@@ -269,22 +260,6 @@ public class Job {
         this.messageType = messageType;
     }
 
-    public Timestamp getCreateTs() {
-        return createTs;
-    }
-
-    public void setCreateTs(Timestamp createTs) {
-        this.createTs = createTs;
-    }
-
-    public Timestamp getUpdateTs() {
-        return updateTs;
-    }
-
-    public void setUpdateTs(Timestamp updateTs) {
-        this.updateTs = updateTs;
-    }
-
     public String getVmUuid() {
         return vmUuid;
     }
@@ -323,7 +298,7 @@ public class Job {
         this.stderr = stderr;
     }
 
-    public long getJobId() {
+    public int getJobId() {
         return jobId;
     }
 

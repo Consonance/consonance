@@ -127,7 +127,7 @@ public class JobResource {
                 throw new InternalServerErrorException();
             }
         }
-        final long jobId = dao.create(job);
+        final int jobId = dao.create(job);
         Job createdJob = dao.findById(jobId);
         provisionDAO.create(provision);
 

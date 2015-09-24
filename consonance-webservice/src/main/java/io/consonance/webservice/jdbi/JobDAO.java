@@ -31,11 +31,11 @@ public class JobDAO extends AbstractDAO<Job> {
         super(factory);
     }
 
-    public Job findById(long id) {
+    public Job findById(int id) {
         return get(id);
     }
 
-    public long create(Job job) {
+    public int create(Job job) {
         return persist(job).getJobId();
     }
 

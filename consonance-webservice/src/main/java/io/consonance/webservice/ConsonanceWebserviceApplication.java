@@ -16,6 +16,8 @@
  */
 package io.consonance.webservice;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Provision;
 import io.consonance.webservice.jdbi.JobDAO;
@@ -75,6 +77,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         beanConfig.setScan(true);
         beanConfig.setTitle("Swagger Consonance Prototype");
 
+
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
 
@@ -93,6 +96,9 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         final JobDAO dao = new JobDAO(hibernate.getSessionFactory());
         final ProvisionDAO provisionDAO = new ProvisionDAO(hibernate.getSessionFactory());
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
+
+        environment.getObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+        environment.getObjectMapper().disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         environment.jersey().register(new JobResource(dao,provisionDAO, configuration.getConsonanceConfig()));
 

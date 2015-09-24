@@ -29,11 +29,11 @@ public class ProvisionDAO extends AbstractDAO<Provision> {
         super(factory);
     }
 
-    public Provision findById(long id) {
+    public Provision findById(int id) {
         return get(id);
     }
 
-    public long create(Provision provision) {
+    public int create(Provision provision) {
         return persist(provision).getProvisionId();
     }
 

@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.slf4j.Logger;
@@ -20,7 +20,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.List;
 
 /**
@@ -30,7 +29,8 @@ import java.util.List;
 @Table(name= "provision")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel(value="provision", description="Describes provision requests in Consonance, needs to be deprecated")
-public class Provision {
+@JsonNaming(PropertyNamingStrategy.LowerCaseWithUnderscoresStrategy.class)
+public class Provision extends BaseBean{
 
     private static Logger log = LoggerFactory.getLogger(Provision.class);
 
@@ -67,10 +67,7 @@ public class Provision {
     @ApiModelProperty(value = "uuid for the instance, should be the instance id on Amazon")
     @Column(name="provision_uuid",columnDefinition="text")
     private String provisionUUID = "";
-    @Column(name="create_timestamp",columnDefinition="text")
-    private Timestamp createTimestamp;
-    @Column(name="update_timestamp",columnDefinition="text")
-    private Timestamp updateTimestamp;
+
 
     public Provision(int cores, int memGb, int storageGb, List<String> ansiblePlaybooks) {
         this.cores = cores;
@@ -83,18 +80,11 @@ public class Provision {
         super();
     }
 
-    public String toJSON() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        try {
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
+    /**
+     * This sucks, can't figure out how to do this with generics.
+     * @param json
+     * @return
+     */
     public Provision fromJSON(String json) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
@@ -188,35 +178,7 @@ public class Provision {
         this.jobUUID = jobUUID;
     }
 
-    /**
-     * @return the createTimestamp
-     */
-    public Timestamp getCreateTimestamp() {
-        return createTimestamp;
-    }
-
-    /**
-     * @param createTimestamp the createTimestamp to set
-     */
-    public void setCreateTimestamp(Timestamp createTimestamp) {
-        this.createTimestamp = createTimestamp;
-    }
-
-    /**
-     * @return the updateTimestamp
-     */
-    public Timestamp getUpdateTimestamp() {
-        return updateTimestamp;
-    }
-
-    /**
-     * @param updateTimestamp the updateTimestamp to set
-     */
-    public void setUpdateTimestamp(Timestamp updateTimestamp) {
-        this.updateTimestamp = updateTimestamp;
-    }
-
-    public long getProvisionId() {
+    public int getProvisionId() {
         return provisionId;
     }
 

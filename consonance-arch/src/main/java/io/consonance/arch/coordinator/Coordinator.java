@@ -360,7 +360,7 @@ public class Coordinator extends Base {
 
                 for (Job job : jobs) {
                     Timestamp nowTs = new Timestamp(new Date().getTime());
-                    Timestamp updateTs = job.getUpdateTs();
+                    Timestamp updateTs = job.getUpdateTimestamp();
 
                     long diff = nowTs.getTime() - updateTs.getTime();
                     long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);

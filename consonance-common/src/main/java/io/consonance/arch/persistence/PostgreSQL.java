@@ -270,8 +270,8 @@ public class PostgreSQL {
             // timestamp
             Timestamp createTs = (Timestamp) entry.getValue().get("create_timestamp");
             Timestamp updateTs = (Timestamp) entry.getValue().get("update_timestamp");
-            j.setCreateTs(createTs);
-            j.setUpdateTs(updateTs);
+            j.setCreateTimestamp(createTs);
+            j.setUpdateTimestamp(updateTs);
 
             jobs.add(j);
 

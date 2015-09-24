@@ -217,10 +217,10 @@ public class Arch3ReportImpl implements ReportAPI {
                 jobMap.put("status", job.getState().toString());
                 jobMap.put("workflow", job.getWorkflow());
                 jobMap.put("workflow_version", job.getWorkflowVersion());
-                long lastSeen = job.getUpdateTs().getTime();
+                long lastSeen = job.getUpdateTimestamp().getTime();
                 double secondsAgo = (time - lastSeen) / MILLISECONDS_IN_SECOND;
                 jobMap.put("last seen (seconds)", df.format(secondsAgo));
-                long firstSeen = job.getCreateTs().getTime();
+                long firstSeen = job.getCreateTimestamp().getTime();
                 double hoursAgo = (time - firstSeen) / (MILLISECONDS_IN_SECOND * SECONDS_IN_MINUTE * MINUTES_IN_HOUR);
                 jobMap.put("first seen(hours)", df.format(hoursAgo));
                 map.put(job.getUuid(), jobMap);
