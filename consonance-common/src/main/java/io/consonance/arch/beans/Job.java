@@ -16,6 +16,9 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -44,7 +47,11 @@ import java.util.UUID;
         ),
         @NamedQuery(
                 name = "io.consonance.arch.beans.core.Job.findAllByUser",
-                query = "SELECT j FROM Job j where endUser LIKE :endUser"
+                query = "SELECT j FROM Job j WHERE endUser LIKE :endUser"
+        ),
+        @NamedQuery(
+                name = "io.consonance.arch.beans.core.Job.findByJobUUID",
+                query = "SELECT j FROM Job j WHERE uuid = :jobuuid"
         )
 })
 @JsonNaming(PropertyNamingStrategy.LowerCaseWithUnderscoresStrategy.class)
@@ -57,6 +64,7 @@ public class Job extends BaseBean{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="job_id")
     private int jobId;
+    @Enumerated(EnumType.STRING)
     @JsonProperty
     @ApiModelProperty(value = "the state of the job ")
     @Column(name = "status", columnDefinition="text")
@@ -91,14 +99,14 @@ public class Job extends BaseBean{
     private String iniFileAsString;
 
     @JsonProperty("arguments")
-    @ElementCollection(targetClass = String.class)
+    @ElementCollection(fetch = FetchType.EAGER, targetClass = String.class)
     @MapKeyColumn(name="key", columnDefinition = "text")
     @Column(name="value", columnDefinition = "text")
     @CollectionTable(name="ini_params", joinColumns=@JoinColumn(name="job_id"))
     @ApiModelProperty(value = "deprecated, key values for seqware workflows")
     private Map<String, String> ini = new HashMap<>();
 
-    @ElementCollection(targetClass = String.class)
+    @ElementCollection(fetch = FetchType.EAGER,targetClass = String.class)
     @MapKeyColumn(name="path", columnDefinition = "text")
     @Column(name="content",columnDefinition = "text")
     @CollectionTable(name="extra_files", joinColumns=@JoinColumn(name="job_id"))

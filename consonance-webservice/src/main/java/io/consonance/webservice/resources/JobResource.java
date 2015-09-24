@@ -45,6 +45,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -98,6 +99,18 @@ public class JobResource {
     @ApiOperation(value = "List all known jobs", notes = "List all jobs", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
     public List<Job> listWorkflowRuns() {
         return dao.findAll();
+    }
+
+    @GET
+    @Path("/{jobUUID}")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List a specific job", notes = "List a specific job", response = Job.class, authorizations = @Authorization(value = "api_key"))
+    @ApiResponses(value = {
+            @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
+            @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Job not found") })
+    public Job getWorkflowRun(@ApiParam(value = "UUID of job that needs to be fetched", required = true) @PathParam("jobUUID") String uuid) {
+        return dao.findJobByUUID(uuid);
     }
 
     @POST

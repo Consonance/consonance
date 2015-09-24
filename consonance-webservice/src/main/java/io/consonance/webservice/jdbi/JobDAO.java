@@ -43,6 +43,10 @@ public class JobDAO extends AbstractDAO<Job> {
         return list(namedQuery("io.consonance.arch.beans.core.Job.findAll"));
     }
 
+    public Job findJobByUUID(String uuid){
+        return uniqueResult(namedQuery("io.consonance.arch.beans.core.Job.findByJobUUID").setString("jobuuid",uuid));
+    }
+
     public List<Job> findAll(String endUser) {
         return list(namedQuery("io.consonance.arch.beans.core.Job.findAllByUser").setString("endUser",endUser));
     }

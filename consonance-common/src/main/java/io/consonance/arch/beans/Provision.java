@@ -15,6 +15,9 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -48,11 +51,12 @@ public class Provision extends BaseBean{
     @ApiModelProperty(value = "deprecated, the amount of storage for this VM")
     @Column(name = "storage_gb", columnDefinition="integer")
     private long storageGb;
+    @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "the state of the provision ")
     @Column(name = "status", columnDefinition="text")
     private ProvisionState state = ProvisionState.START;
     @JsonProperty("bindle_profiles_to_run")
-    @ElementCollection(targetClass = String.class)
+    @ElementCollection(fetch = FetchType.EAGER,targetClass = String.class)
     @ApiModelProperty(value = "deprecated, ansible playbook to run on provisioned instances", hidden=true)
     private List<String> ansiblePlaybooks;
     @ApiModelProperty(value = "the state of the provision ")

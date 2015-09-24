@@ -216,8 +216,7 @@ public class Coordinator extends Base {
 
                 PostgreSQL db = new PostgreSQL(settings);
                 Job newJob = new Job().fromJSON(message);
-                newJob.setState(JobState.PENDING);
-                db.createJob(newJob);
+                db.updateJob(newJob.getUuid(), newJob.getVmUuid(), JobState.PENDING);
                 final String routingKey = newJob.getFlavour();
                 // see if a particular queue type exist yet
                 if (!existingJobQueues.contains(routingKey)){

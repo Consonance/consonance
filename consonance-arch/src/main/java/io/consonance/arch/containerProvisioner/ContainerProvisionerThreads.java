@@ -141,7 +141,7 @@ public class ContainerProvisionerThreads extends Base {
                     p.setState(ProvisionState.PENDING);
 
                     // puts it into the DB so I can count it in another thread
-                    db.createProvision(p);
+                    db.updateProvisionByJobUUID(p.getJobUUID(),p.getProvisionUUID(),p.getState(),p.getIpAddress());
                     vmChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 } while (endless);
 
