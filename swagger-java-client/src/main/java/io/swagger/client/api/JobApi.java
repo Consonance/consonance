@@ -17,7 +17,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-24T17:17:13.241Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-24T21:12:39.504Z")
 public class JobApi {
   private ApiClient apiClient;
 
@@ -179,6 +179,60 @@ public class JobApi {
     
     
     TypeRef returnType = new TypeRef<List<Job>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+    
+
+
+  }
+  
+  /**
+   * List a specific job
+   * List a specific job
+   * @param jobUUID UUID of job that needs to be fetched
+   * @return Job
+   */
+  public Job getWorkflowRun (String jobUUID) throws ApiException {
+    Object postBody = null;
+    byte[] postBinaryBody = null;
+    
+     // verify the required parameter 'jobUUID' is set
+     if (jobUUID == null) {
+        throw new ApiException(400, "Missing the required parameter 'jobUUID' when calling getWorkflowRun");
+     }
+     
+    // create path and map variables
+    String path = "/job/{jobUUID}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "jobUUID" + "\\}", apiClient.escapeString(jobUUID.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+
+    
+    
+    TypeRef returnType = new TypeRef<Job>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
     

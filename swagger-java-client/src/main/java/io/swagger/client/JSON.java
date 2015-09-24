@@ -6,7 +6,7 @@ import com.fasterxml.jackson.datatype.joda.*;
 
 import java.io.IOException;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-24T17:17:13.241Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-24T21:12:39.504Z")
 public class JSON {
   private ObjectMapper mapper;
 
