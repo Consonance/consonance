@@ -11,12 +11,13 @@ import io.swagger.client.model.*;
 import java.util.*;
 
 import io.swagger.client.model.Job;
+import io.swagger.client.model.User;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-22T20:16:20.394Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-24T17:17:13.241Z")
 public class JobApi {
   private ApiClient apiClient;
 
@@ -140,10 +141,11 @@ public class JobApi {
   /**
    * List all jobs owned by the logged-in user
    * List the jobs owned by the user
+   * @param body 
    * @return List<Job>
    */
-  public List<Job> listOwnedWorkflowRuns () throws ApiException {
-    Object postBody = null;
+  public List<Job> listOwnedWorkflowRuns (User body) throws ApiException {
+    Object postBody = body;
     byte[] postBinaryBody = null;
     
     // create path and map variables
