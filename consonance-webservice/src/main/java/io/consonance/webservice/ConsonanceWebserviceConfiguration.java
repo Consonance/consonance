@@ -48,7 +48,7 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
 
     @JsonProperty
     public String getConsonanceConfig() {
-        return template;
+        return consonanceConfig;
     }
 
     @JsonProperty

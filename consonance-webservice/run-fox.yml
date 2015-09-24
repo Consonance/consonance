@@ -1,5 +1,7 @@
 template: Funky
 
+consonanceConfig: /home/dyuen/.arch3/config
+
 httpClient:
   timeout: 5500ms
   connectionTimeout: 5500ms

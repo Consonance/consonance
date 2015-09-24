@@ -1,21 +1,29 @@
 package io.consonance.arch.beans;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -26,6 +34,8 @@ import java.util.UUID;
  * @author boconnor
  * @author dyuen
  */
+@Entity
+@Table(name= "job")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel(value="Job", description="Describes jobs running in Consonance")
 @NamedQueries({
@@ -40,25 +50,83 @@ import java.util.UUID;
 })
 public class Job {
 
+    private static Logger log = LoggerFactory.getLogger(Job.class);
+
+    @ApiModelProperty(value = "job id")
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="job_id")
-    private long jobId;
+    private int jobId;
+    @JsonProperty
+    @ApiModelProperty(value = "the state of the job ")
+    @Column(name = "status", columnDefinition="text")
     private JobState state = JobState.START;
+    @JsonProperty("job_uuid")
+    @ApiModelProperty(value = "consonance will assign a uuid to jobs")
+    @Column(name="job_uuid", columnDefinition="text")
     private String uuid = UUID.randomUUID().toString().toLowerCase();
+    @JsonProperty("workflow_name")
+    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
+    @Column(columnDefinition="text")
     private String workflow;
+    @JsonProperty("vmuuid")
+    @ApiModelProperty(value = "the cloud instance-id assigned to run a job")
+    @Column(name="provision_uuid",columnDefinition="text")
     private String vmUuid;
+    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
+    @Column(name="workflow_version",columnDefinition="text")
     private String workflowVersion;
+    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
+    @Column(name="workflow_path",columnDefinition="text")
     private String workflowPath;
+    @ApiModelProperty(value = "can be used to group user-submitted jobs for reporting purposes")
+    @Column(name="job_hash",columnDefinition="text")
     private String jobHash;
+    @ApiModelProperty(value = "used by consonance internally")
+    @Column(name="message_type",columnDefinition="text")
     private String messageType;
+
+    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
+    @Column(name="ini",columnDefinition="text")
+    private String iniFileAsString;
+
+    @JsonProperty("arguments")
+    @ElementCollection(targetClass = String.class)
+    @MapKeyColumn(name="key", columnDefinition = "text")
+    @Column(name="value", columnDefinition = "text")
+    @CollectionTable(name="ini_params", joinColumns=@JoinColumn(name="job_id"))
+    @ApiModelProperty(value = "deprecated, key values for seqware workflows")
     private Map<String, String> ini = new HashMap<>();
+
+    @ElementCollection(targetClass = String.class)
+    @MapKeyColumn(name="path", columnDefinition = "text")
+    @Column(name="content",columnDefinition = "text")
+    @CollectionTable(name="extra_files", joinColumns=@JoinColumn(name="job_id"))
+    @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
     private Map<String, String> extraFiles = new HashMap<>();
+    @ApiModelProperty(value = "the time a job was submitted")
+    @Column(name="create_timestamp")
     private Timestamp createTs;
+    @ApiModelProperty(value = "the last time we saw a job")
+    @Column(name="update_timestamp")
     private Timestamp updateTs;
+    @ApiModelProperty(value = "stdout from the job run")
+    @Column(columnDefinition="text")
     private String stdout;
+    @ApiModelProperty(value = "stderr from the job run")
+    @Column(columnDefinition="text")
     private String stderr;
+    @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
+    @Column(name="container_image_descriptor",columnDefinition="text")
+    private String containerImageDescriptor;
+    @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
+    @Column(name="container_runtime_descriptor",columnDefinition="text")
+    private String containerRuntimeDescriptor;
+    @ApiModelProperty(value = "indicates the user that scheduled a job", required=true)
+    @Column(name="end_user",columnDefinition="text")
     private String endUser;
+    @ApiModelProperty(value = "indicates the flavour of VM for a job", required=true)
+    @Column(columnDefinition="text")
     private String flavour = null;
 
     public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini) {
@@ -75,6 +143,7 @@ public class Job {
 
     public String toJSON() {
         ObjectMapper mapper = new ObjectMapper();
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
@@ -86,24 +155,19 @@ public class Job {
 
     public Job fromJSON(String json) {
         ObjectMapper mapper = new ObjectMapper();
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
             return mapper.readValue(json, Job.class);
         } catch (JsonParseException e) {
-            // TODO: improve logging for JSON parse errors.
-            System.out.println("JSON parsing error: " + e.getMessage());
-            e.printStackTrace();
+            log.error("JSON parsing error: ", e.getMessage());
             return null;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("IO exception parsing error: ", e.getMessage());
             return null;
         }
-
     }
 
-    @JsonProperty
-    @ApiModelProperty(value = "indicates the user that scheduled a job", required=true)
     public String getEndUser() {
         return endUser;
     }
@@ -112,8 +176,7 @@ public class Job {
         this.endUser = endUser;
     }
 
-    @JsonProperty
-    @ApiModelProperty(value = "indicates the flavour of VM for a job", required=true)
+
     public String getFlavour() {
         return flavour;
     }
@@ -122,8 +185,7 @@ public class Job {
         this.flavour = flavour;
     }
 
-    @JsonProperty("job_uuid")
-    @ApiModelProperty(value = "consonance will assign a uuid to jobs")
+
     public String getUuid() {
         return uuid;
     }
@@ -132,32 +194,21 @@ public class Job {
         this.uuid = uuid;
     }
 
-    @JsonProperty("arguments")
-    @ApiModelProperty(value = "seqware containers use ini files, deprecated")
+
     public Map<String, String> getIni() {
         return ini;
     }
 
-    @JsonProperty("extra_files")
-    @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
     public Map<String, String> getExtraFiles() {
         return extraFiles;
     }
 
-    @JsonIgnore
-    public String getExtraFilesStr() {
-        StringBuilder sb = new StringBuilder();
-        for (String key : this.extraFiles.keySet()) {
-            sb.append(key).append("=").append(this.extraFiles.get(key)).append("\n");
-        }
-        return (sb.toString());
-    }
 
     public void setExtraFiles(Map<String, String> ini) {
         this.extraFiles = ini;
     }
 
-    @JsonIgnore
+    @ApiModelProperty(value = "deprecated, read-only convenience renderer for ini files")
     public String getIniStr() {
         StringBuilder sb = new StringBuilder();
         for (String key : this.ini.keySet()) {
@@ -170,8 +221,6 @@ public class Job {
         this.ini = ini;
     }
 
-    @JsonProperty("job_hash")
-    @ApiModelProperty(value = "can be used to group user-submitted jobs for reporting purposes")
     public String getJobHash() {
         return jobHash;
     }
@@ -180,8 +229,6 @@ public class Job {
         this.jobHash = jobHash;
     }
 
-    @JsonProperty("workflow_version")
-    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     public String getWorkflowVersion() {
         return workflowVersion;
     }
@@ -190,8 +237,6 @@ public class Job {
         this.workflowVersion = workflowVersion;
     }
 
-    @JsonProperty("workflow_name")
-    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     public String getWorkflow() {
         return workflow;
     }
@@ -200,8 +245,6 @@ public class Job {
         this.workflow = workflow;
     }
 
-    @JsonProperty
-    @ApiModelProperty(value = "the state of the job ")
     public JobState getState() {
         return state;
     }
@@ -210,8 +253,6 @@ public class Job {
         this.state = state;
     }
 
-    @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     public String getWorkflowPath() {
         return workflowPath;
     }
@@ -220,8 +261,6 @@ public class Job {
         this.workflowPath = workflowPath;
     }
 
-    @JsonProperty("message_type")
-    @ApiModelProperty(value = "used by consonance internally")
     public String getMessageType() {
         return messageType;
     }
@@ -230,8 +269,6 @@ public class Job {
         this.messageType = messageType;
     }
 
-    @JsonProperty("create_ts")
-    @ApiModelProperty(value = "the time a job was submitted")
     public Timestamp getCreateTs() {
         return createTs;
     }
@@ -240,8 +277,6 @@ public class Job {
         this.createTs = createTs;
     }
 
-    @JsonProperty("update_ts")
-    @ApiModelProperty(value = "the last time we saw a job")
     public Timestamp getUpdateTs() {
         return updateTs;
     }
@@ -250,8 +285,6 @@ public class Job {
         this.updateTs = updateTs;
     }
 
-    @JsonProperty("vmuuid")
-    @ApiModelProperty(value = "the cloud instance-id assigned to run a job")
     public String getVmUuid() {
         return vmUuid;
     }
@@ -263,7 +296,6 @@ public class Job {
     /**
      * @return the stdout
      */
-    @ApiModelProperty(value = "stdout from the job run")
     public String getStdout() {
         return stdout;
     }
@@ -279,7 +311,6 @@ public class Job {
     /**
      * @return the stderr
      */
-    @ApiModelProperty(value = "stderr from the job run")
     public String getStderr() {
         return stderr;
     }
@@ -292,9 +323,32 @@ public class Job {
         this.stderr = stderr;
     }
 
-    @JsonProperty("job_id")
-    @ApiModelProperty(value = "job id")
     public long getJobId() {
         return jobId;
+    }
+
+
+    public String getContainerImageDescriptor() {
+        return containerImageDescriptor;
+    }
+
+    public void setContainerImageDescriptor(String containerImageDescriptor) {
+        this.containerImageDescriptor = containerImageDescriptor;
+    }
+
+    public String getContainerRuntimeDescriptor() {
+        return containerRuntimeDescriptor;
+    }
+
+    public void setContainerRuntimeDescriptor(String containerRuntimeDescriptor) {
+        this.containerRuntimeDescriptor = containerRuntimeDescriptor;
+    }
+
+    public String getIniFileAsString() {
+        return iniFileAsString;
+    }
+
+    public void setIniFileAsString(String iniFileAsString) {
+        this.iniFileAsString = iniFileAsString;
     }
 }

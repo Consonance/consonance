@@ -23,6 +23,7 @@
         <youxia.version>1.1.0-rc.5</youxia.version>
         <cobertura.version>2.1.1</cobertura.version>
         <seqware.version>1.1.1</seqware.version>
+        <dropwizard.version>0.8.4</dropwizard.version>
     </properties>
 
     <scm>

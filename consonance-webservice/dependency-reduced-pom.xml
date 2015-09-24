@@ -145,8 +145,5 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
-  <properties>
-    <dropwizard.version>0.8.4</dropwizard.version>
-  </properties>
 </project>
 

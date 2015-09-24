@@ -16,34 +16,25 @@
  */
 package io.consonance.webservice.jdbi;
 
-import io.consonance.arch.beans.Job;
+import io.consonance.arch.beans.Provision;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
-
-import java.util.List;
 
 /**
  *
  * @author dyuen
  */
-public class JobDAO extends AbstractDAO<Job> {
-    public JobDAO(SessionFactory factory) {
+public class ProvisionDAO extends AbstractDAO<Provision> {
+    public ProvisionDAO(SessionFactory factory) {
         super(factory);
     }
 
-    public Job findById(long id) {
+    public Provision findById(long id) {
         return get(id);
     }
 
-    public long create(Job job) {
-        return persist(job).getJobId();
+    public long create(Provision provision) {
+        return persist(provision).getProvisionId();
     }
 
-    public List<Job> findAll() {
-        return list(namedQuery("io.consonance.arch.beans.core.Job.findAll"));
-    }
-
-    public List<Job> findAll(String endUser) {
-        return list(namedQuery("io.consonance.arch.beans.core.Job.findAllByUser").setString("endUser",endUser));
-    }
 }

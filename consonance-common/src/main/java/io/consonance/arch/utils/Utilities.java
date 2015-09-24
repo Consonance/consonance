@@ -204,4 +204,5 @@ public class Utilities {
     public static int randInRangeInc(int min, int max) {
         return min + (int) (Math.random() * ((1 + max) - min));
     }
+
 }

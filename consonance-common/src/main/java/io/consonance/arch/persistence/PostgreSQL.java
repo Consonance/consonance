@@ -188,11 +188,10 @@ public class PostgreSQL {
 
     public String createJob(Job j) {
         JSONObject jsonIni = new JSONObject(j.getIni());
-        JSONObject jsonExtraFiles = new JSONObject(j.getExtraFiles());
         Map<Object, Map<String, Object>> map = this.runInsertStatement(
-                "INSERT INTO job (status, job_uuid, workflow, workflow_version, job_hash, ini, extra_files) VALUES (?,?,?,?,?,?,?::jsonb)",
+                "INSERT INTO job (status, job_uuid, workflow, workflow_version, job_hash, ini) VALUES (?,?,?,?,?,?)",
                 new KeyedHandler<>("job_uuid"), j.getState().toString(), j.getUuid(), j.getWorkflow(), j.getWorkflowVersion(),
-                j.getJobHash(), jsonIni.toJSONString(), jsonExtraFiles.toJSONString());
+                j.getJobHash(), jsonIni.toJSONString());
         return (String) map.entrySet().iterator().next().getKey();
     }
 
@@ -267,8 +266,6 @@ public class PostgreSQL {
             j.setStderr((String) entry.getValue().get("stderr"));
             final Map<String, String> ini = convertJSON(entry, "ini");
             j.setIni(ini);
-            final Map<String, String> extraFiles = convertJSON(entry, "extra_files");
-            j.setExtraFiles(extraFiles);
 
             // timestamp
             Timestamp createTs = (Timestamp) entry.getValue().get("create_timestamp");

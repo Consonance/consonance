@@ -11,7 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
- * Created by boconnor on 15-04-18.
+ * @author boconnor
+ * @author dyuen
  */
 public class Base {
 

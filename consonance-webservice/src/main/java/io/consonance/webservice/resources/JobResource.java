@@ -27,6 +27,7 @@ import io.consonance.arch.utils.Constants;
 import io.consonance.arch.utils.Utilities;
 import io.consonance.webservice.core.User;
 import io.consonance.webservice.jdbi.JobDAO;
+import io.consonance.webservice.jdbi.ProvisionDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -69,12 +70,14 @@ public class JobResource {
     private final HierarchicalINIConfiguration settings;
     private final String queueName;
     private final PostgreSQL db;
+    private final ProvisionDAO provisionDAO;
     private Channel jchannel = null;
 
     private static final Logger LOG = LoggerFactory.getLogger(JobResource.class);
 
-    public JobResource(JobDAO dao, String consonanceConfigFile) {
+    public JobResource(JobDAO dao, ProvisionDAO provisionDAO, String consonanceConfigFile) {
         this.dao = dao;
+        this.provisionDAO = provisionDAO;
         this.settings = Utilities.parseConfig(consonanceConfigFile);
         this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         this.db = new PostgreSQL(settings);
@@ -98,6 +101,8 @@ public class JobResource {
     }
 
     @POST
+    @Timed
+    @UnitOfWork
     @ApiOperation(value = "Schedule a new workflow run")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_METHOD_NOT_ALLOWED, message = "Invalid input") })
     public Job addWorkflowRun(@ApiParam(value = "Workflow run that needs to be added to the store", required = true) Job job) {
@@ -109,7 +114,8 @@ public class JobResource {
 
         Order newOrder = new Order();
         newOrder.setJob(job);
-        newOrder.setProvision(new Provision(cores, memGb, storageGb, a));
+        Provision provision = new Provision(cores, memGb, storageGb, a);
+        newOrder.setProvision(provision);
         newOrder.getProvision().setJobUUID(newOrder.getJob().getUuid());
 
         if (jchannel == null || !jchannel.isOpen()){
@@ -123,6 +129,7 @@ public class JobResource {
         }
         final long jobId = dao.create(job);
         Job createdJob = dao.findById(jobId);
+        provisionDAO.create(provision);
 
         try {
             LOG.info("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");

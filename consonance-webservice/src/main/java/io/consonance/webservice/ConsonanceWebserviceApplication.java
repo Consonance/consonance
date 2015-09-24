@@ -17,7 +17,9 @@
 package io.consonance.webservice;
 
 import io.consonance.arch.beans.Job;
+import io.consonance.arch.beans.Provision;
 import io.consonance.webservice.jdbi.JobDAO;
+import io.consonance.webservice.jdbi.ProvisionDAO;
 import io.consonance.webservice.resources.JobResource;
 import io.consonance.webservice.resources.TemplateHealthCheck;
 import io.dropwizard.Application;
@@ -49,7 +51,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
     }
 
     private final HibernateBundle<ConsonanceWebserviceConfiguration> hibernate = new HibernateBundle<ConsonanceWebserviceConfiguration>(
-            Job.class) {
+            Job.class, Provision.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(ConsonanceWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -89,9 +91,10 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.healthChecks().register("template", healthCheck);
 
         final JobDAO dao = new JobDAO(hibernate.getSessionFactory());
+        final ProvisionDAO provisionDAO = new ProvisionDAO(hibernate.getSessionFactory());
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
-        environment.jersey().register(new JobResource(dao, configuration.getConsonanceConfig()));
+        environment.jersey().register(new JobResource(dao,provisionDAO, configuration.getConsonanceConfig()));
 
         // swagger stuff
 

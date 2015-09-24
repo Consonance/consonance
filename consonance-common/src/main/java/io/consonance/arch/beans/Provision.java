@@ -1,30 +1,75 @@
 package io.consonance.arch.beans;
 
-import io.consonance.arch.utils.Utilities;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This represents a message sent to the Container/VM queue. Created by boconnor on 2015-04-22.
+ * @author dyuen
  */
+@Entity
+@Table(name= "provision")
+@JsonIgnoreProperties(ignoreUnknown = true)
+@ApiModel(value="provision", description="Describes provision requests in Consonance, needs to be deprecated")
 public class Provision {
 
+    private static Logger log = LoggerFactory.getLogger(Provision.class);
+
+    @ApiModelProperty(value = "provision id")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="provision_id")
+    private int provisionId;
+    @ApiModelProperty(value = "deprecated, the number of cores for this VM")
+    @Column(columnDefinition="integer")
     private long cores;
+    @ApiModelProperty(value = "deprecated, the amount of memory for this VM")
+    @Column(name = "mem_gb", columnDefinition="integer")
     private long memGb;
+    @ApiModelProperty(value = "deprecated, the amount of storage for this VM")
+    @Column(name = "storage_gb", columnDefinition="integer")
     private long storageGb;
+    @ApiModelProperty(value = "the state of the provision ")
+    @Column(name = "status", columnDefinition="text")
     private ProvisionState state = ProvisionState.START;
+    @JsonProperty("bindle_profiles_to_run")
+    @ElementCollection(targetClass = String.class)
+    @ApiModelProperty(value = "deprecated, ansible playbook to run on provisioned instances", hidden=true)
     private List<String> ansiblePlaybooks;
+    @ApiModelProperty(value = "the state of the provision ")
+    @Column(name="ip_address",columnDefinition="text")
     private String ipAddress = "";
+    @ApiModelProperty(value = "uuid for the job")
+    @Column(name="job_uuid",columnDefinition="text")
     private String jobUUID = "";
     /**
      * This is the provision_uuid
      */
+    @ApiModelProperty(value = "uuid for the instance, should be the instance id on Amazon")
+    @Column(name="provision_uuid",columnDefinition="text")
     private String provisionUUID = "";
+    @Column(name="create_timestamp",columnDefinition="text")
     private Timestamp createTimestamp;
+    @Column(name="update_timestamp",columnDefinition="text")
     private Timestamp updateTimestamp;
 
     public Provision(int cores, int memGb, int storageGb, List<String> ansiblePlaybooks) {
@@ -39,43 +84,30 @@ public class Provision {
     }
 
     public String toJSON() {
-
-        StringBuilder j = new StringBuilder();
-
-        j.append("{" + "   \"message_type\": \"provision\",\n" + "\"provision_uuid\": \"").append(provisionUUID)
-                .append("\",\n" + "   \"cores\": ").append(cores).append(",\n" + "    \"mem_gb\": ").append(memGb)
-                .append(",\n" + "    \"storage_gb\": ").append(storageGb).append(",\n" + "    \"job_uuid\": \"").append(jobUUID)
-                .append("\",\n" + "    \"ip_address\": \"").append(ipAddress).append("\",\n" + "    \"bindle_profiles_to_run\": [");
-
-        boolean first = true;
-        for (String playbook : ansiblePlaybooks) {
-            if (first) {
-                first = false;
-            } else {
-                j.append(",\n");
-            }
-            j.append("\"").append(playbook).append("\"");
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
         }
-        j.append("\n]\n}\n");
-        return (j.toString());
     }
 
     public Provision fromJSON(String json) {
-        Utilities u = new Utilities();
-        JSONObject obj = u.parseJob(json);
-        cores = (Long) obj.get("cores");
-        memGb = (Long) obj.get("mem_gb");
-        storageGb = (Long) obj.get("storage_gb");
-        this.setJobUUID((String) obj.get("job_uuid"));
-        this.setIpAddress((String) obj.get("ip_address"));
-        provisionUUID = (String) obj.get("provision_uuid");
-        JSONArray playbooks = (JSONArray) obj.get("bindle_profiles_to_run");
-        ansiblePlaybooks = new ArrayList<>();
-        for (Object key : playbooks) {
-            ansiblePlaybooks.add((String) key);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.readValue(json, Provision.class);
+        } catch (JsonParseException e) {
+            log.error("JSON parsing error: ", e.getMessage());
+            return null;
+        } catch (IOException e) {
+            log.error("IO exception parsing error: ", e.getMessage());
+            return null;
         }
-        return this;
-
     }
 
     public String getProvisionUUID() {
@@ -182,5 +214,13 @@ public class Provision {
      */
     public void setUpdateTimestamp(Timestamp updateTimestamp) {
         this.updateTimestamp = updateTimestamp;
+    }
+
+    public long getProvisionId() {
+        return provisionId;
+    }
+
+    public void setProvisionId(int provisionId) {
+        this.provisionId = provisionId;
     }
 }
