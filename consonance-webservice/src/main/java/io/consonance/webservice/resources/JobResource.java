@@ -25,7 +25,7 @@ import io.consonance.arch.beans.Provision;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.Constants;
 import io.consonance.arch.utils.Utilities;
-import io.consonance.webservice.core.User;
+import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.jdbi.JobDAO;
 import io.consonance.webservice.jdbi.ProvisionDAO;
 import io.dropwizard.auth.Auth;
@@ -47,6 +47,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -55,8 +56,8 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 /**
- * The token resource handles operations with jobs. Jobs are scheduled and can be queried to get information on the
- * current state of the job.
+ * The token resource handles operations with jobs. Jobs are scheduled and can be queried to get information on the current state of the
+ * job.
  *
  * @author dyuen
  */
@@ -88,17 +89,20 @@ public class JobResource {
     @Path("/listOwned")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all jobs owned by the logged-in user", notes = "List the jobs owned by the user", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<Job> listOwnedWorkflowRuns(@Auth User user) {
-        return dao.findAll(user.getName());
+    @ApiOperation(value = "List all jobs owned by the logged-in consonanceUser", notes = "List the jobs owned by the consonanceUser", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    public List<Job> listOwnedWorkflowRuns(@Auth ConsonanceUser consonanceUser) {
+        return dao.findAll(consonanceUser.getName());
     }
 
     @GET
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List all known jobs", notes = "List all jobs", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<Job> listWorkflowRuns() {
-        return dao.findAll();
+    public List<Job> listWorkflowRuns(@Auth ConsonanceUser consonanceUser) {
+        if (consonanceUser.isAdmin()) {
+            return dao.findAll();
+        }
+        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
     }
 
     @GET
@@ -106,11 +110,14 @@ public class JobResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List a specific job", notes = "List a specific job", response = Job.class, authorizations = @Authorization(value = "api_key"))
-    @ApiResponses(value = {
-            @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Job not found") })
-    public Job getWorkflowRun(@ApiParam(value = "UUID of job that needs to be fetched", required = true) @PathParam("jobUUID") String uuid) {
-        return dao.findJobByUUID(uuid);
+    public Job getWorkflowRun(@Auth ConsonanceUser consonanceUser, @ApiParam(value = "UUID of job that needs to be fetched", required = true) @PathParam("jobUUID") String uuid) {
+        final Job jobByUUID = dao.findJobByUUID(uuid);
+        if (consonanceUser.isAdmin() || consonanceUser.getName().equals(jobByUUID.getEndUser())){
+            return jobByUUID;
+        }
+        throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
     }
 
     @POST
@@ -118,7 +125,10 @@ public class JobResource {
     @UnitOfWork
     @ApiOperation(value = "Schedule a new workflow run")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_METHOD_NOT_ALLOWED, message = "Invalid input") })
-    public Job addWorkflowRun(@ApiParam(value = "Workflow run that needs to be added to the store", required = true) Job job) {
+    public Job addWorkflowRun(@Auth ConsonanceUser consonanceUser, @ApiParam(value = "Workflow run that needs to be added to the store", required = true) Job job) {
+        // enforce that users schedule jobs as themselves
+        job.setEndUser(consonanceUser.getName());
+
         int cores = DEFAULT_NUM_CORES;
         int memGb = DEFAULT_MEMORY;
         int storageGb = DEFAULT_DISKSPACE;
@@ -131,7 +141,7 @@ public class JobResource {
         newOrder.setProvision(provision);
         newOrder.getProvision().setJobUUID(newOrder.getJob().getUuid());
 
-        if (jchannel == null || !jchannel.isOpen()){
+        if (jchannel == null || !jchannel.isOpen()) {
             try {
                 this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
             } catch (IOException e) {
@@ -146,7 +156,8 @@ public class JobResource {
 
         try {
             LOG.info("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
-            this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN, newOrder.toJSON().getBytes(StandardCharsets.UTF_8));
+            this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    newOrder.toJSON().getBytes(StandardCharsets.UTF_8));
             jchannel.waitForConfirms();
         } catch (IOException | InterruptedException ex) {
             LOG.error(ex.toString());
