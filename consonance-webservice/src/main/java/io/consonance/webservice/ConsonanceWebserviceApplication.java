@@ -56,7 +56,6 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
 
     private static final Logger LOG = LoggerFactory.getLogger(ConsonanceWebserviceApplication.class);
 
-
     public static void main(String[] args) throws Exception {
         new ConsonanceWebserviceApplication().run(args);
     }
@@ -86,7 +85,6 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         beanConfig.setScan(true);
         beanConfig.setTitle("Swagger Consonance Prototype");
 
-
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
 
@@ -110,7 +108,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.getObjectMapper().disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         environment.getObjectMapper().enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
 
-        environment.jersey().register(new JobResource(dao,provisionDAO, configuration.getConsonanceConfig()));
+        environment.jersey().register(new JobResource(dao, provisionDAO, configuration.getConsonanceConfig()));
         environment.jersey().register(new UserResource(userDAO));
 
         // swagger stuff
@@ -122,9 +120,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         // setup authentication
         SimpleJPAAuthenticator authenticator = new SimpleJPAAuthenticator(userDAO);
         CachingAuthenticator<String, ConsonanceUser> cachingAuthenticator = new CachingAuthenticator<String, ConsonanceUser>(
-                environment.metrics()
-                , authenticator,
-                configuration.getAuthenticationCachePolicy());
+                environment.metrics(), authenticator, configuration.getAuthenticationCachePolicy());
         environment.jersey().register(
                 AuthFactory.binder(new OAuthFactory<ConsonanceUser>(cachingAuthenticator, "SUPER SECRET STUFF", ConsonanceUser.class)));
 
@@ -133,9 +129,15 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         final FilterRegistration.Dynamic cors = environment.servlets().addFilter("CORS", CrossOriginFilter.class);
 
         // Configure CORS parameters
-        cors.setInitParameter("allowedOrigins", "*");
-        cors.setInitParameter("allowedHeaders", "X-Requested-With,Content-Type,Accept,Origin,api_key,Authorization");
-        cors.setInitParameter("allowedMethods", "OPTIONS,GET,PUT,POST,DELETE,HEAD");
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM,
+                "X-Requested-With,Content-Type,Accept,Content-Length,Origin,api_key,Authorization");
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "OPTIONS,GET,PUT,POST,DELETE,HEAD");
+        cors.setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*");
+        cors.setInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM, "true");
+        cors.setInitParameter(CrossOriginFilter.EXPOSED_HEADERS_PARAM, "true");
+
 
         // Add URL mapping
         cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
