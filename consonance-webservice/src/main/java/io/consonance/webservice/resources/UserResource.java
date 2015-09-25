@@ -64,7 +64,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List all known jobs", notes = "List all users", response = ConsonanceUser.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<ConsonanceUser> listUsers(@Auth ConsonanceUser user) {
+    public List<ConsonanceUser> listUsers(@ApiParam(hidden=true) @Auth ConsonanceUser user) {
         if (user.isAdmin()) {
             return dao.findAll();
         }
@@ -72,16 +72,16 @@ public class UserResource {
     }
 
     @GET
-    @Path("/{userUUID}")
+    @Path("/{name}")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List a specific user", notes = "List a specific user", response = ConsonanceUser.class, authorizations = @Authorization(value = "api_key"))
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
-            @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Job not found") })
-    public ConsonanceUser getUser(@Auth ConsonanceUser user,
-            @ApiParam(value = "UUID of job that needs to be fetched", required = true) @PathParam("userUUID") String uuid) {
+            @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "name not found") })
+    public ConsonanceUser getUser(@ApiParam(hidden=true) @Auth ConsonanceUser user,
+            @ApiParam(value = "name of a user that needs to be fetched", required = true) @PathParam("name") String name) {
         if (user.isAdmin()) {
-            return dao.findUserByName(uuid);
+            return dao.findUserByName(name);
         }
         throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
     }
@@ -91,10 +91,10 @@ public class UserResource {
     @UnitOfWork
     @ApiOperation(value = "Add a new user")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_METHOD_NOT_ALLOWED, message = "Invalid input") })
-    public ConsonanceUser addUser(@Auth ConsonanceUser authUser,
+    public ConsonanceUser addUser(@ApiParam(hidden=true) @Auth ConsonanceUser authUser,
             @ApiParam(value = "User that needs to be added", required = true) ConsonanceUser user,
             @QueryParam(value = "password") @ApiParam(value = "unhashed password", required = true) String password) {
-        if (user.isAdmin()) {
+        if (authUser.isAdmin()) {
             final String hashedPassword = Hashing.sha256().hashString(password, Charsets.UTF_8).toString();
             user.setHashedPassword(hashedPassword);
             final int jobID = dao.create(user);

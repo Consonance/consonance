@@ -90,7 +90,7 @@ public class JobResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List all jobs owned by the logged-in consonanceUser", notes = "List the jobs owned by the consonanceUser", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<Job> listOwnedWorkflowRuns(@Auth ConsonanceUser consonanceUser) {
+    public List<Job> listOwnedWorkflowRuns(@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser) {
         return dao.findAll(consonanceUser.getName());
     }
 
@@ -98,7 +98,7 @@ public class JobResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List all known jobs", notes = "List all jobs", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<Job> listWorkflowRuns(@Auth ConsonanceUser consonanceUser) {
+    public List<Job> listWorkflowRuns(@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser) {
         if (consonanceUser.isAdmin()) {
             return dao.findAll();
         }
@@ -112,7 +112,7 @@ public class JobResource {
     @ApiOperation(value = "List a specific job", notes = "List a specific job", response = Job.class, authorizations = @Authorization(value = "api_key"))
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Job not found") })
-    public Job getWorkflowRun(@Auth ConsonanceUser consonanceUser, @ApiParam(value = "UUID of job that needs to be fetched", required = true) @PathParam("jobUUID") String uuid) {
+    public Job getWorkflowRun(@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser, @ApiParam(value = "UUID of job that needs to be fetched", required = true) @PathParam("jobUUID") String uuid) {
         final Job jobByUUID = dao.findJobByUUID(uuid);
         if (consonanceUser.isAdmin() || consonanceUser.getName().equals(jobByUUID.getEndUser())){
             return jobByUUID;
@@ -125,7 +125,7 @@ public class JobResource {
     @UnitOfWork
     @ApiOperation(value = "Schedule a new workflow run")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_METHOD_NOT_ALLOWED, message = "Invalid input") })
-    public Job addWorkflowRun(@Auth ConsonanceUser consonanceUser, @ApiParam(value = "Workflow run that needs to be added to the store", required = true) Job job) {
+    public Job addWorkflowRun(@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser, @ApiParam(value = "Workflow run that needs to be added to the store", required = true) Job job) {
         // enforce that users schedule jobs as themselves
         job.setEndUser(consonanceUser.getName());
 
