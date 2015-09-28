@@ -22,6 +22,9 @@ package io.consonance.common;
  * @author dyuen
  */
 public class Constants {
+    public static final String WEBSERVICE_BASE_PATH = "webservice.base_path";
+    public static final String WEBSERVICE_TOKEN = "webservice.token";
+
     public static final String POSTGRES_HOST = "database.postgresHost";
     public static final String POSTGRES_USERNAME = "database.postgresUser";
     public static final String POSTGRES_PASSWORD = "database.postgresPass";

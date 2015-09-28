@@ -30,6 +30,7 @@ import javax.persistence.Table;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -73,6 +74,7 @@ public class Job extends BaseBean{
     @ApiModelProperty(value = "consonance will assign a uuid to jobs")
     @Column(name="job_uuid", columnDefinition="text")
     private String uuid = UUID.randomUUID().toString().toLowerCase();
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("workflow_name")
     @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     @Column(columnDefinition="text")
@@ -81,19 +83,24 @@ public class Job extends BaseBean{
     @ApiModelProperty(value = "the cloud instance-id assigned to run a job")
     @Column(name="provision_uuid",columnDefinition="text")
     private String vmUuid;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     @Column(name="workflow_version",columnDefinition="text")
     private String workflowVersion;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     @Column(name="workflow_path",columnDefinition="text")
     private String workflowPath;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(value = "can be used to group user-submitted jobs for reporting purposes")
     @Column(name="job_hash",columnDefinition="text")
     private String jobHash;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(value = "used by consonance internally")
     @Column(name="message_type",columnDefinition="text")
     private String messageType;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
     @Column(name="ini",columnDefinition="text")
     private String iniFileAsString;
@@ -207,6 +214,7 @@ public class Job extends BaseBean{
         this.extraFiles = ini;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(value = "deprecated, read-only convenience renderer for ini files")
     public String getIniStr() {
         StringBuilder sb = new StringBuilder();
@@ -333,5 +341,29 @@ public class Job extends BaseBean{
 
     public void setIniFileAsString(String iniFileAsString) {
         this.iniFileAsString = iniFileAsString;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jobId, state, uuid, vmUuid, messageType, extraFiles, stdout, stderr, containerImageDescriptor,
+                containerRuntimeDescriptor, endUser, flavour);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final Job other = (Job) obj;
+        return Objects.equals(this.jobId, other.jobId) && Objects.equals(this.state, other.state) && Objects.equals(this.uuid, other.uuid)
+                && Objects.equals(this.vmUuid, other.vmUuid) && Objects.equals(this.messageType, other.messageType)
+                && Objects.equals(this.extraFiles, other.extraFiles) && Objects.equals(this.stdout, other.stdout)
+                && Objects.equals(this.stderr, other.stderr)
+                && Objects.equals(this.containerImageDescriptor, other.containerImageDescriptor)
+                && Objects.equals(this.containerRuntimeDescriptor, other.containerRuntimeDescriptor)
+                && Objects.equals(this.endUser, other.endUser) && Objects.equals(this.flavour, other.flavour);
     }
 }

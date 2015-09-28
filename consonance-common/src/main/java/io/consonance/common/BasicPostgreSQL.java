@@ -79,8 +79,11 @@ public class BasicPostgreSQL {
         }
     }
 
+    /**
+     * This clears the data base for testing and creates an admin user
+     */
     public void clearDatabase() {
-        this.runUpdateStatement("delete from extra_files; delete from ini_params; delete from provision_ansibleplaybooks; delete from provision; delete from job;");
+        this.runUpdateStatement("delete from extra_files; delete from ini_params; delete from provision_ansibleplaybooks; delete from provision; delete from job; delete from consonance_user");
     }
 
     protected <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {

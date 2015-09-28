@@ -19,7 +19,6 @@ public class UserTest {
         @Test
         public void serializesToJSON() throws Exception {
                 final ConsonanceUser user = getUser();
-                System.out.println(MAPPER.writeValueAsString(user));
                 final String expected = MAPPER.writeValueAsString(
                         MAPPER.readValue(fixture("fixtures/user.json"), ConsonanceUser.class));
                 assertThat(MAPPER.writeValueAsString(user)).isEqualTo(expected);
