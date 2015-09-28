@@ -1,5 +1,6 @@
-package io.consonance.arch.utils;
+package io.consonance.common;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 
@@ -22,8 +23,17 @@ public class ITUtilities {
      */
     public static void clearState() throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        Utilities.clearState(parseConfig);
+        HierarchicalINIConfiguration parseConfig = parseConfig(configFile.getAbsolutePath());
+        BasicPostgreSQL postgres = new BasicPostgreSQL(parseConfig);
+        postgres.clearDatabase();
+    }
+
+    public static HierarchicalINIConfiguration parseConfig(String path) {
+        try {
+            return new HierarchicalINIConfiguration(path);
+        } catch (ConfigurationException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
 }

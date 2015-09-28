@@ -23,7 +23,7 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Order;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Constants;
+import io.consonance.common.Constants;
 import io.consonance.arch.utils.Utilities;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.jdbi.JobDAO;

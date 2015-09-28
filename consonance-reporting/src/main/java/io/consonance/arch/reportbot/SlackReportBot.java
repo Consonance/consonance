@@ -26,7 +26,7 @@ import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.reporting.ReportAPI;
 import io.consonance.arch.reporting.ReportAPIFactory;
 import io.consonance.arch.reporting.SlackRenderer;
-import io.consonance.arch.utils.Constants;
+import io.consonance.common.Constants;
 import io.consonance.arch.utils.Utilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 

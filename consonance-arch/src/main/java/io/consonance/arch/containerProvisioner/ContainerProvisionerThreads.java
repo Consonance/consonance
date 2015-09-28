@@ -16,7 +16,7 @@ import io.consonance.arch.beans.ProvisionState;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Constants;
+import io.consonance.common.Constants;
 import io.consonance.arch.utils.Utilities;
 import io.consonance.arch.worker.WorkerRunnable;
 import joptsimple.OptionSpecBuilder;

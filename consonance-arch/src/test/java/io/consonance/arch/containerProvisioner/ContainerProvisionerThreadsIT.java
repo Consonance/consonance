@@ -16,7 +16,7 @@
  */
 package io.consonance.arch.containerProvisioner;
 
-import io.consonance.arch.utils.ITUtilities;
+import io.consonance.common.ITUtilities;
 import joptsimple.OptionException;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;

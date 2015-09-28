@@ -9,7 +9,7 @@ import io.consonance.arch.Base;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
-import io.consonance.arch.utils.Constants;
+import io.consonance.common.Constants;
 import io.consonance.arch.utils.Utilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;

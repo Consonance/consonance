@@ -2,13 +2,12 @@ package io.swagger.client.auth;
 
 import io.swagger.client.Pair;
 
-import java.util.Map;
-import java.util.List;
-
-import java.io.UnsupportedEncodingException;
 import javax.xml.bind.DatatypeConverter;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Map;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T16:14:27.320Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T16:36:29.864Z")
 public class HttpBasicAuth implements Authentication {
   private String username;
   private String password;

@@ -9,7 +9,7 @@ import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.coordinator.Coordinator;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Constants;
+import io.consonance.common.Constants;
 import io.consonance.arch.utils.Utilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbcp2.PoolableConnection;

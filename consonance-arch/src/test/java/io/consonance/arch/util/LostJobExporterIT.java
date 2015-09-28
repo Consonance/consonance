@@ -20,7 +20,7 @@ import com.google.common.io.Files;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.ITUtilities;
+import io.consonance.common.ITUtilities;
 import io.consonance.arch.utils.Utilities;
 import joptsimple.OptionException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;

@@ -3,6 +3,7 @@ package io.consonance.arch.utils;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import io.consonance.common.Constants;
 import io.consonance.arch.persistence.PostgreSQL;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;

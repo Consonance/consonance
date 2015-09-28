@@ -226,6 +226,7 @@
 
     <modules>
         <module>consonance-common</module>
+        <module>consonance-server-common</module>
         <module>consonance-arch</module>
         <module>consonance-reporting</module>
         <module>consonance-webservice</module>

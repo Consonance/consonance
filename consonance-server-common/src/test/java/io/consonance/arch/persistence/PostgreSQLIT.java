@@ -20,7 +20,7 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
-import io.consonance.arch.utils.ITUtilities;
+import io.consonance.common.ITUtilities;
 import io.consonance.arch.utils.Utilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;

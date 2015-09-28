@@ -1,5 +1,13 @@
 template: Funky
 
+logging:
+  level: INFO
+  loggers:
+    io.consonance.webservice: ALL
+  appenders:
+    - type: console
+      threshold: ALL
+
 consonanceConfig: /home/dyuen/.arch3/config
 
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m

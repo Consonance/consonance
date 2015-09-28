@@ -1,0 +1,113 @@
+package io.consonance.common;
+
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
+import java.sql.SQLException;
+import java.util.Properties;
+
+/**
+ * @author dyuen
+ */
+public class BasicPostgreSQL {
+
+    protected static final Logger LOG = LoggerFactory.getLogger(BasicPostgreSQL.class);
+    private static DataSource dataSource = null;
+
+    public BasicPostgreSQL(HierarchicalINIConfiguration settings) {
+        if (dataSource == null) {
+            try {
+                String nullConfigs = "";
+                String host = settings.getString(Constants.POSTGRES_HOST);
+                if (host == null) {
+                    nullConfigs += "postgresHost ";
+                }
+
+                String user = settings.getString(Constants.POSTGRES_USERNAME);
+                if (user == null) {
+                    nullConfigs += "postgresUser ";
+                }
+
+                String pass = settings.getString(Constants.POSTGRES_PASSWORD);
+                if (pass == null) {
+                    nullConfigs += "postgresPass ";
+                }
+
+                String db = settings.getString(Constants.POSTGRES_DBNAME);
+                if (db == null) {
+                    nullConfigs += "postgresDBName ";
+                }
+
+                String maxConnections = settings.getString(Constants.POSTGRES_MAX_CONNECTIONS, "5");
+
+                if (nullConfigs.trim().length() > 0) {
+                    throw new NullPointerException("The following configuration values are null: " + nullConfigs
+                            + ". Please check your configuration file.");
+                }
+
+                Class.forName("org.postgresql.Driver");
+
+                String url = "jdbc:postgresql://" + host + "/" + db;
+                LOG.debug("PostgreSQL URL is: " + url);
+                Properties props = new Properties();
+                props.setProperty("user", user);
+                props.setProperty("password", pass);
+                // props.setProperty("ssl","true");
+                props.setProperty("initialSize", "5");
+                props.setProperty("maxActive", maxConnections);
+
+                ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(url, props);
+                PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
+                poolableConnectionFactory.setValidationQuery("select count(*) from job;");
+                ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory);
+                poolableConnectionFactory.setPool(connectionPool);
+                dataSource = new PoolingDataSource<>(connectionPool);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void clearDatabase() {
+        this.runUpdateStatement("delete from extra_files; delete from ini_params; delete from provision_ansibleplaybooks; delete from provision; delete from job;");
+    }
+
+    protected <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
+        try {
+            QueryRunner run = new QueryRunner(dataSource);
+            return run.query(query, handler, params);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected <T> T runInsertStatement(String query, ResultSetHandler<T> handler, Object... params) {
+        try {
+            QueryRunner run = new QueryRunner(dataSource);
+            return run.insert(query, handler, params);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected boolean runUpdateStatement(String query, Object... params) {
+        try {
+            QueryRunner run = new QueryRunner(dataSource);
+            run.update(query, params);
+            return true;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}

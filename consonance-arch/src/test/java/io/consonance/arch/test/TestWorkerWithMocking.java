@@ -10,7 +10,7 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 import io.consonance.arch.beans.Job;
-import io.consonance.arch.utils.Constants;
+import io.consonance.common.Constants;
 import io.consonance.arch.utils.Utilities;
 import io.consonance.arch.worker.WorkerRunnable;
 import io.consonance.arch.worker.WorkflowRunner;

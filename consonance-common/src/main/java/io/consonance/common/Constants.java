@@ -14,9 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.arch.utils;
+package io.consonance.common;
 
 /**
+ * This describes all keys available in Consonance config files.
  *
  * @author dyuen
  */

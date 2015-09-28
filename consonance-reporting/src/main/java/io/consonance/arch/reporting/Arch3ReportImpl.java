@@ -30,7 +30,7 @@ import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Constants;
+import io.consonance.common.Constants;
 import io.consonance.arch.utils.Utilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
