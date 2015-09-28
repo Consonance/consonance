@@ -232,6 +232,7 @@
         <module>consonance-webservice</module>
         <module>consonance-client</module>
         <module>swagger-java-client</module>
+        <module>consonance-integration-testing</module>
     </modules>
 
     <licenses>

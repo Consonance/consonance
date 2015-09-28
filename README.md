@@ -3,6 +3,23 @@
 [![Build Status](https://travis-ci.org/Consonance/consonance.svg?branch=develop)](https://travis-ci.org/Consonance/Consonance)
 [![Coverage Status](https://coveralls.io/repos/Consonance/consonance/badge.svg?branch=develop)](https://coveralls.io/r/Consonance/consonance?branch=develop)
 
+## Components
+
+There are the following main components that are visible to the end-user. Each component usually contains just the unit tests for each component in isolation:
+
+* consonance-arch: contains the main consonance daemons that handle things like provisioning VMs, running jobs, etc. 
+* consonance-client: contains the client classes that will form the basis for the command line client
+* consonance-webservice: containers the webservice which is built as a facade between the client and our daemons
+* consonance-reporting: contains reporting utilities for those running the daemons
+
+There are the following support components:
+
+* consonance-common: contains classes common to both the client and server (just testing utilities)
+* consonance-server-common: contains classes common to the daemons and the webservice
+* swagger-java-client: contains classes auto-generated b swagger-codegen to support the client
+* consonance-integration-testing: contains integration tests that test the whole system
+
+
 ## Release Process
 
 Use the standard mvn release:prepare and mvn release:perform procedures
