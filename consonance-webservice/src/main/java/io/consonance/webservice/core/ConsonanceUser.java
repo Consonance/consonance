@@ -1,6 +1,5 @@
 package io.consonance.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.consonance.arch.beans.BaseBean;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -43,15 +42,14 @@ public class ConsonanceUser extends BaseBean implements Principal  {
         private int userID;
 
         @ApiModelProperty(value = "username")
-        @Column(unique = true)
+        @Column(unique = true, nullable=false)
         private String name;
 
         @ApiModelProperty(value = "set this if creating an admin")
         private boolean admin;
 
-        @JsonIgnore
-        @Column(name="hashed_password")
-        @ApiModelProperty(value = "the hashed password, should not be transfered over webservice", hidden=true)
+        @Column(name="hashed_password", unique=true, nullable=false)
+        @ApiModelProperty(value = "the hash token, can be used to identify the user")
         private String hashedPassword;
 
         public int getUserID() {

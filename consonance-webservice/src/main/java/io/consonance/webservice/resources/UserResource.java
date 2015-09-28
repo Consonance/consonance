@@ -19,6 +19,7 @@ package io.consonance.webservice.resources;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.jdbi.ConsonanceUserDAO;
 import io.dropwizard.auth.Auth;
@@ -38,10 +39,11 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.Random;
+
 
 /**
  * This resource manages users. This should be admin access only.
@@ -92,10 +94,14 @@ public class UserResource {
     @ApiOperation(value = "Add a new user")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_METHOD_NOT_ALLOWED, message = "Invalid input") })
     public ConsonanceUser addUser(@ApiParam(hidden=true) @Auth ConsonanceUser authUser,
-            @ApiParam(value = "User that needs to be added", required = true) ConsonanceUser user,
-            @QueryParam(value = "password") @ApiParam(value = "unhashed password", required = true) String password) {
+            @ApiParam(value = "User that needs to be added", required = true) ConsonanceUser user) {
         if (authUser.isAdmin()) {
-            final String hashedPassword = Hashing.sha256().hashString(password, Charsets.UTF_8).toString();
+	    final Random random = new Random();
+	    final int bufferLength = 1024;
+	    final byte[] buffer = new byte[bufferLength];
+	    random.nextBytes(buffer);
+	    String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+            final String hashedPassword = Hashing.sha256().hashString(user.getName() + randomString, Charsets.UTF_8).toString();
             user.setHashedPassword(hashedPassword);
             final int jobID = dao.create(user);
             ConsonanceUser createdUser = dao.findById(jobID);
