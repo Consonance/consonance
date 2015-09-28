@@ -1,20 +1,26 @@
 package io.swagger.client;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource.Builder;
-import com.sun.jersey.api.client.filter.LoggingFilter;
-import com.sun.jersey.multipart.FormDataMultiPart;
-import com.sun.jersey.multipart.file.FileDataBodyPart;
 import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.auth.Authentication;
 import io.swagger.client.auth.HttpBasicAuth;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.filter.LoggingFilter;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.MultiPart;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response.Status.Family;
-import java.io.DataInputStream;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import java.io.File;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.DateFormat;
@@ -29,7 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TimeZone;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T16:36:29.864Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T21:24:04.813Z")
 public class ApiClient {
   private Map<String, Client> hostMap = new HashMap<String, Client>();
   private Map<String, String> defaultHeaderMap = new HashMap<String, String>();
@@ -342,12 +348,12 @@ public class ApiClient {
   }
 
   /**
-   * Serialize the given Java object into string according the given
+   * Serialize the given Java object into string entity according the given
    * Content-Type (only JSON is supported for now).
    */
-  public String serialize(Object obj, String contentType) throws ApiException {
+  public Entity<String> serialize(Object obj, String contentType) throws ApiException {
     if (contentType.startsWith("application/json")) {
-      return json.serialize(obj);
+      return Entity.json(json.serialize(obj));
     } else {
       throw new ApiException(400, "can not serialize object into Content-Type: " + contentType);
     }
@@ -356,17 +362,17 @@ public class ApiClient {
   /**
    * Deserialize response body to Java object according to the Content-Type.
    */
-  public <T> T deserialize(ClientResponse response, TypeRef returnType) throws ApiException {
+  public <T> T deserialize(Response response, TypeRef returnType) throws ApiException {
     String contentType = null;
-    List<String> contentTypes = response.getHeaders().get("Content-Type");
+    List<Object> contentTypes = response.getHeaders().get("Content-Type");
     if (contentTypes != null && !contentTypes.isEmpty())
-      contentType = contentTypes.get(0);
+      contentType = String.valueOf(contentTypes.get(0));
     if (contentType == null)
       throw new ApiException(500, "missing Content-Type in response");
 
     String body;
     if (response.hasEntity())
-      body = (String) response.getEntity(String.class);
+      body = (String) response.readEntity(String.class);
     else
       body = "";
 
@@ -377,133 +383,119 @@ public class ApiClient {
     }
   }
 
-  private ClientResponse getAPIResponse(String path, String method, List<Pair> queryParams, Object body, byte[] binaryBody, Map<String, String> headerParams, Map<String, Object> formParams, String accept, String contentType, String[] authNames) throws ApiException {
-
-    if (body != null && binaryBody != null){
-      throw new ApiException(500, "either body or binaryBody must be null");
-    }
-
-    updateParamsForAuth(authNames, queryParams, headerParams);
-
-    Client client = getClient();
-
-    StringBuilder b = new StringBuilder();
-    b.append("?");
-    if (queryParams != null){
-      for (Pair queryParam : queryParams){
-        if (!queryParam.getName().isEmpty()) {
-          b.append(escapeString(queryParam.getName()));
-          b.append("=");
-          b.append(escapeString(queryParam.getValue()));
-          b.append("&");
-        }
-      }
-    }
-
-    String querystring = b.substring(0, b.length() - 1);
-
-    Builder builder;
-    if (accept == null)
-      builder = client.resource(basePath + path + querystring).getRequestBuilder();
-    else
-      builder = client.resource(basePath + path + querystring).accept(accept);
-
-    for (String key : headerParams.keySet()) {
-      builder = builder.header(key, headerParams.get(key));
-    }
-    for (String key : defaultHeaderMap.keySet()) {
-      if (!headerParams.containsKey(key)) {
-        builder = builder.header(key, defaultHeaderMap.get(key));
-      }
-    }
-
-    String encodedFormParams = null;
-    if (contentType.startsWith("multipart/form-data")) {
-      FormDataMultiPart mp = new FormDataMultiPart();
-      for (Entry<String, Object> param: formParams.entrySet()) {
-        if (param.getValue() instanceof File) {
-          File file = (File) param.getValue();
-          mp.field(param.getKey(), file.getName());
-          mp.bodyPart(new FileDataBodyPart(param.getKey(), file, MediaType.MULTIPART_FORM_DATA_TYPE));
-        } else {
-          mp.field(param.getKey(), parameterToString(param.getValue()), MediaType.MULTIPART_FORM_DATA_TYPE);
-        }
-      }
-      body = mp;
-    } else if (contentType.startsWith("application/x-www-form-urlencoded")) {
-      encodedFormParams = this.getXWWWFormUrlencodedParams(formParams);
-    }
-
-    ClientResponse response = null;
-
-    if ("GET".equals(method)) {
-      response = (ClientResponse) builder.get(ClientResponse.class);
-    } else if ("POST".equals(method)) {
-      if (encodedFormParams != null) {
-        response = builder.type(contentType).post(ClientResponse.class, encodedFormParams);
-      } else if (body == null) {
-        if(binaryBody == null)
-            response = builder.post(ClientResponse.class, null);
-        else
-            response = builder.type(contentType).post(ClientResponse.class, binaryBody);
-      } else if (body instanceof FormDataMultiPart) {
-        response = builder.type(contentType).post(ClientResponse.class, body);
-      } else {
-        response = builder.type(contentType).post(ClientResponse.class, serialize(body, contentType));
-      }
-    } else if ("PUT".equals(method)) {
-      if (encodedFormParams != null) {
-        response = builder.type(contentType).put(ClientResponse.class, encodedFormParams);
-      } else if(body == null) {
-        if(binaryBody == null)
-            response = builder.put(ClientResponse.class, null);
-        else
-            response = builder.type(contentType).put(ClientResponse.class, binaryBody);
-      } else {
-        response = builder.type(contentType).put(ClientResponse.class, serialize(body, contentType));
-      }
-    } else if ("DELETE".equals(method)) {
-      if (encodedFormParams != null) {
-        response = builder.type(contentType).delete(ClientResponse.class, encodedFormParams);
-      } else if(body == null) {
-        if(binaryBody == null)
-            response = builder.delete(ClientResponse.class);
-        else
-            response = builder.type(contentType).delete(ClientResponse.class, binaryBody);
-      } else {
-        response = builder.type(contentType).delete(ClientResponse.class, serialize(body, contentType));
-      }
-    } else {
-      throw new ApiException(500, "unknown method type " + method);
-    }
-    return response;
-  }
-
   /**
    * Invoke API by sending HTTP request with the given options.
    *
    * @param path The sub-path of the HTTP URL
    * @param method The request method, one of "GET", "POST", "PUT", and "DELETE"
    * @param queryParams The query parameters
-   * @param body The request body object - if it is not binary, otherwise null
-   * @param binaryBody The request body object - if it is binary, otherwise null
+   * @param body The request body object
    * @param headerParams The header parameters
    * @param formParams The form parameters
    * @param accept The request's Accept header
    * @param contentType The request's Content-Type header
    * @param authNames The authentications to apply
+   * @param returnType The return type into which to deserialize the response
    * @return The response body in type of string
    */
-   public <T> T invokeAPI(String path, String method, List<Pair> queryParams, Object body, byte[] binaryBody, Map<String, String> headerParams, Map<String, Object> formParams, String accept, String contentType, String[] authNames, TypeRef returnType) throws ApiException {
+  public <T> T invokeAPI(String path, String method, List<Pair> queryParams, Object body, Map<String, String> headerParams, Map<String, Object> formParams, String accept, String contentType, String[] authNames, TypeRef returnType) throws ApiException {
+    updateParamsForAuth(authNames, queryParams, headerParams);
 
-    ClientResponse response = getAPIResponse(path, method, queryParams, body, binaryBody, headerParams, formParams, accept, contentType, authNames);
+    final ClientConfig clientConfig = new ClientConfig();
+    clientConfig.register(MultiPartFeature.class);
+    if (debugging) {
+      clientConfig.register(LoggingFilter.class);
+    }
+    Client client = ClientBuilder.newClient(clientConfig);
+
+    WebTarget target = client.target(this.basePath).path(path);
+
+    if (queryParams != null) {
+      for (Pair queryParam : queryParams) {
+        if (queryParam.getValue() != null) {
+          target = target.queryParam(queryParam.getName(), queryParam.getValue());
+        }
+      }
+    }
+
+    Invocation.Builder invocationBuilder = target.request(contentType).accept(accept);
+
+    for (String key : headerParams.keySet()) {
+      String value = headerParams.get(key);
+      if (value != null) {
+        invocationBuilder = invocationBuilder.header(key, value);
+      }
+    }
+
+    for (String key : defaultHeaderMap.keySet()) {
+      if (!headerParams.containsKey(key)) {
+        String value = defaultHeaderMap.get(key);
+        if (value != null) {
+          invocationBuilder = invocationBuilder.header(key, value);
+        }
+      }
+    }
+
+    Entity<?> formEntity = null;
+
+    if (contentType.startsWith("multipart/form-data")) {
+      MultiPart multipart = new MultiPart();
+      for (Entry<String, Object> param: formParams.entrySet()) {
+        if (param.getValue() instanceof File) {
+          File file = (File) param.getValue();
+
+          FormDataMultiPart mp = new FormDataMultiPart();
+          mp.bodyPart(new FormDataBodyPart(param.getKey(), file.getName()));
+          multipart.bodyPart(mp, MediaType.MULTIPART_FORM_DATA_TYPE);
+
+          multipart.bodyPart(new FileDataBodyPart(param.getKey(), file, MediaType.APPLICATION_OCTET_STREAM_TYPE));
+        } else {
+          FormDataMultiPart mp = new FormDataMultiPart();
+          mp.bodyPart(new FormDataBodyPart(param.getKey(), parameterToString(param.getValue())));
+          multipart.bodyPart(mp, MediaType.MULTIPART_FORM_DATA_TYPE);
+        }
+      }
+      formEntity = Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA_TYPE);
+    } else if (contentType.startsWith("application/x-www-form-urlencoded")) {
+      Form form = new Form();
+      for (Entry<String, Object> param: formParams.entrySet()) {
+        form.param(param.getKey(), parameterToString(param.getValue()));
+      }
+      formEntity = Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+    }
+
+    Response response = null;
+
+    if ("GET".equals(method)) {
+      response = invocationBuilder.get();
+    } else if ("POST".equals(method)) {
+      if (formEntity != null) {
+        response = invocationBuilder.post(formEntity);
+      } else if (body == null) {
+        response = invocationBuilder.post(null);
+      } else {
+        response = invocationBuilder.post(serialize(body, contentType));
+      }
+    } else if ("PUT".equals(method)) {
+      if (formEntity != null) {
+        response = invocationBuilder.put(formEntity);
+      } else if (body == null) {
+        response = invocationBuilder.put(null);
+      } else {
+        response = invocationBuilder.put(serialize(body, contentType));
+      }
+    } else if ("DELETE".equals(method)) {
+      response = invocationBuilder.delete();
+    } else {
+      throw new ApiException(500, "unknown method type " + method);
+    }
 
     statusCode = response.getStatusInfo().getStatusCode();
-    responseHeaders = response.getHeaders();
+    responseHeaders = buildResponseHeaders(response);
 
-    if(response.getStatusInfo() == ClientResponse.Status.NO_CONTENT) {
+    if (response.getStatus() == Status.NO_CONTENT.getStatusCode()) {
       return null;
-    } else if (response.getStatusInfo().getFamily() == Family.SUCCESSFUL) {
+    } else if (response.getStatusInfo().getFamily().equals(Status.Family.SUCCESSFUL)) {
       if (returnType == null)
         return null;
       else
@@ -513,70 +505,31 @@ public class ApiClient {
       String respBody = null;
       if (response.hasEntity()) {
         try {
-          respBody = String.valueOf(response.getEntity(String.class));
+          respBody = String.valueOf(response.readEntity(String.class));
           message = respBody;
         } catch (RuntimeException e) {
           // e.printStackTrace();
         }
       }
       throw new ApiException(
-        response.getStatusInfo().getStatusCode(),
+        response.getStatus(),
         message,
-        response.getHeaders(),
+        buildResponseHeaders(response),
         respBody);
     }
   }
- /**
-   * Invoke API by sending HTTP request with the given options - return binary result
-   *
-   * @param path The sub-path of the HTTP URL
-   * @param method The request method, one of "GET", "POST", "PUT", and "DELETE"
-   * @param queryParams The query parameters
-   * @param body The request body object - if it is not binary, otherwise null
-   * @param binaryBody The request body object - if it is binary, otherwise null
-   * @param headerParams The header parameters
-   * @param formParams The form parameters
-   * @param accept The request's Accept header
-   * @param contentType The request's Content-Type header
-   * @param authNames The authentications to apply
-   * @return The response body in type of string
-   */
- public byte[] invokeBinaryAPI(String path, String method, List<Pair> queryParams, Object body, byte[] binaryBody, Map<String, String> headerParams, Map<String, Object> formParams, String accept, String contentType, String[]authNames) throws ApiException {
 
-    ClientResponse response = getAPIResponse(path, method, queryParams, body, binaryBody, headerParams, formParams, accept, contentType, authNames);
-
-    if(response.getStatusInfo() == ClientResponse.Status.NO_CONTENT) {
-      return null;
-    }
-    else if(response.getStatusInfo().getFamily() == Family.SUCCESSFUL) {
-      if(response.hasEntity()) {
-    	DataInputStream stream = new DataInputStream(response.getEntityInputStream());
-    	byte[] data = new byte[response.getLength()];
-    	try {
-    	  stream.readFully(data);
-    	} catch (IOException ex) {
-    	  throw new ApiException(500, "Error obtaining binary response data");
-    	}
-        return data;
+  private Map<String, List<String>> buildResponseHeaders(Response response) {
+    Map<String, List<String>> responseHeaders = new HashMap<String, List<String>>();
+    for (Entry<String, List<Object>> entry: response.getHeaders().entrySet()) {
+      List<Object> values = entry.getValue();
+      List<String> headers = new ArrayList<String>();
+      for (Object o : values) {
+        headers.add(String.valueOf(o));
       }
-      else {
-        return new byte[0];
-      }
+      responseHeaders.put(entry.getKey(), headers);
     }
-    else {
-      String message = "error";
-      if(response.hasEntity()) {
-        try{
-          message = String.valueOf(response.getEntity(String.class));
-        }
-        catch (RuntimeException e) {
-          // e.printStackTrace();
-        }
-      }
-      throw new ApiException(
-                response.getStatusInfo().getStatusCode(),
-                message);
-    }
+    return responseHeaders;
   }
 
   /**
@@ -590,45 +543,5 @@ public class ApiClient {
       if (auth == null) throw new RuntimeException("Authentication undefined: " + authName);
       auth.applyToParams(queryParams, headerParams);
     }
-  }
-
-  /**
-   * Encode the given form parameters as request body.
-   */
-  private String getXWWWFormUrlencodedParams(Map<String, Object> formParams) {
-    StringBuilder formParamBuilder = new StringBuilder();
-
-    for (Entry<String, Object> param : formParams.entrySet()) {
-      String keyStr = param.getKey();
-      String valueStr = parameterToString(param.getValue());
-      try {
-        formParamBuilder.append(URLEncoder.encode(param.getKey(), "utf8"))
-            .append("=")
-            .append(URLEncoder.encode(valueStr, "utf8"));
-        formParamBuilder.append("&");
-      } catch (UnsupportedEncodingException e) {
-        // move on to next
-      }
-    }
-
-    String encodedFormParams = formParamBuilder.toString();
-    if (encodedFormParams.endsWith("&")) {
-      encodedFormParams = encodedFormParams.substring(0, encodedFormParams.length() - 1);
-    }
-
-    return encodedFormParams;
-  }
-
-  /**
-   * Get an existing client or create a new client to handle HTTP request.
-   */
-  private Client getClient() {
-    if(!hostMap.containsKey(basePath)) {
-      Client client = Client.create();
-      if (debugging)
-        client.addFilter(new LoggingFilter());
-      hostMap.put(basePath, client);
-    }
-    return hostMap.get(basePath);
   }
 }

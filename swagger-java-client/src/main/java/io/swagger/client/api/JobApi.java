@@ -1,18 +1,22 @@
 package io.swagger.client.api;
 
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
+
+import io.swagger.client.model.*;
+
+import java.util.*;
+
 import io.swagger.client.model.Job;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.io.File;
 import java.util.Map;
+import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T16:36:29.864Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T21:24:04.813Z")
 public class JobApi {
   private ApiClient apiClient;
 
@@ -40,7 +44,6 @@ public class JobApi {
    */
   public List<Job> listWorkflowRuns () throws ApiException {
     Object postBody = null;
-    byte[] postBinaryBody = null;
     
     // create path and map variables
     String path = "/job".replaceAll("\\{format\\}","json");
@@ -69,15 +72,9 @@ public class JobApi {
     String[] authNames = new String[] {  };
 
     
-
-    
-    
     TypeRef returnType = new TypeRef<List<Job>>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
-    
-
-
   }
   
   /**
@@ -88,13 +85,12 @@ public class JobApi {
    */
   public Job addWorkflowRun (Job body) throws ApiException {
     Object postBody = body;
-    byte[] postBinaryBody = null;
     
-     // verify the required parameter 'body' is set
-     if (body == null) {
-        throw new ApiException(400, "Missing the required parameter 'body' when calling addWorkflowRun");
-     }
-     
+    // verify the required parameter 'body' is set
+    if (body == null) {
+      throw new ApiException(400, "Missing the required parameter 'body' when calling addWorkflowRun");
+    }
+    
     // create path and map variables
     String path = "/job".replaceAll("\\{format\\}","json");
 
@@ -122,15 +118,9 @@ public class JobApi {
     String[] authNames = new String[] {  };
 
     
-
-    
-    
     TypeRef returnType = new TypeRef<Job>() {};
-    return apiClient.invokeAPI(path, "POST", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
-    
-
-
   }
   
   /**
@@ -140,7 +130,6 @@ public class JobApi {
    */
   public List<Job> listOwnedWorkflowRuns () throws ApiException {
     Object postBody = null;
-    byte[] postBinaryBody = null;
     
     // create path and map variables
     String path = "/job/listOwned".replaceAll("\\{format\\}","json");
@@ -169,15 +158,9 @@ public class JobApi {
     String[] authNames = new String[] {  };
 
     
-
-    
-    
     TypeRef returnType = new TypeRef<List<Job>>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
-    
-
-
   }
   
   /**
@@ -188,13 +171,12 @@ public class JobApi {
    */
   public Job getWorkflowRun (String jobUUID) throws ApiException {
     Object postBody = null;
-    byte[] postBinaryBody = null;
     
-     // verify the required parameter 'jobUUID' is set
-     if (jobUUID == null) {
-        throw new ApiException(400, "Missing the required parameter 'jobUUID' when calling getWorkflowRun");
-     }
-     
+    // verify the required parameter 'jobUUID' is set
+    if (jobUUID == null) {
+      throw new ApiException(400, "Missing the required parameter 'jobUUID' when calling getWorkflowRun");
+    }
+    
     // create path and map variables
     String path = "/job/{jobUUID}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "jobUUID" + "\\}", apiClient.escapeString(jobUUID.toString()));
@@ -223,15 +205,9 @@ public class JobApi {
     String[] authNames = new String[] {  };
 
     
-
-    
-    
     TypeRef returnType = new TypeRef<Job>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
-    
-
-
   }
   
 }

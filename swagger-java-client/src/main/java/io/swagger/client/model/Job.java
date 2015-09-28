@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Describes jobs running in Consonance
  **/
 @ApiModel(description = "Describes jobs running in Consonance")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T16:36:29.864Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T21:24:04.813Z")
 public class Job   {
   
   private Date createTimestamp = null;
