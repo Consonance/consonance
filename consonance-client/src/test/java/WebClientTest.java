@@ -20,6 +20,7 @@ import java.util.concurrent.TimeoutException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
+ * These tests mock up a Dropwizard instance in order to unit test the client.
  * @author dyuen
  */
 public class WebClientTest {
@@ -38,8 +39,7 @@ public class WebClientTest {
     @ClassRule
     public final static DropwizardClientRule dropwizard = new DropwizardClientRule(new PingResource());
 
-    @Test
-    public void testListJobs() throws ApiException, IOException, TimeoutException {
+    private WebClient getWebClient() throws IOException, TimeoutException {
         ITUtilities.clearState();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = ITUtilities.parseConfig(configFile.getAbsolutePath());
@@ -47,6 +47,12 @@ public class WebClientTest {
         String root = dropwizard.baseUri().toURL().toString();
         client.setBasePath(root);
         client.addDefaultHeader("Authorization", "Bearer " + parseConfig.getString(Constants.WEBSERVICE_TOKEN));
+        return client;
+    }
+
+    @Test
+    public void testListUsers() throws ApiException, IOException, TimeoutException {
+        WebClient client = getWebClient();
         UserApi userApi = new UserApi(client);
         final List<ConsonanceUser> consonanceUsers = userApi.listUsers();
         // should just be the one admin user after we clear it out

@@ -32,7 +32,7 @@ public class JobTest {
                         .isEqualTo(person);
         }
 
-        private Job getJob() {
+        public static Job getJob() {
                 final Job job = new Job();
                 job.setUuid("42");
                 job.setEndUser("Player1");

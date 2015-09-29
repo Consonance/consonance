@@ -8,7 +8,7 @@ logging:
     - type: console
       threshold: ALL
 
-consonanceConfig: /home/travis/.consonance/config
+consonanceConfig: ${HOME}/.consonance/config
 
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 
