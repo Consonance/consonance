@@ -17,8 +17,7 @@ hs_err_pid*
 consonance-daemon/.idea
 
 .DS_Store
-consonance-daemon/dependency-reduced-pom.xml
-consonance-reporting/dependency-reduced-pom.xml
+*/dependency-reduced-pom.xml
 consonance-daemon/target
 
 consonance-arch/arch3_test.log
