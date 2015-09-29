@@ -1,3 +1,4 @@
+import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.client.WebClient;
 import io.consonance.common.Constants;
@@ -72,6 +73,33 @@ public class TheOneIT {
     }
 
     @Test
+    public void testStateAndStdoutChangeOnBackEnd() throws ApiException, IOException, TimeoutException {
+        WebClient client = getWebClient();
+        JobApi jobApi = new JobApi(client);
+        List<Job> allJobs = jobApi.listWorkflowRuns();
+        List<Job> myJobs = jobApi.listOwnedWorkflowRuns();
+        assertThat(allJobs.size() == 0 && myJobs.size() == 0);
+        // schedule a job for myself via the api
+        final Job clientJob = createClientJob();
+        jobApi.addWorkflowRun(clientJob);
+        Job jobFromServer =  jobApi.listOwnedWorkflowRuns().get(0);
+
+        // state change using a direct DB connection
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        HierarchicalINIConfiguration parseConfig = ITUtilities.parseConfig(configFile.getAbsolutePath());
+        PostgreSQL postgres = new PostgreSQL(parseConfig);
+        postgres.updateJob(jobFromServer.getJobUuid(), jobFromServer.getVmuuid(), JobState.FAILED);
+
+        jobFromServer =  jobApi.listOwnedWorkflowRuns().get(0);
+        assertThat(jobFromServer.getState() == Job.StateEnum.FAILED);
+
+        // test stdout and stderr
+        postgres.updateJobMessage(jobFromServer.getJobUuid(), "funky town stdout", "funky town stderr");
+        jobFromServer =  jobApi.listOwnedWorkflowRuns().get(0);
+        assertThat(jobFromServer.getStdout().equals("funky town stdout") && jobFromServer.getStderr().equals("funky town stderr"));
+    }
+
+    @Test
     public void testScheduleForSomeoneElse() throws ApiException, IOException, TimeoutException {
         WebClient client = getWebClient();
         JobApi jobApi = new JobApi(client);
@@ -89,6 +117,8 @@ public class TheOneIT {
         myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(allJobs.size() == 1 && myJobs.size() == 0);
     }
+
+
 
     private Job createClientJob() {
         final Job job = new Job();
