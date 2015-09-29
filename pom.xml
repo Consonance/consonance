@@ -217,7 +217,7 @@
             <groupId>net.sourceforge.cobertura</groupId>
             <artifactId>cobertura-runtime</artifactId>
             <version>${cobertura.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
             <type>pom</type>
         </dependency>
     </dependencies>
@@ -430,6 +430,9 @@
                             <failOnWarning>true</failOnWarning>
                             <outputXML>true</outputXML>
                             <ignoreNonCompile>true</ignoreNonCompile>
+                            <usedDependencies>
+                                <usedDependency>net.sourceforge.cobertura:cobertura-runtime</usedDependency>
+                            </usedDependencies>
                         </configuration>
                     </execution>
                 </executions>
