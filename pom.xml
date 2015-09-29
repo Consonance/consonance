@@ -512,6 +512,13 @@
                         <format>html</format>
                     </formats>
                     <aggregate>true</aggregate>
+                    <!-- exclude generated classes -->
+                    <instrumentation>
+                        <excludes>
+                            <exclude>io/swagger/client/*.class</exclude>
+                            <exclude>io/swagger/client/**/*.class</exclude>
+                        </excludes>
+                    </instrumentation>
                 </configuration>
             </plugin>
             <plugin>
