@@ -23,7 +23,7 @@ before_script:
 
 script: 
   - mvn -B clean install -DskipITs=false
-  - mvn -B jacoco:report coveralls:report
+  - mvn -B clean -DskipITs=false jacoco:report coveralls:report
 
 addons:
   postgresql: "9.4"
