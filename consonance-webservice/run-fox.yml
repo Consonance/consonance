@@ -8,7 +8,7 @@ logging:
     - type: console
       threshold: ALL
 
-consonanceConfig: /home/ubuntu/.consonance/config
+consonanceConfig: /home/travis/.consonance/config
 
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 
