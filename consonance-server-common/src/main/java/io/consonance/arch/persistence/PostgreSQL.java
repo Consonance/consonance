@@ -5,7 +5,7 @@ import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
 import io.consonance.common.BasicPostgreSQL;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
@@ -188,7 +188,7 @@ public class PostgreSQL extends BasicPostgreSQL{
     }
 
     private Map<String, String> convertJSON(Entry<Object, Map<String, Object>> entry, String columnName) {
-        JSONObject iniJson = Utilities.parseJSONStr(entry.getValue().get(columnName).toString());
+        JSONObject iniJson = CommonServerTestUtilities.parseJSONStr(entry.getValue().get(columnName).toString());
         HashMap<String, String> ini = new HashMap<>();
         for (Object key : iniJson.keySet()) {
             ini.put((String) key, (String) iniJson.get(key));

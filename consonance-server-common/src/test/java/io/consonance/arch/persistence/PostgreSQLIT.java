@@ -20,8 +20,8 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
-import io.consonance.common.ITUtilities;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -50,7 +50,7 @@ public class PostgreSQLIT {
 
     @BeforeClass
     public static void setup() throws IOException, TimeoutException {
-        ITUtilities.clearState();
+        CommonTestUtilities.clearState();
     }
 
     @AfterClass
@@ -60,7 +60,7 @@ public class PostgreSQLIT {
     @Before
     public void setUp() throws IOException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonServerTestUtilities.parseConfig(configFile.getAbsolutePath());
         this.postgres = new PostgreSQL(parseConfig);
 
         // clean up the database
@@ -225,7 +225,7 @@ public class PostgreSQLIT {
 
     public Job createJob() {
         String uuid = UUID.randomUUID().toString().toLowerCase();
-        Utilities u = new Utilities();
+        CommonServerTestUtilities u = new CommonServerTestUtilities();
         String hashStr = uuid;
         HashMap<String, String> hm = new HashMap<>();
         hm.put("param1", "bar");

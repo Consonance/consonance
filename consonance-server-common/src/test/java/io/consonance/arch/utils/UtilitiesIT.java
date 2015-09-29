@@ -37,58 +37,58 @@ public class UtilitiesIT {
 
     public static HierarchicalINIConfiguration getSettings() {
         File file = FileUtils.getFile("src", "test", "resources", "config");
-        Utilities instance = new Utilities();
-        HierarchicalINIConfiguration settings = Utilities.parseConfig(file.getAbsolutePath());
+        CommonServerTestUtilities instance = new CommonServerTestUtilities();
+        HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(file.getAbsolutePath());
         return settings;
     }
 
     /**
-     * Test of parseJSONStr method, of class Utilities.
+     * Test of parseJSONStr method, of class CommonServerTestUtilities.
      *
      * @throws java.io.IOException
      */
     @Test
     public void testParseJSONStr() throws IOException {
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
-        Utilities instance = new Utilities();
-        JSONObject result = Utilities.parseJSONStr(FileUtils.readFileToString(file));
+        CommonServerTestUtilities instance = new CommonServerTestUtilities();
+        JSONObject result = CommonServerTestUtilities.parseJSONStr(FileUtils.readFileToString(file));
         Assert.assertTrue("parsed json is invalid", !result.isEmpty());
     }
 
     /**
-     * Test of setupQueue method, of class Utilities.
+     * Test of setupQueue method, of class CommonServerTestUtilities.
      *
      * @throws java.io.IOException
      */
     @Test
     public void testSetupQueue() throws IOException, TimeoutException {
-        Utilities instance = new Utilities();
-        Channel result = Utilities.setupQueue(getSettings(), "testing_queue");
+        CommonServerTestUtilities instance = new CommonServerTestUtilities();
+        Channel result = CommonServerTestUtilities.setupQueue(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();
     }
 
     /**
-     * Test of setupExchange method, of class Utilities.
+     * Test of setupExchange method, of class CommonServerTestUtilities.
      *
      * @throws java.io.IOException
      */
     @Test
     public void testSetupMultiQueue() throws IOException, TimeoutException {
-        Utilities instance = new Utilities();
-        Channel result = Utilities.setupExchange(getSettings(), "testing_queue");
+        CommonServerTestUtilities instance = new CommonServerTestUtilities();
+        Channel result = CommonServerTestUtilities.setupExchange(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();
     }
 
     /**
-     * Test of randInRangeInc method, of class Utilities.
+     * Test of randInRangeInc method, of class CommonServerTestUtilities.
      */
     @Test
     public void testRandInRangeInc() {
         int min = 0;
         int max = 10;
-        int result = Utilities.randInRangeInc(min, max);
+        int result = CommonServerTestUtilities.randInRangeInc(min, max);
         assertTrue("randomly generated value not in range", result >= min && result <= max);
     }
 

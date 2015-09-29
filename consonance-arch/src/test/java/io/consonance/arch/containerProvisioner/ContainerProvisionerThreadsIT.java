@@ -16,7 +16,7 @@
  */
 package io.consonance.arch.containerProvisioner;
 
-import io.consonance.common.ITUtilities;
+import io.consonance.common.CommonTestUtilities;
 import joptsimple.OptionException;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -34,7 +34,7 @@ public class ContainerProvisionerThreadsIT {
 
     @BeforeClass
     public static void setup() throws IOException, TimeoutException {
-        ITUtilities.clearState();
+        CommonTestUtilities.clearState();
     }
 
     /**

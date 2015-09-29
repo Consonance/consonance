@@ -9,8 +9,8 @@ import io.consonance.arch.Base;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.Constants;
-import io.consonance.arch.utils.Utilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.httpclient.HttpClient;
@@ -107,7 +107,7 @@ public class WorkerRunnable implements Runnable {
         }
 
         this.maxRuns = maxRuns;
-        settings = Utilities.parseConfig(configFile);
+        settings = CommonServerTestUtilities.parseConfig(configFile);
 
         // TODO: Dynamically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
         // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)
@@ -174,7 +174,7 @@ public class WorkerRunnable implements Runnable {
             // TODO: Add some sort of "local debug" mode so that developers working on their local
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
-            resultsChannel = Utilities.setupExchange(settings, this.resultsQueueName);
+            resultsChannel = CommonServerTestUtilities.setupExchange(settings, this.resultsQueueName);
 
             while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
@@ -189,12 +189,12 @@ public class WorkerRunnable implements Runnable {
 
                 // create the job exchange
                 String exchange = queueName + "_job_exchange";
-                Channel jobChannel = Utilities.setupExchange(settings, exchange, "direct");
+                Channel jobChannel = CommonServerTestUtilities.setupExchange(settings, exchange, "direct");
                 if (jobChannel == null) {
                     throw new NullPointerException("jobChannel is null for queue: " + this.jobQueueName
                             + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
                 }
-                final String finalQueueName = Utilities.setupQueueOnExchange(jobChannel, queueName + "_jobs", flavour);
+                final String finalQueueName = CommonServerTestUtilities.setupQueueOnExchange(jobChannel, queueName + "_jobs", flavour);
                 jobChannel.queueBind(finalQueueName, exchange,flavour);
 
                 QueueingConsumer consumer = new QueueingConsumer(jobChannel);
@@ -210,7 +210,7 @@ public class WorkerRunnable implements Runnable {
 
                         Job job = new Job().fromJSON(message);
 
-                        Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, Utilities.JOB_MESSAGE_TYPE,
+                        Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
                                 "job is starting", this.networkAddress);
                         status.setStderr("");
                         status.setStdout("");
@@ -238,7 +238,7 @@ public class WorkerRunnable implements Runnable {
                         }
 
                         status = new Status(vmUuid, job.getUuid(),
-                                workflowResult.getExitCode() == 0 ? StatusState.SUCCESS : StatusState.FAILED, Utilities.JOB_MESSAGE_TYPE,
+                                workflowResult.getExitCode() == 0 ? StatusState.SUCCESS : StatusState.FAILED, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
                                 "job is finished", networkAddress);
                         status.setStderr(workflowResult.getWorkflowStdErr());
                         status.setStdout(workflowResult.getWorkflowStdout());

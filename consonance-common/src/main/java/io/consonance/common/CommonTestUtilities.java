@@ -14,7 +14,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author dyuen
  */
-public class ITUtilities {
+public class CommonTestUtilities {
 
     private static class TestingPostgres extends BasicPostgreSQL{
         public TestingPostgres(HierarchicalINIConfiguration config){

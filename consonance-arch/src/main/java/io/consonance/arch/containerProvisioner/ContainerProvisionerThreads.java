@@ -16,8 +16,8 @@ import io.consonance.arch.beans.ProvisionState;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.persistence.PostgreSQL;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.Constants;
-import io.consonance.arch.utils.Utilities;
 import io.consonance.arch.worker.WorkerRunnable;
 import joptsimple.OptionSpecBuilder;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -111,12 +111,12 @@ public class ContainerProvisionerThreads extends Base {
             Channel vmChannel = null;
             try {
 
-                HierarchicalINIConfiguration settings = Utilities.parseConfig(config);
+                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(config);
 
                 String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
 
                 // read from
-                vmChannel = Utilities.setupQueue(settings, queueName + "_vms");
+                vmChannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_vms");
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
@@ -178,7 +178,7 @@ public class ContainerProvisionerThreads extends Base {
         public Void call() throws Exception {
             try {
 
-                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
                 if (!settings.containsKey(Constants.PROVISION_MAX_RUNNING_CONTAINERS)) {
                     LOG.info("No max_running_containers specified, skipping provision ");
                     return null;
@@ -296,16 +296,16 @@ public class ContainerProvisionerThreads extends Base {
             Channel resultsChannel = null;
             try {
 
-                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
 
                 String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 final String exchangeName = queueName + "_results";
 
                 // read from
-                resultsChannel = Utilities.setupExchange(settings, exchangeName);
+                resultsChannel = CommonServerTestUtilities.setupExchange(settings, exchangeName);
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
-                String resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupVMs");
+                String resultsQueue = CommonServerTestUtilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupVMs");
                 resultsChannel.queueBind(resultsQueue, exchangeName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
@@ -335,7 +335,7 @@ public class ContainerProvisionerThreads extends Base {
                         db.updateJobMessage(status.getJobUuid(), status.getStdout(), status.getStderr());
                     }
 
-                    if (Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                    if (CommonServerTestUtilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // now update that DB record to be exited
                         // this is actually finishing the VM and not the work
                         if (status.getState() == StatusState.SUCCESS) {

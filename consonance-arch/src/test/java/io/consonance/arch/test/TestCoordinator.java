@@ -9,8 +9,8 @@ import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.coordinator.Coordinator;
 import io.consonance.arch.persistence.PostgreSQL;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.Constants;
-import io.consonance.arch.utils.Utilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolingDataSource;
@@ -37,7 +37,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
-@PrepareForTest({ QueueingConsumer.class, Utilities.class, Coordinator.class, Logger.class, LoggerFactory.class, PostgreSQL.class })
+@PrepareForTest({ QueueingConsumer.class, CommonServerTestUtilities.class, Coordinator.class, Logger.class, LoggerFactory.class, PostgreSQL.class })
 @RunWith(PowerMockRunner.class)
 public class TestCoordinator {
     private static final Logger log = LoggerFactory.getLogger(TestCoordinator.class);
@@ -76,15 +76,15 @@ public class TestCoordinator {
 
         outBuffer = new StringBuffer();
 
-        PowerMockito.mockStatic(Utilities.class);
+        PowerMockito.mockStatic(CommonServerTestUtilities.class);
 
         Mockito.doNothing().when(mockConnection).close();
 
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
 
-        Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(CommonServerTestUtilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
-        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(CommonServerTestUtilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
     }
 
@@ -144,7 +144,7 @@ public class TestCoordinator {
             jsonObj.addProperty(Constants.POSTGRES_PASSWORD, "password");
             jsonObj.addProperty(Constants.POSTGRES_DBNAME, "dbname");
         }
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(jsonObj);
+        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(jsonObj);
     }
 
     private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {

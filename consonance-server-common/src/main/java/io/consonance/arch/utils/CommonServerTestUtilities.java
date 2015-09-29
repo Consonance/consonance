@@ -3,6 +3,7 @@ package io.consonance.arch.utils;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.arch.persistence.PostgreSQL;
 import org.apache.commons.configuration.ConfigurationException;
@@ -24,9 +25,9 @@ import java.util.concurrent.TimeoutException;
  *
  * @author boconnor
  */
-public class Utilities {
+public class CommonServerTestUtilities {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(CommonServerTestUtilities.class);
     // TODO: These really should be refactored out to an enum
     // message types
     public static final String JOB_MESSAGE_TYPE = "job-message-type";
@@ -54,20 +55,21 @@ public class Utilities {
     /**
      * Clears database state and known queues for testing.
      *
-     * @param settings consonance config file
      * @throws IOException
      * @throws java.util.concurrent.TimeoutException
      */
-    public static void clearState(HierarchicalINIConfiguration settings) throws IOException, TimeoutException {
+    public static void clearState() throws IOException, TimeoutException {
+        CommonTestUtilities.clearState();
+
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonServerTestUtilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
         // clean up the database
         postgres.clearDatabase();
 
-        String server = settings.getString(Constants.RABBIT_HOST);
-        String user = settings.getString(Constants.RABBIT_USERNAME);
-        String pass = settings.getString(Constants.RABBIT_PASSWORD);
+        String server = parseConfig.getString(Constants.RABBIT_HOST);
+        String user = parseConfig.getString(Constants.RABBIT_USERNAME);
+        String pass = parseConfig.getString(Constants.RABBIT_PASSWORD);
 
         Channel channel;
 
@@ -81,7 +83,7 @@ public class Utilities {
         channel.basicQos(1);
         channel.confirmSelect();
 
-        String prefix = settings.getString(Constants.RABBIT_QUEUE_NAME);
+        String prefix = parseConfig.getString(Constants.RABBIT_QUEUE_NAME);
         String[] queues = { prefix + "_jobs", prefix + "_orders", prefix + "_vms", prefix + "_for_CleanupJobs", prefix + "_for_CleanupVMs" };
         for (String queue : queues) {
             try {

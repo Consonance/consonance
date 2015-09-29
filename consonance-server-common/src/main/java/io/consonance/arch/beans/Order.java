@@ -1,6 +1,6 @@
 package io.consonance.arch.beans;
 
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import org.json.simple.JSONObject;
 
 import java.util.UUID;
@@ -13,7 +13,7 @@ import java.util.UUID;
  */
 public class Order {
 
-    Utilities u = new Utilities();
+    CommonServerTestUtilities u = new CommonServerTestUtilities();
     private Job job = null;
     private Provision provision = null;
     String orderUUID = UUID.randomUUID().toString().toLowerCase();

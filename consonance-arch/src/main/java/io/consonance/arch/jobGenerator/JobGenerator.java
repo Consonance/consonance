@@ -8,9 +8,9 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Order;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.persistence.PostgreSQL;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.arch.utils.IniFile;
-import io.consonance.arch.utils.Utilities;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionSpecBuilder;
 import joptsimple.util.KeyValuePair;
@@ -100,14 +100,14 @@ public class JobGenerator extends Base {
         }
 
         // UTILS OBJECT
-        settings = Utilities.parseConfig(configFile);
+        settings = CommonServerTestUtilities.parseConfig(configFile);
 
         // CONFIG
         queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         log.info("queue name: " + queueName);
         try {
             // SETUP QUEUE
-            this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
+            this.jchannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_orders");
         } catch (TimeoutException ex) {
             throw new RuntimeException(ex);
         }

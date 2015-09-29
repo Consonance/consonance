@@ -17,7 +17,7 @@
 package io.consonance.arch.coordinator;
 
 import io.consonance.arch.jobGenerator.JobGenerator;
-import io.consonance.common.ITUtilities;
+import io.consonance.common.CommonTestUtilities;
 import joptsimple.OptionException;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -35,7 +35,7 @@ public class CoordinatorIT {
 
     @BeforeClass
     public static void setup() throws IOException, TimeoutException {
-        ITUtilities.clearState();
+        CommonTestUtilities.clearState();
     }
 
     /**

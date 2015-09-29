@@ -1,6 +1,6 @@
 import io.consonance.client.WebClient;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
-import io.consonance.common.ITUtilities;
 import io.dropwizard.testing.junit.DropwizardClientRule;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UserApi;
@@ -40,9 +40,9 @@ public class WebClientTest {
     public final static DropwizardClientRule dropwizard = new DropwizardClientRule(new PingResource());
 
     private WebClient getWebClient() throws IOException, TimeoutException {
-        ITUtilities.clearState();
+        CommonTestUtilities.clearState();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = ITUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
         WebClient client = new WebClient();
         String root = dropwizard.baseUri().toURL().toString();
         client.setBasePath(root);

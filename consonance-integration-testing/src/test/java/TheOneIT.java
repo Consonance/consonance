@@ -1,8 +1,8 @@
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.client.WebClient;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
-import io.consonance.common.ITUtilities;
 import io.consonance.webservice.ConsonanceWebserviceApplication;
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
@@ -38,9 +38,9 @@ public class TheOneIT {
 
 
     private WebClient getWebClient() throws IOException, TimeoutException {
-        ITUtilities.clearState();
+        CommonTestUtilities.clearState();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = ITUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
         WebClient client = new WebClient();
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         client.addDefaultHeader("Authorization", "Bearer " + parseConfig.getString(Constants.WEBSERVICE_TOKEN));
@@ -86,7 +86,7 @@ public class TheOneIT {
 
         // state change using a direct DB connection
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = ITUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
         postgres.updateJob(jobFromServer.getJobUuid(), jobFromServer.getVmuuid(), JobState.FAILED);
 
@@ -108,7 +108,7 @@ public class TheOneIT {
         assertThat(allJobs.size() == 0 && myJobs.size() == 0);
         // schedule a job for someone else using a direct DB connection
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = ITUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
         postgres.createJob(createServerJob());
 
