@@ -17,6 +17,8 @@
 package io.consonance.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.Constants;
@@ -24,6 +26,7 @@ import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
+import io.dropwizard.setup.Environment;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -53,14 +56,16 @@ public class ConfigurationResource {
     private final HierarchicalINIConfiguration settings;
     private final String queueName;
     private final ConsonanceWebserviceConfiguration config;
+    private final Environment environment;
     private Channel jchannel = null;
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurationResource.class);
 
-    public ConfigurationResource(ConsonanceWebserviceConfiguration config) {
+    public ConfigurationResource(ConsonanceWebserviceConfiguration config, Environment environment) {
         this.config = config;
         this.settings = CommonServerTestUtilities.parseConfig(config.getConsonanceConfig());
         this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
+        this.environment = environment;
     }
 
     @GET
@@ -72,14 +77,15 @@ public class ConfigurationResource {
             SortedMap<String, String> environment = new TreeMap<>();
             // handle dropwizard config
             environment.put("consonance.authenticationCachePolicy", config.getAuthenticationCachePolicy().toParsableString());
-            environment.put("consonance.database.url", config.getDataSourceFactory().getUrl());
-            environment.put("consonance.database.user", config.getDataSourceFactory().getUrl());
-            environment.put("consonance.database.password", config.getDataSourceFactory().getUrl());
-            environment.put("consonance.database.password", config.getDataSourceFactory().getUrl());
-            
-            environment.put("consonance.httpclient", config.getHttpClientConfiguration().toString());
-            environment.put("consonance.consonanceConfig", config.getConsonanceConfig());
+            ObjectMapper mapper = this.environment.getObjectMapper();
+            try {
+                environment.put("consonance.database", mapper.writeValueAsString(config.getDataSourceFactory()));
+                environment.put("consonance.httpclient", mapper.writeValueAsString(config.getHttpClientConfiguration()));
+            } catch (JsonProcessingException e) {
+                throw new WebApplicationException(e, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
 
+            environment.put("consonance.consonanceConfig", config.getConsonanceConfig());
             // handle consonance config
             final Iterator<String> keys = settings.getKeys();
             keys.forEachRemaining(key -> environment.put(key, settings.getString(key)));

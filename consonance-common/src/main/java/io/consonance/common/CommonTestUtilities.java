@@ -1,6 +1,5 @@
 package io.consonance.common;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.io.FileUtils;
@@ -38,17 +37,9 @@ public class CommonTestUtilities {
      */
     public static void clearState() throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         TestingPostgres postgres = new TestingPostgres(parseConfig);
         postgres.clearDatabase();
-    }
-
-    public static HierarchicalINIConfiguration parseConfig(String path) {
-        try {
-            return new HierarchicalINIConfiguration(path);
-        } catch (ConfigurationException ex) {
-            throw new RuntimeException(ex);
-        }
     }
 
 }

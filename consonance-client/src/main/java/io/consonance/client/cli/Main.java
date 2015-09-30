@@ -2,10 +2,20 @@ package io.consonance.client.cli;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ObjectArrays;
+import io.consonance.client.WebClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.JSON;
+import io.swagger.client.api.ConfigurationApi;
+import io.swagger.client.api.JobApi;
+import io.swagger.client.model.Job;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
+import javax.naming.OperationNotSupportedException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /*
@@ -160,49 +170,40 @@ public class Main {
         System.out.println(output);
     }
 
-
-    private static void runJob(List<String> args) {
+    private static void jobStatus(List<String> args, JobApi jobApi) {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: seqware workflow-run --help");
-            out("       seqware workflow-run <sub-command> [--help]");
+            out("Usage: consonance status --help");
+            out("       consonance status <params>");
             out("");
             out("Description:");
-            out("  Interact with workflow runs.");
+            out("  List the status of a given job.");
             out("");
-            out("Sub-commands:");
-            out("  cancel              Cancel a submitted or running workflow run");
-            out("  launch-scheduled    Launch scheduled workflow runs");
-            out("  propagate-statuses  Propagate workflow engine statuses to seqware meta DB");
-            out("  retry               Retry a failed or cancelled workflow run skipping completed steps");
-            out("  reschedule          Reschedule a workflow-run to re-run from scratch as a new run");
-            out("  stderr              Obtain the stderr output of the run");
-            out("  stdout              Obtain the stdout output of the run");
-            out("  report              The details of a given workflow-run");
-            out("  watch               Watch a workflow-run in progress");
-            out("  ini                 Output the effective ini for a workflow run");
-            out("  delete              Recursively delete workflow-runs");
+            out("Required parameters (one of):");
+            out("  --job <uuid>  The UUID of the job");
             out("");
         } else {
-            String cmd = args.remove(0);
-            if (null != cmd) {
-                switch (cmd) {
-
-                default:
-                    invalid("run", cmd);
-                    break;
-                }
+            String jobUuid = reqVal(args, "--job");
+            try {
+                JSON json = new JSON();
+                final Job workflowRun = jobApi.getWorkflowRun(jobUuid);
+                out(json.serialize(workflowRun));
+            } catch (ApiException e) {
+                kill("consonance: could not retrieve status of '%s'.", jobUuid);
             }
         }
     }
 
-    public static void main(String[] argv) {
+
+
+    public static void main(String[] argv) throws IOException, TimeoutException, ApiException, OperationNotSupportedException {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
         if (flag(args, "--debug")) {
             DEBUG.set(true);
         }
         if (flag(args, "--verbose")) {
             VERBOSE.set(true);
+            throw new OperationNotSupportedException("Not implemented yet");
         }
 
         if (isHelp(args, true)) {
@@ -225,19 +226,25 @@ public class Main {
         } else {
             try {
                 String cmd = args.remove(0);
+                HierarchicalINIConfiguration config = new HierarchicalINIConfiguration();
+                WebClient client = new WebClient(config);
+                client.setDebugging(DEBUG.get());
+
                 if (null != cmd) {
                     switch (cmd) {
                     case "-v":
                     case "--version":
-                        kill("seqware: version information is provided by the wrapper script.");
+                        kill("consonance: version information is provided by the wrapper script.");
                         break;
                     case "--metadata":
+                        ConfigurationApi configApi = new ConfigurationApi(client);
+                        out(configApi.listConfiguration());
                         break;
                     case "status":
-                        //query(args);
+                        jobStatus(args, new JobApi(client));
                         break;
                     case "update":
-                        //bundle(args);
+                        throw new OperationNotSupportedException("Not implemented yet");
                         break;
                     case "run":
                         runJob(args);

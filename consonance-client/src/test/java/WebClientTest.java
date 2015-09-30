@@ -1,6 +1,7 @@
 import io.consonance.client.WebClient;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
+import io.consonance.common.Utilities;
 import io.dropwizard.testing.junit.DropwizardClientRule;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UserApi;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeoutException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * These tests mock up a Dropwizard instance in order to unit test the client.
+ * These tests mock up a DropWizard instance in order to unit test the client.
  * @author dyuen
  */
 public class WebClientTest {
@@ -39,20 +40,17 @@ public class WebClientTest {
     @ClassRule
     public final static DropwizardClientRule dropwizard = new DropwizardClientRule(new PingResource());
 
-    private WebClient getWebClient() throws IOException, TimeoutException {
+    private WebClient getTestingWebClient() throws IOException, TimeoutException{
         CommonTestUtilities.clearState();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
-        WebClient client = new WebClient();
         String root = dropwizard.baseUri().toURL().toString();
-        client.setBasePath(root);
-        client.addDefaultHeader("Authorization", "Bearer " + parseConfig.getString(Constants.WEBSERVICE_TOKEN));
-        return client;
+        final HierarchicalINIConfiguration config = Utilities.parseConfig(configFile.getAbsolutePath());
+        return new WebClient(root, config.getString(Constants.WEBSERVICE_TOKEN));
     }
 
     @Test
     public void testListUsers() throws ApiException, IOException, TimeoutException {
-        WebClient client = getWebClient();
+        WebClient client = this.getTestingWebClient();
         UserApi userApi = new UserApi(client);
         final List<ConsonanceUser> consonanceUsers = userApi.listUsers();
         // should just be the one admin user after we clear it out
