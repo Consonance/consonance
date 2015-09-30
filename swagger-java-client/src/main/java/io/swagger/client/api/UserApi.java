@@ -1,18 +1,22 @@
 package io.swagger.client.api;
 
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
+
+import io.swagger.client.model.*;
+
+import java.util.*;
+
 import io.swagger.client.model.ConsonanceUser;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.io.File;
 import java.util.Map;
+import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T21:24:04.813Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-30T18:22:06.933Z")
 public class UserApi {
   private ApiClient apiClient;
 
@@ -40,6 +44,7 @@ public class UserApi {
    */
   public List<ConsonanceUser> listUsers () throws ApiException {
     Object postBody = null;
+    byte[] postBinaryBody = null;
     
     // create path and map variables
     String path = "/user".replaceAll("\\{format\\}","json");
@@ -68,9 +73,15 @@ public class UserApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<ConsonanceUser>>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+
     
+    
+    TypeRef returnType = new TypeRef<List<ConsonanceUser>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+    
+
+
   }
   
   /**
@@ -81,12 +92,13 @@ public class UserApi {
    */
   public ConsonanceUser addUser (ConsonanceUser body) throws ApiException {
     Object postBody = body;
+    byte[] postBinaryBody = null;
     
-    // verify the required parameter 'body' is set
-    if (body == null) {
-      throw new ApiException(400, "Missing the required parameter 'body' when calling addUser");
-    }
-    
+     // verify the required parameter 'body' is set
+     if (body == null) {
+        throw new ApiException(400, "Missing the required parameter 'body' when calling addUser");
+     }
+     
     // create path and map variables
     String path = "/user".replaceAll("\\{format\\}","json");
 
@@ -114,9 +126,15 @@ public class UserApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<ConsonanceUser>() {};
-    return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+
     
+    
+    TypeRef returnType = new TypeRef<ConsonanceUser>() {};
+    return apiClient.invokeAPI(path, "POST", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+    
+
+
   }
   
   /**
@@ -127,12 +145,13 @@ public class UserApi {
    */
   public ConsonanceUser getUser (String name) throws ApiException {
     Object postBody = null;
+    byte[] postBinaryBody = null;
     
-    // verify the required parameter 'name' is set
-    if (name == null) {
-      throw new ApiException(400, "Missing the required parameter 'name' when calling getUser");
-    }
-    
+     // verify the required parameter 'name' is set
+     if (name == null) {
+        throw new ApiException(400, "Missing the required parameter 'name' when calling getUser");
+     }
+     
     // create path and map variables
     String path = "/user/{name}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()));
@@ -161,9 +180,15 @@ public class UserApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<ConsonanceUser>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+
     
+    
+    TypeRef returnType = new TypeRef<ConsonanceUser>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+    
+
+
   }
   
 }
