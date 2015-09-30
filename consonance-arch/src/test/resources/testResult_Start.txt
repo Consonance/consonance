@@ -1,8 +1,5 @@
- [x] Received JOBS REQUEST '{
-  "state" : "START",
   "job_id" : 0,
-  "job_uuid" : "1234567890",
-  "workflow_name" : "HelloWorld",
+  "state" : "START",
   "workflow_version" : "1.0-SNAPSHOT",
   "workflow_path" : "/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0",
   "job_hash" : "asdlk2390aso12jvrej",

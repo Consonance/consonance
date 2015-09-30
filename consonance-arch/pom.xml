@@ -122,6 +122,12 @@
             <groupId>io.consonance</groupId>
             <artifactId>consonance-common</artifactId>
             <version>1.2-alpha.0-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>joda-time</groupId>
+                    <artifactId>joda-time</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -219,6 +225,14 @@
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpcore</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jcl-over-slf4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jcl-over-slf4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -226,6 +240,16 @@
             <artifactId>commons-httpclient</artifactId>
             <version>3.1</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-dbcp2</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -242,7 +266,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
                 <configuration>
                     <!-- put your configurations here -->
                     <filters>

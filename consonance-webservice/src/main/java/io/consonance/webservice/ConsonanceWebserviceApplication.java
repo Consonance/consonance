@@ -16,10 +16,14 @@
  */
 package io.consonance.webservice;
 
-import info.consonance.arch.beans.Job;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import io.consonance.arch.beans.Job;
+import io.consonance.arch.beans.Provision;
 import io.consonance.webservice.jdbi.JobDAO;
-import io.consonance.webservice.resources.TemplateHealthCheck;
+import io.consonance.webservice.jdbi.ProvisionDAO;
 import io.consonance.webservice.resources.JobResource;
+import io.consonance.webservice.resources.TemplateHealthCheck;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
@@ -31,11 +35,12 @@ import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
-import java.util.EnumSet;
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
+import java.util.EnumSet;
 
 /**
  *
@@ -48,7 +53,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
     }
 
     private final HibernateBundle<ConsonanceWebserviceConfiguration> hibernate = new HibernateBundle<ConsonanceWebserviceConfiguration>(
-            Job.class) {
+            Job.class, Provision.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(ConsonanceWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -72,6 +77,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         beanConfig.setScan(true);
         beanConfig.setTitle("Swagger Consonance Prototype");
 
+
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
 
@@ -88,9 +94,14 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.healthChecks().register("template", healthCheck);
 
         final JobDAO dao = new JobDAO(hibernate.getSessionFactory());
+        final ProvisionDAO provisionDAO = new ProvisionDAO(hibernate.getSessionFactory());
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
-        environment.jersey().register(new JobResource(dao));
+        environment.getObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+        environment.getObjectMapper().disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        environment.getObjectMapper().enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+
+        environment.jersey().register(new JobResource(dao,provisionDAO, configuration.getConsonanceConfig()));
 
         // swagger stuff
 

@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
+import org.hibernate.validator.constraints.NotEmpty;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.NotEmpty;
 
 public class ConsonanceWebserviceConfiguration extends Configuration {
 
@@ -20,6 +21,9 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
 
     @NotEmpty
     private String template;
+
+    @NotEmpty
+    private String consonanceConfig;
 
 
     @JsonProperty("database")
@@ -40,6 +44,16 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
     @JsonProperty
     public void setTemplate(String template) {
         this.template = template;
+    }
+
+    @JsonProperty
+    public String getConsonanceConfig() {
+        return consonanceConfig;
+    }
+
+    @JsonProperty
+    public void setConsonanceConfig(String consonanceConfig) {
+        this.consonanceConfig = consonanceConfig;
     }
 
 

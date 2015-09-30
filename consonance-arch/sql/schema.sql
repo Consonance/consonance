@@ -1,61 +1,243 @@
 --
--- Name: provision_id_seq; Type: SEQUENCE; Schema: public; Owner: seqware
+-- PostgreSQL database dump
 --
 
-CREATE SEQUENCE provision_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MAXVALUE
-    NO MINVALUE
-    CACHE 1;
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
 
 --
--- Name: provision; Type: TABLE; Schema: public; Owner: seqware; Tablespace:
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
-CREATE TABLE provision (
-    provision_id integer DEFAULT nextval('provision_id_seq'::regclass) NOT NULL,
-    status text,
-    provision_uuid text,
-    job_uuid text,
-    ip_address text,
-    cores integer,
-    mem_gb integer,
-    storage_gb integer,
-    update_timestamp timestamp default current_timestamp,
-    create_timestamp timestamp default current_timestamp
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: extra_files; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+CREATE TABLE extra_files (
+    job_id integer NOT NULL,
+    content text,
+    path text NOT NULL
 );
 
---
--- Name: job_id_seq; Type: SEQUENCE; Schema: public; Owner: seqware
---
 
-CREATE SEQUENCE job_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MAXVALUE
-    NO MINVALUE
-    CACHE 1;
+ALTER TABLE extra_files OWNER TO queue_user;
 
 --
--- Name: provision; Type: TABLE; Schema: public; Owner: seqware; Tablespace:
+-- Name: ini_params; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+CREATE TABLE ini_params (
+    job_id integer NOT NULL,
+    value text,
+    key text NOT NULL
+);
+
+
+ALTER TABLE ini_params OWNER TO queue_user;
+
+--
+-- Name: job; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
 --
 
 CREATE TABLE job (
-    job_id integer DEFAULT nextval('job_id_seq'::regclass) NOT NULL,
+    job_id integer NOT NULL,
+    container_image_descriptor text,
+    container_runtime_descriptor text,
+    create_timestamp timestamp without time zone,
+    end_user text,
+    flavour text,
+    ini text,
+    job_hash text,
+    message_type text,
     status text,
+    stderr text,
+    stdout text,
+    update_timestamp timestamp without time zone,
     job_uuid text,
     provision_uuid text,
     workflow text,
-    workflow_version text,
-    job_hash text,
-    ini text,
-    end_user text, 
-    flavour text,
-    extra_files jsonb,
-    stdout text,
-    stderr text,
-    update_timestamp timestamp default current_timestamp,
-    create_timestamp timestamp default current_timestamp
+    workflow_path text,
+    workflow_version text
 );
+
+
+ALTER TABLE job OWNER TO queue_user;
+
+--
+-- Name: job_job_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
+--
+
+CREATE SEQUENCE job_job_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE job_job_id_seq OWNER TO queue_user;
+
+--
+-- Name: job_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
+--
+
+ALTER SEQUENCE job_job_id_seq OWNED BY job.job_id;
+
+
+--
+-- Name: provision; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+CREATE TABLE provision (
+    provision_id integer NOT NULL,
+    cores integer,
+    create_timestamp text,
+    ip_address text,
+    job_uuid text,
+    mem_gb integer,
+    provision_uuid text,
+    status text,
+    storage_gb integer,
+    update_timestamp text
+);
+
+
+ALTER TABLE provision OWNER TO queue_user;
+
+--
+-- Name: provision_ansibleplaybooks; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+CREATE TABLE provision_ansibleplaybooks (
+    provision_provision_id integer NOT NULL,
+    ansibleplaybooks character varying(255)
+);
+
+
+ALTER TABLE provision_ansibleplaybooks OWNER TO queue_user;
+
+--
+-- Name: provision_provision_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
+--
+
+CREATE SEQUENCE provision_provision_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE provision_provision_id_seq OWNER TO queue_user;
+
+--
+-- Name: provision_provision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
+--
+
+ALTER SEQUENCE provision_provision_id_seq OWNED BY provision.provision_id;
+
+
+--
+-- Name: job_id; Type: DEFAULT; Schema: public; Owner: queue_user
+--
+
+ALTER TABLE ONLY job ALTER COLUMN job_id SET DEFAULT nextval('job_job_id_seq'::regclass);
+
+
+--
+-- Name: provision_id; Type: DEFAULT; Schema: public; Owner: queue_user
+--
+
+ALTER TABLE ONLY provision ALTER COLUMN provision_id SET DEFAULT nextval('provision_provision_id_seq'::regclass);
+
+
+--
+-- Name: extra_files_pkey; Type: CONSTRAINT; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+ALTER TABLE ONLY extra_files
+    ADD CONSTRAINT extra_files_pkey PRIMARY KEY (job_id, path);
+
+
+--
+-- Name: ini_params_pkey; Type: CONSTRAINT; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+ALTER TABLE ONLY ini_params
+    ADD CONSTRAINT ini_params_pkey PRIMARY KEY (job_id, key);
+
+
+--
+-- Name: job_pkey; Type: CONSTRAINT; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+ALTER TABLE ONLY job
+    ADD CONSTRAINT job_pkey PRIMARY KEY (job_id);
+
+
+--
+-- Name: provision_pkey; Type: CONSTRAINT; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+ALTER TABLE ONLY provision
+    ADD CONSTRAINT provision_pkey PRIMARY KEY (provision_id);
+
+
+--
+-- Name: fk_5dtb4x4tewkcfpjw58v68opmb; Type: FK CONSTRAINT; Schema: public; Owner: queue_user
+--
+
+ALTER TABLE ONLY provision_ansibleplaybooks
+    ADD CONSTRAINT fk_5dtb4x4tewkcfpjw58v68opmb FOREIGN KEY (provision_provision_id) REFERENCES provision(provision_id);
+
+
+--
+-- Name: fk_d6ymmeamjm0wheh1jjwhoky6x; Type: FK CONSTRAINT; Schema: public; Owner: queue_user
+--
+
+ALTER TABLE ONLY extra_files
+    ADD CONSTRAINT fk_d6ymmeamjm0wheh1jjwhoky6x FOREIGN KEY (job_id) REFERENCES job(job_id);
+
+
+--
+-- Name: fk_jqnqnwsqveuw1x3kjlhqs7fve; Type: FK CONSTRAINT; Schema: public; Owner: queue_user
+--
+
+ALTER TABLE ONLY ini_params
+    ADD CONSTRAINT fk_jqnqnwsqveuw1x3kjlhqs7fve FOREIGN KEY (job_id) REFERENCES job(job_id);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
 

@@ -16,10 +16,11 @@
  */
 package io.consonance.webservice.jdbi;
 
-import info.consonance.arch.beans.Job;
+import io.consonance.arch.beans.Job;
 import io.dropwizard.hibernate.AbstractDAO;
-import java.util.List;
 import org.hibernate.SessionFactory;
+
+import java.util.List;
 
 /**
  *
@@ -30,15 +31,23 @@ public class JobDAO extends AbstractDAO<Job> {
         super(factory);
     }
 
-    public Job findById(Long id) {
+    public Job findById(int id) {
         return get(id);
     }
 
-    public long create(Job job) {
+    public int create(Job job) {
         return persist(job).getJobId();
     }
 
     public List<Job> findAll() {
-        return list(namedQuery("io.consonance.webservice.core.WorkflowRun.findAll"));
+        return list(namedQuery("io.consonance.arch.beans.core.Job.findAll"));
+    }
+
+    public Job findJobByUUID(String uuid){
+        return uniqueResult(namedQuery("io.consonance.arch.beans.core.Job.findByJobUUID").setString("jobuuid",uuid));
+    }
+
+    public List<Job> findAll(String endUser) {
+        return list(namedQuery("io.consonance.arch.beans.core.Job.findAllByUser").setString("endUser",endUser));
     }
 }
