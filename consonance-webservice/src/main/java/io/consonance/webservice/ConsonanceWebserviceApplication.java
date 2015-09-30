@@ -24,6 +24,7 @@ import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.jdbi.ConsonanceUserDAO;
 import io.consonance.webservice.jdbi.JobDAO;
 import io.consonance.webservice.jdbi.ProvisionDAO;
+import io.consonance.webservice.resources.ConfigurationResource;
 import io.consonance.webservice.resources.JobResource;
 import io.consonance.webservice.resources.TemplateHealthCheck;
 import io.consonance.webservice.resources.UserResource;
@@ -119,6 +120,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
 
         environment.jersey().register(new JobResource(dao, provisionDAO, configuration.getConsonanceConfig()));
         environment.jersey().register(new UserResource(userDAO));
+        environment.jersey().register(new ConfigurationResource(configuration));
 
         // swagger stuff
 

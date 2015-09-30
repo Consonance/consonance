@@ -1,5 +1,6 @@
 package io.consonance.client.cli;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ObjectArrays;
 
 import java.util.ArrayList;
@@ -12,44 +13,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class Main {
 
-    /**
-     * Take a List and create a 'delim' delimited String.
-     *
-     * @param tokens
-     * @param delim
-     * @return
-     */
-    private static String dl(List<String> tokens, String delim) {
-        if (tokens.isEmpty()) {
-            return "";
-        } else {
-            StringBuilder sb = new StringBuilder(tokens.get(0));
-            for (int i = 1; i < tokens.size(); i++) {
-                sb.append(delim);
-                sb.append(tokens.get(i));
-            }
-            return sb.toString();
-        }
-    }
-
-    /**
-     * Create a comma delimited string from a List
-     *
-     * @param tokens
-     * @return
-     */
-    private static String cdl(List<String> tokens) {
-        return dl(tokens, ",");
-    }
-
-    private static int swid(String swid) {
-        try {
-            return Integer.parseInt(swid);
-        } catch (NumberFormatException e) {
-            kill("seqware: invalid seqware accession: '" + swid + "'");
-            return 0; // non-reachable
-        }
-    }
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -57,20 +20,6 @@ public class Main {
 
     private static void err(String format, Object... args) {
         System.err.println(String.format(format, args));
-    }
-
-    private static List<String> processOverrideParams(List<String> override) {
-        List<String> overrideParams = new ArrayList<>();
-        if (!override.isEmpty()) {
-            overrideParams.add("--");
-            for (String entry : override) {
-                String key = entry.substring(0, entry.indexOf('='));
-                String value = entry.substring(entry.indexOf('=') + 1);
-                overrideParams.add("--" + key);
-                overrideParams.add(value);
-            }
-        }
-        return overrideParams;
     }
 
     private static class Kill extends RuntimeException {
@@ -87,12 +36,6 @@ public class Main {
 
     private static void invalid(String cmd, String sub) {
         kill("consonance: '%s %s' is not a consonance command. See 'consonance %s --help'.", cmd, sub, cmd);
-    }
-
-    private static void extras(List<String> args, String curCommand) {
-        if (args.size() > 0) {
-            kill("consonance: unexpected arguments to '%s': %s", curCommand, dl(args, " "));
-        }
     }
 
     private static boolean flag(List<String> args, String flag) {
@@ -191,7 +134,7 @@ public class Main {
                     args[i] = "'" + args[i] + "'";
                 }
             }
-            out("PluginRunner.main: %s", dl(Arrays.asList(args), " "));
+            out("PluginRunner.main: %s", Joiner.on(",").join(args));
         } else {
             System.out.println("Do it");
             //PluginRunner.main(args);
