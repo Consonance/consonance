@@ -15,7 +15,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-30T18:22:06.933Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-30T21:10:20.461Z")
 public class ConfigurationApi {
   private ApiClient apiClient;
 
@@ -43,7 +43,6 @@ public class ConfigurationApi {
    */
   public String listConfiguration () throws ApiException {
     Object postBody = null;
-    byte[] postBinaryBody = null;
     
     // create path and map variables
     String path = "/configuration".replaceAll("\\{format\\}","json");
@@ -72,15 +71,9 @@ public class ConfigurationApi {
     String[] authNames = new String[] {  };
 
     
-
-    
-    
     TypeRef returnType = new TypeRef<String>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, postBinaryBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
-    
-
-
   }
   
 }
