@@ -71,7 +71,7 @@ public class ConfigurationResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List configuration", notes = "List the jobs owned by the consonanceUser", response = String.class, responseContainer = "SortedMap", authorizations = @Authorization(value = "api_key"))
+    @ApiOperation(value = "List configuration", notes = "List configuration for debugging", response = String.class, responseContainer = "SortedMap", authorizations = @Authorization(value = "api_key"))
     public SortedMap<String, String> listConfiguration(@ApiParam(hidden = true) @Auth ConsonanceUser consonanceUser) {
         if (consonanceUser.isAdmin()) {
             SortedMap<String, String> environment = new TreeMap<>();

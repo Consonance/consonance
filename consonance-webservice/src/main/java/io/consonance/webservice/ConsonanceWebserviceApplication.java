@@ -117,6 +117,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.getObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
         environment.getObjectMapper().disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         environment.getObjectMapper().enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+        environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
         environment.jersey().register(new JobResource(dao, provisionDAO, configuration.getConsonanceConfig()));
         environment.jersey().register(new UserResource(userDAO));

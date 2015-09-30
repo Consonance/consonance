@@ -1,12 +1,9 @@
 package io.consonance.client;
 
 import io.consonance.common.Constants;
-import io.consonance.common.Utilities;
 import io.swagger.client.ApiClient;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.mortbay.thread.Timeout;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 

@@ -3,6 +3,7 @@ package io.consonance.client.cli;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ObjectArrays;
 import io.consonance.client.WebClient;
+import io.consonance.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.JSON;
 import io.swagger.client.api.ConfigurationApi;
@@ -11,6 +12,7 @@ import io.swagger.client.model.Job;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 import javax.naming.OperationNotSupportedException;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Based on the SeqWare command.line.
  */
 public class Main {
-
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -66,7 +67,7 @@ public class Main {
     private static List<String> optVals(List<String> args, String key) {
         List<String> vals = new ArrayList<>();
 
-        for (int i = 0; i < args.size();) {
+        for (int i = 0; i < args.size(); /** do nothing */ i = i) {
             String s = args.get(i);
             if (key.equals(s)) {
                 args.remove(i);
@@ -157,7 +158,6 @@ public class Main {
 
     // COMMANDS:
 
-
     /**
      * Prints to the console without applying any formatting. Useful for situations where output contains unintended formatting strings,
      * which would break the {@link #out(String format, Object... args)} function. For example, if you try to print an INI file containing
@@ -194,8 +194,6 @@ public class Main {
         }
     }
 
-
-
     public static void main(String[] argv) throws IOException, TimeoutException, ApiException, OperationNotSupportedException {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
         if (flag(args, "--debug")) {
@@ -226,8 +224,9 @@ public class Main {
         } else {
             try {
                 String cmd = args.remove(0);
-                HierarchicalINIConfiguration config = new HierarchicalINIConfiguration();
-                WebClient client = new WebClient(config);
+                File configFile = new File(System.getProperty("user.home"), ".consonance/config");
+                final HierarchicalINIConfiguration hierarchicalINIConfiguration = Utilities.parseConfig(configFile.getAbsolutePath());
+                WebClient client = new WebClient(hierarchicalINIConfiguration);
                 client.setDebugging(DEBUG.get());
 
                 if (null != cmd) {
@@ -245,10 +244,10 @@ public class Main {
                         break;
                     case "update":
                         throw new OperationNotSupportedException("Not implemented yet");
-                        break;
+                        //break;
                     case "run":
-                        runJob(args);
-                        break;
+                        throw new OperationNotSupportedException("Not implemented yet");
+                        //break;
                     default:
                         invalid(cmd);
                         break;
