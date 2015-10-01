@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -113,12 +114,34 @@ public class Job extends BaseBean{
     @ApiModelProperty(value = "deprecated, key values for seqware workflows")
     private Map<String, String> ini = new HashMap<>();
 
-    @ElementCollection(fetch = FetchType.EAGER,targetClass = String.class)
+    @Embeddable
+    public static class ExtraFile{
+        @ApiModelProperty(value = "contents of the extra file")
+        @Column(name="ini",columnDefinition="text")
+        private final String contents;
+        @ApiModelProperty(value = "whether to keep this file after workflow execution")
+        @Column(name="keep")
+        private final boolean keep;
+
+        public ExtraFile(String contents, boolean keep){
+            this.contents = contents;
+            this.keep = keep;
+        }
+
+        public String getContents() {
+            return contents;
+        }
+
+        public boolean isKeep() {
+            return keep;
+        }
+    }
+    @ElementCollection(fetch = FetchType.EAGER, targetClass=ExtraFile.class)
     @MapKeyColumn(name="path", columnDefinition = "text")
     @Column(name="content",columnDefinition = "text")
     @CollectionTable(name="extra_files", joinColumns=@JoinColumn(name="job_id"))
-    @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
-    private Map<String, String> extraFiles = new HashMap<>();
+    @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path:keep=content")
+    private Map<String, ExtraFile> extraFiles = new HashMap<>();
 
     @ApiModelProperty(value = "stdout from the job run")
     @Column(columnDefinition="text")
@@ -205,12 +228,12 @@ public class Job extends BaseBean{
         return ini;
     }
 
-    public Map<String, String> getExtraFiles() {
+    public Map<String, Job.ExtraFile> getExtraFiles() {
         return extraFiles;
     }
 
 
-    public void setExtraFiles(Map<String, String> ini) {
+    public void setExtraFiles(Map<String, ExtraFile> ini) {
         this.extraFiles = ini;
     }
 
