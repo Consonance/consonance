@@ -61,10 +61,10 @@ import java.util.concurrent.TimeoutException;
  *
  * @author dyuen
  */
-@Path("/job")
-@Api(value = "/job", tags = "job")
+@Path("/order")
+@Api(value = "/order", tags = "order")
 @Produces(MediaType.APPLICATION_JSON)
-public class JobResource {
+public class OrderResource {
     public static final int DEFAULT_DISKSPACE = 1024;
     public static final int DEFAULT_MEMORY = 128;
     public static final int DEFAULT_NUM_CORES = 8;
@@ -75,9 +75,9 @@ public class JobResource {
     private final ProvisionDAO provisionDAO;
     private Channel jchannel = null;
 
-    private static final Logger LOG = LoggerFactory.getLogger(JobResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OrderResource.class);
 
-    public JobResource(JobDAO dao, ProvisionDAO provisionDAO, String consonanceConfigFile) {
+    public OrderResource(JobDAO dao, ProvisionDAO provisionDAO, String consonanceConfigFile) {
         this.dao = dao;
         this.provisionDAO = provisionDAO;
         this.settings = CommonServerTestUtilities.parseConfig(consonanceConfigFile);
@@ -123,9 +123,10 @@ public class JobResource {
     @POST
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Schedule a new workflow run")
+    @ApiOperation(value = "Schedule a new order")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_METHOD_NOT_ALLOWED, message = "Invalid input") })
-    public Job addWorkflowRun(@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser, @ApiParam(value = "Workflow run that needs to be added to the store", required = true) Job job) {
+    public Job addOrder(@ApiParam(hidden = true) @Auth ConsonanceUser consonanceUser,
+            @ApiParam(value = "Order that needs to be added to the store", required = true) Job job) {
         // enforce that users schedule jobs as themselves
         job.setEndUser(consonanceUser.getName());
 

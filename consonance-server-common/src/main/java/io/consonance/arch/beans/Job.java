@@ -118,10 +118,14 @@ public class Job extends BaseBean{
     public static class ExtraFile{
         @ApiModelProperty(value = "contents of the extra file")
         @Column(name="ini",columnDefinition="text")
-        private final String contents;
+        private String contents;
         @ApiModelProperty(value = "whether to keep this file after workflow execution")
         @Column(name="keep")
-        private final boolean keep;
+        private boolean keep;
+
+        public ExtraFile(){
+
+        }
 
         public ExtraFile(String contents, boolean keep){
             this.contents = contents;
@@ -134,6 +138,23 @@ public class Job extends BaseBean{
 
         public boolean isKeep() {
             return keep;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            final ExtraFile other = (ExtraFile) obj;
+            return Objects.equals(this.keep, other.keep) && Objects.equals(this.contents, other.contents);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(keep, contents);
         }
     }
     @ElementCollection(fetch = FetchType.EAGER, targetClass=ExtraFile.class)
