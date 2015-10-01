@@ -77,8 +77,9 @@ public class ConfigurationResource {
             SortedMap<String, String> environment = new TreeMap<>();
             // handle dropwizard config
             environment.put("consonance.authenticationCachePolicy", config.getAuthenticationCachePolicy().toParsableString());
-            ObjectMapper mapper = this.environment.getObjectMapper();
+            ObjectMapper mapper = new ObjectMapper();
             try {
+                config.getDataSourceFactory().setPassword("<redacted>");
                 environment.put("consonance.database", mapper.writeValueAsString(config.getDataSourceFactory()));
                 environment.put("consonance.httpclient", mapper.writeValueAsString(config.getHttpClientConfiguration()));
             } catch (JsonProcessingException e) {
@@ -88,7 +89,7 @@ public class ConfigurationResource {
             environment.put("consonance.consonanceConfig", config.getConsonanceConfig());
             // handle consonance config
             final Iterator<String> keys = settings.getKeys();
-            keys.forEachRemaining(key -> environment.put(key, settings.getString(key)));
+            keys.forEachRemaining(key -> environment.put(key, key.contains("Pass") || key.contains("pass") ? "<redacted>" : settings.getString(key)));
             return environment;
         }
         throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);

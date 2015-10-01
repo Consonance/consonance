@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 /**
- * The token resource handles operations with jobs. Jobs are scheduled and can be queried to get information on the current state of the
+ * The order resource handles operations with jobs. Jobs are scheduled and can be queried to get information on the current state of the
  * job.
  *
  * @author dyuen
