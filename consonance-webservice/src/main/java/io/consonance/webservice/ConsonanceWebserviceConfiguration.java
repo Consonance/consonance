@@ -1,6 +1,7 @@
 package io.consonance.webservice;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.cache.CacheBuilderSpec;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
@@ -25,6 +26,8 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
     @NotEmpty
     private String consonanceConfig;
 
+    @NotNull
+    private CacheBuilderSpec authenticationCachePolicy;
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -56,8 +59,6 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
         this.consonanceConfig = consonanceConfig;
     }
 
-
-
     /**
      * @param database
      *            the database to set
@@ -76,5 +77,11 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
         this.httpClient = httpClient;
     }
 
+    public CacheBuilderSpec getAuthenticationCachePolicy() {
+        return authenticationCachePolicy;
+    }
 
+    public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
+        this.authenticationCachePolicy = authenticationCachePolicy;
+    }
 }

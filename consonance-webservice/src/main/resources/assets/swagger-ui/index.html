@@ -70,14 +70,15 @@
         },
         docExpansion: "none",
         apisSorter: "alpha",
-        showRequestHeaders: false
+        showRequestHeaders: true
       });
 
       function addApiKeyAuthorization(){
         var key = encodeURIComponent($('#input_apiKey')[0].value);
         if(key && key.trim() != "") {
-            var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization("api_key", key, "query");
-            window.swaggerUi.api.clientAuthorizations.add("api_key", apiKeyAuth);
+            //var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization("api_key", key, "query");
+            //window.swaggerUi.api.clientAuthorizations.add("api_key", apiKeyAuth);
+            swaggerUi.api.clientAuthorizations.add("api_key", new SwaggerClient.ApiKeyAuthorization("Authorization", "Bearer " + key, "header"));
             log("added key " + key);
         }
       }
@@ -85,10 +86,9 @@
       $('#input_apiKey').change(addApiKeyAuthorization);
 
       // if you have an apiKey you would like to pre-populate on the page for demonstration purposes...
-      /*
-        var apiKey = "myApiKeyXXXX123456789";
-        $('#input_apiKey').val(apiKey);
-      */
+      var apiKey = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+      $('#input_apiKey').val(apiKey);
+
 
       window.swaggerUi.load();
 
