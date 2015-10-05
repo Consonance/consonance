@@ -20,6 +20,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.MessageProperties;
 import io.consonance.arch.beans.Job;
+import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.Order;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.persistence.PostgreSQL;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -137,6 +139,8 @@ public class OrderResource {
         a.add("ansible_playbook_path");
 
         Order newOrder = new Order();
+        job.setState(JobState.START);
+        job.setUuid(UUID.randomUUID().toString().toLowerCase());
         newOrder.setJob(job);
         Provision provision = new Provision(cores, memGb, storageGb, a);
         newOrder.setProvision(provision);

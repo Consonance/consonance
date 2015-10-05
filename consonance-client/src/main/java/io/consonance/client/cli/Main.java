@@ -10,8 +10,10 @@ import io.consonance.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ConfigurationApi;
 import io.swagger.client.api.OrderApi;
+import io.swagger.client.model.ExtraFile;
 import io.swagger.client.model.Job;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.io.FileUtils;
 
 import javax.naming.OperationNotSupportedException;
 import java.io.File;
@@ -209,9 +211,63 @@ public class Main {
             String jobUuid = reqVal(args, "--uuid");
             try {
                 final Job workflowRun = jobApi.getWorkflowRun(jobUuid);
+                if (workflowRun == null){
+                    kill("consonance: could not retrieve status of '%s'.", jobUuid);
+                }
                 outWithoutFormatting(serialize(workflowRun));
             } catch (ApiException e) {
                 kill("consonance: could not retrieve status of '%s'.", jobUuid);
+            }
+        }
+    }
+
+    private static void jobSchedule(List<String> args, OrderApi jobApi) {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: consonance run --help");
+            out("       consonance run <params>");
+            out("");
+            out("Description:");
+            out("  Schedule a job to be run.");
+            out("");
+            out("Required parameters (one of):");
+            out("  --flavour <flavour>              The type of machine that the job should execute on");
+            out("  --image-descriptor <file>        Path to the image descriptor");
+            out("  --run-descriptor <file>          Path to the runtime descriptor");
+            out("Optional parameters:");
+            out("  --extra-file <path=file=keep>    The path where a particular file should be provisioned, a path to the contents "
+                    + "of that file, and whether this file should be kept after execution. Can repeat to specify multiple files");
+            out("");
+        } else {
+            String flavour = reqVal(args, "--flavour");
+            String imageDescriptor = reqVal(args, "--image-descriptor");
+            String runDescriptor = reqVal(args, "--run-descriptor");
+            List<String> extraFiles = optVals(args, "--extra-file");
+            try {
+                Job job = new Job();
+                job.setFlavour(flavour);
+                job.setContainerImageDescriptor(FileUtils.readFileToString(new File(imageDescriptor)));
+                job.setContainerRuntimeDescriptor(FileUtils.readFileToString(new File(runDescriptor)));
+                for(String extraFile : extraFiles){
+                    String[] values = extraFile.split("=");
+                    final int lengthOfValues = 3;
+                    if (values.length != lengthOfValues){
+                        kill("consonance: failure parsing: '%s'.", extraFile);
+                    }
+                    ExtraFile file =  new ExtraFile();
+                    file.setContents(FileUtils.readFileToString(new File(values[1])));
+                    file.setKeep(Boolean.valueOf(values[2]));
+                    job.getExtraFiles().put(values[0],file);
+                }
+                final Job workflowRun = jobApi.addOrder(job);
+                if (workflowRun == null){
+                    kill("consonance: failure reading back scheduled job");
+                }
+                outWithoutFormatting(serialize(workflowRun));
+            } catch (ApiException e) {
+                kill("consonance: could not schedule");
+            } catch (IOException e) {
+                kill("consonance: could not read file");
             }
         }
     }
@@ -268,8 +324,8 @@ public class Main {
                         throw new OperationNotSupportedException("Not implemented yet");
                         //break;
                     case "run":
-                        throw new OperationNotSupportedException("Not implemented yet");
-                        //break;
+                        jobSchedule(args, new OrderApi(client));
+                        break;
                     default:
                         invalid(cmd);
                         break;
