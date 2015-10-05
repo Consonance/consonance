@@ -26,6 +26,7 @@
         <dropwizard.version>0.8.4</dropwizard.version>
         <swagger.version>1.5.3</swagger.version>
         <aws.version>1.10.16</aws.version>
+        <powermock.version>1.6.3</powermock.version>
     </properties>
 
     <scm>
@@ -171,7 +172,7 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.19.0-GA</version>
+                <version>3.20.0-GA</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -202,6 +203,46 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>9.4-1201-jdbc41</version>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-core</artifactId>
+                <version>${powermock.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-module-junit4</artifactId>
+                <version>${powermock.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-api-mockito</artifactId>
+                <version>${powermock.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-api-easymock</artifactId>
+                <version>${powermock.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-all</artifactId>
+                <version>1.10.19</version>
+            </dependency>
+            <dependency>
+                <groupId>org.easymock</groupId>
+                <artifactId>easymock</artifactId>
+                <version>3.2</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.objenesis</groupId>
+                        <artifactId>objenesis</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.hamcrest</groupId>
+                        <artifactId>hamcrest-core</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>

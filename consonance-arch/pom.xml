@@ -13,7 +13,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <powermock.version>1.6.2</powermock.version>
     </properties>
 
     <dependencies>

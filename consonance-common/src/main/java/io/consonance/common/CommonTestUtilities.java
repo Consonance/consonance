@@ -15,7 +15,11 @@ import java.util.concurrent.TimeoutException;
  */
 public class CommonTestUtilities {
 
+    public static final String DUMMY_ADMIN_PASSWORD = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+
+
     private static class TestingPostgres extends BasicPostgreSQL{
+
         public TestingPostgres(HierarchicalINIConfiguration config){
             super(config);
         }
@@ -24,7 +28,8 @@ public class CommonTestUtilities {
         public void clearDatabase(){
             super.clearDatabase();
             this.runInsertStatement(
-                    "insert into consonance_user(user_id, admin, hashed_password, name) VALUES (1,true,'8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918','admin@admin.com');"
+                    "insert into consonance_user(user_id, admin, hashed_password, name) VALUES (1,true,'" + DUMMY_ADMIN_PASSWORD
+                            + "','admin@admin.com');"
             , new KeyedHandler<>("user_id"));
         }
     }
