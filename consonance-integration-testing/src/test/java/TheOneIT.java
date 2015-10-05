@@ -9,7 +9,7 @@ import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.JobApi;
+import io.swagger.client.api.OrderApi;
 import io.swagger.client.api.UserApi;
 import io.swagger.client.model.ConsonanceUser;
 import io.swagger.client.model.Job;
@@ -60,13 +60,13 @@ public class TheOneIT {
     @Test
     public void testScheduleAndListJobs() throws ApiException, IOException, TimeoutException {
         WebClient client = getWebClient();
-        JobApi jobApi = new JobApi(client);
+        OrderApi jobApi = new OrderApi(client);
         List<Job> allJobs = jobApi.listWorkflowRuns();
         List<Job> myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(allJobs.size() == 0 && myJobs.size() == 0);
         // schedule a job for myself via the api
         final Job clientJob = createClientJob();
-        jobApi.addWorkflowRun(clientJob);
+        jobApi.addOrder(clientJob);
         allJobs = jobApi.listWorkflowRuns();
         myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(myJobs.size() == 1 && allJobs.size() == 1);
@@ -76,13 +76,13 @@ public class TheOneIT {
     @Test
     public void testStateAndStdoutChangeOnBackEnd() throws ApiException, IOException, TimeoutException {
         WebClient client = getWebClient();
-        JobApi jobApi = new JobApi(client);
+        OrderApi jobApi = new OrderApi(client);
         List<Job> allJobs = jobApi.listWorkflowRuns();
         List<Job> myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(allJobs.size() == 0 && myJobs.size() == 0);
         // schedule a job for myself via the api
         final Job clientJob = createClientJob();
-        jobApi.addWorkflowRun(clientJob);
+        jobApi.addOrder(clientJob);
         Job jobFromServer =  jobApi.listOwnedWorkflowRuns().get(0);
 
         // state change using a direct DB connection
@@ -103,7 +103,7 @@ public class TheOneIT {
     @Test
     public void testScheduleForSomeoneElse() throws ApiException, IOException, TimeoutException {
         WebClient client = getWebClient();
-        JobApi jobApi = new JobApi(client);
+        OrderApi jobApi = new OrderApi(client);
         List<Job> allJobs = jobApi.listWorkflowRuns();
         List<Job> myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(allJobs.size() == 0 && myJobs.size() == 0);

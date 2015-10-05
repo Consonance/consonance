@@ -7,7 +7,7 @@ import io.consonance.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.JSON;
 import io.swagger.client.api.ConfigurationApi;
-import io.swagger.client.api.JobApi;
+import io.swagger.client.api.OrderApi;
 import io.swagger.client.model.Job;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
@@ -170,7 +170,7 @@ public class Main {
         System.out.println(output);
     }
 
-    private static void jobStatus(List<String> args, JobApi jobApi) {
+    private static void jobStatus(List<String> args, OrderApi jobApi) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: consonance status --help");
@@ -240,7 +240,7 @@ public class Main {
                         out(configApi.listConfiguration());
                         break;
                     case "status":
-                        jobStatus(args, new JobApi(client));
+                        jobStatus(args, new OrderApi(client));
                         break;
                     case "update":
                         throw new OperationNotSupportedException("Not implemented yet");
