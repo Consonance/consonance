@@ -15,7 +15,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-30T21:10:20.461Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-05T18:28:38.975Z")
 public class ConfigurationApi {
   private ApiClient apiClient;
 
@@ -38,7 +38,7 @@ public class ConfigurationApi {
   
   /**
    * List configuration
-   * List the jobs owned by the consonanceUser
+   * List configuration for debugging
    * @return String
    */
   public String listConfiguration () throws ApiException {
