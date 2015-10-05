@@ -1,11 +1,13 @@
 package io.consonance.client.cli;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ObjectArrays;
 import io.consonance.client.WebClient;
 import io.consonance.common.Utilities;
 import io.swagger.client.ApiException;
-import io.swagger.client.JSON;
 import io.swagger.client.api.ConfigurationApi;
 import io.swagger.client.api.OrderApi;
 import io.swagger.client.model.Job;
@@ -24,6 +26,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Based on the SeqWare command.line.
  */
 public class Main {
+
+    private static final ObjectMapper OBJECT_MAPPER;
+    static {
+        OBJECT_MAPPER = new ObjectMapper();
+        OBJECT_MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        OBJECT_MAPPER.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+        OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
+        OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -152,6 +163,18 @@ public class Main {
         }
     }
 
+    private static String serialize(Object obj) throws ApiException {
+        try {
+            if (obj != null) {
+                return OBJECT_MAPPER.writeValueAsString(obj);
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
     private static void run(List<String> runnerArgs) {
         run(runnerArgs.toArray(new String[runnerArgs.size()]));
     }
@@ -180,14 +203,13 @@ public class Main {
             out("  List the status of a given job.");
             out("");
             out("Required parameters (one of):");
-            out("  --job <uuid>  The UUID of the job");
+            out("  --uuid <uuid>  The UUID of the job");
             out("");
         } else {
-            String jobUuid = reqVal(args, "--job");
+            String jobUuid = reqVal(args, "--uuid");
             try {
-                JSON json = new JSON();
                 final Job workflowRun = jobApi.getWorkflowRun(jobUuid);
-                out(json.serialize(workflowRun));
+                outWithoutFormatting(serialize(workflowRun));
             } catch (ApiException e) {
                 kill("consonance: could not retrieve status of '%s'.", jobUuid);
             }
