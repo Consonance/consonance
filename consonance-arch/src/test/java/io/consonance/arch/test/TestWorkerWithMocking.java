@@ -54,7 +54,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
-@PrepareForTest({ QueueingConsumer.class, CommonServerTestUtilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
+@PrepareForTest({ QueueingConsumer.class, CommonServerTestUtilities.class,  CommonTestUtilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
         DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorkerWithMocking {
@@ -103,6 +103,7 @@ public class TestWorkerWithMocking {
     public void setUp() throws IOException, TimeoutException, Exception {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(CommonServerTestUtilities.class);
+        PowerMockito.mockStatic(CommonTestUtilities.class);
 
         Mockito.when(mockAppender.getName()).thenReturn("MOCK");
         LOG.addAppender((Appender) mockAppender);

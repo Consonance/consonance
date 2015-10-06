@@ -54,7 +54,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
-@PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, CommonServerTestUtilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
+@PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, CommonServerTestUtilities.class, CommonTestUtilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
         Appender.class, Logger.class, LoggerFactory.class, ch.qos.logback.classic.Logger.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorker {
@@ -100,6 +100,7 @@ public class TestWorker {
         Mockito.when(mockAppender.getName()).thenReturn("MOCK");
         LOG.addAppender((Appender) mockAppender);
         PowerMockito.mockStatic(CommonServerTestUtilities.class);
+        PowerMockito.mockStatic(CommonTestUtilities.class);
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
         Mockito.when(CommonServerTestUtilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
