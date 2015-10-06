@@ -1,21 +1,24 @@
 {
-  "create_timestamp": 0,
-  "update_timestamp": 0,
-  "job_id": 0,
-  "state": "START",
-  "extra_files": {
+  "create_timestamp":0,
+  "update_timestamp":0,
+  "job_id":0,
+  "state":"START",
+  "extra_files":{
+    "/etc/awesomefile/foo.txt":{
+      "contents":"contents",
+      "keep":false
+    }
+  },
+  "stdout":"My god",
+  "stderr":"It's full of stars",
+  "end_user":"Player1",
+  "flavour":"m1.funky",
+  "ini_str":"",
+  "job_uuid":"42",
+  "vmuuid":null,
+  "arguments":{
 
   },
-  "stdout": "My god",
-  "stderr": "It's full of stars",
-  "end_user": "Player1",
-  "flavour": "m1.funky",
-  "ini_str": "",
-  "job_uuid": "42",
-  "vmuuid": null,
-  "arguments": {
-
-  },
-  "container_image_descriptor": "{\n\n    \"items\": [\n        {\n            \"index\": 1,\n            \"index_start_at\": 56,\n            \"integer\": 19,\n            \"float\": 15.1507,\n            \"name\": \"Ashley\",\n            \"surname\": \"Coley\",\n            \"fullname\": \"Brenda Raynor\",\n            \"email\": \"anita@poole.sy\",\n            \"bool\": true\n        }\n    ]\n\n}",
-  "container_runtime_descriptor": "{\n\n    \"items\": [\n        {\n            \"index\": 1,\n            \"index_start_at\": 56,\n            \"integer\": 1,\n            \"float\": 18.5884,\n            \"name\": \"Lee\",\n            \"surname\": \"Summers\",\n            \"fullname\": \"Sandra Alexander\",\n            \"email\": \"ronnie@byrne.gh\",\n            \"bool\": false\n        }\n    ]\n\n}"
+  "container_image_descriptor":"{\n\n    \"items\": [\n        {\n            \"index\": 1,\n            \"index_start_at\": 56,\n            \"integer\": 19,\n            \"float\": 15.1507,\n            \"name\": \"Ashley\",\n            \"surname\": \"Coley\",\n            \"fullname\": \"Brenda Raynor\",\n            \"email\": \"anita@poole.sy\",\n            \"bool\": true\n        }\n    ]\n\n}",
+  "container_runtime_descriptor":"{\n\n    \"items\": [\n        {\n            \"index\": 1,\n            \"index_start_at\": 56,\n            \"integer\": 1,\n            \"float\": 18.5884,\n            \"name\": \"Lee\",\n            \"surname\": \"Summers\",\n            \"fullname\": \"Sandra Alexander\",\n            \"email\": \"ronnie@byrne.gh\",\n            \"bool\": false\n        }\n    ]\n\n}"
 }

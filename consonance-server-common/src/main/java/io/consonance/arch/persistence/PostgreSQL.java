@@ -174,6 +174,8 @@ public class PostgreSQL extends BasicPostgreSQL{
             final Map<String, String> ini = convertJSON(entry, "ini");
             j.setIni(ini);
 
+            j.setFlavour((String) entry.getValue().get("flavour"));
+
             // timestamp
             Timestamp createTs = (Timestamp) entry.getValue().get("create_timestamp");
             Timestamp updateTs = (Timestamp) entry.getValue().get("update_timestamp");
@@ -188,6 +190,9 @@ public class PostgreSQL extends BasicPostgreSQL{
     }
 
     private Map<String, String> convertJSON(Entry<Object, Map<String, Object>> entry, String columnName) {
+        if (entry.getValue().get(columnName) == null){
+            return new HashMap<>();
+        }
         JSONObject iniJson = CommonServerTestUtilities.parseJSONStr(entry.getValue().get(columnName).toString());
         HashMap<String, String> ini = new HashMap<>();
         for (Object key : iniJson.keySet()) {

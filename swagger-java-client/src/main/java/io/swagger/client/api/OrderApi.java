@@ -16,15 +16,15 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T21:24:04.813Z")
-public class JobApi {
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-05T18:28:38.975Z")
+public class OrderApi {
   private ApiClient apiClient;
 
-  public JobApi() {
+  public OrderApi() {
     this(Configuration.getDefaultApiClient());
   }
 
-  public JobApi(ApiClient apiClient) {
+  public OrderApi(ApiClient apiClient) {
     this.apiClient = apiClient;
   }
 
@@ -46,7 +46,7 @@ public class JobApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/job".replaceAll("\\{format\\}","json");
+    String path = "/order".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -78,21 +78,21 @@ public class JobApi {
   }
   
   /**
-   * Schedule a new workflow run
+   * Schedule a new order
    * 
-   * @param body Workflow run that needs to be added to the store
+   * @param body Order that needs to be added to the store
    * @return Job
    */
-  public Job addWorkflowRun (Job body) throws ApiException {
+  public Job addOrder (Job body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'body' is set
     if (body == null) {
-      throw new ApiException(400, "Missing the required parameter 'body' when calling addWorkflowRun");
+      throw new ApiException(400, "Missing the required parameter 'body' when calling addOrder");
     }
     
     // create path and map variables
-    String path = "/job".replaceAll("\\{format\\}","json");
+    String path = "/order".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -132,7 +132,7 @@ public class JobApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/job/listOwned".replaceAll("\\{format\\}","json");
+    String path = "/order/listOwned".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -178,7 +178,7 @@ public class JobApi {
     }
     
     // create path and map variables
-    String path = "/job/{jobUUID}".replaceAll("\\{format\\}","json")
+    String path = "/order/{jobUUID}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "jobUUID" + "\\}", apiClient.escapeString(jobUUID.toString()));
 
     // query params

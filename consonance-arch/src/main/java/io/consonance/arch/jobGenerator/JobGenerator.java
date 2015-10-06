@@ -92,10 +92,11 @@ public class JobGenerator extends Base {
         this.user = options.valueOf(userSpec);
         this.flavour = options.valueOf(flavourSpec);
 
-        final Map<String, String> extraFiles = new HashMap<>();
+        final Map<String, Job.ExtraFile> extraFiles = new HashMap<>();
         if (options.has(extraFilesSpec)){
             for (KeyValuePair keyValuePair : options.valuesOf(extraFilesSpec)) {
-                extraFiles.put(keyValuePair.key, FileUtils.readFileToString(new File(keyValuePair.value)));
+                Job.ExtraFile file = new Job.ExtraFile(FileUtils.readFileToString(new File(keyValuePair.value)), false);
+                extraFiles.put(keyValuePair.key, file);
             }
         }
 
@@ -143,7 +144,7 @@ public class JobGenerator extends Base {
 
     }
 
-    private void generateAndQueueJob(String iniFile, String workflowName, String workflowVersion, String workflowPath, Map<String, String> extraFiles) {
+    private void generateAndQueueJob(String iniFile, String workflowName, String workflowVersion, String workflowPath, Map<String, Job.ExtraFile> extraFiles) {
         // keep track of the iterations
         currIterations++;
         log.info("\ngenerating new jobs, iteration " + currIterations + "\n");
@@ -166,7 +167,7 @@ public class JobGenerator extends Base {
 
     // TODO: this will actually need to come from a file or web service
     private Order generateNewJob(String file, String workflowName, String workflowVersion, String workflowPath,
-            Map<String, String> extraFiles) {
+            Map<String, Job.ExtraFile> extraFiles) {
 
         Map<String, String> iniFileEntries;
         if (file != null) {

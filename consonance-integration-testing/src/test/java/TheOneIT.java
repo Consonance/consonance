@@ -3,12 +3,13 @@ import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.client.WebClient;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
+import io.consonance.common.Utilities;
 import io.consonance.webservice.ConsonanceWebserviceApplication;
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.JobApi;
+import io.swagger.client.api.OrderApi;
 import io.swagger.client.api.UserApi;
 import io.swagger.client.model.ConsonanceUser;
 import io.swagger.client.model.Job;
@@ -40,7 +41,7 @@ public class TheOneIT {
     private WebClient getWebClient() throws IOException, TimeoutException {
         CommonTestUtilities.clearState();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         WebClient client = new WebClient();
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         client.addDefaultHeader("Authorization", "Bearer " + parseConfig.getString(Constants.WEBSERVICE_TOKEN));
@@ -59,13 +60,13 @@ public class TheOneIT {
     @Test
     public void testScheduleAndListJobs() throws ApiException, IOException, TimeoutException {
         WebClient client = getWebClient();
-        JobApi jobApi = new JobApi(client);
+        OrderApi jobApi = new OrderApi(client);
         List<Job> allJobs = jobApi.listWorkflowRuns();
         List<Job> myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(allJobs.size() == 0 && myJobs.size() == 0);
         // schedule a job for myself via the api
         final Job clientJob = createClientJob();
-        jobApi.addWorkflowRun(clientJob);
+        jobApi.addOrder(clientJob);
         allJobs = jobApi.listWorkflowRuns();
         myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(myJobs.size() == 1 && allJobs.size() == 1);
@@ -75,18 +76,18 @@ public class TheOneIT {
     @Test
     public void testStateAndStdoutChangeOnBackEnd() throws ApiException, IOException, TimeoutException {
         WebClient client = getWebClient();
-        JobApi jobApi = new JobApi(client);
+        OrderApi jobApi = new OrderApi(client);
         List<Job> allJobs = jobApi.listWorkflowRuns();
         List<Job> myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(allJobs.size() == 0 && myJobs.size() == 0);
         // schedule a job for myself via the api
         final Job clientJob = createClientJob();
-        jobApi.addWorkflowRun(clientJob);
+        jobApi.addOrder(clientJob);
         Job jobFromServer =  jobApi.listOwnedWorkflowRuns().get(0);
 
         // state change using a direct DB connection
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
         postgres.updateJob(jobFromServer.getJobUuid(), jobFromServer.getVmuuid(), JobState.FAILED);
 
@@ -102,13 +103,13 @@ public class TheOneIT {
     @Test
     public void testScheduleForSomeoneElse() throws ApiException, IOException, TimeoutException {
         WebClient client = getWebClient();
-        JobApi jobApi = new JobApi(client);
+        OrderApi jobApi = new OrderApi(client);
         List<Job> allJobs = jobApi.listWorkflowRuns();
         List<Job> myJobs = jobApi.listOwnedWorkflowRuns();
         assertThat(allJobs.size() == 0 && myJobs.size() == 0);
         // schedule a job for someone else using a direct DB connection
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
         postgres.createJob(createServerJob());
 

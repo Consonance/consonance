@@ -43,7 +43,7 @@ CREATE TABLE consonance_user (
 );
 
 
-ALTER TABLE consonance_user OWNER TO queue_user;
+ALTER TABLE public.consonance_user OWNER TO queue_user;
 
 --
 -- Name: consonance_user_user_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
@@ -57,7 +57,7 @@ CREATE SEQUENCE consonance_user_user_id_seq
     CACHE 1;
 
 
-ALTER TABLE consonance_user_user_id_seq OWNER TO queue_user;
+ALTER TABLE public.consonance_user_user_id_seq OWNER TO queue_user;
 
 --
 -- Name: consonance_user_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
@@ -72,12 +72,13 @@ ALTER SEQUENCE consonance_user_user_id_seq OWNED BY consonance_user.user_id;
 
 CREATE TABLE extra_files (
     job_id integer NOT NULL,
-    content text,
+    contents character varying(255),
+    keep boolean NOT NULL,
     path text NOT NULL
 );
 
 
-ALTER TABLE extra_files OWNER TO queue_user;
+ALTER TABLE public.extra_files OWNER TO queue_user;
 
 --
 -- Name: ini_params; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
@@ -90,7 +91,7 @@ CREATE TABLE ini_params (
 );
 
 
-ALTER TABLE ini_params OWNER TO queue_user;
+ALTER TABLE public.ini_params OWNER TO queue_user;
 
 --
 -- Name: job; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
@@ -118,7 +119,7 @@ CREATE TABLE job (
 );
 
 
-ALTER TABLE job OWNER TO queue_user;
+ALTER TABLE public.job OWNER TO queue_user;
 
 --
 -- Name: job_job_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
@@ -132,7 +133,7 @@ CREATE SEQUENCE job_job_id_seq
     CACHE 1;
 
 
-ALTER TABLE job_job_id_seq OWNER TO queue_user;
+ALTER TABLE public.job_job_id_seq OWNER TO queue_user;
 
 --
 -- Name: job_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
@@ -159,7 +160,7 @@ CREATE TABLE provision (
 );
 
 
-ALTER TABLE provision OWNER TO queue_user;
+ALTER TABLE public.provision OWNER TO queue_user;
 
 --
 -- Name: provision_ansibleplaybooks; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
@@ -171,7 +172,7 @@ CREATE TABLE provision_ansibleplaybooks (
 );
 
 
-ALTER TABLE provision_ansibleplaybooks OWNER TO queue_user;
+ALTER TABLE public.provision_ansibleplaybooks OWNER TO queue_user;
 
 --
 -- Name: provision_provision_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
@@ -185,7 +186,7 @@ CREATE SEQUENCE provision_provision_id_seq
     CACHE 1;
 
 
-ALTER TABLE provision_provision_id_seq OWNER TO queue_user;
+ALTER TABLE public.provision_provision_id_seq OWNER TO queue_user;
 
 --
 -- Name: provision_provision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
