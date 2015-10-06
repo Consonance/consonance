@@ -13,6 +13,7 @@ import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.slf4j.Logger;
@@ -107,7 +108,7 @@ public class Coordinator extends Base {
         public Void call() throws Exception {
             try {
 
-                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
 
                 queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 // read from
@@ -257,7 +258,7 @@ public class Coordinator extends Base {
             Channel resultsChannel = null;
             try {
 
-                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
                 String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 final String resultQueueName = queueName + "_results";
 
@@ -342,7 +343,7 @@ public class Coordinator extends Base {
 
         @Override
         public Void call() {
-            HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
+            HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
 
             // writes to DB as well
             PostgreSQL db = new PostgreSQL(settings);

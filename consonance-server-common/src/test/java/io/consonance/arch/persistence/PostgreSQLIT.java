@@ -60,7 +60,7 @@ public class PostgreSQLIT {
     @Before
     public void setUp() throws IOException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = CommonServerTestUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
         this.postgres = new PostgreSQL(parseConfig);
 
         // clean up the database

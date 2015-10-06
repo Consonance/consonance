@@ -26,8 +26,8 @@ import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.reporting.ReportAPI;
 import io.consonance.arch.reporting.ReportAPIFactory;
 import io.consonance.arch.reporting.SlackRenderer;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
-import io.consonance.arch.utils.CommonServerTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ public class SlackReportBot extends Base {
 
     public void doWork() throws Exception {
 
-        final HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
+        final HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
         final PostgreSQL db = new PostgreSQL(settings);
 
         final SlackSession session = SlackSessionFactory.createWebSocketSlackSession(settings.getString(Constants.REPORT_TOKEN));

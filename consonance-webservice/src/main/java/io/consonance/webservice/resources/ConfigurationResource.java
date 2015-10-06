@@ -20,7 +20,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
-import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.consonance.webservice.core.ConsonanceUser;
@@ -63,7 +63,7 @@ public class ConfigurationResource {
 
     public ConfigurationResource(ConsonanceWebserviceConfiguration config, Environment environment) {
         this.config = config;
-        this.settings = CommonServerTestUtilities.parseConfig(config.getConsonanceConfig());
+        this.settings = CommonTestUtilities.parseConfig(config.getConsonanceConfig());
         this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         this.environment = environment;
     }

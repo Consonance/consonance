@@ -9,6 +9,7 @@ import io.consonance.arch.beans.Order;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.arch.utils.IniFile;
 import joptsimple.ArgumentAcceptingOptionSpec;
@@ -101,7 +102,7 @@ public class JobGenerator extends Base {
         }
 
         // UTILS OBJECT
-        settings = CommonServerTestUtilities.parseConfig(configFile);
+        settings = CommonTestUtilities.parseConfig(configFile);
 
         // CONFIG
         queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);

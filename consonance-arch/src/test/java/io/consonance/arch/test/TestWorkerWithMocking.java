@@ -10,6 +10,7 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 import io.consonance.arch.beans.Job;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.arch.worker.WorkerRunnable;
@@ -225,7 +226,7 @@ public class TestWorkerWithMocking {
         Mockito.when(config.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE)).thenReturn("/home/ubuntu/custom-seqware-settings");
 
         Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME, "ubuntu")).thenReturn("ubuntu");
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(config);
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(config);
     }
 
     private String cleanResults(String testResults) {

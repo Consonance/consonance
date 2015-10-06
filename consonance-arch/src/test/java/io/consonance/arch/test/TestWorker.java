@@ -16,6 +16,7 @@ import io.consonance.arch.worker.WorkerHeartbeat;
 import io.consonance.arch.worker.WorkerRunnable;
 import io.consonance.arch.worker.WorkflowResult;
 import io.consonance.arch.worker.WorkflowRunner;
+import io.consonance.common.CommonTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.StatusLine;
@@ -128,7 +129,7 @@ public class TestWorker {
     @Test
     public void testWorker_noQueueName() {
         PowerMockito.mockStatic(CommonServerTestUtilities.class);
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(new HierarchicalINIConfiguration());
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(new HierarchicalINIConfiguration());
         try {
             WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
             fail("Execution should not have reached this point!");
@@ -214,7 +215,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
         Mockito.when(CommonServerTestUtilities.parseJSONStr(anyString())).thenCallRealMethod();
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenCallRealMethod();
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenCallRealMethod();
         final FutureTask<String> tester = new FutureTask<>(new Callable<String>() {
             @Override
             public String call() {
@@ -293,7 +294,7 @@ public class TestWorker {
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(configObj);
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(configObj);
         final FutureTask<String> tester = new FutureTask<>(new Callable<String>() {
             @Override
             public String call() {
@@ -489,7 +490,7 @@ public class TestWorker {
         configObj.addProperty("worker.preworkerSleep", "1");
         configObj.addProperty("worker.postworkerSleep", "1");
         configObj.addProperty("worker.hostUserName", System.getProperty("user.name"));
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(configObj);
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(configObj);
     }
 
     private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {

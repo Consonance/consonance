@@ -17,6 +17,7 @@ import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.arch.worker.WorkerRunnable;
 import joptsimple.OptionSpecBuilder;
@@ -111,7 +112,7 @@ public class ContainerProvisionerThreads extends Base {
             Channel vmChannel = null;
             try {
 
-                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(config);
+                HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(config);
 
                 String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
 
@@ -178,7 +179,7 @@ public class ContainerProvisionerThreads extends Base {
         public Void call() throws Exception {
             try {
 
-                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
                 if (!settings.containsKey(Constants.PROVISION_MAX_RUNNING_CONTAINERS)) {
                     LOG.info("No max_running_containers specified, skipping provision ");
                     return null;
@@ -298,7 +299,7 @@ public class ContainerProvisionerThreads extends Base {
             Channel resultsChannel = null;
             try {
 
-                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
 
                 String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 final String exchangeName = queueName + "_results";

@@ -64,7 +64,7 @@ public class LostJobExporterIT {
     public void testNormalUsage() throws Exception {
         File tempDir = Files.createTempDir();
         File config = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = CommonServerTestUtilities.parseConfig(config.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(config.getAbsolutePath());
         PostgreSQL db = new PostgreSQL(parseConfig);
 
         db.createJob(createJob("id1", JobState.LOST));
@@ -86,7 +86,7 @@ public class LostJobExporterIT {
     public void testFailedUsage() throws Exception {
         File tempDir = Files.createTempDir();
         File config = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = CommonServerTestUtilities.parseConfig(config.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(config.getAbsolutePath());
         PostgreSQL db = new PostgreSQL(parseConfig);
 
         db.createJob(createJob("id1", JobState.RUNNING));

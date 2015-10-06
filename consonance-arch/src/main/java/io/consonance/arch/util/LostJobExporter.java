@@ -4,7 +4,7 @@ import io.consonance.arch.Base;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -49,7 +49,7 @@ public class LostJobExporter extends Base {
 
         parseOptions(argv);
 
-        settings = CommonServerTestUtilities.parseConfig(configFile);
+        settings = CommonTestUtilities.parseConfig(configFile);
     }
 
     private void runExport() throws IOException {

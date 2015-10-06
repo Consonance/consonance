@@ -1,5 +1,6 @@
 package io.consonance.common;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.io.FileUtils;
@@ -17,6 +18,13 @@ public class CommonTestUtilities {
 
     public static final String DUMMY_ADMIN_PASSWORD = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
 
+    public static HierarchicalINIConfiguration parseConfig(String path) {
+        try {
+            return new HierarchicalINIConfiguration(path);
+        } catch (ConfigurationException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 
     private static class TestingPostgres extends BasicPostgreSQL{
 

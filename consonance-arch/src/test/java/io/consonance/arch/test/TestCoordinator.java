@@ -10,6 +10,7 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.coordinator.Coordinator;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -144,7 +145,7 @@ public class TestCoordinator {
             jsonObj.addProperty(Constants.POSTGRES_PASSWORD, "password");
             jsonObj.addProperty(Constants.POSTGRES_DBNAME, "dbname");
         }
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(jsonObj);
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(jsonObj);
     }
 
     private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {
