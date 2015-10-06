@@ -25,6 +25,7 @@
         <seqware.version>1.1.1</seqware.version>
         <dropwizard.version>0.8.4</dropwizard.version>
         <swagger.version>1.5.3</swagger.version>
+        <aws.version>1.10.16</aws.version>
     </properties>
 
     <scm>
@@ -145,7 +146,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.4</version>
+                <version>4.5</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -161,6 +162,46 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>3.3.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-multipart</artifactId>
+                <version>2.21</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.19.0-GA</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk</artifactId>
+                <version>${aws.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${aws.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-s3</artifactId>
+                <version>${aws.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-simpledb</artifactId>
+                <version>${aws.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-ec2</artifactId>
+                <version>${aws.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>9.4-1201-jdbc41</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -226,11 +267,13 @@
 
     <modules>
         <module>consonance-common</module>
+        <module>consonance-server-common</module>
         <module>consonance-arch</module>
         <module>consonance-reporting</module>
         <module>consonance-webservice</module>
         <module>consonance-client</module>
         <module>swagger-java-client</module>
+        <module>consonance-integration-testing</module>
     </modules>
 
     <licenses>
@@ -469,6 +512,13 @@
                         <format>html</format>
                     </formats>
                     <aggregate>true</aggregate>
+                    <!-- exclude generated classes -->
+                    <instrumentation>
+                        <excludes>
+                            <exclude>io/swagger/client/*.class</exclude>
+                            <exclude>io/swagger/client/**/*.class</exclude>
+                        </excludes>
+                    </instrumentation>
                 </configuration>
             </plugin>
             <plugin>

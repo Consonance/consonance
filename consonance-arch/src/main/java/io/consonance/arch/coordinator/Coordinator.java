@@ -12,8 +12,8 @@ import io.consonance.arch.beans.Order;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Constants;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,21 +107,21 @@ public class Coordinator extends Base {
         public Void call() throws Exception {
             try {
 
-                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
 
                 queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 // read from
-                orderChannel = Utilities.setupQueue(settings, queueName + "_orders");
+                orderChannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_orders");
                 // write to
 
                 // create the job exchange
                 String exchange = queueName + "_job_exchange";
-                jobChannel = Utilities.setupExchange(settings, exchange, "direct");
+                jobChannel = CommonServerTestUtilities.setupExchange(settings, exchange, "direct");
 
                 // full
                 // info
                 // write to
-                vmChannel = Utilities.setupQueue(settings, queueName + "_vms");
+                vmChannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_vms");
                 // read from
 
                 QueueingConsumer consumer = new QueueingConsumer(orderChannel);
@@ -221,7 +221,8 @@ public class Coordinator extends Base {
                 // see if a particular queue type exist yet
                 if (!existingJobQueues.contains(routingKey)){
                     existingJobQueues.add(routingKey);
-                    final String finalQueueName = Utilities.setupQueueOnExchange(jobChannel, queueName + "_jobs", newJob.getFlavour());
+                    final String finalQueueName = CommonServerTestUtilities
+                            .setupQueueOnExchange(jobChannel, queueName + "_jobs", newJob.getFlavour());
                     jobChannel.queueBind(finalQueueName, exchangeName, newJob.getFlavour());
                 }
                 jobChannel.basicPublish(exchangeName, newJob.getFlavour() , MessageProperties.PERSISTENT_TEXT_PLAIN,
@@ -256,15 +257,15 @@ public class Coordinator extends Base {
             Channel resultsChannel = null;
             try {
 
-                HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
+                HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
                 String queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
                 final String resultQueueName = queueName + "_results";
 
                 // read from
-                resultsChannel = Utilities.setupExchange(settings, resultQueueName);
+                resultsChannel = CommonServerTestUtilities.setupExchange(settings, resultQueueName);
                 // this declares a queue exchange where multiple consumers get the same message:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
-                String resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupJobs");
+                String resultsQueue = CommonServerTestUtilities.setupQueueOnExchange(resultsChannel, queueName, "CleanupJobs");
                 resultsChannel.queueBind(resultsQueue, resultQueueName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
@@ -288,12 +289,12 @@ public class Coordinator extends Base {
 
                     // now update that DB record to be exited
                     // this is actually finishing the VM and not the work
-                    if (status.getState() == StatusState.SUCCESS && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                    if (status.getState() == StatusState.SUCCESS && CommonServerTestUtilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         LOG.info("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
                         db.finishJob(status.getJobUuid());
                     } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED || status.getState() == StatusState.PENDING)
-                            && Utilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
+                            && CommonServerTestUtilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         // convert from StatusState to JobState
                         JobState valueOf = JobState.valueOf(status.getState().toString());
@@ -341,7 +342,7 @@ public class Coordinator extends Base {
 
         @Override
         public Void call() {
-            HierarchicalINIConfiguration settings = Utilities.parseConfig(configFile);
+            HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
 
             // writes to DB as well
             PostgreSQL db = new PostgreSQL(settings);

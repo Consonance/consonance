@@ -10,7 +10,7 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 import io.consonance.arch.beans.Job;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.arch.worker.Worker;
 import io.consonance.arch.worker.WorkerHeartbeat;
 import io.consonance.arch.worker.WorkerRunnable;
@@ -53,7 +53,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
-@PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, Utilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
+@PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, CommonServerTestUtilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
         Appender.class, Logger.class, LoggerFactory.class, ch.qos.logback.classic.Logger.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorker {
@@ -98,13 +98,13 @@ public class TestWorker {
 
         Mockito.when(mockAppender.getName()).thenReturn("MOCK");
         LOG.addAppender((Appender) mockAppender);
-        PowerMockito.mockStatic(Utilities.class);
+        PowerMockito.mockStatic(CommonServerTestUtilities.class);
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
-        Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
-        Mockito.when(Utilities.setupQueueOnExchange(any(Channel.class), anyString(),anyString())).thenReturn("consonance_arch_jobs");
-        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString(),anyString())).thenReturn(mockChannel);
-        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(CommonServerTestUtilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(CommonServerTestUtilities.setupQueueOnExchange(any(Channel.class), anyString(), anyString())).thenReturn("consonance_arch_jobs");
+        Mockito.when(CommonServerTestUtilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString(), anyString())).thenReturn(mockChannel);
+        Mockito.when(CommonServerTestUtilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
         WorkflowResult result = new WorkflowResult();
         result.setWorkflowStdout("Mock Workflow Response");
@@ -127,8 +127,8 @@ public class TestWorker {
 
     @Test
     public void testWorker_noQueueName() {
-        PowerMockito.mockStatic(Utilities.class);
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(new HierarchicalINIConfiguration());
+        PowerMockito.mockStatic(CommonServerTestUtilities.class);
+        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(new HierarchicalINIConfiguration());
         try {
             WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
             fail("Execution should not have reached this point!");
@@ -213,8 +213,8 @@ public class TestWorker {
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
-        Mockito.when(Utilities.parseJSONStr(anyString())).thenCallRealMethod();
-        Mockito.when(Utilities.parseConfig(anyString())).thenCallRealMethod();
+        Mockito.when(CommonServerTestUtilities.parseJSONStr(anyString())).thenCallRealMethod();
+        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenCallRealMethod();
         final FutureTask<String> tester = new FutureTask<>(new Callable<String>() {
             @Override
             public String call() {
@@ -293,7 +293,7 @@ public class TestWorker {
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(configObj);
+        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(configObj);
         final FutureTask<String> tester = new FutureTask<>(new Callable<String>() {
             @Override
             public String call() {
@@ -489,7 +489,7 @@ public class TestWorker {
         configObj.addProperty("worker.preworkerSleep", "1");
         configObj.addProperty("worker.postworkerSleep", "1");
         configObj.addProperty("worker.hostUserName", System.getProperty("user.name"));
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(configObj);
+        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(configObj);
     }
 
     private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {

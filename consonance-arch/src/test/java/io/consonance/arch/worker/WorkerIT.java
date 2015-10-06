@@ -18,7 +18,7 @@ package io.consonance.arch.worker;
 
 import io.consonance.arch.coordinator.Coordinator;
 import io.consonance.arch.jobGenerator.JobGenerator;
-import io.consonance.arch.utils.ITUtilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +35,7 @@ public class WorkerIT {
 
     @BeforeClass
     public static void setup() throws IOException, TimeoutException {
-        ITUtilities.clearState();
+            CommonServerTestUtilities.clearState();
     }
 
     /**

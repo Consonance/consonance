@@ -20,8 +20,8 @@ import com.google.common.io.Files;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.ITUtilities;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import joptsimple.OptionException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -42,7 +42,7 @@ public class LostJobExporterIT {
 
     @Before
     public void setup() throws IOException, TimeoutException {
-        ITUtilities.clearState();
+        CommonTestUtilities.clearState();
     }
 
     /**
@@ -64,7 +64,7 @@ public class LostJobExporterIT {
     public void testNormalUsage() throws Exception {
         File tempDir = Files.createTempDir();
         File config = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(config.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonServerTestUtilities.parseConfig(config.getAbsolutePath());
         PostgreSQL db = new PostgreSQL(parseConfig);
 
         db.createJob(createJob("id1", JobState.LOST));
@@ -86,7 +86,7 @@ public class LostJobExporterIT {
     public void testFailedUsage() throws Exception {
         File tempDir = Files.createTempDir();
         File config = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(config.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonServerTestUtilities.parseConfig(config.getAbsolutePath());
         PostgreSQL db = new PostgreSQL(parseConfig);
 
         db.createJob(createJob("id1", JobState.RUNNING));
@@ -97,7 +97,7 @@ public class LostJobExporterIT {
     }
 
     private Job createJob(String uuid, JobState state) {
-        Utilities u = new Utilities();
+        CommonServerTestUtilities u = new CommonServerTestUtilities();
         String hashStr = uuid;
         HashMap<String, String> hm = new HashMap<>();
         hm.put("param1", "bar");

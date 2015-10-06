@@ -30,6 +30,43 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: consonance_user; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+CREATE TABLE consonance_user (
+    user_id integer NOT NULL,
+    create_timestamp timestamp without time zone,
+    update_timestamp timestamp without time zone,
+    admin boolean NOT NULL,
+    hashed_password character varying(255) NOT NULL,
+    name character varying(255) NOT NULL
+);
+
+
+ALTER TABLE consonance_user OWNER TO queue_user;
+
+--
+-- Name: consonance_user_user_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
+--
+
+CREATE SEQUENCE consonance_user_user_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE consonance_user_user_id_seq OWNER TO queue_user;
+
+--
+-- Name: consonance_user_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
+--
+
+ALTER SEQUENCE consonance_user_user_id_seq OWNED BY consonance_user.user_id;
+
+
+--
 -- Name: extra_files; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
 --
 
@@ -61,9 +98,10 @@ ALTER TABLE ini_params OWNER TO queue_user;
 
 CREATE TABLE job (
     job_id integer NOT NULL,
+    create_timestamp timestamp without time zone,
+    update_timestamp timestamp without time zone,
     container_image_descriptor text,
     container_runtime_descriptor text,
-    create_timestamp timestamp without time zone,
     end_user text,
     flavour text,
     ini text,
@@ -72,7 +110,6 @@ CREATE TABLE job (
     status text,
     stderr text,
     stdout text,
-    update_timestamp timestamp without time zone,
     job_uuid text,
     provision_uuid text,
     workflow text,
@@ -110,15 +147,15 @@ ALTER SEQUENCE job_job_id_seq OWNED BY job.job_id;
 
 CREATE TABLE provision (
     provision_id integer NOT NULL,
+    create_timestamp timestamp without time zone,
+    update_timestamp timestamp without time zone,
     cores integer,
-    create_timestamp text,
     ip_address text,
     job_uuid text,
     mem_gb integer,
     provision_uuid text,
     status text,
-    storage_gb integer,
-    update_timestamp text
+    storage_gb integer
 );
 
 
@@ -158,6 +195,13 @@ ALTER SEQUENCE provision_provision_id_seq OWNED BY provision.provision_id;
 
 
 --
+-- Name: user_id; Type: DEFAULT; Schema: public; Owner: queue_user
+--
+
+ALTER TABLE ONLY consonance_user ALTER COLUMN user_id SET DEFAULT nextval('consonance_user_user_id_seq'::regclass);
+
+
+--
 -- Name: job_id; Type: DEFAULT; Schema: public; Owner: queue_user
 --
 
@@ -169,6 +213,14 @@ ALTER TABLE ONLY job ALTER COLUMN job_id SET DEFAULT nextval('job_job_id_seq'::r
 --
 
 ALTER TABLE ONLY provision ALTER COLUMN provision_id SET DEFAULT nextval('provision_provision_id_seq'::regclass);
+
+
+--
+-- Name: consonance_user_pkey; Type: CONSTRAINT; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+ALTER TABLE ONLY consonance_user
+    ADD CONSTRAINT consonance_user_pkey PRIMARY KEY (user_id);
 
 
 --
@@ -201,6 +253,22 @@ ALTER TABLE ONLY job
 
 ALTER TABLE ONLY provision
     ADD CONSTRAINT provision_pkey PRIMARY KEY (provision_id);
+
+
+--
+-- Name: uk_fi4s6tg0ng09pfbkhdus2n2h8; Type: CONSTRAINT; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+ALTER TABLE ONLY consonance_user
+    ADD CONSTRAINT uk_fi4s6tg0ng09pfbkhdus2n2h8 UNIQUE (name);
+
+
+--
+-- Name: uk_i6afhcugr97k0viwvj67wno0j; Type: CONSTRAINT; Schema: public; Owner: queue_user; Tablespace: 
+--
+
+ALTER TABLE ONLY consonance_user
+    ADD CONSTRAINT uk_i6afhcugr97k0viwvj67wno0j UNIQUE (hashed_password);
 
 
 --

@@ -1,0 +1,8 @@
+{
+  "createTimestamp": 0,
+  "updateTimestamp": 0,
+  "userID": 0,
+  "name": "funky user",
+  "admin": false,
+  "hashedPassword": "password"
+}

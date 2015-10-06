@@ -23,8 +23,8 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Order;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Constants;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.Constants;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.jdbi.JobDAO;
 import io.consonance.webservice.jdbi.ProvisionDAO;
@@ -80,7 +80,7 @@ public class JobResource {
     public JobResource(JobDAO dao, ProvisionDAO provisionDAO, String consonanceConfigFile) {
         this.dao = dao;
         this.provisionDAO = provisionDAO;
-        this.settings = Utilities.parseConfig(consonanceConfigFile);
+        this.settings = CommonServerTestUtilities.parseConfig(consonanceConfigFile);
         this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
         this.db = new PostgreSQL(settings);
     }
@@ -143,7 +143,7 @@ public class JobResource {
 
         if (jchannel == null || !jchannel.isOpen()) {
             try {
-                this.jchannel = Utilities.setupQueue(settings, queueName + "_orders");
+                this.jchannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_orders");
             } catch (IOException e) {
                 throw new InternalServerErrorException();
             } catch (TimeoutException e) {

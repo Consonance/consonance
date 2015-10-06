@@ -16,7 +16,7 @@
  */
 package io.consonance.arch.jobGenerator;
 
-import io.consonance.arch.utils.ITUtilities;
+import io.consonance.common.CommonTestUtilities;
 import joptsimple.OptionException;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -34,7 +34,7 @@ public class JobGeneratorIT {
 
     @BeforeClass
     public static void setup() throws IOException, TimeoutException {
-        ITUtilities.clearState();
+        CommonTestUtilities.clearState();
     }
 
     /**

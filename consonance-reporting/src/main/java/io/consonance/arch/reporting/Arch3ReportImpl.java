@@ -30,8 +30,8 @@ import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.Constants;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 import java.io.BufferedReader;
@@ -108,10 +108,10 @@ public class Arch3ReportImpl implements ReportAPI {
         synchronized (Arch3ReportImpl.this) {
             try {
                 // read from
-                resultsChannel = Utilities.setupExchange(settings, resultQueueName);
+                resultsChannel = CommonServerTestUtilities.setupExchange(settings, resultQueueName);
                 // this declares a queue exchange where multiple consumers get the same convertToResult:
                 // https://www.rabbitmq.com/tutorials/tutorial-three-java.html
-                resultsQueue = Utilities.setupQueueOnExchange(resultsChannel, queueName, "SlackReportBot");
+                resultsQueue = CommonServerTestUtilities.setupQueueOnExchange(resultsChannel, queueName, "SlackReportBot");
                 resultsChannel.queueBind(resultsQueue, resultQueueName, "");
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);

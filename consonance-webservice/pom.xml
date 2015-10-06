@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>io.consonance</groupId>
-            <artifactId>consonance-common</artifactId>
+            <artifactId>consonance-server-common</artifactId>
             <version>1.2-alpha.0-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
@@ -200,6 +200,17 @@
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-testing</artifactId>
+            <version>${dropwizard.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-configuration</artifactId>
+            <version>${dropwizard.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-hibernate</artifactId>
             <version>${dropwizard.version}</version>
             <exclusions>
@@ -209,6 +220,23 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>2.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-jackson</artifactId>
+            <version>${dropwizard.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+        </dependency>
+
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-assets</artifactId>
@@ -366,7 +394,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
-                    <createDependencyReducedPom>true</createDependencyReducedPom>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>

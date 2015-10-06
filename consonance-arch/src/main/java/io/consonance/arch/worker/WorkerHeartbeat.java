@@ -6,7 +6,7 @@ import com.rabbitmq.client.MessageProperties;
 import io.consonance.arch.Base;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ public class WorkerHeartbeat implements Runnable {
         Channel reportingChannel = null;
         try {
             try {
-                reportingChannel = Utilities.setupExchange(settings, this.queueName);
+                reportingChannel = CommonServerTestUtilities.setupExchange(settings, this.queueName);
             } catch (IOException | TimeoutException | AlreadyClosedException e) {
                 LOG.error("Exception caught! Queue channel could not be opened, waiting. Exception is: " + e.getMessage(), e);
                 // retry after a minute, do not die simply because the launcher is unavailable, it may come back
@@ -66,7 +66,7 @@ public class WorkerHeartbeat implements Runnable {
                     heartbeatStatus.setJobUuid(this.jobUuid);
                     heartbeatStatus.setMessage("job is running; IP address: " + networkID);
                     heartbeatStatus.setState(StatusState.RUNNING);
-                    heartbeatStatus.setType(Utilities.JOB_MESSAGE_TYPE);
+                    heartbeatStatus.setType(CommonServerTestUtilities.JOB_MESSAGE_TYPE);
                     heartbeatStatus.setVmUuid(this.vmUuid);
                     heartbeatStatus.setIpAddress(networkID);
 

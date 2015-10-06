@@ -10,8 +10,8 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import com.rabbitmq.client.ShutdownSignalException;
 import io.consonance.arch.beans.Job;
-import io.consonance.arch.utils.Constants;
-import io.consonance.arch.utils.Utilities;
+import io.consonance.common.Constants;
+import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.arch.worker.WorkerRunnable;
 import io.consonance.arch.worker.WorkflowRunner;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -53,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
-@PrepareForTest({ QueueingConsumer.class, Utilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
+@PrepareForTest({ QueueingConsumer.class, CommonServerTestUtilities.class, WorkerRunnable.class, DefaultExecutor.class, WorkflowRunner.class,
         DefaultExecuteResultHandler.class, Logger.class, LoggerFactory.class, HierarchicalINIConfiguration.class })
 @RunWith(PowerMockRunner.class)
 public class TestWorkerWithMocking {
@@ -62,7 +62,7 @@ public class TestWorkerWithMocking {
     private HierarchicalINIConfiguration config;
 
     @Mock
-    private Utilities mockUtil;
+    private CommonServerTestUtilities mockUtil;
 
     @Mock
     private Channel mockChannel;
@@ -101,17 +101,17 @@ public class TestWorkerWithMocking {
     @Before
     public void setUp() throws IOException, TimeoutException, Exception {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(Utilities.class);
+        PowerMockito.mockStatic(CommonServerTestUtilities.class);
 
         Mockito.when(mockAppender.getName()).thenReturn("MOCK");
         LOG.addAppender((Appender) mockAppender);
 
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
-        Mockito.when(Utilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
-        Mockito.when(Utilities.setupQueueOnExchange(any(Channel.class), anyString(),anyString())).thenReturn("consonance_arch_jobs");
-        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString(),anyString())).thenReturn(mockChannel);
-        Mockito.when(Utilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(CommonServerTestUtilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
+        Mockito.when(CommonServerTestUtilities.setupQueueOnExchange(any(Channel.class), anyString(), anyString())).thenReturn("consonance_arch_jobs");
+        Mockito.when(CommonServerTestUtilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString(), anyString())).thenReturn(mockChannel);
+        Mockito.when(CommonServerTestUtilities.setupExchange(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
 
         StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
         Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
@@ -225,7 +225,7 @@ public class TestWorkerWithMocking {
         Mockito.when(config.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE)).thenReturn("/home/ubuntu/custom-seqware-settings");
 
         Mockito.when(config.getString(Constants.WORKER_HOST_USER_NAME, "ubuntu")).thenReturn("ubuntu");
-        Mockito.when(Utilities.parseConfig(anyString())).thenReturn(config);
+        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(config);
     }
 
     private String cleanResults(String testResults) {

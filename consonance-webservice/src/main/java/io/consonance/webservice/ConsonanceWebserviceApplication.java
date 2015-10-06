@@ -32,6 +32,8 @@ import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthFactory;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthFactory;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.setup.Bootstrap;
@@ -92,6 +94,13 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
         // enable views
         bootstrap.addBundle(new ViewBundle<>());
+
+        // lookup environment variables (to get the home directory)
+
+        // Enable variable substitution with environment variables
+        bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(bootstrap.getConfigurationSourceProvider(),
+                new EnvironmentVariableSubstitutor()));
+        
     }
 
     @Override
