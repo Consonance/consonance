@@ -38,12 +38,22 @@ public class Main {
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
+    private WebClient webClient = null;
+
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
 
     private static void err(String format, Object... args) {
         System.err.println(String.format(format, args));
+    }
+
+    public WebClient getWebClient() {
+        return webClient;
+    }
+
+    public void setWebClient(WebClient webClient) {
+        this.webClient = webClient;
     }
 
     private static class Kill extends RuntimeException {
@@ -272,7 +282,8 @@ public class Main {
         }
     }
 
-    public static void main(String[] argv) throws IOException, TimeoutException, ApiException, OperationNotSupportedException {
+    protected void runMain(String[] argv)
+            throws OperationNotSupportedException, IOException, TimeoutException, ApiException {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
         if (flag(args, "--debug")) {
             DEBUG.set(true);
@@ -303,8 +314,13 @@ public class Main {
             try {
                 String cmd = args.remove(0);
                 File configFile = new File(System.getProperty("user.home"), ".consonance/config");
-                final HierarchicalINIConfiguration hierarchicalINIConfiguration = Utilities.parseConfig(configFile.getAbsolutePath());
-                WebClient client = new WebClient(hierarchicalINIConfiguration);
+                WebClient client;
+                if (this.getWebClient() == null){
+                    final HierarchicalINIConfiguration hierarchicalINIConfiguration = Utilities.parseConfig(configFile.getAbsolutePath());
+                    client = new WebClient(hierarchicalINIConfiguration);
+                } else{
+                    client = this.getWebClient();
+                }
                 client.setDebugging(DEBUG.get());
 
                 if (null != cmd) {
@@ -335,5 +351,10 @@ public class Main {
                 System.exit(1);
             }
         }
+    }
+
+    public static void main(String[] argv) throws IOException, TimeoutException, ApiException, OperationNotSupportedException {
+        Main main = new Main();
+        main.runMain(argv);
     }
 }

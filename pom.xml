@@ -546,12 +546,13 @@
                 <version>2.7</version>
                 <configuration>
                     <check>
-                        
+
                     </check>
                     <formats>
                         <format>xml</format>
                         <format>html</format>
                     </formats>
+                    <attach>true</attach>
                     <aggregate>true</aggregate>
                     <!-- exclude generated classes -->
                     <instrumentation>
@@ -581,9 +582,36 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <inherited>true</inherited>
+            </plugin>
         </plugins>
     </build>
 
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>cobertura-maven-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>cobertura</report>
+                            <report>cobertura-integration-test</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
 
 </project>
