@@ -8,6 +8,8 @@ import io.consonance.arch.beans.Job;
 import io.dropwizard.jackson.Jackson;
 
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.dropwizard.testing.FixtureHelpers.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +50,9 @@ public class JobTest {
                         + "            \"bool\": false\n" + "        }\n" + "    ]\n" + "\n" + "}");
                 job.setCreateTimestamp(new Timestamp(0));
                 job.setUpdateTimestamp(new Timestamp(0));
+                Map<String, Job.ExtraFile> extraFiles = new HashMap<>();
+                extraFiles.put("/etc/awesomefile/foo.txt", new Job.ExtraFile("contents", false));
+                job.setExtraFiles(extraFiles);
                 job.setStdout("My god");
                 job.setStderr("It's full of stars");
                 job.setFlavour("m1.funky");

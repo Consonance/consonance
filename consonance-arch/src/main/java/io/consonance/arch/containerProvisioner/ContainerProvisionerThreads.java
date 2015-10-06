@@ -190,6 +190,7 @@ public class ContainerProvisionerThreads extends Base {
                 // TODO: need threads that each read from orders and another that reads results
                 do {
 
+                    LOG.info("Checking running VMs");
                     // System.out.println("CHECKING RUNNING VMs");
 
                     // read from DB
@@ -197,6 +198,7 @@ public class ContainerProvisionerThreads extends Base {
                     long numberRunningContainers = pendingJobs.size();
                     final List<Job> runningJobs = db.getJobs(JobState.RUNNING);
                     long numberPendingContainers = runningJobs.size();
+                    LOG.info("Found " + numberRunningContainers + " pending containers and " + numberPendingContainers + " running containers.");
 
                     if (testMode) {
                         LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
@@ -248,7 +250,7 @@ public class ContainerProvisionerThreads extends Base {
                             CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
                             List<String> arguments = new ArrayList<>();
                             arguments.addAll(Arrays.asList(parse.getArguments()));
-                            arguments.add("--instance-types ");
+                            arguments.add("--instance-types");
                             arguments.add(tempFile.getAbsolutePath());
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
                             LOG.info("Running youxia deployer with following parameters:" + Arrays.toString(toArray));

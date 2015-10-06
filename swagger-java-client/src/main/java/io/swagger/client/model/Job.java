@@ -4,6 +4,7 @@ import io.swagger.client.StringUtil;
 import java.util.Date;
 import java.util.Map;
 import java.util.*;
+import io.swagger.client.model.ExtraFile;
 
 
 
@@ -15,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Describes jobs running in Consonance
  **/
 @ApiModel(description = "Describes jobs running in Consonance")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-28T21:24:04.813Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-05T18:28:38.975Z")
 public class Job   {
   
   private Date createTimestamp = null;
@@ -41,7 +42,7 @@ public enum StateEnum {
   private String workflow = null;
   private String jobHash = null;
   private String messageType = null;
-  private Map<String, String> extraFiles = new HashMap<String, String>();
+  private Map<String, ExtraFile> extraFiles = new HashMap<String, ExtraFile>();
   private String stdout = null;
   private String stderr = null;
   private String endUser = null;
@@ -143,14 +144,14 @@ public enum StateEnum {
 
   
   /**
-   * credentials or other files needed by your workflow, specify pairs of path=content
+   * credentials or other files needed by your workflow, specify pairs of path:keep=content
    **/
-  @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
+  @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path:keep=content")
   @JsonProperty("extra_files")
-  public Map<String, String> getExtraFiles() {
+  public Map<String, ExtraFile> getExtraFiles() {
     return extraFiles;
   }
-  public void setExtraFiles(Map<String, String> extraFiles) {
+  public void setExtraFiles(Map<String, ExtraFile> extraFiles) {
     this.extraFiles = extraFiles;
   }
 
