@@ -7,7 +7,10 @@ import org.junit.Test;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
+import static org.junit.Assert.assertTrue;
 
 /**
  * These tests mock up a DropWizard instance in order to unit test the client.
@@ -32,8 +35,18 @@ public class MainTest {
 
     @Test
     public void testGetConfiguration() throws Exception {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(stream));
+
         Main main = new Main();
         main.setWebClient(WebClientTest.getTestingWebClient(dropwizard));
         main.runMain(new String[] { "--metadata" });
+
+        // reset system.out
+        System.setOut(System.out);
+        // check out the output
+        assertTrue(stream.toString().contains("foobar"));
     }
+
+
 }

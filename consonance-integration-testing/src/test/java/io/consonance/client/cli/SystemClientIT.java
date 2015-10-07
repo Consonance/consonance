@@ -1,3 +1,5 @@
+package io.consonance.client.cli;
+
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.client.WebClient;
@@ -31,14 +33,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author dyuen
  */
-public class TheOneIT {
+public class SystemClientIT {
 
     @ClassRule
     public static final DropwizardAppRule<ConsonanceWebserviceConfiguration> RULE =
             new DropwizardAppRule<>(ConsonanceWebserviceApplication.class, ResourceHelpers.resourceFilePath("run-fox.yml"));
 
 
-    private WebClient getWebClient() throws IOException, TimeoutException {
+    public static WebClient getWebClient() throws IOException, TimeoutException {
         CommonTestUtilities.clearState();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());

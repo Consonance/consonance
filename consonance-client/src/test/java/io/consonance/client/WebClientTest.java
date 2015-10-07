@@ -9,6 +9,7 @@ import io.swagger.client.api.UserApi;
 import io.swagger.client.model.ConsonanceUser;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -18,8 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * These tests mock up a DropWizard instance in order to unit test the client.
@@ -55,6 +54,6 @@ public class WebClientTest {
         UserApi userApi = new UserApi(client);
         final List<ConsonanceUser> consonanceUsers = userApi.listUsers();
         // should just be the one admin user after we clear it out
-        assertThat(consonanceUsers.size() > 1);
+        Assert.assertTrue(consonanceUsers.size() == 1);
     }
 }
