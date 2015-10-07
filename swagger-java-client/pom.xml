@@ -215,7 +215,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit-version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -231,6 +230,5 @@
         <jackson-version>2.5.3</jackson-version>
         <jodatime-version>2.3</jodatime-version>
         <maven-plugin-version>1.0.0</maven-plugin-version>
-        <junit-version>4.8.1</junit-version>
     </properties>
 </project>
