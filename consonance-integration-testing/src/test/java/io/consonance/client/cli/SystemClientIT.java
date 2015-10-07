@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * One integration test to test everything.
+ * Test only the swagger-extended webclient.
  *
  * @author dyuen
  */
