@@ -2,6 +2,7 @@ package io.consonance.arch.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -116,8 +117,9 @@ public class Job extends BaseBean{
 
     @Embeddable
     public static class ExtraFile{
-        @ApiModelProperty(value = "contents of the extra file")
-        @Column(name="ini",columnDefinition="text")
+        @ApiModelProperty(value = "contents of the extra files, should not be returned over the webservice")
+        @Column(name="content",columnDefinition="text")
+	@JsonIgnore
         private String contents;
         @ApiModelProperty(value = "whether to keep this file after workflow execution")
         @Column(name="keep")
@@ -132,6 +134,12 @@ public class Job extends BaseBean{
             this.keep = keep;
         }
 
+	@JsonProperty
+	public void setContents(String contents){
+	    this.contents = contents;
+	}
+
+	@JsonIgnore
         public String getContents() {
             return contents;
         }
