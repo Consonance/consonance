@@ -126,7 +126,6 @@ public class SlackReportBot extends Base {
      */
     public static long getWaitTimeExp(int retryCount) {
         final long convertToMilliseconds = 100L;
-        long waitTime = ((long) Math.pow(2, retryCount) * convertToMilliseconds);
-        return waitTime;
+        return ((long) Math.pow(2, retryCount) * convertToMilliseconds);
     }
 }

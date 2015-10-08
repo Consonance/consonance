@@ -6,7 +6,7 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import java.io.File;
 
 /**
- * Created by denis.yuen on 2015-09-30.
+ * @author dyuen
  */
 public class Utilities {
 

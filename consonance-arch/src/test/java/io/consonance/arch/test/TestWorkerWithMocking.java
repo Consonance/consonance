@@ -4,17 +4,15 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.ShutdownSignalException;
 import io.consonance.arch.beans.Job;
-import io.consonance.common.CommonTestUtilities;
-import io.consonance.common.Constants;
 import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.arch.worker.WorkerRunnable;
 import io.consonance.arch.worker.WorkflowRunner;
+import io.consonance.common.CommonTestUtilities;
+import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
@@ -41,14 +39,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -100,7 +96,7 @@ public class TestWorkerWithMocking {
     private static ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
     @Before
-    public void setUp() throws IOException, TimeoutException, Exception {
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(CommonServerTestUtilities.class);
         PowerMockito.mockStatic(CommonTestUtilities.class);
@@ -119,7 +115,7 @@ public class TestWorkerWithMocking {
         Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
         Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
         
-        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn((GetMethod) mockMethod);
+        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn(mockMethod);
         Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
         PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
     }
@@ -127,13 +123,13 @@ public class TestWorkerWithMocking {
     private String appendEventsIntoString(List<LoggingEvent> events) {
         StringBuffer sbuff = new StringBuffer();
         for (LoggingEvent e : events) {
-            sbuff.append("\n" + e.getMessage());
+            sbuff.append("\n").append(e.getMessage());
         }
         return sbuff.toString();
     }
 
     @Test
-    public void testRunWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testRunWorker() throws Exception {
 
         PowerMockito.whenNew(DefaultExecuteResultHandler.class).withNoArguments().thenReturn(this.handler);
         Mockito.doAnswer(new Answer<Object>() {

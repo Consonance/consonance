@@ -4,11 +4,9 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.ShutdownSignalException;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.arch.worker.Worker;
@@ -36,7 +34,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -95,7 +92,7 @@ public class WorkerIT {
     private HttpClient mockClient;
     
     @Before
-    public void setup() throws IOException, Exception {
+    public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         Mockito.when(mockAppender.getName()).thenReturn("MOCK");
@@ -123,7 +120,7 @@ public class WorkerIT {
         Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
         Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
         
-        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn((GetMethod) mockMethod);
+        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn(mockMethod);
         Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
         PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
     }
@@ -145,7 +142,7 @@ public class WorkerIT {
     }
 
     @Test
-    public void testWorker_exception() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_exception() throws Exception {
         Mockito.when(mockRunner.call()).thenThrow(new RuntimeException("Mock Exception"));
         PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
 
@@ -166,7 +163,7 @@ public class WorkerIT {
     }
 
     @Test
-    public void testWorker_emptyMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_emptyMessage() throws Exception {
         setupConfig();
         byte body[] = ("").getBytes();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
@@ -182,7 +179,7 @@ public class WorkerIT {
     }
 
     @Test
-    public void testWorker_nullMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_nullMessage() throws Exception {
         setupConfig();
 
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, null);
@@ -360,7 +357,7 @@ public class WorkerIT {
     }
 
     @Test
-    public void testWorker_main() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_main() throws Exception {
         setupConfig();
 
         byte[] body = setupMessage();
@@ -386,7 +383,7 @@ public class WorkerIT {
     }
 
     @Test
-    public void testWorker_mainNoArgs() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_mainNoArgs() throws Exception {
         setupConfig();
 
         byte[] body = setupMessage();
@@ -404,7 +401,7 @@ public class WorkerIT {
     }
 
     @Test
-    public void testWorker_mainUUIDOonly() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_mainUUIDOonly() throws Exception {
         setupConfig();
 
         byte[] body = setupMessage();
@@ -431,7 +428,7 @@ public class WorkerIT {
     }
 
     @Test
-    public void testWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker() throws Exception {
         setupConfig();
 
         byte[] body = setupMessage();
@@ -495,7 +492,7 @@ public class WorkerIT {
         Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(configObj);
     }
 
-    private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {
+    private void setupMockQueue(Delivery testDelivery) throws Exception {
         Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
         PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
     }

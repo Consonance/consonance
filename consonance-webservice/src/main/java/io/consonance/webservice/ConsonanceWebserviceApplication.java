@@ -121,7 +121,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
 
         environment.jersey().register(new OrderResource(dao, provisionDAO, configuration.getConsonanceConfig()));
         environment.jersey().register(new UserResource(userDAO));
-        environment.jersey().register(new ConfigurationResource(configuration, environment));
+        environment.jersey().register(new ConfigurationResource(configuration));
 
         // swagger stuff
 

@@ -50,7 +50,7 @@ public class WebClientTest {
 
     @Test
     public void testListUsers() throws ApiException, IOException, TimeoutException {
-        WebClient client = this.getTestingWebClient(dropwizard);
+        WebClient client = getTestingWebClient(dropwizard);
         UserApi userApi = new UserApi(client);
         final List<ConsonanceUser> consonanceUsers = userApi.listUsers();
         // should just be the one admin user after we clear it out
