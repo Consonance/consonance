@@ -51,6 +51,7 @@ public class Constants {
     public static final String WORKER_MAX_RUNS = "worker.max-runs";
     public static final String WORKER_SEQWARE_ENGINE = "worker.seqware-engine";
     public static final String WORKER_SEQWARE_SETTINGS_FILE = "worker.seqware-settings-file";
+	public static final String WORKER_SEQWARE_DOCKER_IMAGE_NAME = "worker.seqware-docker-image-name";
 
     public static final String REPORT_NAMESPACE = "report.namespace";
     public static final String REPORT_TOKEN = "report.slack_token";

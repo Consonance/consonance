@@ -19,6 +19,8 @@ import info.pancancer.arch3.worker.WorkflowRunner;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +31,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.lang3.StringUtils;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -42,6 +47,8 @@ import static org.mockito.Matchers.anyString;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -80,7 +87,13 @@ public class TestWorker {
 
     @Captor
     private ArgumentCaptor<LoggingEvent> argCaptor;
+    
+    @Mock
+    private DefaultExecutor mockExecutor;
 
+    @Mock
+    private DefaultExecuteResultHandler mockExecHandler;
+    
     @Before
     public void setup() throws IOException, Exception {
         MockitoAnnotations.initMocks(this);
@@ -137,6 +150,7 @@ public class TestWorker {
         Mockito.verify(mockAppender, Mockito.atLeastOnce()).doAppend(argCaptor.capture());
         List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
         String testResults = this.appendEventsIntoString(tmpList);
+        //System.out.println(testResults);
 
         assertTrue("Mock Exception is present", testResults.contains("java.lang.RuntimeException: Mock Exception"));
     }
@@ -193,6 +207,16 @@ public class TestWorker {
         setupMockQueue(testDelivery);
         Mockito.when(Utilities.parseJSONStr(anyString())).thenCallRealMethod();
         Mockito.when(Utilities.parseConfig(anyString())).thenCallRealMethod();
+        
+        //Because the code that does cleanup in calls resultHandler.waitFor(); we need to actually execute something, even if it does nothing.
+        Mockito.doNothing().when(mockExecutor).execute(any(CommandLine.class),any(DefaultExecuteResultHandler.class));
+        
+        // This is to mock the cleanup command - we don't really want to execute the command for deleting contents of /datastore, at least not when unit testing on a workstation!
+        PowerMockito.whenNew(DefaultExecutor.class).withNoArguments().thenReturn(mockExecutor);
+        
+        Mockito.when(mockExecHandler.hasResult()).thenReturn(true);
+        PowerMockito.whenNew(DefaultExecuteResultHandler.class).withNoArguments().thenReturn(mockExecHandler);
+        
         final FutureTask<String> tester = new FutureTask<>(new Callable<String>() {
             @Override
             public String call() {
@@ -224,7 +248,7 @@ public class TestWorker {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(1500);
+                    Thread.sleep(2500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
@@ -272,6 +296,17 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
         Mockito.when(Utilities.parseConfig(anyString())).thenReturn(configObj);
+        
+        //Because the code that does cleanup in calls resultHandler.waitFor(); we need to actually execute something, even if it does nothing.
+        Mockito.doNothing().when(mockExecutor).execute(any(CommandLine.class),any(DefaultExecuteResultHandler.class));
+        
+        // This is to mock the cleanup command - we don't really want to execute the command for deleting contents of /datastore, at least not when unit testing on a workstation!
+        PowerMockito.whenNew(DefaultExecutor.class).withNoArguments().thenReturn(mockExecutor);
+        
+        Mockito.when(mockExecHandler.hasResult()).thenReturn(true);
+        PowerMockito.whenNew(DefaultExecuteResultHandler.class).withNoArguments().thenReturn(mockExecHandler);
+
+        
         final FutureTask<String> tester = new FutureTask<>(new Callable<String>() {
             @Override
             public String call() {
@@ -303,7 +338,7 @@ public class TestWorker {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(1500);
+                    Thread.sleep(2500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
@@ -357,6 +392,7 @@ public class TestWorker {
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
         assertTrue("check ending of output", testResults.contains(ending));
 
+        //System.out.println(testResults);
         assertTrue("Check for \"docker\" command", testResults.contains("Docker execution result: Mock Workflow Response"));
     }
 
@@ -426,6 +462,7 @@ public class TestWorker {
         assertTrue("check begining of output", testResults.contains(begining));
 
         String ending = new String(Files.readAllBytes(Paths.get("src/test/resources/testResult_End.txt")));
+        //System.out.println(testResults);
         assertTrue("check ending of output", testResults.contains(ending));
 
         assertTrue("Check for \"docker\" command", testResults.contains("Docker execution result: Mock Workflow Response"));
