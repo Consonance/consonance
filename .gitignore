@@ -34,3 +34,7 @@ pancancer-arch-3/target
 # Ignore NetBeans files
 nbactions.xml
 /pancancer-reporting/target/
+
+# Ignore maven-generated files
+pom.xml.releaseBackup
+release.properties
