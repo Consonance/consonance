@@ -54,9 +54,9 @@ import static org.mockito.Matchers.anyString;
 @PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, CommonServerTestUtilities.class, CommonTestUtilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
         Appender.class, Logger.class, LoggerFactory.class, ch.qos.logback.classic.Logger.class })
 @RunWith(PowerMockRunner.class)
-public class WorkerIT {
+public class MockingWorkerIT {
 
-    public static final int THIRTY_SECONDS = 30000;
+    public static final int TEN_SECONDS = 10000;
     private static ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
     private WorkerHeartbeat heartbeat = new WorkerHeartbeat();
@@ -202,7 +202,8 @@ public class WorkerIT {
     private String appendEventsIntoString(List<LoggingEvent> events) {
         StringBuffer sbuff = new StringBuffer();
         for (LoggingEvent e : events) {
-            sbuff.append(e.getMessage());
+            // why does this become null now?
+            sbuff.append(e != null ? e.getMessage() : "");
         }
         return sbuff.toString();
     }
@@ -246,7 +247,7 @@ public class WorkerIT {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(THIRTY_SECONDS);
+                    Thread.sleep(TEN_SECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
@@ -325,7 +326,7 @@ public class WorkerIT {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(THIRTY_SECONDS);
+                    Thread.sleep(TEN_SECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
