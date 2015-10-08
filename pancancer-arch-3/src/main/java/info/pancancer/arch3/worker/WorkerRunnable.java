@@ -203,7 +203,8 @@ public class WorkerRunnable implements Runnable {
                         } else {
                             String seqwareEngine = settings.getString(Constants.WORKER_SEQWARE_ENGINE, Constants.SEQWARE_WHITESTAR_ENGINE);
                             String seqwareSettingsFile = settings.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE);
-                            workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
+                            String dockerImage = settings.getString(Constants.WORKER_SEQWARE_DOCKER_IMAGE_NAME);
+                            workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile, dockerImage);
                         }
 
                         status = new Status(vmUuid, job.getUuid(),
@@ -295,7 +296,7 @@ public class WorkerRunnable implements Runnable {
      *            - The job contains information about what workflow to execute, and how.
      * @return The complete stdout and stderr from the workflow execution will be returned.
      */
-    private WorkflowResult launchJob(String message, Job job, String seqwareEngine, String seqwareSettingsFile) {
+    private WorkflowResult launchJob(String message, Job job, String seqwareEngine, String seqwareSettingsFile, String dockerImage) {
         WorkflowResult workflowResult = null;
         ExecutorService exService = Executors.newFixedThreadPool(2);
         WorkflowRunner workflowRunner = new WorkflowRunner();
@@ -306,7 +307,10 @@ public class WorkerRunnable implements Runnable {
                     message.getBytes(StandardCharsets.UTF_8));
             resultsChannel.waitForConfirms();
 
-            String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
+            //TODO: Parameterize dockerImage
+            if (dockerImage == null || dockerImage.trim()==null) {
+            	dockerImage = "pancancer/seqware_whitestar_pancancer:latest";
+            }
             CommandLine cli = new CommandLine("docker");
             cli.addArgument("run");
             List<String> args = new ArrayList<>(Arrays.asList("--rm", "-h", "master", "-t", "-v",
