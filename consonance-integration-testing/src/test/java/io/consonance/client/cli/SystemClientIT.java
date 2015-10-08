@@ -39,16 +39,29 @@ public class SystemClientIT {
     public static final DropwizardAppRule<ConsonanceWebserviceConfiguration> RULE =
             new DropwizardAppRule<>(ConsonanceWebserviceApplication.class, ResourceHelpers.resourceFilePath("run-fox.yml"));
 
-
     public static WebClient getWebClient() throws IOException, TimeoutException {
+        return getWebClient(true);
+    }
+
+    public static WebClient getWebClient(boolean correctUser) throws IOException, TimeoutException {
         CommonTestUtilities.clearState();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         WebClient client = new WebClient();
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader("Authorization", "Bearer " + parseConfig.getString(Constants.WEBSERVICE_TOKEN));
+        client.addDefaultHeader("Authorization", "Bearer " + (correctUser? parseConfig.getString(Constants.WEBSERVICE_TOKEN) : "foobar"));
         return client;
     }
+
+    @Test(expected = ApiException.class)
+    public void testListUsersWithoutAuthentication() throws IOException, TimeoutException, ApiException {
+        WebClient client = getWebClient(false);
+        UserApi userApi = new UserApi(client);
+        final List<ConsonanceUser> consonanceUsers = userApi.listUsers();
+        // should just be the one admin user after we clear it out
+        assertThat(consonanceUsers.size() > 1);
+    }
+
 
     @Test
     public void testListUsers() throws ApiException, IOException, TimeoutException {
