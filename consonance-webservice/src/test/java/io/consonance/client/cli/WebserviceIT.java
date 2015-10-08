@@ -41,9 +41,14 @@ public class WebserviceIT {
 
     @Test
     public void testMetadataNotAuthorized() throws Exception {
-        Client client = new JerseyClientBuilder(RULE.getEnvironment()).build("test client");
-        Response response = client.target(String.format("http://localhost:%d/configuration", RULE.getLocalPort())).request().get();
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_UNAUTHORIZED);
+        Client client = null;
+        try {
+            client = new JerseyClientBuilder(RULE.getEnvironment()).build("test client");
+            Response response = client.target(String.format("http://localhost:%d/configuration", RULE.getLocalPort())).request().get();
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_UNAUTHORIZED);
+        } finally {
+            client.close();
+        }
     }
 
     @Test
