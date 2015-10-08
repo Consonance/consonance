@@ -27,6 +27,7 @@
         <swagger.version>1.5.3</swagger.version>
         <aws.version>1.10.16</aws.version>
         <powermock.version>1.6.3</powermock.version>
+        <assertj.version>3.2.0</assertj.version>
     </properties>
 
     <scm>
@@ -48,6 +49,11 @@
     <dependencyManagement>
         <!-- need to unify shared dependency versions -->
         <dependencies>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.rabbitmq</groupId>
                 <artifactId>amqp-client</artifactId>
@@ -116,7 +122,12 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.1.2</version>
+                <version>1.1.3</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>1.1.3</version>
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.cobertura</groupId>
@@ -232,7 +243,7 @@
             <dependency>
                 <groupId>org.easymock</groupId>
                 <artifactId>easymock</artifactId>
-                <version>3.2</version>
+                <version>3.4</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.objenesis</groupId>
