@@ -15,6 +15,7 @@ authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 httpClient:
   timeout: 60000ms
   connectionTimeout: 60000ms
+  connectionRequestTimeout: 60000ms
   timeToLive: 1h
   cookiesEnabled: false
   maxConnections: 1024
