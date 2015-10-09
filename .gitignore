@@ -18,7 +18,6 @@ consonance-daemon/.idea
 
 .DS_Store
 */dependency-reduced-pom.xml
-consonance-daemon/target
 
 consonance-arch/arch3_test.log
 
