@@ -152,7 +152,7 @@ This tool allows you to export ini files belonging to failed and lost jobs given
 
 ### Upgrade SOP
 
-To upgrade from one version of arch3 to a newer version, the simplest approach is to slowly tear down hosts managed by one version by cutting off jobs sent to it while spinning up a new launcher. 
+To upgrade from one version of arch to a newer version, the simplest approach is to slowly tear down hosts managed by one version by cutting off jobs sent to it while spinning up a new launcher. 
 
 Step-by-step:
 

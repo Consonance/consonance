@@ -22,7 +22,7 @@ There are the following support components:
 
 ## Release Process
 
-Use the standard mvn release:prepare and mvn release:perform procedures
+Use the standard mvn release:prepare and mvn release:perform procedures with maven 3
 
 ## Updating
 
