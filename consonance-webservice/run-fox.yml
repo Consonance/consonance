@@ -13,9 +13,9 @@ consonanceConfig: ${HOME}/.consonance/config
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 
 httpClient:
-  timeout: 60000ms
-  connectionTimeout: 60000ms
-  connectionRequestTimeout: 60000ms
+  timeout: 5500ms
+  connectionTimeout: 5500ms
+  connectionRequestTimeout: 5500ms
   timeToLive: 1h
   cookiesEnabled: false
   maxConnections: 1024
