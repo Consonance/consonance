@@ -21,7 +21,7 @@ httpClient:
   maxConnections: 1024
   maxConnectionsPerRoute: 1024
   keepAlive: 0ms
-  retries: 2
+  retries: 0
 
 database:
   # the name of your JDBC driver
