@@ -19,14 +19,11 @@ package io.consonance.webservice.resources;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rabbitmq.client.Channel;
-import io.consonance.arch.utils.CommonServerTestUtilities;
-import io.consonance.common.Constants;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.dropwizard.setup.Environment;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -54,18 +51,13 @@ import java.util.TreeMap;
 @Produces(MediaType.APPLICATION_JSON)
 public class ConfigurationResource {
     private final HierarchicalINIConfiguration settings;
-    private final String queueName;
     private final ConsonanceWebserviceConfiguration config;
-    private final Environment environment;
-    private Channel jchannel = null;
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurationResource.class);
 
-    public ConfigurationResource(ConsonanceWebserviceConfiguration config, Environment environment) {
+    public ConfigurationResource(ConsonanceWebserviceConfiguration config) {
         this.config = config;
-        this.settings = CommonServerTestUtilities.parseConfig(config.getConsonanceConfig());
-        this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
-        this.environment = environment;
+        this.settings = CommonTestUtilities.parseConfig(config.getConsonanceConfig());
     }
 
     @GET

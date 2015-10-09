@@ -3,8 +3,6 @@ package io.consonance.client.cli;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ObjectArrays;
 import io.consonance.client.WebClient;
 import io.consonance.common.Utilities;
 import io.swagger.client.ApiException;
@@ -38,12 +36,22 @@ public class Main {
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
+    private WebClient webClient = null;
+
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
 
     private static void err(String format, Object... args) {
         System.err.println(String.format(format, args));
+    }
+
+    public WebClient getWebClient() {
+        return webClient;
+    }
+
+    public void setWebClient(WebClient webClient) {
+        this.webClient = webClient;
     }
 
     private static class Kill extends RuntimeException {
@@ -107,7 +115,7 @@ public class Main {
         List<String> vals = optVals(args, key);
 
         if (vals.isEmpty()) {
-            kill("seqware: missing required flag '%s'.", key);
+            kill("consonance: missing required flag '%s'.", key);
         }
 
         return vals;
@@ -148,22 +156,7 @@ public class Main {
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean VERBOSE = new AtomicBoolean(false);
 
-    private static void run(String... args) {
-        if (VERBOSE.get()) {
-            args = ObjectArrays.concat("--verbose", args);
-        }
-        if (DEBUG.get()) {
-            for (int i = 0; i < args.length; i++) {
-                if (args[i].contains(" ")) {
-                    args[i] = "'" + args[i] + "'";
-                }
-            }
-            out("PluginRunner.main: %s", Joiner.on(",").join(args));
-        } else {
-            System.out.println("Do it");
-            //PluginRunner.main(args);
-        }
-    }
+
 
     private static String serialize(Object obj) throws ApiException {
         try {
@@ -177,10 +170,6 @@ public class Main {
         }
     }
 
-    private static void run(List<String> runnerArgs) {
-        run(runnerArgs.toArray(new String[runnerArgs.size()]));
-    }
-
     // COMMANDS:
 
     /**
@@ -189,7 +178,7 @@ public class Main {
      * the line "refExclude=XX,GL%,hs37d5,XX_001234" the <i>substring</i> "%,h" will cause String.format to throw an exception and fail. So
      * it is sometimes necessary to print output with no consideration to formatting.
      *
-     * @param output
+     * @param output what to send to System.out
      */
     private static void outWithoutFormatting(String output) {
         System.out.println(output);
@@ -272,7 +261,8 @@ public class Main {
         }
     }
 
-    public static void main(String[] argv) throws IOException, TimeoutException, ApiException, OperationNotSupportedException {
+    protected void runMain(String[] argv)
+            throws OperationNotSupportedException, IOException, TimeoutException, ApiException {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
         if (flag(args, "--debug")) {
             DEBUG.set(true);
@@ -303,8 +293,13 @@ public class Main {
             try {
                 String cmd = args.remove(0);
                 File configFile = new File(System.getProperty("user.home"), ".consonance/config");
-                final HierarchicalINIConfiguration hierarchicalINIConfiguration = Utilities.parseConfig(configFile.getAbsolutePath());
-                WebClient client = new WebClient(hierarchicalINIConfiguration);
+                WebClient client;
+                if (this.getWebClient() == null){
+                    final HierarchicalINIConfiguration hierarchicalINIConfiguration = Utilities.parseConfig(configFile.getAbsolutePath());
+                    client = new WebClient(hierarchicalINIConfiguration);
+                } else{
+                    client = this.getWebClient();
+                }
                 client.setDebugging(DEBUG.get());
 
                 if (null != cmd) {
@@ -335,5 +330,10 @@ public class Main {
                 System.exit(1);
             }
         }
+    }
+
+    public static void main(String[] argv) throws IOException, TimeoutException, ApiException, OperationNotSupportedException {
+        Main main = new Main();
+        main.runMain(argv);
     }
 }

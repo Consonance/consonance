@@ -10,6 +10,7 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
@@ -107,7 +108,7 @@ public class WorkerRunnable implements Runnable {
         }
 
         this.maxRuns = maxRuns;
-        settings = CommonServerTestUtilities.parseConfig(configFile);
+        settings = CommonTestUtilities.parseConfig(configFile);
 
         // TODO: Dynamically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
         // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)

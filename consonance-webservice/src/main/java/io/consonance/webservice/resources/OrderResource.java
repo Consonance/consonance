@@ -23,8 +23,8 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.Order;
 import io.consonance.arch.beans.Provision;
-import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.jdbi.JobDAO;
@@ -73,7 +73,6 @@ public class OrderResource {
     private final JobDAO dao;
     private final HierarchicalINIConfiguration settings;
     private final String queueName;
-    private final PostgreSQL db;
     private final ProvisionDAO provisionDAO;
     private Channel jchannel = null;
 
@@ -82,9 +81,8 @@ public class OrderResource {
     public OrderResource(JobDAO dao, ProvisionDAO provisionDAO, String consonanceConfigFile) {
         this.dao = dao;
         this.provisionDAO = provisionDAO;
-        this.settings = CommonServerTestUtilities.parseConfig(consonanceConfigFile);
+        this.settings = CommonTestUtilities.parseConfig(consonanceConfigFile);
         this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
-        this.db = new PostgreSQL(settings);
     }
 
     @GET

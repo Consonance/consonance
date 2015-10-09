@@ -104,8 +104,7 @@ public class UserResource {
             final String hashedPassword = Hashing.sha256().hashString(user.getName() + randomString, Charsets.UTF_8).toString();
             user.setHashedPassword(hashedPassword);
             final int jobID = dao.create(user);
-            ConsonanceUser createdUser = dao.findById(jobID);
-            return createdUser;
+            return dao.findById(jobID);
         }
         throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
     }

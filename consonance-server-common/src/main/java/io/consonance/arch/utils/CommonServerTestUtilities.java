@@ -6,7 +6,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.arch.persistence.PostgreSQL;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
@@ -44,14 +43,6 @@ public class CommonServerTestUtilities {
         return data;
     }
 
-    public static HierarchicalINIConfiguration parseConfig(String path) {
-        try {
-            return new HierarchicalINIConfiguration(path);
-        } catch (ConfigurationException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
     /**
      * Clears database state and known queues for testing.
      *
@@ -62,7 +53,7 @@ public class CommonServerTestUtilities {
         CommonTestUtilities.clearState();
 
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = CommonServerTestUtilities.parseConfig(configFile.getAbsolutePath());
+        HierarchicalINIConfiguration parseConfig = CommonTestUtilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
         // clean up the database
         postgres.clearDatabase();

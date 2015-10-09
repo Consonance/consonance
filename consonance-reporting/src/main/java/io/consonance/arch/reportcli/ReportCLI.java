@@ -22,7 +22,7 @@ import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.reporting.ReportAPI;
 import io.consonance.arch.reporting.ReportAPIFactory;
 import io.consonance.arch.reporting.SlackRenderer;
-import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 import java.io.IOException;
@@ -50,7 +50,7 @@ public class ReportCLI extends Base {
 
     public void doWork() throws Exception {
 
-        final HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(configFile);
+        final HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
         final PostgreSQL db = new PostgreSQL(settings);
 
         ReportAPI reportAPI = ReportAPIFactory.makeReportAPI(settings, db);

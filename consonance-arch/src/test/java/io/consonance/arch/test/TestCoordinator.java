@@ -10,6 +10,7 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.coordinator.Coordinator;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -71,7 +72,7 @@ public class TestCoordinator {
     private static StringBuffer outBuffer = new StringBuffer();
 
     @Before
-    public void setup() throws IOException, IOException, TimeoutException {
+    public void setup() throws IOException, TimeoutException {
         MockitoAnnotations.initMocks(this);
 
         outBuffer = new StringBuffer();
@@ -89,7 +90,7 @@ public class TestCoordinator {
     }
 
     @Test(expected = Exception.class)
-    public void testCoordinator_badDBConfig() throws InterruptedException, Exception {
+    public void testCoordinator_badDBConfig() throws Exception {
         setupConfig(false);
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
@@ -102,7 +103,7 @@ public class TestCoordinator {
     }
 
     @Test(expected = Exception.class)
-    public void testCoordinator_invalidDB() throws InterruptedException, Exception {
+    public void testCoordinator_invalidDB() throws Exception {
         setupConfig(true);
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
@@ -144,10 +145,10 @@ public class TestCoordinator {
             jsonObj.addProperty(Constants.POSTGRES_PASSWORD, "password");
             jsonObj.addProperty(Constants.POSTGRES_DBNAME, "dbname");
         }
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(jsonObj);
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(jsonObj);
     }
 
-    private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {
+    private void setupMockQueue(Delivery testDelivery) throws Exception {
         Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
 
         Mockito.when(mockDeclareOk.getQueue()).thenReturn("mockQueue");

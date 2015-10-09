@@ -17,6 +17,7 @@
 package io.consonance.arch.utils;
 
 import com.rabbitmq.client.Channel;
+import io.consonance.common.CommonTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
@@ -38,7 +39,7 @@ public class UtilitiesIT {
     public static HierarchicalINIConfiguration getSettings() {
         File file = FileUtils.getFile("src", "test", "resources", "config");
         CommonServerTestUtilities instance = new CommonServerTestUtilities();
-        HierarchicalINIConfiguration settings = CommonServerTestUtilities.parseConfig(file.getAbsolutePath());
+        HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(file.getAbsolutePath());
         return settings;
     }
 

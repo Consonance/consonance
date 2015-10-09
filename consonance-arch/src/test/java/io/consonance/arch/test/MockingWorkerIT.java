@@ -4,11 +4,9 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
-import com.rabbitmq.client.ShutdownSignalException;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.arch.worker.Worker;
@@ -16,6 +14,7 @@ import io.consonance.arch.worker.WorkerHeartbeat;
 import io.consonance.arch.worker.WorkerRunnable;
 import io.consonance.arch.worker.WorkflowResult;
 import io.consonance.arch.worker.WorkflowRunner;
+import io.consonance.common.CommonTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.StatusLine;
@@ -35,7 +34,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -53,11 +51,12 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
-@PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, CommonServerTestUtilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
+@PrepareForTest({ QueueingConsumer.class, Worker.class, WorkerRunnable.class, CommonServerTestUtilities.class, CommonTestUtilities.class, WorkerHeartbeat.class, WorkflowRunner.class,
         Appender.class, Logger.class, LoggerFactory.class, ch.qos.logback.classic.Logger.class })
 @RunWith(PowerMockRunner.class)
-public class TestWorker {
+public class MockingWorkerIT {
 
+    public static final int TEN_SECONDS = 10000;
     private static ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
     private WorkerHeartbeat heartbeat = new WorkerHeartbeat();
@@ -93,12 +92,13 @@ public class TestWorker {
     private HttpClient mockClient;
     
     @Before
-    public void setup() throws IOException, Exception {
+    public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         Mockito.when(mockAppender.getName()).thenReturn("MOCK");
         LOG.addAppender((Appender) mockAppender);
         PowerMockito.mockStatic(CommonServerTestUtilities.class);
+        PowerMockito.mockStatic(CommonTestUtilities.class);
         Mockito.doNothing().when(mockConnection).close();
         Mockito.when(mockChannel.getConnection()).thenReturn(mockConnection);
         Mockito.when(CommonServerTestUtilities.setupQueue(any(HierarchicalINIConfiguration.class), anyString())).thenReturn(mockChannel);
@@ -120,7 +120,7 @@ public class TestWorker {
         Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
         Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
         
-        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn((GetMethod) mockMethod);
+        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn(mockMethod);
         Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
         PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
     }
@@ -128,7 +128,7 @@ public class TestWorker {
     @Test
     public void testWorker_noQueueName() {
         PowerMockito.mockStatic(CommonServerTestUtilities.class);
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(new HierarchicalINIConfiguration());
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(new HierarchicalINIConfiguration());
         try {
             WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
             fail("Execution should not have reached this point!");
@@ -142,7 +142,7 @@ public class TestWorker {
     }
 
     @Test
-    public void testWorker_exception() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_exception() throws Exception {
         Mockito.when(mockRunner.call()).thenThrow(new RuntimeException("Mock Exception"));
         PowerMockito.whenNew(WorkflowRunner.class).withNoArguments().thenReturn(mockRunner);
 
@@ -156,14 +156,14 @@ public class TestWorker {
 
         testWorker.run();
         Mockito.verify(mockAppender, Mockito.atLeastOnce()).doAppend(argCaptor.capture());
-        List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+        List<LoggingEvent> tmpList = new LinkedList<>(argCaptor.getAllValues());
         String testResults = this.appendEventsIntoString(tmpList);
 
         assertTrue("Mock Exception is present", testResults.contains("java.lang.RuntimeException: Mock Exception"));
     }
 
     @Test
-    public void testWorker_emptyMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_emptyMessage() throws Exception {
         setupConfig();
         byte body[] = ("").getBytes();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
@@ -172,14 +172,14 @@ public class TestWorker {
         WorkerRunnable testWorker = new WorkerRunnable("src/test/resources/workerConfig.ini", "vm123456", 1);
         testWorker.run();
         Mockito.verify(mockAppender, Mockito.atLeastOnce()).doAppend(argCaptor.capture());
-        List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+        List<LoggingEvent> tmpList = new LinkedList<>(argCaptor.getAllValues());
         String testResults = this.appendEventsIntoString(tmpList);
 
         assertTrue("empty message warning", testResults.contains(" [x] Job request came back null/empty! "));
     }
 
     @Test
-    public void testWorker_nullMessage() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_nullMessage() throws Exception {
         setupConfig();
 
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, null);
@@ -189,7 +189,7 @@ public class TestWorker {
         try {
             testWorker.run();
             Mockito.verify(mockAppender, Mockito.atLeastOnce()).doAppend(argCaptor.capture());
-            List<LoggingEvent> tmpList = new LinkedList<LoggingEvent>(argCaptor.getAllValues());
+            List<LoggingEvent> tmpList = new LinkedList<>(argCaptor.getAllValues());
             String testResults = this.appendEventsIntoString(tmpList);
 
             System.out.println(testResults);
@@ -202,7 +202,8 @@ public class TestWorker {
     private String appendEventsIntoString(List<LoggingEvent> events) {
         StringBuffer sbuff = new StringBuffer();
         for (LoggingEvent e : events) {
-            sbuff.append(e.getMessage());
+            // why does this become null now?
+            sbuff.append(e != null ? e.getMessage() : "");
         }
         return sbuff.toString();
     }
@@ -214,7 +215,7 @@ public class TestWorker {
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
         Mockito.when(CommonServerTestUtilities.parseJSONStr(anyString())).thenCallRealMethod();
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenCallRealMethod();
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenCallRealMethod();
         final FutureTask<String> tester = new FutureTask<>(new Callable<String>() {
             @Override
             public String call() {
@@ -246,7 +247,7 @@ public class TestWorker {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(1500);
+                    Thread.sleep(TEN_SECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
@@ -293,7 +294,7 @@ public class TestWorker {
         byte[] body = setupMessage();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);
         setupMockQueue(testDelivery);
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(configObj);
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(configObj);
         final FutureTask<String> tester = new FutureTask<>(new Callable<String>() {
             @Override
             public String call() {
@@ -325,7 +326,7 @@ public class TestWorker {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(1500);
+                    Thread.sleep(TEN_SECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
@@ -357,7 +358,7 @@ public class TestWorker {
     }
 
     @Test
-    public void testWorker_main() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_main() throws Exception {
         setupConfig();
 
         byte[] body = setupMessage();
@@ -383,7 +384,7 @@ public class TestWorker {
     }
 
     @Test
-    public void testWorker_mainNoArgs() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_mainNoArgs() throws Exception {
         setupConfig();
 
         byte[] body = setupMessage();
@@ -401,7 +402,7 @@ public class TestWorker {
     }
 
     @Test
-    public void testWorker_mainUUIDOonly() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker_mainUUIDOonly() throws Exception {
         setupConfig();
 
         byte[] body = setupMessage();
@@ -428,7 +429,7 @@ public class TestWorker {
     }
 
     @Test
-    public void testWorker() throws ShutdownSignalException, ConsumerCancelledException, InterruptedException, Exception {
+    public void testWorker() throws Exception {
         setupConfig();
 
         byte[] body = setupMessage();
@@ -489,10 +490,10 @@ public class TestWorker {
         configObj.addProperty("worker.preworkerSleep", "1");
         configObj.addProperty("worker.postworkerSleep", "1");
         configObj.addProperty("worker.hostUserName", System.getProperty("user.name"));
-        Mockito.when(CommonServerTestUtilities.parseConfig(anyString())).thenReturn(configObj);
+        Mockito.when(CommonTestUtilities.parseConfig(anyString())).thenReturn(configObj);
     }
 
-    private void setupMockQueue(Delivery testDelivery) throws InterruptedException, Exception {
+    private void setupMockQueue(Delivery testDelivery) throws Exception {
         Mockito.when(mockConsumer.nextDelivery()).thenReturn(testDelivery);
         PowerMockito.whenNew(QueueingConsumer.class).withArguments(mockChannel).thenReturn(mockConsumer);
     }

@@ -33,7 +33,7 @@ import java.util.Map;
 public interface ReportAPI {
 
 
-    public enum Commands {
+    enum Commands {
         STATUS("retrieves configuration and version information on arch3"), INFO("retrieves high-level information on bot config"), PROVISIONED(
                 "retrieves detailed information on provisioned instances"), JOBS("retrieves detailed information on jobs"), GATHER(
                 "gathers the last message sent by each worker and displays the last line of it"), YOUXIA(
