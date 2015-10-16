@@ -213,11 +213,6 @@
                 <version>1.9.8</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>3.3.2</version>
-            </dependency>
-            <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-multipart</artifactId>
                 <version>2.21</version>
@@ -297,6 +292,16 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>1.16</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.4</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -317,6 +322,14 @@
     </dependencies>
 
     <repositories>
+        <repository>
+            <id>vfs-s3.repository</id>
+            <name>vfs-s3 project repository</name>
+            <url>http://dl.bintray.com/content/abashev/vfs-s3</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <repository>
             <id>seqware.sourceforge.net</id>
             <name>SeqWare Maven Repository</name>
@@ -505,6 +518,7 @@
                                     <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
                                     <excludes>
                                         <exclude>io.consonance:*</exclude>
+                                        <exclude>io.github.collaboratory.launcher:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
