@@ -43,7 +43,7 @@ CREATE TABLE consonance_user (
 );
 
 
-ALTER TABLE public.consonance_user OWNER TO queue_user;
+ALTER TABLE consonance_user OWNER TO queue_user;
 
 --
 -- Name: consonance_user_user_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
@@ -57,7 +57,7 @@ CREATE SEQUENCE consonance_user_user_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.consonance_user_user_id_seq OWNER TO queue_user;
+ALTER TABLE consonance_user_user_id_seq OWNER TO queue_user;
 
 --
 -- Name: consonance_user_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
@@ -72,26 +72,13 @@ ALTER SEQUENCE consonance_user_user_id_seq OWNED BY consonance_user.user_id;
 
 CREATE TABLE extra_files (
     job_id integer NOT NULL,
-    contents character varying(255),
-    keep boolean NOT NULL,
+    content text,
+    keep boolean,
     path text NOT NULL
 );
 
 
-ALTER TABLE public.extra_files OWNER TO queue_user;
-
---
--- Name: ini_params; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
---
-
-CREATE TABLE ini_params (
-    job_id integer NOT NULL,
-    value text,
-    key text NOT NULL
-);
-
-
-ALTER TABLE public.ini_params OWNER TO queue_user;
+ALTER TABLE extra_files OWNER TO queue_user;
 
 --
 -- Name: job; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
@@ -105,21 +92,17 @@ CREATE TABLE job (
     container_runtime_descriptor text,
     end_user text,
     flavour text,
-    ini text,
     job_hash text,
     message_type text,
     status text,
     stderr text,
     stdout text,
     job_uuid text,
-    provision_uuid text,
-    workflow text,
-    workflow_path text,
-    workflow_version text
+    provision_uuid text
 );
 
 
-ALTER TABLE public.job OWNER TO queue_user;
+ALTER TABLE job OWNER TO queue_user;
 
 --
 -- Name: job_job_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
@@ -133,7 +116,7 @@ CREATE SEQUENCE job_job_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.job_job_id_seq OWNER TO queue_user;
+ALTER TABLE job_job_id_seq OWNER TO queue_user;
 
 --
 -- Name: job_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
@@ -160,7 +143,7 @@ CREATE TABLE provision (
 );
 
 
-ALTER TABLE public.provision OWNER TO queue_user;
+ALTER TABLE provision OWNER TO queue_user;
 
 --
 -- Name: provision_ansibleplaybooks; Type: TABLE; Schema: public; Owner: queue_user; Tablespace: 
@@ -172,7 +155,7 @@ CREATE TABLE provision_ansibleplaybooks (
 );
 
 
-ALTER TABLE public.provision_ansibleplaybooks OWNER TO queue_user;
+ALTER TABLE provision_ansibleplaybooks OWNER TO queue_user;
 
 --
 -- Name: provision_provision_id_seq; Type: SEQUENCE; Schema: public; Owner: queue_user
@@ -186,7 +169,7 @@ CREATE SEQUENCE provision_provision_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.provision_provision_id_seq OWNER TO queue_user;
+ALTER TABLE provision_provision_id_seq OWNER TO queue_user;
 
 --
 -- Name: provision_provision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: queue_user
@@ -230,14 +213,6 @@ ALTER TABLE ONLY consonance_user
 
 ALTER TABLE ONLY extra_files
     ADD CONSTRAINT extra_files_pkey PRIMARY KEY (job_id, path);
-
-
---
--- Name: ini_params_pkey; Type: CONSTRAINT; Schema: public; Owner: queue_user; Tablespace: 
---
-
-ALTER TABLE ONLY ini_params
-    ADD CONSTRAINT ini_params_pkey PRIMARY KEY (job_id, key);
 
 
 --
@@ -286,14 +261,6 @@ ALTER TABLE ONLY provision_ansibleplaybooks
 
 ALTER TABLE ONLY extra_files
     ADD CONSTRAINT fk_d6ymmeamjm0wheh1jjwhoky6x FOREIGN KEY (job_id) REFERENCES job(job_id);
-
-
---
--- Name: fk_jqnqnwsqveuw1x3kjlhqs7fve; Type: FK CONSTRAINT; Schema: public; Owner: queue_user
---
-
-ALTER TABLE ONLY ini_params
-    ADD CONSTRAINT fk_jqnqnwsqveuw1x3kjlhqs7fve FOREIGN KEY (job_id) REFERENCES job(job_id);
 
 
 --
