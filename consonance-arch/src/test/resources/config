@@ -1,3 +1,6 @@
+# launcher CWL
+working-directory=./datastore/
+
 [rabbit]
 rabbitMQHost = localhost
 rabbitMQUser = guest

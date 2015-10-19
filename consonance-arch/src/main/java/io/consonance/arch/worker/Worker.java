@@ -26,7 +26,8 @@ public class Worker extends Base {
     private Worker(String[] argv) throws IOException {
         super();
         this.testSpec = super.parser.accepts("test", "In test mode, worker simply completes successfully");
-        this.configSpec = parser.accepts("config", "Specify a config file").withRequiredArg().required().ofType(String.class);
+        this.configSpec = parser.accepts("config", "Specify a config file, this config file is the merger of the consonance worker config "
+                + "and the launcherCWL config").withRequiredArg().required().ofType(String.class);
         this.maxRunsSpec = parser
                 .accepts("max-runs", "The maximum number of workflows to execute. If \"--endless\" is set, this number will be ignored.")
                 .withOptionalArg().ofType(Integer.class).defaultsTo(1);

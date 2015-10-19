@@ -13,16 +13,17 @@ import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.exec.CommandLine;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -36,11 +37,9 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,6 +55,7 @@ public class WorkerRunnable implements Runnable {
 
     private static final String NO_MESSAGE_FROM_QUEUE_MESSAGE = " [x] Job request came back null/empty! ";
     protected final Logger log = LoggerFactory.getLogger(getClass());
+    private final String configFile;
     private HierarchicalINIConfiguration settings = null;
     private Channel resultsChannel = null;
     private String queueName = null;
@@ -135,6 +135,7 @@ public class WorkerRunnable implements Runnable {
         this.maxRuns = maxRuns;
         this.testMode = testMode;
         this.flavour = flavourOverride;
+        this.configFile = configFile;
     }
 
     @Override
@@ -235,7 +236,7 @@ public class WorkerRunnable implements Runnable {
                         } else {
                             String seqwareEngine = settings.getString(Constants.WORKER_SEQWARE_ENGINE, Constants.SEQWARE_WHITESTAR_ENGINE);
                             String seqwareSettingsFile = settings.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE);
-                            workflowResult = launchJob(statusJSON, job, seqwareEngine, seqwareSettingsFile);
+                            workflowResult = launchJob(statusJSON, job);
                         }
 
                         status = new Status(vmUuid, job.getUuid(),
@@ -311,31 +312,15 @@ public class WorkerRunnable implements Runnable {
      *            - The job contains information about what workflow to execute, and how.
      * @return The complete stdout and stderr from the workflow execution will be returned.
      */
-    private WorkflowResult launchJob(String message, Job job, String seqwareEngine, String seqwareSettingsFile) {
+    private WorkflowResult launchJob(String message, Job job) {
         WorkflowResult workflowResult = null;
         ExecutorService exService = Executors.newFixedThreadPool(2);
         WorkflowRunner workflowRunner = new WorkflowRunner();
         try {
 
-            Path pathToINI = writeINIFile(job);
             resultsChannel.basicPublish(this.resultsQueueName, this.resultsQueueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
                     message.getBytes(StandardCharsets.UTF_8));
             resultsChannel.waitForConfirms();
-
-            String dockerImage = "pancancer/seqware_whitestar_pancancer:1.1.1";
-            CommandLine cli = new CommandLine("docker");
-            cli.addArgument("run");
-            List<String> args = new ArrayList<>(Arrays.asList("--rm", "-h", "master", "-t", "-v",
-                    "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v", pathToINI + ":/ini",
-                    "-v", "/datastore:/datastore", "-v", "/home/" + this.userName + "/.gnos:/home/ubuntu/.gnos"));
-            if (seqwareSettingsFile != null) {
-                args.addAll(Arrays.asList("-v", seqwareSettingsFile + ":/home/seqware/.seqware/settings"));
-            }
-            args.addAll(Arrays.asList(dockerImage, "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata",
-                    "--engine", seqwareEngine));
-
-            String[] argsArray = new String[args.size()];
-            cli.addArguments(args.toArray(argsArray));
 
             WorkerHeartbeat heartbeat = new WorkerHeartbeat();
             heartbeat.setQueueName(this.resultsQueueName);
@@ -353,7 +338,20 @@ public class WorkerRunnable implements Runnable {
             long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * presleep;
             long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * postsleep;
 
-            workflowRunner.setCli(cli);
+            workflowRunner.setConfigFilePath(configFile);
+            // write out descriptors from message
+            final Path imageDescriptor = new File(System.getProperty("user.dir"), "image-descriptor.cwl").toPath();
+            final Path runDescriptor = new File(System.getProperty("user.dir"), "run-descriptor.json").toPath();
+            FileUtils.writeStringToFile(imageDescriptor.toFile(), job.getContainerImageDescriptor(), StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(runDescriptor.toFile(), job.getContainerRuntimeDescriptor(), StandardCharsets.UTF_8);
+            workflowRunner.setImageDescriptorPath(imageDescriptor.toFile().getAbsolutePath());
+            workflowRunner.setRuntimeDescriptorPath(runDescriptor.toFile().getAbsolutePath());
+
+            // write out extra files
+            for(Map.Entry<String, Job.ExtraFile> entry : job.getExtraFiles().entrySet()){
+                FileUtils.write(new File(entry.getKey()), entry.getValue().getContents());
+            }
+
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
             // Submit both

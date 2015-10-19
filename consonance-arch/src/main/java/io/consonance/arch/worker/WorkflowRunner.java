@@ -1,10 +1,6 @@
 package io.consonance.arch.worker;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecuteResultHandler;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.PumpStreamHandler;
+import io.github.collaboratory.LauncherCWL;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,17 +19,19 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  */
 public class WorkflowRunner implements Callable<WorkflowResult> {
-    protected static final Logger LOG = LoggerFactory.getLogger(WorkflowRunner.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WorkflowRunner.class);
     private long preworkDelay;
     private long postworkDelay;
-    private CommandLine cli;
     private final CollectingLogOutputStream outputStream = new CollectingLogOutputStream();
     private final CollectingLogOutputStream errorStream = new CollectingLogOutputStream();
+    private String configFilePath;
+    private String imageDescriptorPath;
+    private String runtimeDescriptorPath;
 
     /**
      * Get the stdout of the running command.
      *
-     * @return
+     * @return stdout
      */
     public String getStdOut() {
         String s;
@@ -62,7 +60,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
     /**
      * Get the stderr of the running command.
      *
-     * @return
+     * @return stderr
      */
     public String getStdErr() {
         String s;
@@ -79,44 +77,31 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
 
     @Override
     public WorkflowResult call() throws IOException {
-        PumpStreamHandler streamHandler = new PumpStreamHandler(this.outputStream, this.errorStream);
+        LOG.info("Executing cwlLauncher:");
+        LOG.info("Image descriptor is: " + imageDescriptorPath);
+        LOG.info("Runtime descriptor is: " + runtimeDescriptorPath);
+        LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
 
-        DefaultExecutor executor = new DefaultExecutor();
-
-        /*
-         * CommandLine cli = new CommandLine("docker"); cli.addArguments(new String[] { "run", "--rm", "-h", "master", "-t" ,"-v",
-         * "/var/run/docker.sock:/var/run/docker.sock", "-v", job.getWorkflowPath() + ":/workflow", "-v",pathToINI + ":/ini", "-v",
-         * "/datastore:/datastore", "-v","/home/"+this.userName+"/.ssh/gnos.pem:/home/ubuntu/.ssh/gnos.pem",
-         * "seqware/seqware_whitestar_pancancer", "seqware", "bundle", "launch", "--dir", "/workflow", "--ini", "/ini", "--no-metadata" });
-         */
-        LOG.info("Executing command: " + this.cli.toString().replace(",", ""));
-
-        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
-        executor.setStreamHandler(streamHandler);
+        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, this.outputStream, this.errorStream);
 
         try {
             if (this.preworkDelay > 0) {
                 LOG.info("Sleeping before executing workflow for " + this.preworkDelay + " ms.");
                 Thread.sleep(this.preworkDelay);
             }
-
-            executor.execute(cli, resultHandler);
-            // Use the result handler for non-blocking call, so this way we should be able to get updates of
-            // stdout and stderr while the command is running.
-            resultHandler.waitFor();
+            // this is a blocking call, but the HeartbeatThread appears to be a in a separate thread
+            launcher.run();
             result.setWorkflowStdout(outputStream.getAllLinesAsString());
             result.setWorkflowStdErr(errorStream.getAllLinesAsString());
-            LOG.debug("Exit code: "+resultHandler.getExitValue());
-            result.setExitCode(resultHandler.getExitValue());
+            // exit code is artificial since the CWL runner actually runs more than one command
+            // we use 0 to indicate success, 1 to indicate failure (and the streams will have more detail)
+            result.setExitCode(0);
             if (this.postworkDelay > 0) {
                 LOG.info("Sleeping after executing workflow for " + this.postworkDelay + " ms.");
                 Thread.sleep(this.postworkDelay);
             }
-        } catch (ExecuteException e) {
-            LOG.error(e.getMessage(), e);
-            result.setWorkflowStdout(this.getStdErr());
-        } catch (InterruptedException | IOException e) {
+        } catch (InterruptedException | RuntimeException e) {
             LOG.error(e.getMessage(), e);
             result.setWorkflowStdout(this.getStdErr());
         } finally {
@@ -143,12 +128,27 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         this.postworkDelay = postworkDelay;
     }
 
-    public CommandLine getCli() {
-        return cli;
+    public String getConfigFilePath() {
+        return configFilePath;
     }
 
-    public void setCli(CommandLine cli) {
-        this.cli = cli;
+    public void setConfigFilePath(String configFilePath) {
+        this.configFilePath = configFilePath;
     }
 
+    public String getImageDescriptorPath() {
+        return imageDescriptorPath;
+    }
+
+    public void setImageDescriptorPath(String imageDescriptorPath) {
+        this.imageDescriptorPath = imageDescriptorPath;
+    }
+
+    public String getRuntimeDescriptorPath() {
+        return runtimeDescriptorPath;
+    }
+
+    public void setRuntimeDescriptorPath(String runtimeDescriptorPath) {
+        this.runtimeDescriptorPath = runtimeDescriptorPath;
+    }
 }
