@@ -456,6 +456,7 @@
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
                                 <usedDependency>org.apache.commons:commons-pool2</usedDependency>
                                 <usedDependency>org.apache.commons:commons-dbcp2</usedDependency>
+                                <usedDependency>org.apache.httpcomponents:httpclient</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
