@@ -51,7 +51,8 @@ public class SystemMainIT {
         Main main = new Main();
         main.setWebClient(SystemClientIT.getWebClient());
         final File file = Files.createTempFile("test", "test").toFile();
-        main.runMain(new String[] { "run","--flavour","m1.test","--image-descriptor", file.getAbsolutePath() , "--run-descriptor", file.getAbsolutePath()});
+        main.runMain(new String[] { "run","--flavour","m1.test","--image-descriptor", file.getAbsolutePath() ,
+                "--run-descriptor", file.getAbsolutePath(), "--extra-file", "node-engine.cwl="+file.getAbsolutePath()+"=true"});
         // reset system.out
         // check out the output
         assertTrue(systemOutRule.getLog().contains("job_uuid"));
