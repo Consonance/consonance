@@ -210,7 +210,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>com.amazonaws</groupId>
-                    <artifactId>aws-java-sdk-core</artifactId>
+                    <artifactId>aws-java-sdk</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>net.sf.jopt-simple</groupId>
