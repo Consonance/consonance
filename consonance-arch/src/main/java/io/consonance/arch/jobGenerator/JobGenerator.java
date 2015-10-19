@@ -35,6 +35,8 @@ import java.util.concurrent.TimeoutException;
 /**
  * Submits orders into the queue system.
  *
+ * @deprecated needs to be hooked up the web service for Consonance 2
+ *
  * @author boconnor
  * @author dyuen
  */
@@ -223,8 +225,9 @@ public class JobGenerator extends Base {
         ArrayList<String> a = new ArrayList<>();
         a.add("ansible_playbook_path");
 
+        // TODO: this is totally broken until we update to use CWL
         Order newOrder = new Order();
-        final Job job = new Job(workflowName, workflowVersion, workflowPath, hashStr, iniFileEntries);
+        final Job job = new Job(hashStr);
         job.setFlavour(flavour);
         job.setEndUser(user);
         job.setExtraFiles(extraFiles);

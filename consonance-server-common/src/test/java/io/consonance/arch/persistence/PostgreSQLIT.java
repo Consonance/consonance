@@ -230,7 +230,7 @@ public class PostgreSQLIT {
         HashMap<String, String> hm = new HashMap<>();
         hm.put("param1", "bar");
         hm.put("param2", "foo");
-        Job job = new Job("DEWrapperWorkflow", "1.0.0", "/path/to/workflow", hashStr, hm);
+        Job job = new Job(hashStr);
         job.setFlavour("m1.xlarge");
         job.setEndUser("player");
         return job;

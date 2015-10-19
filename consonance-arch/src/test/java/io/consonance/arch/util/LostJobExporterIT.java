@@ -20,7 +20,6 @@ import com.google.common.io.Files;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.CommonTestUtilities;
 import joptsimple.OptionException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -31,7 +30,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -97,12 +95,7 @@ public class LostJobExporterIT {
     }
 
     private Job createJob(String uuid, JobState state) {
-        CommonServerTestUtilities u = new CommonServerTestUtilities();
-        String hashStr = uuid;
-        HashMap<String, String> hm = new HashMap<>();
-        hm.put("param1", "bar");
-        hm.put("param2", "foo");
-        Job job1 = new Job("DEWrapperWorkflow", "1.0.0", "/path/to/workflow", hashStr, hm);
+        Job job1 = new Job(uuid);
         job1.setUuid(uuid);
         job1.setState(state);
         return job1;

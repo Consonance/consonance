@@ -37,7 +37,7 @@ public class LostJobExporter extends Base {
     /**
      * This is ugly, but tiny.
      *
-     * @param argv
+     * @param argv arguments from command-line
      * @throws IOException
      */
     public LostJobExporter(String[] argv) throws IOException {
@@ -74,8 +74,10 @@ public class LostJobExporter extends Base {
         log.info("Jobs read from DB");
         if (recoveredJobs.size() == idsToRecover.size()) {
             for (Job job : recoveredJobs) {
-                File outFile = new File(exportDir, job.getUuid() + ".ini");
-                FileUtils.write(outFile, job.getIniStr(), StandardCharsets.UTF_8);
+                File outFile = new File(exportDir, job.getUuid() + ".cwl");
+                FileUtils.write(outFile, job.getContainerImageDescriptor(), StandardCharsets.UTF_8);
+                File jsonFile = new File(exportDir, job.getUuid() + ".json");
+                FileUtils.write(jsonFile, job.getContainerRuntimeDescriptor(), StandardCharsets.UTF_8);
             }
         } else {
             String description = "only recovered " + recoveredJobs.size() + "  out of " + idsToRecover.size();

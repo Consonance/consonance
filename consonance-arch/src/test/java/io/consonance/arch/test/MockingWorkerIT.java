@@ -36,10 +36,8 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
@@ -56,7 +54,7 @@ import static org.mockito.Matchers.anyString;
 @RunWith(PowerMockRunner.class)
 public class MockingWorkerIT {
 
-    public static final int TEN_SECONDS = 10000;
+    public static final int EIGHT_SECONDS = 8000;
     private static ch.qos.logback.classic.Logger LOG = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
     private WorkerHeartbeat heartbeat = new WorkerHeartbeat();
@@ -247,7 +245,7 @@ public class MockingWorkerIT {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(TEN_SECONDS);
+                    Thread.sleep(EIGHT_SECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
@@ -326,7 +324,7 @@ public class MockingWorkerIT {
                 try {
                     // The endless worker will not end on its own (because it's endless) so we need to wait a little bit (0.5 seconds) and
                     // then kill it as if it were killed by the command-line script (kill_worker_daemon.sh).
-                    Thread.sleep(TEN_SECONDS);
+                    Thread.sleep(EIGHT_SECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     LOG.error(e.getMessage());
@@ -456,16 +454,8 @@ public class MockingWorkerIT {
 
     private byte[] setupMessage() {
         Job j = new Job();
-        j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
-        j.setWorkflow("HelloWorld");
-        j.setWorkflowVersion("1.0-SNAPSHOT");
         j.setJobHash("asdlk2390aso12jvrej");
         j.setUuid("1234567890");
-        Map<String, String> iniMap = new HashMap<>(3);
-        iniMap.put("param1", "value1");
-        iniMap.put("param2", "value2");
-        iniMap.put("param3", "help I'm trapped in an INI file");
-        j.setIni(iniMap);
         byte[] body = j.toJSON().getBytes();
         return body;
     }

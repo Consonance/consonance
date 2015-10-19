@@ -12,7 +12,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
@@ -37,7 +36,6 @@ public class SystemMainIT {
 
     @Test
     public void testGetConfiguration() throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Main main = new Main();
         main.setWebClient(SystemClientIT.getWebClient());
         main.runMain(new String[] { "--metadata" });
