@@ -43,7 +43,6 @@ public class Constants {
 
     public static final String COORDINATOR_SECONDS_BEFORE_LOST = "coordinator.max_seconds_before_lost";
 
-    public static final String JOB_GENERATOR_RESULTS_FILE = "generator.results";
     public static final String JOB_GENERATOR_CHECK_JOB_HASH = "generator.check_previous_job_hash";
     public static final String JOB_GENERATOR_FILTER_KEYS_IN_HASH = "generator.job_filter_hash_keys";
 

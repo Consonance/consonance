@@ -5,18 +5,15 @@ import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
 import io.consonance.common.BasicPostgreSQL;
-import io.consonance.arch.utils.CommonServerTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.handlers.ArrayHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -94,11 +91,10 @@ public class PostgreSQL extends BasicPostgreSQL{
     }
 
     public String createJob(Job j) {
-        JSONObject jsonIni = new JSONObject(j.getIni());
         Map<Object, Map<String, Object>> map = this.runInsertStatement(
-                "INSERT INTO job (status, job_uuid, workflow, workflow_version, job_hash, ini) VALUES (?,?,?,?,?,?)",
-                new KeyedHandler<>("job_uuid"), j.getState().toString(), j.getUuid(), j.getWorkflow(), j.getWorkflowVersion(),
-                j.getJobHash(), jsonIni.toJSONString());
+                "INSERT INTO job (status, job_uuid, job_hash) VALUES (?,?,?)",
+                new KeyedHandler<>("job_uuid"), j.getState().toString(), j.getUuid(),
+                j.getJobHash());
         return (String) map.entrySet().iterator().next().getKey();
     }
 
@@ -166,14 +162,9 @@ public class PostgreSQL extends BasicPostgreSQL{
             Job j = new Job();
             j.setState(Enum.valueOf(JobState.class, (String) entry.getValue().get("status")));
             j.setUuid((String) entry.getValue().get("job_uuid"));
-            j.setWorkflow((String) entry.getValue().get("workflow"));
-            j.setWorkflowVersion((String) entry.getValue().get("workflow_version"));
             j.setJobHash((String) entry.getValue().get("job_hash"));
             j.setStdout((String) entry.getValue().get("stdout"));
             j.setStderr((String) entry.getValue().get("stderr"));
-            final Map<String, String> ini = convertJSON(entry, "ini");
-            j.setIni(ini);
-
             j.setFlavour((String) entry.getValue().get("flavour"));
 
             // timestamp
@@ -187,18 +178,6 @@ public class PostgreSQL extends BasicPostgreSQL{
         }
 
         return jobs;
-    }
-
-    private Map<String, String> convertJSON(Entry<Object, Map<String, Object>> entry, String columnName) {
-        if (entry.getValue().get(columnName) == null){
-            return new HashMap<>();
-        }
-        JSONObject iniJson = CommonServerTestUtilities.parseJSONStr(entry.getValue().get(columnName).toString());
-        HashMap<String, String> ini = new HashMap<>();
-        for (Object key : iniJson.keySet()) {
-            ini.put((String) key, (String) iniJson.get(key));
-        }
-        return ini;
     }
 
     public boolean previouslyRun(String hash) {

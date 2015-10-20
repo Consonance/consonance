@@ -46,10 +46,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -161,9 +159,6 @@ public class TestWorkerWithMocking {
         setupConfig();
 
         Job j = new Job();
-        j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
-        j.setWorkflow("HelloWorld");
-        j.setWorkflowVersion("1.0-SNAPSHOT");
         j.setJobHash("asdlk2390aso12jvrej");
         j.setUuid("1234567890");
 
@@ -176,12 +171,6 @@ public class TestWorkerWithMocking {
         j.setContainerRuntimeDescriptor(FileUtils.readFileToString(jobFile));
         j.getExtraFiles().put("node-engine.cwl", new Job.ExtraFile(FileUtils.readFileToString(engineFile), true));
 
-
-        Map<String, String> iniMap = new HashMap<>(3);
-        iniMap.put("param1", "value1");
-        iniMap.put("param2", "value2");
-        iniMap.put("param3", "help I'm trapped in an INI file");
-        j.setIni(iniMap);
         String json = j.toJSON();
         byte[] body = json.getBytes();
         Delivery testDelivery = new Delivery(mockEnvelope, mockProperties, body);

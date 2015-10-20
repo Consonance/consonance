@@ -30,8 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.fail;
@@ -117,16 +115,8 @@ public class TestCoordinator {
 
     private byte[] setupMessage() {
         Job j = new Job();
-        j.setWorkflowPath("/workflows/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.1.0");
-        j.setWorkflow("HelloWorld");
-        j.setWorkflowVersion("1.0-SNAPSHOT");
         j.setJobHash("asdlk2390aso12jvrej");
         j.setUuid("1234567890");
-        Map<String, String> iniMap = new HashMap<>(3);
-        iniMap.put("param1", "value1");
-        iniMap.put("param2", "value2");
-        iniMap.put("param3", "help I'm trapped in an INI file");
-        j.setIni(iniMap);
         byte[] body = j.toJSON().getBytes();
         return body;
     }

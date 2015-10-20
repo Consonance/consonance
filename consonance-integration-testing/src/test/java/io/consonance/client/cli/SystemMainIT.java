@@ -12,7 +12,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
@@ -37,7 +36,6 @@ public class SystemMainIT {
 
     @Test
     public void testGetConfiguration() throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Main main = new Main();
         main.setWebClient(SystemClientIT.getWebClient());
         main.runMain(new String[] { "--metadata" });
@@ -53,7 +51,8 @@ public class SystemMainIT {
         Main main = new Main();
         main.setWebClient(SystemClientIT.getWebClient());
         final File file = Files.createTempFile("test", "test").toFile();
-        main.runMain(new String[] { "run","--flavour","m1.test","--image-descriptor", file.getAbsolutePath() , "--run-descriptor", file.getAbsolutePath()});
+        main.runMain(new String[] { "run","--flavour","m1.test","--image-descriptor", file.getAbsolutePath() ,
+                "--run-descriptor", file.getAbsolutePath(), "--extra-file", "node-engine.cwl="+file.getAbsolutePath()+"=true"});
         // reset system.out
         // check out the output
         assertTrue(systemOutRule.getLog().contains("job_uuid"));

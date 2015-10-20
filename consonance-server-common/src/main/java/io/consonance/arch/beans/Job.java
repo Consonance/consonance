@@ -75,23 +75,10 @@ public class Job extends BaseBean{
     @ApiModelProperty(value = "consonance will assign a uuid to jobs")
     @Column(name="job_uuid", columnDefinition="text")
     private String uuid = UUID.randomUUID().toString().toLowerCase();
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("workflow_name")
-    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
-    @Column(columnDefinition="text")
-    private String workflow;
     @JsonProperty("vmuuid")
     @ApiModelProperty(value = "the cloud instance-id assigned to run a job")
     @Column(name="provision_uuid",columnDefinition="text")
     private String vmUuid;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
-    @Column(name="workflow_version",columnDefinition="text")
-    private String workflowVersion;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
-    @Column(name="workflow_path",columnDefinition="text")
-    private String workflowPath;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @ApiModelProperty(value = "can be used to group user-submitted jobs for reporting purposes")
     @Column(name="job_hash",columnDefinition="text")
@@ -100,19 +87,6 @@ public class Job extends BaseBean{
     @ApiModelProperty(value = "used by consonance internally")
     @Column(name="message_type",columnDefinition="text")
     private String messageType;
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @ApiModelProperty(value = "used by seqware, deprecated", hidden=true)
-    @Column(name="ini",columnDefinition="text")
-    private String iniFileAsString;
-
-    @JsonProperty("arguments")
-    @ElementCollection(fetch = FetchType.EAGER, targetClass = String.class)
-    @MapKeyColumn(name="key", columnDefinition = "text")
-    @Column(name="value", columnDefinition = "text")
-    @CollectionTable(name="ini_params", joinColumns=@JoinColumn(name="job_id"))
-    @ApiModelProperty(value = "deprecated, key values for seqware workflows")
-    private Map<String, String> ini = new HashMap<>();
 
     @Embeddable
     public static class ExtraFile{
@@ -189,12 +163,8 @@ public class Job extends BaseBean{
     @Column(columnDefinition="text")
     private String flavour = null;
 
-    public Job(String workflow, String workflowVersion, String workflowPath, String jobHash, Map<String, String> ini) {
-        this.workflow = workflow;
-        this.workflowVersion = workflowVersion;
-        this.workflowPath = workflowPath;
+    public Job(String jobHash) {
         this.jobHash = jobHash;
-        this.ini = ini;
     }
 
     public Job() {
@@ -249,10 +219,6 @@ public class Job extends BaseBean{
     }
 
 
-    public Map<String, String> getIni() {
-        return ini;
-    }
-
     public Map<String, Job.ExtraFile> getExtraFiles() {
         return extraFiles;
     }
@@ -260,20 +226,6 @@ public class Job extends BaseBean{
 
     public void setExtraFiles(Map<String, ExtraFile> ini) {
         this.extraFiles = ini;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @ApiModelProperty(value = "deprecated, read-only convenience renderer for ini files")
-    public String getIniStr() {
-        StringBuilder sb = new StringBuilder();
-        for (String key : this.ini.keySet()) {
-            sb.append(key).append("=").append(this.ini.get(key)).append("\n");
-        }
-        return (sb.toString());
-    }
-
-    public void setIni(Map<String, String> ini) {
-        this.ini = ini;
     }
 
     public String getJobHash() {
@@ -284,36 +236,12 @@ public class Job extends BaseBean{
         this.jobHash = jobHash;
     }
 
-    public String getWorkflowVersion() {
-        return workflowVersion;
-    }
-
-    public void setWorkflowVersion(String workflowVersion) {
-        this.workflowVersion = workflowVersion;
-    }
-
-    public String getWorkflow() {
-        return workflow;
-    }
-
-    public void setWorkflow(String workflow) {
-        this.workflow = workflow;
-    }
-
     public JobState getState() {
         return state;
     }
 
     public void setState(JobState state) {
         this.state = state;
-    }
-
-    public String getWorkflowPath() {
-        return workflowPath;
-    }
-
-    public void setWorkflowPath(String workflowPath) {
-        this.workflowPath = workflowPath;
     }
 
     public String getMessageType() {
@@ -381,14 +309,6 @@ public class Job extends BaseBean{
 
     public void setContainerRuntimeDescriptor(String containerRuntimeDescriptor) {
         this.containerRuntimeDescriptor = containerRuntimeDescriptor;
-    }
-
-    public String getIniFileAsString() {
-        return iniFileAsString;
-    }
-
-    public void setIniFileAsString(String iniFileAsString) {
-        this.iniFileAsString = iniFileAsString;
     }
 
     @Override

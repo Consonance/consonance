@@ -20,10 +20,10 @@ import io.consonance.arch.beans.Job;
 import io.consonance.arch.beans.JobState;
 import io.consonance.arch.beans.Provision;
 import io.consonance.arch.beans.ProvisionState;
-import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.CommonTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -34,7 +34,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
@@ -150,12 +149,12 @@ public class PostgreSQLIT {
         String uuid = postgres.createJob(createJob);
         // get everything
         List<Job> jobs = postgres.getJobs(null);
-        Assert.assertTrue("found jobs, incorrect number" + jobs.size(), jobs.size() == 3);
+        Assert.assertTrue("found jobs, incorrect number " + jobs.size(), jobs.size() == 3);
         List<Job> jobs2 = postgres.getJobs(JobState.PENDING);
-        Assert.assertTrue("found jobs, incorrect number" + jobs2.size(), jobs2.size() == 1);
+        Assert.assertTrue("found jobs, incorrect number " + jobs2.size(), jobs2.size() == 1);
         postgres.updateJob(uuid, "none", JobState.FAILED);
         List<Job> jobs3 = postgres.getJobs(JobState.PENDING);
-        Assert.assertTrue("found jobs, incorrect number" + jobs3.size(), jobs3.isEmpty());
+        Assert.assertTrue("found jobs, incorrect number " + jobs3.size(), jobs3.isEmpty());
     }
 
     /**
@@ -225,14 +224,15 @@ public class PostgreSQLIT {
 
     public Job createJob() {
         String uuid = UUID.randomUUID().toString().toLowerCase();
-        CommonServerTestUtilities u = new CommonServerTestUtilities();
-        String hashStr = uuid;
-        HashMap<String, String> hm = new HashMap<>();
-        hm.put("param1", "bar");
-        hm.put("param2", "foo");
-        Job job = new Job("DEWrapperWorkflow", "1.0.0", "/path/to/workflow", hashStr, hm);
+        Job job = new Job(uuid);
         job.setFlavour("m1.xlarge");
         job.setEndUser("player");
+        job.setContainerImageDescriptor(RandomStringUtils.randomAscii(50));
+        job.setContainerRuntimeDescriptor(RandomStringUtils.randomAscii(50));
+        Job.ExtraFile file = new Job.ExtraFile(RandomStringUtils.randomAscii(50), false);
+        job.getExtraFiles().put("/tmp/test", file);
+        job.setStderr(RandomStringUtils.randomAscii(50));
+        job.setStdout(RandomStringUtils.randomAscii(50));
         return job;
     }
 

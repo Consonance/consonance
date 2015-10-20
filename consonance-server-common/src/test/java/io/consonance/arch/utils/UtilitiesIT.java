@@ -38,7 +38,6 @@ public class UtilitiesIT {
 
     public static HierarchicalINIConfiguration getSettings() {
         File file = FileUtils.getFile("src", "test", "resources", "config");
-        CommonServerTestUtilities instance = new CommonServerTestUtilities();
         HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(file.getAbsolutePath());
         return settings;
     }
@@ -51,7 +50,6 @@ public class UtilitiesIT {
     @Test
     public void testParseJSONStr() throws IOException {
         File file = FileUtils.getFile("src", "test", "resources", "config.json");
-        CommonServerTestUtilities instance = new CommonServerTestUtilities();
         JSONObject result = CommonServerTestUtilities.parseJSONStr(FileUtils.readFileToString(file));
         Assert.assertTrue("parsed json is invalid", !result.isEmpty());
     }
@@ -63,7 +61,6 @@ public class UtilitiesIT {
      */
     @Test
     public void testSetupQueue() throws IOException, TimeoutException {
-        CommonServerTestUtilities instance = new CommonServerTestUtilities();
         Channel result = CommonServerTestUtilities.setupQueue(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();
@@ -76,7 +73,6 @@ public class UtilitiesIT {
      */
     @Test
     public void testSetupMultiQueue() throws IOException, TimeoutException {
-        CommonServerTestUtilities instance = new CommonServerTestUtilities();
         Channel result = CommonServerTestUtilities.setupExchange(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();

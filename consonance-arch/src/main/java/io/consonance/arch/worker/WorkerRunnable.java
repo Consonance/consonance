@@ -22,23 +22,15 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -63,7 +55,6 @@ public class WorkerRunnable implements Runnable {
     private String resultsQueueName;
     private String vmUuid = null;
     private int maxRuns = 1;
-    private String userName;
     private boolean testMode;
     private boolean endless = false;
     public static final int DEFAULT_PRESLEEP = 1;
@@ -122,7 +113,6 @@ public class WorkerRunnable implements Runnable {
         }
         this.jobQueueName = this.queueName + "_jobs";
         this.resultsQueueName = this.queueName + "_results";
-        this.userName = settings.getString(Constants.WORKER_HOST_USER_NAME, "ubuntu");
         /*
          * If the user specified "--endless" on the CLI, then this.endless=true Else: check to see if "endless" is in the config file, and
          * if it is, parse the value of it and use that. If not in the config file, then use "false".
@@ -276,30 +266,6 @@ public class WorkerRunnable implements Runnable {
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
         }
-    }
-
-    /**
-     * Write the content of the job object to an INI file which will be used by the workflow.
-     *
-     * @param job
-     *            - the job object which must contain a HashMap, which will be used to write an INI file.
-     * @return A Path object pointing to the new file will be returned.
-     * @throws IOException
-     */
-    private Path writeINIFile(Job job) throws IOException {
-        log.info("INI is: " + job.getIniStr());
-        EnumSet<PosixFilePermission> perms = EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
-                PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE,
-                PosixFilePermission.OTHERS_READ, PosixFilePermission.OTHERS_WRITE);
-        FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(perms);
-        Path pathToINI = Files.createTempFile("seqware_", ".ini", attrs);
-        log.info("INI file: " + pathToINI.toString());
-        try (BufferedWriter bw = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(pathToINI.toFile()), StandardCharsets.UTF_8))) {
-            bw.write(job.getIniStr());
-            bw.flush();
-        }
-        return pathToINI;
     }
 
     // TODO: obviously, this will need to launch something using Youxia in the future
