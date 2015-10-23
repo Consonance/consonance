@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-05T18:28:38.975Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-22T21:18:50.332Z")
 public class ExtraFile   {
   
   private String contents = null;
@@ -17,9 +17,9 @@ public class ExtraFile   {
 
   
   /**
-   * contents of the extra file
+   * contents of the extra files, should not be returned over the webservice
    **/
-  @ApiModelProperty(value = "contents of the extra file")
+  @ApiModelProperty(value = "contents of the extra files, should not be returned over the webservice")
   @JsonProperty("contents")
   public String getContents() {
     return contents;

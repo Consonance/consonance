@@ -192,7 +192,7 @@ elif [ "$1" = "init" ]; then
     echo -n "  Consonance WebService URL: "
     read WEBSERVICE_URL
     echo >> $CONSONANCE_SETTINGS
-    echo "bash_path=$WEBSERVICE_URL" >> $CONSONANCE_SETTINGS
+    echo "base_path=$WEBSERVICE_URL" >> $CONSONANCE_SETTINGS
     
     echo -n "  Consonance token: "
     read WEBSERVICE_USERNAME

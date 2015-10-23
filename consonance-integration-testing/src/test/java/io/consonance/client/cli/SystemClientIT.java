@@ -104,7 +104,7 @@ public class SystemClientIT {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         PostgreSQL postgres = new PostgreSQL(parseConfig);
-        postgres.updateJob(jobFromServer.getJobUuid(), jobFromServer.getVmuuid(), JobState.FAILED);
+        postgres.updateJob(jobFromServer.getJobUuid(), jobFromServer.getVmUuid(), JobState.FAILED);
 
         jobFromServer =  jobApi.listOwnedWorkflowRuns().get(0);
         assertThat(jobFromServer.getState() == Job.StateEnum.FAILED);

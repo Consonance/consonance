@@ -134,7 +134,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         CachingAuthenticator<String, ConsonanceUser> cachingAuthenticator = new CachingAuthenticator<String, ConsonanceUser>(
                 environment.metrics(), authenticator, configuration.getAuthenticationCachePolicy());
         environment.jersey().register(
-                AuthFactory.binder(new OAuthFactory<ConsonanceUser>(cachingAuthenticator, "SUPER SECRET STUFF", ConsonanceUser.class)));
+                AuthFactory.binder(new OAuthFactory<>(cachingAuthenticator, "SUPER SECRET STUFF", ConsonanceUser.class)));
 
         // optional CORS support
         // Enable CORS headers
