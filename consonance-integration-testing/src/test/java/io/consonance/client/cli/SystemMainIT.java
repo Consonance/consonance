@@ -65,7 +65,7 @@ public class SystemMainIT {
         //reset
         systemOutRule.clearLog();
         // status check the UUID
-        main.runMain(new String[] { "status", "--uuid", job.getJobUuid() });
+        main.runMain(new String[] { "status", "--job_uuid", job.getJobUuid() });
         // reset system.out
         // check out the output
         assertTrue(systemOutRule.getLog().contains("job_uuid"));
