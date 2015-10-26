@@ -164,7 +164,7 @@ public class JobGenerator extends Base {
         String[] arr = this.settings.getStringArray(Constants.JOB_GENERATOR_FILTER_KEYS_IN_HASH);
         Map<String, String> filteredIniFileEntries = iniFileEntries;
         if (arr.length > 0) {
-            System.out.println("Using ini hash filter set: " + Arrays.toString(arr));
+            log.info("Using ini hash filter set: " + Arrays.toString(arr));
             Set<String> keys = new HashSet<>();
             Map<String, String> filteredMap = new LinkedHashMap<>();
             keys.addAll(Arrays.asList(arr));
@@ -183,9 +183,9 @@ public class JobGenerator extends Base {
             boolean runPreviously = db.previouslyRun(hashStr);
             if (runPreviously) {
                 if (this.options.has(this.forceSpec)) {
-                    System.out.println("Forcing scheduling, but would have skipped file (null if testing) due to hash: " + file);
+                    log.info("Forcing scheduling, but would have skipped file (null if testing) due to hash: " + file);
                 } else {
-                    System.out.println("Skipping file (null if testing) due to hash: " + file);
+                    log.info("Skipping file (null if testing) due to hash: " + file);
                     return null;
 
                 }
