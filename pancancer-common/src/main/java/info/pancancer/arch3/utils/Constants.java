@@ -33,6 +33,7 @@ public class Constants {
     public static final String RABBIT_QUEUE_NAME = "rabbit.rabbitMQQueueName";
 
     public static final String PROVISION_MAX_RUNNING_CONTAINERS = "provision.max_running_containers";
+    public static final String PROVISION_REAP_FAILED_WORKERS = "provision.reap_failed_workers";
     public static final String PROVISION_YOUXIA_DEPLOYER = "provision.youxia_deployer_parameters";
     public static final String PROVISION_YOUXIA_REAPER = "provision.youxia_reaper_parameters";
 
@@ -50,6 +51,7 @@ public class Constants {
     public static final String WORKER_MAX_RUNS = "worker.max-runs";
     public static final String WORKER_SEQWARE_ENGINE = "worker.seqware-engine";
     public static final String WORKER_SEQWARE_SETTINGS_FILE = "worker.seqware-settings-file";
+	public static final String WORKER_SEQWARE_DOCKER_IMAGE_NAME = "worker.seqware-docker-image-name";
 
     public static final String REPORT_NAMESPACE = "report.namespace";
     public static final String REPORT_TOKEN = "report.slack_token";

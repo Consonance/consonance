@@ -1,5 +1,9 @@
 notifications:
-  slack: oicr:S9k4EowgQv9AnbCfEZHSzCsg
+  slack: 
+    on_success: never
+    on_failure: always
+    rooms:
+      - oicr:S9k4EowgQv9AnbCfEZHSzCsg
 
 sudo: false
 language: java

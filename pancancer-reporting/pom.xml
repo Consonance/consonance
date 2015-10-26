@@ -5,7 +5,7 @@
     <artifactId>pancancer-reporting</artifactId>
 
     <parent>
-        <version>1.1-beta.4-SNAPSHOT</version>
+        <version>1.1-beta.rc.1-SNAPSHOT</version>
         <groupId>io.cancer.collaboratory</groupId>
         <artifactId>sandbox</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -102,7 +102,7 @@
         <dependency>
             <groupId>io.cancer.collaboratory</groupId>
             <artifactId>pancancer-common</artifactId>
-            <version>1.1-beta.4-SNAPSHOT</version>
+            <version>1.1-beta.rc.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.cobertura</groupId>
@@ -171,7 +171,7 @@
                                 <mainClass>info.pancancer.arch3.reportbot.SlackReportBot</mainClass>
                             </manifestEntries>
                         </transformer>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                     </transformers>
                 </configuration>
                 <executions>

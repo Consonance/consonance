@@ -21,13 +21,13 @@ import com.rabbitmq.client.ConsumerCancelledException;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import info.pancancer.arch3.Base;
+import info.pancancer.arch3.CloudTypes;
 import info.pancancer.arch3.beans.Job;
 import info.pancancer.arch3.beans.JobState;
 import info.pancancer.arch3.beans.Provision;
 import info.pancancer.arch3.beans.ProvisionState;
 import info.pancancer.arch3.beans.Status;
 import info.pancancer.arch3.persistence.PostgreSQL;
-import info.pancancer.arch3.CloudTypes;
 import info.pancancer.arch3.utils.Constants;
 import info.pancancer.arch3.utils.Utilities;
 import io.cloudbindle.youxia.listing.AbstractInstanceListing;
@@ -264,10 +264,10 @@ public class Arch3ReportImpl implements ReportAPI {
                 jobMap.put("status", provision.getState().toString());
                 long lastSeen = provision.getUpdateTimestamp().getTime();
                 double secondsAgo = (time - lastSeen) / MILLISECONDS_IN_SECOND;
-                jobMap.put("last seen (seconds)", df.format(secondsAgo));
+                jobMap.put("last seen with live heartbeat (seconds)", df.format(secondsAgo));
                 long firstSeen = provision.getCreateTimestamp().getTime();
                 double hoursAgo = (time - firstSeen) / (MILLISECONDS_IN_SECOND * SECONDS_IN_MINUTE * MINUTES_IN_HOUR);
-                jobMap.put("first seen (hours)", df.format(hoursAgo));
+                jobMap.put("first seen in submission queue (hours)", df.format(hoursAgo));
                 map.put(provision.getProvisionUUID(), jobMap);
             }
         }

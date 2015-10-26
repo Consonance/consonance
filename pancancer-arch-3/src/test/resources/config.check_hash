@@ -13,7 +13,7 @@ postgresDBName = queue_status
 [generator]
 results = pancancer_arch_3.json
 youxia_deployer_parameters = --max-spot-price 1 --batch-size 1
-check_previous_job_hash = false
+check_previous_job_hash = true
 
 
 [provision]

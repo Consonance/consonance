@@ -13,7 +13,7 @@
     <artifactId>sandbox</artifactId>
     <packaging>pom</packaging>
     <groupId>io.cancer.collaboratory</groupId>
-    <version>1.1-beta.4-SNAPSHOT</version>
+    <version>1.1-beta.rc.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
