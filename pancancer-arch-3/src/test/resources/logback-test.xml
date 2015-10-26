@@ -3,10 +3,10 @@
     <appender name="FILE_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- encoders are assigned the type
         ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
-        <file>${FULL_LOGGING_PATH}</file>
+        <file>${CONSONANCE_LOG_FILE}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <maxHistory>5</maxHistory>
-            <fileNamePattern>${FULL_LOGGING_PATH}.%d{YYYY-MM-dd}.%i.zip</fileNamePattern>
+            <fileNamePattern>${CONSONANCE_LOG_FILE}.%d{YYYY-MM-dd}.%i.zip</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>2GB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
