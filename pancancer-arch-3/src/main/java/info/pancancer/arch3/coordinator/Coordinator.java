@@ -281,7 +281,7 @@ public class Coordinator extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    LOG.info(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
+                    LOG.debug(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
