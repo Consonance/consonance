@@ -318,7 +318,6 @@ public class Main {
             out("Commands:");
             out("  run           Schedule a job");
             out("  status        Get the status of a job");
-            out("  update        Update this tool to a newer version");
             // out("  dev           Advanced commands that are useful for developers or debugging");
             out("");
             out("Flags:");

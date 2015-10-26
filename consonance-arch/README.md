@@ -1,4 +1,4 @@
-# PanCancer Architecture 3.0 Prototype
+# Consonance Architecture
 
 ## About
 
@@ -7,7 +7,7 @@ framework to run Docker containers for the PanCancer project.
 
 ## Building
 
-Just a Java maven project so do the following:
+This is a Java project using Maven 3, build via the following:
 
     mvn clean install
 
