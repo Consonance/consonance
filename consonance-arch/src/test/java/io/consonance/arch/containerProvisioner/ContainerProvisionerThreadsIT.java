@@ -58,5 +58,4 @@ public class ContainerProvisionerThreadsIT {
         File file = FileUtils.getFile("src", "test", "resources", "config");
         ContainerProvisionerThreads.main(new String[] { "--test", "--config", file.getAbsolutePath() });
     }
-
 }

@@ -322,6 +322,7 @@ public class Main {
             // out("  dev           Advanced commands that are useful for developers or debugging");
             out("");
             out("Flags:");
+            out("  --quiet       Print minimal information");
             out("  --help        Print help out");
             out("  --debug       Print debugging information");
             out("  --version     Print Consonance's version");

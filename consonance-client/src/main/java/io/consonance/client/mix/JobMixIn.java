@@ -12,7 +12,7 @@ import java.util.Map;
  * @author dyuen
  */
 @JsonIgnoreProperties({ "extra_files", "create_timestamp", "update_timestamp"
-,"job_id", "container_image_descriptor", "container_runtime_descriptor", "end_user"})
+,"job_id", "container_image_descriptor", "container_runtime_descriptor", "end_user", "stdout", "stderr"})
 public interface JobMixIn {
 
         @JsonProperty("job_uuid")
