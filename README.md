@@ -95,6 +95,10 @@ Insert `--quiet` after `consonance` to run in quiet mode.
 Note that if you use the same extra files over and over again (e.g. all your workflows require provisioning to S3) you can describe them globally 
 for all workflow runs in your ~/.consonance/config. The format of this file follows [below](#config-file-format)
 
+For example, to send a custom config file for the [dockstore-descriptor-launcher](https://github.com/CancerCollaboratory/dockstore-descriptor#the-config-file) in order to send results to an alternate S3 api, you will need:
+
+    extra_files = cwl-launcher.config=/home/ubuntu/cwl-launcher.config=true
+
 
 2. Check on the status of a workflow
 
