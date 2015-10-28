@@ -25,7 +25,7 @@
         <seqware.version>1.1.1</seqware.version>
         <dropwizard.version>0.8.4</dropwizard.version>
         <swagger.version>1.5.3</swagger.version>
-        <aws.version>1.10.16</aws.version>
+        <aws.version>1.10.29</aws.version>
         <powermock.version>1.6.3</powermock.version>
         <assertj.version>3.2.0</assertj.version>
     </properties>
@@ -159,7 +159,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.10</version>
+                <version>1.7.12</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -322,14 +322,6 @@
     </dependencies>
 
     <repositories>
-        <repository>
-            <id>vfs-s3.repository</id>
-            <name>vfs-s3 project repository</name>
-            <url>http://dl.bintray.com/content/abashev/vfs-s3</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
         <repository>
             <id>seqware.sourceforge.net</id>
             <name>SeqWare Maven Repository</name>
