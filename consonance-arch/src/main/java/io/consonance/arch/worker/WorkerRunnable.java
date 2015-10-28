@@ -305,7 +305,7 @@ public class WorkerRunnable implements Runnable {
             long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * postsleep;
 
             // dockstore-launcher has a separate config file
-            File dockstoreLauncherConfig = new File(System.getProperty("user.home"),"cwl-launcher.config");
+            File dockstoreLauncherConfig = new File("cwl-launcher.config");
             if (!dockstoreLauncherConfig.exists()){
                 // if it doesn't exist, just create an empty one
                 dockstoreLauncherConfig.createNewFile();
