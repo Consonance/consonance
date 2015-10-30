@@ -88,6 +88,8 @@ This schedules a workflow to run on an instance-type of m1.xlarge, the workflow 
 the workflow run (i.e. inputs and outputs) is described by collab-cwl-job-pre.json, we will also be loading a file called node-engine.cwl 
 into the working directory, and an AWS credential file at ~root/.aws/config (necessary for uploading files to S3). 
 
+For the extra files, note that the format is `destination=source=(whether we should retain this information)`. 
+
 See the format for CWL on [github](https://github.com/common-workflow-language).
 
 Insert `--quiet` after `consonance` to run in quiet mode.
@@ -119,7 +121,81 @@ Extract individual fields (such as the stderr) with the following one-liner:
     token = foobar 
     
     extra_files =/root/.aws/credentials=/home/ubuntu/.aws/config=false,node-engine.cwl=node-engine.cwl=true
+    
+#### File Provisioning
 
+When specifying input files in the run descriptor ( collab-cwl-job-pre.json above  ) ftp, http, https, local files can all be used out of the box with no credentials (as long as they are not protected). 
+However, special credentials and config files are required for file provisioning from more exotic locations like those listed below.
+ 
+S3 supports both input and output files.
+ 
+DCC-storage supports only input files. 
+
+##### S3 on AWS
+
+Input files from AWS S3 and and output files from AWS S3 can be provisioned if you provide your an ~/.aws/config with access and secret key.
+You can attach them on a per-job basis as above or define them globally in your config file. 
+
+    --extra-file /root/.aws/config=aws_config=false
+
+Entries in the json look as follows:
+
+    {
+      "bam_input": {
+            "class": "File",
+            "path": "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12878/alignment/NA12878.chrom20.ILLUMINA.bwa.CEU.low_coverage.20121211.bam"
+        },
+        "bamstats_report": {
+            "class": "File",
+            "path": "s3://oicr.temp/testing-launcher/bamstats_report.zip"
+        }
+    }
+
+
+##### S3 Api on Ceph (cancercollaboratory.org)
+
+For alternative endpoints that support the S3 API, you can configure the endpoint you wish to use in the  [dockstore descriptor launcher](https://github.com/CancerCollaboratory/dockstore-descriptor) config. 
+
+    --extra-file /root/.aws/config=aws_config=false --extra-file cwl-launcher.config=cwl-launcher.config=true
+    
+cwl-launcher will look like the following
+
+    [s3]
+    endpoint = https://www.cancercollaboratory.org:9080
+
+##### DCC-Storage on Ceph (cancercollaboratory.org)
+
+For the DCC-Storage system, you will need to provide a properties file for the DCC:
+
+    --extra-file /icgc/dcc-storage/conf/application-amazon.properties=application-amazon.properties=false
+    
+application-amazon.properties looks like 
+
+    logging.level.org.icgc.dcc.storage.client=DEBUG
+    logging.level.org.springframework.web.client.RestTemplate=DEBUG
+    client.upload.serviceHostname=storage.cancercollaboratory.org
+    client.ssl.trustStore=classpath:client.jks
+    accessToken=<your token here>
+    
+Entries in the json look as follows:
+
+    {
+      "bam_input": {
+            "class": "File",
+            "path": "icgc:1675bfff-4494-5b15-a96e-c97169438715 "
+        },
+        "bamstats_report": {
+            "class": "File",
+            "path": "s3://oicr.temp/testing-launcher/bamstats_report.zip"
+        }
+    }
+
+ 
+##### DCC-Storage on AWS 
+
+For this, simply replace the following line of the above properties file.
+    
+    client.upload.serviceHostname=objectstore.cancercollaboratory.org
 
 ### Admin
 
