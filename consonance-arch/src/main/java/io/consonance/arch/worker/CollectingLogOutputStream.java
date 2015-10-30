@@ -30,7 +30,11 @@ public class CollectingLogOutputStream extends LogOutputStream {
     protected void processLine(String line, int level) {
         Lock lock = new ReentrantLock();
         lock.lock();
-        lines.add(line);
+        // workaround for dcc-storage, break up on carriage returns as well
+        String[] splitLines = line.split("\r");
+        for(String lineSegment: splitLines){
+            lines.add(lineSegment);
+        }
         lock.unlock();
     }
 

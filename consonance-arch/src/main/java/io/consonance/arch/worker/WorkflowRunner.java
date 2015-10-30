@@ -7,8 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This class will make a command-line call to run a workflow. <br/>
@@ -27,24 +25,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
     private String configFilePath;
     private String imageDescriptorPath;
     private String runtimeDescriptorPath;
-
-    /**
-     * Get the stdout of the running command.
-     *
-     * @return stdout
-     */
-    public String getStdOut() {
-        String s;
-        Lock lock = new ReentrantLock();
-        lock.lock();
-        try {
-            this.outputStream.flush();
-            s = this.outputStream.getAllLinesAsString();
-        } finally {
-            lock.unlock();
-        }
-        return s;
-    }
+    public static final int DEFAULT_OUTPUT_LINE_LIMIT = 1000;
 
     /**
      * Get the last *n* lines of output.
@@ -58,22 +39,16 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
     }
 
     /**
-     * Get the stderr of the running command.
+     * Get the last *n* lines of output.
      *
-     * @return stderr
+     * @param n
+     *            - the number of lines to get.
+     * @return A string with *n* lines.
      */
-    public String getStdErr() {
-        String s;
-        Lock lock = new ReentrantLock();
-        lock.lock();
-        try {
-            this.errorStream.flush();
-            s = this.errorStream.getAllLinesAsString();
-        } finally {
-            lock.unlock();
-        }
-        return s;
+    public String getStdErr(int n) {
+        return StringUtils.join(this.errorStream.getLastNLines(n), "\n");
     }
+
 
     @Override
     public WorkflowResult call() throws IOException {
@@ -92,8 +67,8 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             }
             // this is a blocking call, but the HeartbeatThread appears to be a in a separate thread
             launcher.run();
-            result.setWorkflowStdout(outputStream.getAllLinesAsString());
-            result.setWorkflowStdErr(errorStream.getAllLinesAsString());
+            result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
+            result.setWorkflowStdErr(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
             // exit code is artificial since the CWL runner actually runs more than one command
             // we use 0 to indicate success, 1 to indicate failure (and the streams will have more detail)
             result.setExitCode(0);
@@ -103,7 +78,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             }
         } catch (InterruptedException | RuntimeException e) {
             LOG.error(e.getMessage(), e);
-            result.setWorkflowStdout(this.getStdErr());
+            result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
         } finally {
             this.outputStream.close();
             this.errorStream.close();

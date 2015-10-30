@@ -30,6 +30,7 @@ public class WorkerHeartbeat implements Runnable {
     private double secondsDelay = DEFAULT_DELAY;
     public static final double DEFAULT_DELAY = 30.0;
     private final int stdoutSnipSize = DEFAULT_SNIP_SIZE;
+    private final int stderrSnipSize = DEFAULT_SNIP_SIZE;
     public static final int DEFAULT_SNIP_SIZE = 10;
     private WorkflowRunner statusSource;
     private String networkID;
@@ -74,7 +75,7 @@ public class WorkerHeartbeat implements Runnable {
                     Lock lock = new ReentrantLock();
                     lock.lock();
                     String stdOut = this.statusSource.getStdOut(stdoutSnipSize);
-                    String stdErr = this.statusSource.getStdErr();
+                    String stdErr = this.statusSource.getStdErr(stderrSnipSize);
                     lock.unlock();
                     heartbeatStatus.setStdout(stdOut);
                     heartbeatStatus.setStderr(stdErr);
