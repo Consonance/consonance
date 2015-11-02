@@ -1,9 +1,7 @@
 # Consonance
 
-## Development
-
-[![Build Status](https://travis-ci.org/Consonance/consonance.svg?branch=develop)](https://travis-ci.org/Consonance/Consonance)
-[![Coverage Status](https://coveralls.io/repos/Consonance/consonance/badge.svg?branch=develop)](https://coveralls.io/r/Consonance/consonance?branch=develop)
+[![Build Status](https://travis-ci.org/Consonance/consonance.svg?branch=develop_2)](https://travis-ci.org/Consonance/Consonance)
+[![Coverage Status](https://coveralls.io/repos/Consonance/consonance/badge.svg?branch=develop_2)](https://coveralls.io/r/Consonance/consonance?branch=develop)
 
 ### Components
 
