@@ -75,7 +75,7 @@ public class Job extends BaseBean{
     @ApiModelProperty(value = "consonance will assign a uuid to jobs")
     @Column(name="job_uuid", columnDefinition="text")
     private String uuid = UUID.randomUUID().toString().toLowerCase();
-    @JsonProperty("vmuuid")
+    @JsonProperty("vm_uuid")
     @ApiModelProperty(value = "the cloud instance-id assigned to run a job")
     @Column(name="provision_uuid",columnDefinition="text")
     private String vmUuid;

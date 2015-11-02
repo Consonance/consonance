@@ -5,7 +5,7 @@
     <artifactId>consonance-arch</artifactId>
 
     <parent>
-        <version>2.0-alpha.1-SNAPSHOT</version>
+        <version>2.0-alpha.5-SNAPSHOT</version>
         <groupId>io.consonance</groupId>
         <artifactId>consonance</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -19,7 +19,7 @@
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-common</artifactId>
-            <version>2.0-alpha.1-SNAPSHOT</version>
+            <version>2.0-alpha.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jopt-simple</groupId>
@@ -117,7 +117,7 @@
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-server-common</artifactId>
-            <version>2.0-alpha.1-SNAPSHOT</version>
+            <version>2.0-alpha.5-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>joda-time</groupId>
@@ -257,17 +257,12 @@
         <dependency>
             <groupId>io.github.collaboratory.launcher</groupId>
             <artifactId>io.github.collaboratory.launcher</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
-            <version>2.1.1660580.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.intridea.io</groupId>
-            <artifactId>vfs-s3</artifactId>
-            <version>2.3.3</version>
+            <version>2.0</version>
         </dependency>
     </dependencies>
 
@@ -279,7 +274,6 @@
                     <usedDependencies>
                         <usedDependency>org.apache.commons:commons-pool2</usedDependency>
                         <usedDependency>org.apache.commons:commons-vfs2</usedDependency>
-                        <usedDependency>com.intridea.io:vfs-s3</usedDependency>
                     </usedDependencies>
                 </configuration>
             </plugin>

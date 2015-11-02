@@ -304,7 +304,13 @@ public class WorkerRunnable implements Runnable {
             long presleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * presleep;
             long postsleepMillis = Base.ONE_SECOND_IN_MILLISECONDS * postsleep;
 
-            workflowRunner.setConfigFilePath(configFile);
+            // dockstore-launcher has a separate config file
+            File dockstoreLauncherConfig = new File("cwl-launcher.config");
+            if (!dockstoreLauncherConfig.exists()){
+                // if it doesn't exist, just create an empty one
+                dockstoreLauncherConfig.createNewFile();
+            }
+            workflowRunner.setConfigFilePath(dockstoreLauncherConfig.getAbsolutePath());
             // write out descriptors from message
             final Path imageDescriptor = new File(System.getProperty("user.dir"), "image-descriptor.cwl").toPath();
             final Path runDescriptor = new File(System.getProperty("user.dir"), "run-descriptor.json").toPath();

@@ -54,8 +54,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 /**
  * The order resource handles operations with jobs. Jobs are scheduled and can be queried to get information on the current state of the
@@ -147,21 +149,28 @@ public class OrderResource {
         if (jchannel == null || !jchannel.isOpen()) {
             try {
                 this.jchannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_orders");
-            } catch (IOException e) {
-                throw new InternalServerErrorException();
-            } catch (TimeoutException e) {
+            } catch (IOException | TimeoutException e) {
                 throw new InternalServerErrorException();
             }
         }
+
         final int jobId = dao.create(job);
         Job createdJob = dao.findById(jobId);
         provisionDAO.create(provision);
+        LOG.debug("created job with " + createdJob.getExtraFiles().size() + " entries");
 
         try {
             LOG.info("\nSENDING JOB:\n '" + job + "'\n" + this.jchannel + " \n");
             this.jchannel.basicPublish("", queueName + "_orders", MessageProperties.PERSISTENT_TEXT_PLAIN,
                     newOrder.toJSON().getBytes(StandardCharsets.UTF_8));
             jchannel.waitForConfirms();
+
+            // censor the extra files with isKeep set to false after the message is sent
+            // censor extra files tagged with keep=false
+            job.setExtraFiles(job.getExtraFiles().entrySet().stream().filter(e -> e.getValue().isKeep())
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+            LOG.debug("job in DB should be updated to " + job.getExtraFiles().size() + " entries");
+
         } catch (IOException | InterruptedException ex) {
             LOG.error(ex.toString());
         }

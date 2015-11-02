@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.consonance.client.WebClient;
+import io.consonance.client.mix.JobMixIn;
+import io.consonance.common.Constants;
 import io.consonance.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ConfigurationApi;
@@ -16,6 +18,9 @@ import org.apache.commons.io.FileUtils;
 import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,6 +39,12 @@ public class Main {
         OBJECT_MAPPER.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
+    private static final HierarchicalINIConfiguration CONFIG;
+    static {
+        File configFile = new File(System.getProperty("user.home"), ".consonance/config");
+        CONFIG = Utilities.parseConfig(configFile.getAbsolutePath());
     }
 
     private WebClient webClient = null;
@@ -154,9 +165,7 @@ public class Main {
     }
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
-    public static final AtomicBoolean VERBOSE = new AtomicBoolean(false);
-
-
+    public static final AtomicBoolean QUIET = new AtomicBoolean(false);
 
     private static String serialize(Object obj) throws ApiException {
         try {
@@ -194,10 +203,10 @@ public class Main {
             out("  List the status of a given job.");
             out("");
             out("Required parameters (one of):");
-            out("  --uuid <uuid>  The UUID of the job");
+            out("  --job_uuid <job_uuid>  The UUID of the job");
             out("");
         } else {
-            String jobUuid = reqVal(args, "--uuid");
+            String jobUuid = reqVal(args, "--job_uuid");
             try {
                 final Job workflowRun = jobApi.getWorkflowRun(jobUuid);
                 if (workflowRun == null){
@@ -221,8 +230,8 @@ public class Main {
             out("");
             out("Required parameters (one of):");
             out("  --flavour <flavour>              The type of machine that the job should execute on");
-            out("  --image-descriptor <file>        Path to the image descriptor");
-            out("  --run-descriptor <file>          Path to the runtime descriptor");
+            out("  --image-descriptor <file>        Path to the image descriptor, supports http");
+            out("  --run-descriptor <file>          Path to the runtime descriptor, supports http");
             out("Optional parameters:");
             out("  --extra-file <path=file=keep>    The path where a particular file should be provisioned, a path to the contents "
                     + "of that file, and whether this file should be kept after execution. Can repeat to specify multiple files");
@@ -235,19 +244,36 @@ public class Main {
             try {
                 Job job = new Job();
                 job.setFlavour(flavour);
-                job.setContainerImageDescriptor(FileUtils.readFileToString(new File(imageDescriptor)));
-                job.setContainerRuntimeDescriptor(FileUtils.readFileToString(new File(runDescriptor)));
-                for(String extraFile : extraFiles){
-                    String[] values = extraFile.split("=");
-                    final int lengthOfValues = 3;
-                    if (values.length != lengthOfValues){
-                        kill("consonance: failure parsing: '%s'.", extraFile);
-                    }
-                    ExtraFile file =  new ExtraFile();
-                    file.setContents(FileUtils.readFileToString(new File(values[1])));
-                    file.setKeep(Boolean.valueOf(values[2]));
-                    job.getExtraFiles().put(values[0],file);
+                // attempt to read descriptors from URIs
+                try {
+                    URL jobURL = new URL(imageDescriptor);
+                    final Path tempFile = Files.createTempFile("image", "cwl");
+                    FileUtils.copyURLToFile(jobURL, tempFile.toFile());
+                    job.setContainerImageDescriptor(FileUtils.readFileToString(tempFile.toFile()));
+                } catch (IOException e){
+                    job.setContainerImageDescriptor(FileUtils.readFileToString(new File(imageDescriptor)));
                 }
+
+                try {
+                    URL runURL = new URL(runDescriptor);
+                    final Path tempFile = Files.createTempFile("run", "json");
+                    FileUtils.copyURLToFile(runURL, tempFile.toFile());
+                    job.setContainerRuntimeDescriptor(FileUtils.readFileToString(tempFile.toFile()));
+                } catch (IOException e){
+                    job.setContainerRuntimeDescriptor(FileUtils.readFileToString(new File(runDescriptor)));
+                }
+
+                // grab extra files from this run
+                for(String extraFile : extraFiles){
+                    parseExtraFiles(job, extraFile);
+                }
+                // grab globally defined extra files
+                CONFIG.setListDelimiter(',');
+                final String[] extraFilesGlobal = CONFIG.getStringArray(Constants.WEBSERVICE_EXTRA_FILES);
+                for(String extraFile : extraFilesGlobal){
+                    parseExtraFiles(job, extraFile);
+                }
+
                 final Job workflowRun = jobApi.addOrder(job);
                 if (workflowRun == null){
                     kill("consonance: failure reading back scheduled job");
@@ -261,15 +287,27 @@ public class Main {
         }
     }
 
+    private static void parseExtraFiles(Job job, String extraFile) throws IOException {
+        String[] values = extraFile.split("=");
+        final int lengthOfValues = 3;
+        if (values.length != lengthOfValues){
+            kill("consonance: failure parsing: '%s'.", extraFile);
+        }
+        ExtraFile file =  new ExtraFile();
+        file.setContents(FileUtils.readFileToString(new File(values[1])));
+        file.setKeep(Boolean.valueOf(values[2]));
+        job.getExtraFiles().put(values[0],file);
+    }
+
     protected void runMain(String[] argv)
             throws OperationNotSupportedException, IOException, TimeoutException, ApiException {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
-        if (flag(args, "--debug")) {
+        if (flag(args, "--debug") || flag(args, "--d")) {
             DEBUG.set(true);
         }
-        if (flag(args, "--verbose")) {
-            VERBOSE.set(true);
-            throw new OperationNotSupportedException("Not implemented yet");
+        if (flag(args, "--quiet") || flag(args, "--q")) {
+            QUIET.set(true);
+            OBJECT_MAPPER.addMixIn(Job.class, JobMixIn.class);
         }
 
         if (isHelp(args, true)) {
@@ -280,23 +318,21 @@ public class Main {
             out("Commands:");
             out("  run           Schedule a job");
             out("  status        Get the status of a job");
-            out("  update        Update this tool to a newer version");
             // out("  dev           Advanced commands that are useful for developers or debugging");
             out("");
             out("Flags:");
+            out("  --quiet       Print minimal information");
             out("  --help        Print help out");
-            // handled in seqware script:
+            out("  --debug       Print debugging information");
             out("  --version     Print Consonance's version");
             out("  --metadata    Print metadata environment");
             out("");
         } else {
             try {
                 String cmd = args.remove(0);
-                File configFile = new File(System.getProperty("user.home"), ".consonance/config");
                 WebClient client;
                 if (this.getWebClient() == null){
-                    final HierarchicalINIConfiguration hierarchicalINIConfiguration = Utilities.parseConfig(configFile.getAbsolutePath());
-                    client = new WebClient(hierarchicalINIConfiguration);
+                    client = new WebClient(CONFIG);
                 } else{
                     client = this.getWebClient();
                 }
