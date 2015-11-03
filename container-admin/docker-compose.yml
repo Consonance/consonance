@@ -1,0 +1,15 @@
+admin:
+   build: .
+   ports:
+    - "8081:8080"
+   links:
+   - postgres
+   - rabbitmq
+
+postgres:
+  image: postgres:9.4
+
+rabbitmq:
+  image: rabbitmq:3.5.6-management 
+  ports:
+    - "15673:15672"
