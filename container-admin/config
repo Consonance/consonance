@@ -1,0 +1,21 @@
+[rabbit]
+rabbitMQHost = rabbitmq
+rabbitMQUser = guest
+rabbitMQPass = guest
+rabbitMQQueueName = consonance_arch
+
+[database]
+postgresHost = postgres
+postgresUser = postgres
+postgresPass = postgres
+postgresDBName = postgres
+  
+[generator]
+results = consonance_arch.json
+check_previous_job_hash = false
+
+
+[provision]
+max_running_containers = 5
+youxia_deployer_parameters = --max-spot-price 1 --batch-size 1 --openstack --ansible-playbook /home/ubuntu/container-host-bag/install.yml  -e /home/ubuntu/container-host-bag/params.json --server-tag-file /home/ubuntu/tags.json
+youxia_reaper_parameters = --openstack
