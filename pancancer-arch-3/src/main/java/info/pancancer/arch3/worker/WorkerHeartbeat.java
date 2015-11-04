@@ -29,10 +29,11 @@ import org.slf4j.LoggerFactory;
 public class WorkerHeartbeat implements Runnable {
 
     private String queueName;
-    private double secondsDelay = DEFAULT_DELAY;
     public static final double DEFAULT_DELAY = 30.0;
+    private double secondsDelay = DEFAULT_DELAY;
     private final int stdoutSnipSize = DEFAULT_SNIP_SIZE;
     public static final int DEFAULT_SNIP_SIZE = 10;
+    private static final int MILLISECONDS_PER_SECOND = 1000;
     private WorkflowRunner statusSource;
     private String networkID;
     private String vmUuid;
@@ -86,7 +87,7 @@ public class WorkerHeartbeat implements Runnable {
                             heartBeatMessage.getBytes(StandardCharsets.UTF_8));
                     reportingChannel.waitForConfirms();
 
-                    Thread.sleep(Base.ONE_SECOND_IN_MILLISECONDS);
+                    Thread.sleep((long)(secondsDelay * MILLISECONDS_PER_SECOND));
                 } catch (IOException | AlreadyClosedException e) {
                     LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);
                     // retry after a minute, do not die simply because the launcher is unavailable, it may come back
@@ -135,7 +136,12 @@ public class WorkerHeartbeat implements Runnable {
     }
 
     public void setSecondsDelay(double secondsDelay) {
-        this.secondsDelay = secondsDelay;
+        if (secondsDelay == 0.0) {
+            LOG.error("Sorry, you can't have a delay of 0. Resetting to the default: "+DEFAULT_DELAY);
+            this.secondsDelay = WorkerHeartbeat.DEFAULT_DELAY;
+        } else {
+            this.secondsDelay = secondsDelay;
+        }
     }
 
     public String getNetworkID() {
