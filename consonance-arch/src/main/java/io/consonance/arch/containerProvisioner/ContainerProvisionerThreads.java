@@ -224,10 +224,10 @@ public class ContainerProvisionerThreads extends Base {
                         // determine mix of VMs required
                         Map<String, Integer> clientTypes = new HashMap<>();
                         for(Job j : pendingJobs){
-                            clientTypes.merge(j.getFlavour(), 1, (k,v) -> (v+1));
+                            clientTypes.compute(j.getFlavour(), (k, v) -> (v == null ? 1 : v + 1));
                         }
                         for(Job j : runningJobs){
-                            clientTypes.merge(j.getFlavour(), 1, (k,v) -> (v+1));
+                            clientTypes.compute(j.getFlavour(), (k,v) -> (v == null? 1 : v+1));
                         }
 
                         // cap the number of VMs
