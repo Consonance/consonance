@@ -3,9 +3,9 @@ package io.consonance.arch.utils;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
-import io.consonance.arch.persistence.PostgreSQL;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
@@ -25,6 +25,8 @@ import java.util.concurrent.TimeoutException;
  * @author boconnor
  */
 public class CommonServerTestUtilities {
+
+    public static final long ONE_MINUTE_IN_MILLISECONDS = 60000;
 
     protected static final Logger LOG = LoggerFactory.getLogger(CommonServerTestUtilities.class);
     // TODO: These really should be refactored out to an enum
@@ -90,37 +92,36 @@ public class CommonServerTestUtilities {
      * @param settings consonance config file
      * @param queue name of queue to setup
      * @return channel for the queue
-     * @throws IOException
-     * @throws TimeoutException
+     * @throws InterruptedException
      */
-    public static Channel setupQueue(HierarchicalINIConfiguration settings, String queue) throws IOException, TimeoutException {
+    public static Channel setupQueue(HierarchicalINIConfiguration settings, String queue) throws InterruptedException {
 
         String server = settings.getString(Constants.RABBIT_HOST);
         String user = settings.getString(Constants.RABBIT_USERNAME);
         String pass = settings.getString(Constants.RABBIT_PASSWORD);
 
-        Channel channel = null;
+        Channel channel;
 
-        try {
-
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(server);
-            factory.setUsername(user);
-            factory.setPassword(pass);
-            factory.setAutomaticRecoveryEnabled(true);
-            Connection connection = factory.newConnection();
-            channel = connection.createChannel();
-            channel.basicQos(1);
-            channel.queueDeclare(queue, true, false, false, null);
-            channel.confirmSelect();
-            // channel.queueDeclarePassive(queue);
-
-        } catch (IOException | TimeoutException ex) {
-            // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            LOG.error("Error setting up queue connections to queue:" + queue + " on host: " + server + "; error is: " + ex.getMessage(), ex);
+        while(true) {
+            try {
+                ConnectionFactory factory = new ConnectionFactory();
+                factory.setHost(server);
+                factory.setUsername(user);
+                factory.setPassword(pass);
+                factory.setAutomaticRecoveryEnabled(true);
+                Connection connection = factory.newConnection();
+                channel = connection.createChannel();
+                channel.basicQos(1);
+                channel.queueDeclare(queue, true, false, false, null);
+                channel.confirmSelect();
+            } catch (IOException | TimeoutException ex) {
+                LOG.error("Error setting up queue connections to queue:" + queue + " on host: " + server + "; error is: " + ex.getMessage(),
+                        ex);
+                Thread.sleep(ONE_MINUTE_IN_MILLISECONDS);
+                continue;
+            }
+            return channel;
         }
-        return channel;
-
     }
 
     /**
@@ -128,10 +129,9 @@ public class CommonServerTestUtilities {
      * @param settings consonance config file
      * @param exchange name of the exchange
      * @return a reference to the channel for the exchange
-     * @throws IOException
-     * @throws TimeoutException
+     * @throws InterruptedException
      */
-    public static Channel setupExchange(HierarchicalINIConfiguration settings, String exchange) throws IOException, TimeoutException {
+    public static Channel setupExchange(HierarchicalINIConfiguration settings, String exchange) throws InterruptedException {
         return setupExchange(settings, exchange, "fanout");
     }
 
@@ -141,10 +141,9 @@ public class CommonServerTestUtilities {
      * @param exchange name of the exchange
      * @param exchangeType type of the exchange, looks like it can be direct or fanout, not sure if there are more
      * @return a reference to the channel for the exchange
-     * @throws IOException
-     * @throws TimeoutException
+     * @throws InterruptedException
      */
-    public static Channel setupExchange(HierarchicalINIConfiguration settings, String exchange, String exchangeType) throws IOException, TimeoutException {
+    public static Channel setupExchange(HierarchicalINIConfiguration settings, String exchange, String exchangeType) throws InterruptedException {
 
         String server = settings.getString(Constants.RABBIT_HOST);
         String user = settings.getString(Constants.RABBIT_USERNAME);
@@ -152,24 +151,25 @@ public class CommonServerTestUtilities {
 
         Channel channel;
 
-        try {
+        while(true) {
+            try {
 
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(server);
-            factory.setUsername(user);
-            factory.setPassword(pass);
-            factory.setAutomaticRecoveryEnabled(true);
-            Connection connection = factory.newConnection();
-            channel = connection.createChannel();
-            channel.exchangeDeclare(exchange, exchangeType, true, false, null);
-            channel.confirmSelect();
-
-        } catch (IOException | TimeoutException ex) {
-            // Logger.getLogger(Master.class.getName()).log(Level.SEVERE, null, ex);
-            LOG.error("Error setting up exchange connections: " + ex.getMessage(), ex);
-            throw ex;
+                ConnectionFactory factory = new ConnectionFactory();
+                factory.setHost(server);
+                factory.setUsername(user);
+                factory.setPassword(pass);
+                factory.setAutomaticRecoveryEnabled(true);
+                Connection connection = factory.newConnection();
+                channel = connection.createChannel();
+                channel.exchangeDeclare(exchange, exchangeType, true, false, null);
+                channel.confirmSelect();
+            } catch (IOException | TimeoutException ex) {
+                LOG.error("Error setting up exchange connections, retrying: " + ex.getMessage(), ex);
+                Thread.sleep(ONE_MINUTE_IN_MILLISECONDS);
+                continue;
+            }
+            return channel;
         }
-        return channel;
     }
 
     public static String setupQueueOnExchange(Channel channel, String queue, String suffix) throws IOException {

@@ -70,7 +70,7 @@ public class TestCoordinator {
     private static StringBuffer outBuffer = new StringBuffer();
 
     @Before
-    public void setup() throws IOException, TimeoutException {
+    public void setup() throws IOException, TimeoutException, InterruptedException {
         MockitoAnnotations.initMocks(this);
 
         outBuffer = new StringBuffer();
