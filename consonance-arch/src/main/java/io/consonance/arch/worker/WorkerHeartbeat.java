@@ -43,15 +43,9 @@ public class WorkerHeartbeat implements Runnable {
     @Override
     public void run() {
 
-        Channel reportingChannel = null;
+        Channel reportingChannel;
         try {
-            try {
-                reportingChannel = CommonServerTestUtilities.setupExchange(settings, this.queueName);
-            } catch (IOException | TimeoutException | AlreadyClosedException e) {
-                LOG.error("Exception caught! Queue channel could not be opened, waiting. Exception is: " + e.getMessage(), e);
-                // retry after a minute, do not die simply because the launcher is unavailable, it may come back
-                Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);
-            }
+            reportingChannel = CommonServerTestUtilities.setupExchange(settings, this.queueName);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOG.info("Caught interrupt signal, heartbeat shutting down.", e);

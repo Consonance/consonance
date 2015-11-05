@@ -60,7 +60,7 @@ public class UtilitiesIT {
      * @throws java.io.IOException
      */
     @Test
-    public void testSetupQueue() throws IOException, TimeoutException {
+    public void testSetupQueue() throws IOException, TimeoutException, InterruptedException {
         Channel result = CommonServerTestUtilities.setupQueue(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();
@@ -72,7 +72,7 @@ public class UtilitiesIT {
      * @throws java.io.IOException
      */
     @Test
-    public void testSetupMultiQueue() throws IOException, TimeoutException {
+    public void testSetupMultiQueue() throws IOException, TimeoutException, InterruptedException {
         Channel result = CommonServerTestUtilities.setupExchange(getSettings(), "testing_queue");
         assertTrue("could not open channel", result.isOpen());
         result.close();

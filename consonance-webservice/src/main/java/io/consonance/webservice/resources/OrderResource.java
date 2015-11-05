@@ -56,7 +56,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -149,7 +148,7 @@ public class OrderResource {
         if (jchannel == null || !jchannel.isOpen()) {
             try {
                 this.jchannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_orders");
-            } catch (IOException | TimeoutException e) {
+            } catch (InterruptedException ex) {
                 throw new InternalServerErrorException();
             }
         }

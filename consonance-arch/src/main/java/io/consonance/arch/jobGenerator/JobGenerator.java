@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Submits orders into the queue system.
@@ -94,7 +93,7 @@ public class JobGenerator extends Base {
         try {
             // SETUP QUEUE
             this.jchannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_orders");
-        } catch (TimeoutException ex) {
+        } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         }
         if (options.has(iniDirSpec)) {
