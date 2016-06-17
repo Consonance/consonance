@@ -1,12 +1,10 @@
 FROM ubuntu:14.04.3
 
 # Update the APT cache
-RUN apt-get update
-RUN apt-get upgrade -y
+RUN apt-get update && apt-get upgrade -y
 
 #prepare for Java download
-RUN apt-get install -y python-software-properties
-RUN apt-get install -y software-properties-common
+RUN apt-get update && apt-get install -y python-software-properties software-properties-common git
 
 #grab oracle java (auto accept licence)
 RUN add-apt-repository -y ppa:webupd8team/java
@@ -15,13 +13,17 @@ RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true 
 RUN apt-get install -y oracle-java8-installer
 
 # install Consonance services
-ENV consonance_version=2.0-alpha.4
+ENV consonance_version=2.0-alpha.6
 
 RUN wget https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar
 RUN wget https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-webservice/${consonance_version}/consonance-webservice-${consonance_version}.jar
 
+# the web and Consonance config
 ADD config .
 ADD web.yml .
+
+# the Ansible-based setup
+RUN mkdir container-host-bag
 
 
 # set default webservice to run
