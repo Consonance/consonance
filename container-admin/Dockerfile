@@ -23,7 +23,8 @@ ADD config .
 ADD web.yml .
 
 # the Ansible-based setup
-RUN mkdir container-host-bag
+# TODO this is just being used for testing
+RUN git clone https://github.com/ICGC-TCGA-PanCancer/container-host-bag.git && cd container-host-bag && git checkout 'feature/#113-feature-brian-testing-con-2'
 
 
 # set default webservice to run
