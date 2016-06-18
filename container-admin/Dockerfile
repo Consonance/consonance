@@ -4,7 +4,7 @@ FROM ubuntu:14.04.3
 RUN apt-get update && apt-get upgrade -y
 
 #prepare for Java download
-RUN apt-get update && apt-get install -y python-software-properties software-properties-common git
+RUN apt-get update && apt-get install -y python-software-properties software-properties-common git postgresql-client
 
 #grab oracle java (auto accept licence)
 RUN add-apt-repository -y ppa:webupd8team/java
@@ -19,8 +19,18 @@ RUN wget https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonan
 RUN wget https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-webservice/${consonance_version}/consonance-webservice-${consonance_version}.jar
 
 # the web and Consonance config
-ADD config .
-ADD web.yml .
+COPY config .
+COPY web.yml .
+
+# for youxia and the consonance command line on the main box
+# FIXME: hardcoded root user
+RUN mkdir -p /root/.youxia /root/.consonance /root/.consonance/self-installs
+COPY youxia_config /root/.youxia/config
+COPY config /root/.consonance/config
+# FIXME: need coordinated release to match alpha.6
+RUN wget https://github.com/Consonance/consonance/releases/download/2.0-alpha.2/consonance && mv consonance /bin && chmod a+x /bin/consonance
+RUN wget --no-check-certificate http://wrench.res.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-client/2.0-alpha.2/consonance-client-2.0-alpha.2.jar && mv consonance-client-2.0-alpha.2.jar /root/.consonance/self-installs/
+
 
 # the Ansible-based setup
 # TODO this is just being used for testing
