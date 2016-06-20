@@ -31,3 +31,6 @@ consonance-arch/arch3_test.log
 # Ignore NetBeans files
 nbactions.xml
 /consonance-reporting/target/
+/container-admin/config
+/container-admin/youxia_config
+/container-admin/key.pem

@@ -7,7 +7,7 @@ managed_tag = foobar
 slack_webhook = 
 
 # aws settings
-aws_ssh_key = /root/.ssh/brian-ucsc-east-1.pem
+aws_ssh_key = /root/.ssh/key.pem
 aws_key_name = brian-ucsc-east-1
 region = us-east-1
 zone = us-east-1c
