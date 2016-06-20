@@ -69,3 +69,5 @@ TODO: there's some sort of problem with the admin user getting wiped, need to di
 TODO: I need a /root/.aws/config file after all
 
 TODO: chmod the key.pem
+
+TODO: note about security group ssh to itself
