@@ -39,6 +39,10 @@ RUN git clone https://github.com/ICGC-TCGA-PanCancer/container-host-bag.git && c
 
 # TODO: 1) update the above to have my AWS creds in it and 2) create the admin user in postgres db
 
+# now get a sample CWL and test JSON
+RUN wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/Dockstore.cwl
+RUN wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/sample_configs.json
+
 # set default webservice to run
 CMD sleep 5000; \
     java -cp consonance-arch-*.jar io.consonance.arch.coordinator.Coordinator --config config --endless; \ 

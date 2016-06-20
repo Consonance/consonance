@@ -51,3 +51,21 @@ Start the two daemons
     nohup java -cp consonance-arch-*.jar io.consonance.arch.containerProvisioner.ContainerProvisionerThreads --config config --endless &> provisioner.log &
 
 Now, you should have your webservice running on port 8081, you can monitor rabbitmq on port 15673.
+
+You are now ready to submit some work (from within the admin docker container).
+
+    # get a sample CWL and JSON param file
+    wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/Dockstore.cwl
+    wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/sample_configs.json
+    consonance run  --flavour m1.xlarge \
+        --image-descriptor Dockstore.cwl \
+        --run-descriptor sample_configs.json 
+
+    #    --extra-file /root/.aws/config=/home/ubuntu/.aws/config=false
+    
+    
+TODO: there's some sort of problem with the admin user getting wiped, need to disable in web.yml
+
+TODO: I need a /root/.aws/config file after all
+
+TODO: chmod the key.pem
