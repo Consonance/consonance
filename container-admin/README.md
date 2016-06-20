@@ -34,6 +34,10 @@ Start with
 
 Now, inside the admin container you just launched:
 
+Start the webservice in the container 
+
+    nohup java -jar consonance-webservice-*.jar server web.yml &> web.log &
+
 You need to create the database, password is postgres (unless you changed it)
 
     psql -h postgres -U postgres -W postgres
@@ -41,13 +45,9 @@ You need to create the database, password is postgres (unless you changed it)
 
 Customize `/container-host-bag/example_params.json`, specifically, you need to add your aws keys.  You might also want to customize `/container-host-bag/example_tags.json`.
 
-Start the webservice in the container 
-
-    java -jar consonance-webservice-*.jar server web.yml
-
 Start the two daemons
 
-    java -cp consonance-arch-*.jar io.consonance.arch.coordinator.Coordinator --config config --endless
-    java -cp consonance-arch-*.jar io.consonance.arch.containerProvisioner.ContainerProvisionerThreads --config config --endless
+    nohup java -cp consonance-arch-*.jar io.consonance.arch.coordinator.Coordinator --config config --endless &> coordinator.log &
+    nohup java -cp consonance-arch-*.jar io.consonance.arch.containerProvisioner.ContainerProvisionerThreads --config config --endless &> provisioner.log &
 
 Now, you should have your webservice running on port 8081, you can monitor rabbitmq on port 15673.

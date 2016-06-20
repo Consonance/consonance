@@ -4,7 +4,7 @@ FROM ubuntu:14.04.3
 RUN apt-get update && apt-get upgrade -y
 
 #prepare for Java download
-RUN apt-get update && apt-get install -y python-software-properties software-properties-common git postgresql-client vim
+RUN apt-get update && apt-get install -y python-software-properties software-properties-common git postgresql-client vim ansible
 
 #grab oracle java (auto accept licence)
 RUN add-apt-repository -y ppa:webupd8team/java
