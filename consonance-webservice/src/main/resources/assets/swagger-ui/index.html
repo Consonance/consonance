@@ -38,6 +38,7 @@
   <script src='lib/backbone-min.js' type='text/javascript'></script>
   <script src='swagger-ui.js' type='text/javascript'></script>
   <script src='lib/highlight.7.3.pack.js' type='text/javascript'></script>
+  <script src='lib/jsoneditor.min.js' type='text/javascript'></script>
   <script src='lib/marked.js' type='text/javascript'></script>
   <script src='lib/swagger-oauth.js' type='text/javascript'></script>
 
@@ -48,12 +49,12 @@
 
   <script type="text/javascript">
     $(function () {
-      var url = window.location.search.match(/url=([^&]+)/);
-      if (url && url.length > 1) {
-        url = decodeURIComponent(url[1]);
-      } else {
-        url = "http://localhost:8080/swagger.json";
-      }
+      var url = window.location.origin + '/swagger.json';
+      //if (url && url.length > 1) {
+      //  url = decodeURIComponent(url[1]);
+      //} else {
+      //  url = "http://petstore.swagger.io/v2/swagger.json";
+      //}
 
       // Pre load translate...
       if(window.SwaggerTranslator) {
@@ -70,7 +71,8 @@
               clientSecret: "your-client-secret",
               realm: "your-realms",
               appName: "your-app-name", 
-              scopeSeparator: ","
+              scopeSeparator: ",",
+              additionalQueryStringParams: {}
             });
           }
 
@@ -89,6 +91,7 @@
         },
         docExpansion: "none",
         apisSorter: "alpha",
+        defaultModelRendering: 'schema',
         showRequestHeaders: true
       });
 
