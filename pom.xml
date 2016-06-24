@@ -47,6 +47,7 @@
         <aws.version>1.10.29</aws.version>
         <powermock.version>1.6.3</powermock.version>
         <assertj.version>3.2.0</assertj.version>
+        <swagger-ui.version>2.1.4</swagger-ui.version>
     </properties>
 
     <scm>
@@ -411,6 +412,11 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <artifactId>download-maven-plugin</artifactId>
+                    <version>1.2.1</version>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>2.4.1</version>
@@ -675,6 +681,15 @@
                     </execution>
                 </executions>
                 <inherited>true</inherited>
+            </plugin>
+            <plugin>
+                <groupId>com.versioneye</groupId>
+                <artifactId>versioneye-maven-plugin</artifactId>
+                <version>3.9.2</version>
+                <configuration>
+		    <updatePropertiesAfterCreate>false</updatePropertiesAfterCreate>
+                    <projectId>576c57680c0727000a45ce46</projectId>
+                </configuration>
             </plugin>
         </plugins>
     </build>
