@@ -21,7 +21,8 @@ Create these files from templates:
 
 * youxia_config -> need to update aws key and various settings
 * config -> not much to do
-* key.pem -> need my AWS key
+* key.pem -> need your AWS SSH key
+* aws.config -> need your AWS API keys
 * *the above files won’t be checked in due to the .gitignore policy*
 
 Build with
