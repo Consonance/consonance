@@ -37,6 +37,7 @@ RUN wget --no-check-certificate http://wrench.res.oicr.on.ca/artifactory/seqware
 # the Ansible-based setup
 # TODO this is just being used for testing
 RUN git clone https://github.com/ICGC-TCGA-PanCancer/container-host-bag.git && cd container-host-bag && git checkout 'feature/#113-feature-brian-testing-con-2'
+COPY bag_params.json /container-host-bag/example_params.json
 
 # TODO: 1) update the above to have my AWS creds in it and 2) create the admin user in postgres db
 
