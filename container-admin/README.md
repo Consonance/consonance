@@ -12,10 +12,10 @@ To run the webservice and command-line tools (still a work in progress, the ip a
 
     docker-compose build
     docker-compose up
-    
+
 **NOTE:** this `docker-compose up` currently isn't working since you need to do some manual configuration before you can start the daemons. See the next section.
- 
-## Developing 
+
+## Developing
 
 Create these files from templates:
 
@@ -28,13 +28,13 @@ Build with
 
     docker-compose build
 
-Start with 
+Start with
 
     docker-compose run admin bash
 
 Now, inside the admin container you just launched:
 
-Start the webservice in the container 
+Start the webservice in the container
 
     nohup java -jar consonance-webservice-*.jar server web.yml &> web.log &
 
@@ -59,11 +59,11 @@ You are now ready to submit some work (from within the admin docker container).
     wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/sample_configs.json
     consonance run  --flavour m1.xlarge \
         --image-descriptor Dockstore.cwl \
-        --run-descriptor sample_configs.json 
+        --run-descriptor sample_configs.json
 
     #    --extra-file /root/.aws/config=/home/ubuntu/.aws/config=false
-    
-    
+
+
 TODO: there's some sort of problem with the admin user getting wiped, need to disable in web.yml
 
 TODO: I need a /root/.aws/config file after all
@@ -71,3 +71,7 @@ TODO: I need a /root/.aws/config file after all
 TODO: chmod the key.pem
 
 TODO: note about security group ssh to itself
+
+TODO: how to get Youxia to launch m1.xlarge and have it attach all 4 ephemerial drives, only 1 is attached
+
+TODO: the ecryptfs setup is using a hard-coded password for now, see lvm/tasks/mount.yml

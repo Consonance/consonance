@@ -46,6 +46,6 @@ RUN wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats
 
 # set default webservice to run
 CMD sleep 5000; \
-    java -cp consonance-arch-*.jar io.consonance.arch.coordinator.Coordinator --config config --endless; \ 
-    java -cp consonance-arch-*.jar io.consonance.arch.containerProvisioner.ContainerProvisionerThreads --config config --endless ; \ 
+    java -cp consonance-arch-*.jar io.consonance.arch.coordinator.Coordinator --config config --endless; \
+    java -cp consonance-arch-*.jar io.consonance.arch.containerProvisioner.ContainerProvisionerThreads --config config --endless ; \
     java -jar consonance-webservice-*.jar server web.yml
