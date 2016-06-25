@@ -51,7 +51,7 @@ Start the two daemons
     nohup java -cp consonance-arch-*.jar io.consonance.arch.coordinator.Coordinator --config config --endless &> coordinator.log &
     nohup java -cp consonance-arch-*.jar io.consonance.arch.containerProvisioner.ContainerProvisionerThreads --config config --endless &> provisioner.log &
 
-Now, you should have your webservice running on port 8081, you can monitor rabbitmq on port 15673.
+Now, you should have your webservice running on port 8080, you can monitor rabbitmq on port 15672.
 
 You are now ready to submit some work (from within the admin docker container).
 
