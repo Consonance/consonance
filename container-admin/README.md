@@ -67,12 +67,12 @@ You are now ready to submit some work (from within the admin docker container).
 
 TODO: there's some sort of problem with the admin user getting wiped, need to disable in web.yml
 
-TODO: I need a /root/.aws/config file after all
+TODO: I need a /root/.aws/config file after all -- DONE
 
-TODO: chmod the key.pem
+TODO: chmod the key.pem -- DONE
 
 TODO: note about security group ssh to itself
 
-TODO: how to get Youxia to launch m1.xlarge and have it attach all 4 ephemerial drives, only 1 is attached
+TODO: how to get Youxia to launch m1.xlarge and have it attach all 4 ephemerial drives, only 1 is attached -- WORKED AROUND
 
 TODO: the ecryptfs setup is using a hard-coded password for now, see lvm/tasks/mount.yml
