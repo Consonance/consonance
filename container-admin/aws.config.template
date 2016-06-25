@@ -1,0 +1,4 @@
+[default]
+aws_secret_access_key = FILLMEIN
+aws_access_key_id = FILLMEIN
+region = us-east-1

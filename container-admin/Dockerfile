@@ -29,6 +29,7 @@ COPY youxia_config /root/.youxia/config
 COPY config /root/.consonance/config
 COPY key.pem /root/.ssh/key.pem
 RUN chmod 600 /root/.ssh/key.pem
+COPY aws.config /root/.aws/config
 
 # FIXME: need coordinated release to match alpha.6
 RUN wget https://github.com/Consonance/consonance/releases/download/2.0-alpha.2/consonance && mv consonance /bin && chmod a+x /bin/consonance
