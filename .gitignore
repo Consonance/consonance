@@ -35,3 +35,4 @@ nbactions.xml
 /container-admin/youxia_config
 /container-admin/key.pem
 /container-admin/bag_params.json
+/container-admin/aws.config
