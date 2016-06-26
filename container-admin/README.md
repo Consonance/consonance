@@ -58,6 +58,7 @@ You are now ready to submit some work (from within the admin docker container).
     # get a sample CWL and JSON param file
     wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/Dockstore.cwl
     wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/sample_configs.json
+    export CONSONANCE_ROOT=1
     consonance run  --flavour m1.xlarge \
         --image-descriptor Dockstore.cwl \
         --run-descriptor sample_configs.json
@@ -76,3 +77,5 @@ TODO: note about security group ssh to itself
 TODO: how to get Youxia to launch m1.xlarge and have it attach all 4 ephemerial drives, only 1 is attached -- WORKED AROUND
 
 TODO: the ecryptfs setup is using a hard-coded password for now, see lvm/tasks/mount.yml
+
+TODO: need to download the latest CLI and depenencies for Dockstore and then write an updated launcher that uses it instead of the CWL launcher from an older release
