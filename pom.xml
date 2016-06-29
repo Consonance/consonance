@@ -322,6 +322,24 @@
                 <artifactId>commons-lang3</artifactId>
                 <version>3.4</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>1.9.2</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-log -->
+            <dependency>
+                <groupId>com.jcabi</groupId>
+                <artifactId>jcabi-log</artifactId>
+                <version>0.15.1</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.jcabi/jcabi-aspects -->
+            <dependency>
+                <groupId>com.jcabi</groupId>
+                <artifactId>jcabi-aspects</artifactId>
+                <version>0.20.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
