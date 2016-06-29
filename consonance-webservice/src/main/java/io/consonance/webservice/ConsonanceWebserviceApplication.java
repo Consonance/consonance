@@ -86,7 +86,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         beanConfig.setSchemes(new String[] { "http" });
         beanConfig.setHost("localhost:8080");
         beanConfig.setBasePath("/");
-        beanConfig.setResourcePackage("io.consonance.webservice.resources,io.swagger.workflow.api");
+        beanConfig.setResourcePackage("io.consonance.webservice.resources,io.swagger.workflow.api,,io.swagger.task.api");
         beanConfig.setScan(true);
         beanConfig.setTitle("Swagger Consonance Prototype");
 
