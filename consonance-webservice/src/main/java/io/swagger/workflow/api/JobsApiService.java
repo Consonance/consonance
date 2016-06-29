@@ -17,21 +17,13 @@
  *
  */
 
-package io.swagger.api.impl;
-
-import io.swagger.api.ApiResponseMessage;
-import io.swagger.api.NotFoundException;
-import io.swagger.api.RunApiService;
+package io.swagger.workflow.api;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T18:39:51.024Z")
-public class RunApiServiceImpl extends RunApiService {
-    @Override
-    public Response runPost(String descriptorUrl, SecurityContext securityContext)
-    throws NotFoundException {
-        // do some magic!
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
-    }
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T19:50:58.742Z")
+public abstract class JobsApiService {
+      public abstract Response jobsGet(String descriptorUrl,SecurityContext securityContext)
+      throws NotFoundException;
 }

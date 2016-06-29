@@ -17,11 +17,11 @@
  *
  */
 
-package io.swagger.api.impl;
+package io.swagger.workflow.api.impl;
 
-import io.swagger.api.ApiResponseMessage;
-import io.swagger.api.JobsApiService;
-import io.swagger.api.NotFoundException;
+import io.swagger.workflow.api.ApiResponseMessage;
+import io.swagger.workflow.api.JobsApiService;
+import io.swagger.workflow.api.NotFoundException;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
