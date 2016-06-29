@@ -15,7 +15,7 @@ import javax.ws.rs.core.SecurityContext;
 
 @Produces({ "application/json" })
 @io.swagger.annotations.Api(description = "the run API")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T18:39:51.024Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T19:50:58.742Z")
 public class RunApi  {
    private final RunApiService delegate = RunApiServiceFactory.getRunApi();
 
@@ -23,7 +23,7 @@ public class RunApi  {
     
     
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "", notes = "Submit launch of a workflow ", response = void.class, tags={  })
+    @io.swagger.annotations.ApiOperation(value = "", notes = "Submit launch of a workflow ", response = void.class, tags={ "GA4GH-workflow-execution" })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Successful response", response = void.class) })
     public Response runPost(
