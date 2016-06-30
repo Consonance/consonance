@@ -147,6 +147,18 @@ public class OrderResource {
         newOrder.setProvision(provision);
         newOrder.getProvision().setJobUUID(newOrder.getJob().getUuid());
 
+        return persistAndPublishJob(job, newOrder, provision);
+    }
+
+    /**
+     *
+     * @param job
+     * @param newOrder
+     * @param provision
+     * @return
+     */
+    protected Job persistAndPublishJob(@ApiParam(value = "Order that needs to be added to the store", required = true) Job job,
+            Order newOrder, Provision provision) {
         if (jchannel == null || !jchannel.isOpen()) {
             try {
                 this.jchannel = CommonServerTestUtilities.setupQueue(settings, queueName + "_orders");

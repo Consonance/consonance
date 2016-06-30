@@ -45,6 +45,9 @@ import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.task.api.V1Api;
+import io.swagger.workflow.api.JobsApi;
+import io.swagger.workflow.api.RunApi;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +89,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         beanConfig.setSchemes(new String[] { "http" });
         beanConfig.setHost("localhost:8080");
         beanConfig.setBasePath("/");
-        beanConfig.setResourcePackage("io.consonance.webservice.resources,io.swagger.workflow.api,,io.swagger.task.api");
+        beanConfig.setResourcePackage("io.consonance.webservice.resources,io.swagger.workflow.api,io.swagger.task.api");
         beanConfig.setScan(true);
         beanConfig.setTitle("Swagger Consonance Prototype");
 
@@ -124,6 +127,12 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.jersey().register(new OrderResource(dao, provisionDAO, configuration.getConsonanceConfig()));
         environment.jersey().register(new UserResource(userDAO));
         environment.jersey().register(new ConfigurationResource(configuration));
+
+        // hook up GA4GH APIs
+        environment.jersey().register(new V1Api());
+        environment.jersey().register(new RunApi());
+        environment.jersey().register(new JobsApi());
+
 
         // swagger stuff
 
