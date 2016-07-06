@@ -19,6 +19,8 @@
 
 package io.swagger.workflow.api.impl;
 
+import io.consonance.webservice.ConsonanceWebserviceConfiguration;
+import io.consonance.webservice.resources.OrderResource;
 import io.swagger.workflow.api.ApiResponseMessage;
 import io.swagger.workflow.api.JobsApiService;
 import io.swagger.workflow.api.NotFoundException;
@@ -28,10 +30,20 @@ import javax.ws.rs.core.SecurityContext;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T18:39:51.024Z")
 public class JobsApiServiceImpl extends JobsApiService {
+    private static ConsonanceWebserviceConfiguration config;
+    private static OrderResource orderResource;
+
+    public static void setConfig(ConsonanceWebserviceConfiguration config) {
+        JobsApiServiceImpl.config = config;
+    }
+
+    public static void setOrderResource(OrderResource orderResource) {
+        JobsApiServiceImpl.orderResource = orderResource;
+    }
+
     @Override
     public Response jobsGet(String descriptorUrl, SecurityContext securityContext)
     throws NotFoundException {
-        // do some magic!
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
 }

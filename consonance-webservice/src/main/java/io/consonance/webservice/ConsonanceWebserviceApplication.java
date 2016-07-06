@@ -46,8 +46,11 @@ import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
 import io.swagger.task.api.V1Api;
+import io.swagger.task.api.impl.V1ApiServiceImpl;
 import io.swagger.workflow.api.JobsApi;
 import io.swagger.workflow.api.RunApi;
+import io.swagger.workflow.api.impl.JobsApiServiceImpl;
+import io.swagger.workflow.api.impl.RunApiServiceImpl;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,15 +127,23 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.getObjectMapper().enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-        environment.jersey().register(new OrderResource(dao, provisionDAO, configuration.getConsonanceConfig()));
+        final OrderResource orderResource = new OrderResource(dao, provisionDAO, configuration.getConsonanceConfig());
+        environment.jersey().register(orderResource);
         environment.jersey().register(new UserResource(userDAO));
         environment.jersey().register(new ConfigurationResource(configuration));
+
+        // attach the container dao statically to avoid too much modification of generated code
+        V1ApiServiceImpl.setConfig(configuration);
+        V1ApiServiceImpl.setOrderResource(orderResource);
+        JobsApiServiceImpl.setConfig(configuration);
+        JobsApiServiceImpl.setOrderResource(orderResource);
+        RunApiServiceImpl.setConfig(configuration);
+        RunApiServiceImpl.setOrderResource(orderResource);
 
         // hook up GA4GH APIs
         environment.jersey().register(new V1Api());
         environment.jersey().register(new RunApi());
         environment.jersey().register(new JobsApi());
-
 
         // swagger stuff
 

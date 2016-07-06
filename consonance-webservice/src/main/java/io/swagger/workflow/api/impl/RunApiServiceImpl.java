@@ -19,6 +19,8 @@
 
 package io.swagger.workflow.api.impl;
 
+import io.consonance.webservice.ConsonanceWebserviceConfiguration;
+import io.consonance.webservice.resources.OrderResource;
 import io.swagger.workflow.api.ApiResponseMessage;
 import io.swagger.workflow.api.NotFoundException;
 import io.swagger.workflow.api.RunApiService;
@@ -28,10 +30,22 @@ import javax.ws.rs.core.SecurityContext;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T18:39:51.024Z")
 public class RunApiServiceImpl extends RunApiService {
+    private static ConsonanceWebserviceConfiguration config;
+    private static OrderResource orderResource;
+
+    public static void setConfig(ConsonanceWebserviceConfiguration config) {
+        RunApiServiceImpl.config = config;
+    }
+
+    public static void setOrderResource(OrderResource orderResource) {
+        RunApiServiceImpl.orderResource = orderResource;
+    }
+
     @Override
     public Response runPost(String descriptorUrl, SecurityContext securityContext)
     throws NotFoundException {
         // do some magic!
+        //return Response.seeOther()
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
 }
