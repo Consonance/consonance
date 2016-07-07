@@ -23,6 +23,7 @@ import io.github.collaboratory.LauncherCWL;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.cwl.avro.CommandLineTool;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -77,7 +78,9 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
 
-        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, this.outputStream, this.errorStream);
+        //LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, this.outputStream, this.errorStream);
+        // FIXME: we need a way to pass back the stderr/stdout
+        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath);
 
         try {
             if (this.preworkDelay > 0) {
@@ -85,7 +88,8 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 Thread.sleep(this.preworkDelay);
             }
             // this is a blocking call, but the HeartbeatThread appears to be a in a separate thread
-            launcher.run();
+            // TODO: this assumes consonance just takes CWL tool call requests
+            launcher.run(CommandLineTool.class);
             result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
             result.setWorkflowStdErr(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
             // exit code is artificial since the CWL runner actually runs more than one command
