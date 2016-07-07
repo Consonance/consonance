@@ -274,9 +274,14 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+		<!--
             <groupId>io.github.collaboratory.launcher</groupId>
             <artifactId>io.github.collaboratory.launcher</artifactId>
-            <version>1.0.7</version>
+	    <version>1.0.7</version>
+	      -->
+	             <groupId>io.dockstore</groupId>
+	             <artifactId>dockstore-launcher</artifactId>
+	             <version>0.4-beta.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
