@@ -364,6 +364,17 @@
             </snapshots>
         </repository>
         <repository>
+            <id>releases.collab</id>
+            <name>Collab Dependencies Maven Repository</name>
+            <url>http://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <id>apache-releases</id>
             <name>Apache Releases repository</name>
             <url>https://repository.apache.org/content/repositories/releases/</url>
