@@ -539,6 +539,7 @@
                                     <message>No Snapshots Allowed!</message>
                                     <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
                                     <excludes>
+                                        <exclude>io.dockstore:*</exclude>
                                         <exclude>io.consonance:*</exclude>
                                         <exclude>io.github.collaboratory.launcher:*</exclude>
                                     </excludes>
