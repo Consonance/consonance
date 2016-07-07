@@ -235,7 +235,7 @@ public class TestWorkerWithMocking {
 
     private void setupConfig() {
         // need launcher CWL
-        Mockito.when(config.getString(LauncherCWL.WORKING_DIRECTORY)).thenReturn("./datastore/");
+        // Mockito.when(config.getString(LauncherCWL.WORKING_DIRECTORY)).thenReturn("./datastore/");
 
         Mockito.when(config.getString(Constants.RABBIT_QUEUE_NAME)).thenReturn("consonance_arch");
         Mockito.when(config.getString(Constants.RABBIT_HOST)).thenReturn("localhost");
