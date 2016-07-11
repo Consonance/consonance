@@ -19,19 +19,30 @@
 
 package io.swagger.workflow.api.impl;
 
+import com.google.gson.Gson;
+import io.consonance.arch.beans.Job;
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
+import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.resources.OrderResource;
-import io.swagger.workflow.api.ApiResponseMessage;
 import io.swagger.workflow.api.JobsApiService;
 import io.swagger.workflow.api.NotFoundException;
+import io.swagger.workflow.model.JobStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
+import java.util.HashMap;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T18:39:51.024Z")
 public class JobsApiServiceImpl extends JobsApiService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JobsApiServiceImpl.class);
+
     private static ConsonanceWebserviceConfiguration config;
     private static OrderResource orderResource;
+    private static Gson gson = new Gson();
 
     public static void setConfig(ConsonanceWebserviceConfiguration config) {
         JobsApiServiceImpl.config = config;
@@ -42,8 +53,52 @@ public class JobsApiServiceImpl extends JobsApiService {
     }
 
     @Override
-    public Response jobsGet(String descriptorUrl, SecurityContext securityContext)
+    public Response jobsGet(String descriptorUrl, SecurityContext securityContext, UriInfo uriInfo)
     throws NotFoundException {
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+        // TODO: GA4GH api needs authentication, bypass for now
+        ConsonanceUser user = new ConsonanceUser();
+        user.setAdmin(true);
+        final Job workflowRun = orderResource.getWorkflowRun(user, descriptorUrl);
+
+        JobStatus status = new JobStatus();
+        final String containerRuntimeDescriptor = workflowRun.getContainerRuntimeDescriptor();
+        final HashMap hashMap = gson.fromJson(containerRuntimeDescriptor, HashMap.class);
+        status.setInput(hashMap);
+
+        status.setLog(uriInfo.getBaseUri() + "order/" + descriptorUrl + "/log");
+
+        //TODO: not defined in specification
+        status.setOutput(null);
+        status.setRun(workflowRun.getContainerImageDescriptor());
+
+        JobStatus.StateEnum stateEnum;
+
+        // convert from our status to GA4GH status
+        switch (workflowRun.getState()) {
+        case START:
+            stateEnum = JobStatus.StateEnum.RUNNING;
+            break;
+        case PENDING:
+            stateEnum = JobStatus.StateEnum.RUNNING;
+            break;
+        case RUNNING:
+            stateEnum = JobStatus.StateEnum.RUNNING;
+            break;
+        case SUCCESS:
+            stateEnum = JobStatus.StateEnum.SUCCESS;
+            break;
+        case FAILED:
+            stateEnum = JobStatus.StateEnum.FAILED;
+            break;
+        case LOST:
+            stateEnum = JobStatus.StateEnum.PAUSED;
+            break;
+        default:
+            stateEnum = null;
+        }
+
+        status.setState(stateEnum);
+        // convert from order to GA4GH workflow
+        return Response.ok().entity(status).build();
     }
 }

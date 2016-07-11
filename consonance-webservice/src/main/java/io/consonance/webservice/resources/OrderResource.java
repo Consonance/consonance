@@ -52,7 +52,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -119,6 +124,26 @@ public class OrderResource {
         final Job jobByUUID = dao.findJobByUUID(uuid);
         if (consonanceUser.isAdmin() || consonanceUser.getName().equals(jobByUUID.getEndUser())){
             return jobByUUID;
+        }
+        throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @GET
+    @Path("/{jobUUID}/log")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List a specific job", notes = "List a specific job", response = Job.class, authorizations = @Authorization(value = "api_key"))
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
+            @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Job not found") })
+    public Response getWorkflowRunStreamingLog(@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser, @ApiParam(value = "UUID of job that needs to be fetched", required = true) @PathParam("jobUUID") String uuid) {
+        final Job jobByUUID = dao.findJobByUUID(uuid);
+        if (consonanceUser.isAdmin() || consonanceUser.getName().equals(jobByUUID.getEndUser())){
+            StreamingOutput stream = os -> {
+                Writer writer = new BufferedWriter(new OutputStreamWriter(os));
+                writer.write(jobByUUID.getStdout() == null? "": jobByUUID.getStdout());
+                writer.flush();
+            };
+            return Response.ok(stream).build();
         }
         throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
     }

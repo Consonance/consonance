@@ -145,6 +145,10 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.jersey().register(new RunApi());
         environment.jersey().register(new JobsApi());
 
+        // implement
+        JobsApiServiceImpl.setConfig(configuration);
+        RunApiServiceImpl.setConfig(configuration);
+
         // swagger stuff
 
         // Swagger providers

@@ -44,8 +44,7 @@ public class RunApiServiceImpl extends RunApiService {
     @Override
     public Response runPost(String descriptorUrl, SecurityContext securityContext)
     throws NotFoundException {
-        // do some magic!
-        //return Response.seeOther()
+
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
 }

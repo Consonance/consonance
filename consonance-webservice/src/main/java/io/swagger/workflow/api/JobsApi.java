@@ -19,6 +19,7 @@
 
 package io.swagger.workflow.api;
 
+import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiParam;
 import io.swagger.workflow.api.factories.JobsApiServiceFactory;
 import io.swagger.workflow.model.JobStatus;
@@ -30,6 +31,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
 
 @Path("/jobs")
 
@@ -39,9 +41,11 @@ import javax.ws.rs.core.SecurityContext;
 public class JobsApi  {
    private final JobsApiService delegate = JobsApiServiceFactory.getJobsApi();
 
+    @Context
+    private UriInfo uriInfo;
+
     @GET
-    
-    
+    @UnitOfWork
     @Produces({ "application/json" })
     @io.swagger.annotations.ApiOperation(value = "", notes = "Get status for a workflow ", response = JobStatus.class, tags={ "GA4GH-workflow-execution" })
     @io.swagger.annotations.ApiResponses(value = { 
@@ -50,6 +54,6 @@ public class JobsApi  {
         @ApiParam(value = "URL to descriptor for workflow",required=true) @QueryParam("descriptor_url") String descriptorUrl,
         @Context SecurityContext securityContext)
     throws NotFoundException {
-        return delegate.jobsGet(descriptorUrl,securityContext);
+        return delegate.jobsGet(descriptorUrl,securityContext, uriInfo);
     }
 }
