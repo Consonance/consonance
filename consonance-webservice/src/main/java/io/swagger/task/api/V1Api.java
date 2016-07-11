@@ -1,11 +1,11 @@
 package io.swagger.task.api;
 
 import io.swagger.annotations.ApiParam;
+import io.swagger.task.api.factories.V1ApiServiceFactory;
 import io.swagger.task.model.Ga4ghTaskExecJob;
 import io.swagger.task.model.Ga4ghTaskExecJobId;
 import io.swagger.task.model.Ga4ghTaskExecJobListResponse;
 import io.swagger.task.model.Ga4ghTaskExecTask;
-import io.swagger.task.api.factories.V1ApiServiceFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;

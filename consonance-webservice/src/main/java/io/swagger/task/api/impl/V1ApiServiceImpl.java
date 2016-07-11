@@ -2,10 +2,10 @@ package io.swagger.task.api.impl;
 
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.consonance.webservice.resources.OrderResource;
-import io.swagger.task.model.Ga4ghTaskExecTask;
 import io.swagger.task.api.ApiResponseMessage;
 import io.swagger.task.api.NotFoundException;
 import io.swagger.task.api.V1ApiService;
+import io.swagger.task.model.Ga4ghTaskExecTask;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;

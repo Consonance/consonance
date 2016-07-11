@@ -52,6 +52,7 @@ import io.swagger.workflow.api.RunApi;
 import io.swagger.workflow.api.impl.JobsApiServiceImpl;
 import io.swagger.workflow.api.impl.RunApiServiceImpl;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,6 +132,8 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.jersey().register(orderResource);
         environment.jersey().register(new UserResource(userDAO));
         environment.jersey().register(new ConfigurationResource(configuration));
+
+        environment.jersey().register(MultiPartFeature.class);
 
         // attach the container dao statically to avoid too much modification of generated code
         V1ApiServiceImpl.setConfig(configuration);

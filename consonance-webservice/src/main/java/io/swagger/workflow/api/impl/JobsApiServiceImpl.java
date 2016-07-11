@@ -27,9 +27,11 @@ import io.consonance.webservice.resources.OrderResource;
 import io.swagger.workflow.api.JobsApiService;
 import io.swagger.workflow.api.NotFoundException;
 import io.swagger.workflow.model.JobStatus;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
@@ -53,13 +55,16 @@ public class JobsApiServiceImpl extends JobsApiService {
     }
 
     @Override
-    public Response jobsGet(String descriptorUrl, SecurityContext securityContext, UriInfo uriInfo)
+    public Response jobsDescriptorUrlGet(String descriptorUrl, SecurityContext securityContext, UriInfo uriInfo)
     throws NotFoundException {
         // TODO: GA4GH api needs authentication, bypass for now
         ConsonanceUser user = new ConsonanceUser();
         user.setAdmin(true);
         final Job workflowRun = orderResource.getWorkflowRun(user, descriptorUrl);
 
+        if (workflowRun == null){
+            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+        }
         JobStatus status = new JobStatus();
         final String containerRuntimeDescriptor = workflowRun.getContainerRuntimeDescriptor();
         final HashMap hashMap = gson.fromJson(containerRuntimeDescriptor, HashMap.class);
