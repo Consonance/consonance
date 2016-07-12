@@ -11,11 +11,13 @@ import java.util.Objects;
 
 
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T20:13:58.346Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-12T15:19:07.784Z")
 public class Ga4ghTaskExecDockerExecutor   {
   
   private List<String> cmd = new ArrayList<String>();
   private String imageName = null;
+  private String stderr = null;
+  private String stdout = null;
 
   /**
    **/
@@ -51,6 +53,40 @@ public class Ga4ghTaskExecDockerExecutor   {
     this.imageName = imageName;
   }
 
+  /**
+   **/
+  public Ga4ghTaskExecDockerExecutor stderr(String stderr) {
+    this.stderr = stderr;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("stderr")
+  public String getStderr() {
+    return stderr;
+  }
+  public void setStderr(String stderr) {
+    this.stderr = stderr;
+  }
+
+  /**
+   **/
+  public Ga4ghTaskExecDockerExecutor stdout(String stdout) {
+    this.stdout = stdout;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("stdout")
+  public String getStdout() {
+    return stdout;
+  }
+  public void setStdout(String stdout) {
+    this.stdout = stdout;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -62,12 +98,14 @@ public class Ga4ghTaskExecDockerExecutor   {
     }
     Ga4ghTaskExecDockerExecutor ga4ghTaskExecDockerExecutor = (Ga4ghTaskExecDockerExecutor) o;
     return Objects.equals(cmd, ga4ghTaskExecDockerExecutor.cmd) &&
-        Objects.equals(imageName, ga4ghTaskExecDockerExecutor.imageName);
+        Objects.equals(imageName, ga4ghTaskExecDockerExecutor.imageName) &&
+        Objects.equals(stderr, ga4ghTaskExecDockerExecutor.stderr) &&
+        Objects.equals(stdout, ga4ghTaskExecDockerExecutor.stdout);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(cmd, imageName);
+    return Objects.hash(cmd, imageName, stderr, stdout);
   }
 
   @Override
@@ -77,6 +115,8 @@ public class Ga4ghTaskExecDockerExecutor   {
     
     sb.append("    cmd: ").append(toIndentedString(cmd)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");
+    sb.append("    stderr: ").append(toIndentedString(stderr)).append("\n");
+    sb.append("    stdout: ").append(toIndentedString(stdout)).append("\n");
     sb.append("}");
     return sb.toString();
   }

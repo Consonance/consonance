@@ -10,8 +10,9 @@ import io.swagger.task.model.Ga4ghTaskExecTask;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T20:13:58.346Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-12T15:19:07.784Z")
 public class V1ApiServiceImpl extends V1ApiService {
+
     private static ConsonanceWebserviceConfiguration config;
     private static OrderResource orderResource;
 
@@ -22,6 +23,7 @@ public class V1ApiServiceImpl extends V1ApiService {
     public static void setOrderResource(OrderResource orderResource) {
         V1ApiServiceImpl.orderResource = orderResource;
     }
+
 
     @Override
     public Response cancelJob(String value, SecurityContext securityContext)

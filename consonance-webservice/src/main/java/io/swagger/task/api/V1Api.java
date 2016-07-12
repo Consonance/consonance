@@ -22,7 +22,7 @@ import javax.ws.rs.core.SecurityContext;
 @Consumes({ "application/json" })
 @Produces({ "application/json" })
 @io.swagger.annotations.Api(description = "the v1 API")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T20:13:58.346Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-12T15:19:07.784Z")
 public class V1Api  {
    private final V1ApiService delegate = V1ApiServiceFactory.getV1Api();
 
