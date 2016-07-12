@@ -67,7 +67,7 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all known jobs", notes = "List all users", response = ConsonanceUser.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    @ApiOperation(value = "List all known users", notes = "List all users", response = ConsonanceUser.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
     public List<ConsonanceUser> listUsers(@ApiParam(hidden=true) @Auth ConsonanceUser user) {
         if (user.isAdmin()) {
             return dao.findAll();
