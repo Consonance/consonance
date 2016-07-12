@@ -1,5 +1,8 @@
 package io.swagger.task.api;
 
+import io.consonance.webservice.core.ConsonanceUser;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiParam;
 import io.swagger.task.api.factories.V1ApiServiceFactory;
 import io.swagger.task.model.Ga4ghTaskExecJob;
@@ -14,9 +17,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 
 @Path("/v1")
 @Consumes({ "application/json" })
@@ -26,6 +27,7 @@ import javax.ws.rs.core.SecurityContext;
 public class V1Api  {
    private final V1ApiService delegate = V1ApiServiceFactory.getV1Api();
 
+    @UnitOfWork
     @DELETE
     @Path("/jobs/{value}")
     @Consumes({ "application/json" })
@@ -35,10 +37,12 @@ public class V1Api  {
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description", response = Ga4ghTaskExecJobId.class) })
     public Response cancelJob(
         @ApiParam(value = "",required=true) @PathParam("value") String value,
-        @Context SecurityContext securityContext)
+        @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.cancelJob(value,securityContext);
+     return delegate.cancelJob(value,user);
     }
+
+    @UnitOfWork
     @GET
     @Path("/jobs/{value}")
     @Consumes({ "application/json" })
@@ -47,11 +51,12 @@ public class V1Api  {
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description", response = Ga4ghTaskExecJob.class) })
     public Response getJob(
-        @ApiParam(value = "",required=true) @PathParam("value") String value,
-        @Context SecurityContext securityContext)
+        @ApiParam(value = "",required=true) @PathParam("value") String value, @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.getJob(value,securityContext);
+        return delegate.getJob(value,user);
     }
+
+    @UnitOfWork
     @GET
     @Path("/jobs")
     @Consumes({ "application/json" })
@@ -59,11 +64,12 @@ public class V1Api  {
     @io.swagger.annotations.ApiOperation(value = "List the TaskOps", notes = "", response = Ga4ghTaskExecJobListResponse.class, tags={ "TaskService",  })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description", response = Ga4ghTaskExecJobListResponse.class) })
-    public Response listJobs(
-        @Context SecurityContext securityContext)
+    public Response listJobs(@Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.listJobs(securityContext);
+        return delegate.listJobs(user);
     }
+
+    @UnitOfWork
     @POST
     @Path("/jobs")
     @Consumes({ "application/json" })
@@ -73,8 +79,8 @@ public class V1Api  {
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description", response = Ga4ghTaskExecJobId.class) })
     public Response runTask(
         @ApiParam(value = "" ,required=true) Ga4ghTaskExecTask body,
-        @Context SecurityContext securityContext)
+            @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.runTask(body,securityContext);
+        return delegate.runTask(body,user);
     }
 }

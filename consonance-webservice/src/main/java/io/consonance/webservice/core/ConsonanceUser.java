@@ -19,6 +19,8 @@
 
 package io.consonance.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import io.consonance.arch.beans.BaseBean;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -53,6 +55,7 @@ import java.util.Objects;
                 query = "SELECT u FROM ConsonanceUser u WHERE hashedPassword = :hashedPassword"
         )
 })
+@JsonIdentityInfo(generator=ObjectIdGenerators.PropertyGenerator.class, property = "userID")
 public class ConsonanceUser extends BaseBean implements Principal  {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)

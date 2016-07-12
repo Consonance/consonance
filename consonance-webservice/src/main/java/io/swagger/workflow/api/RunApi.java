@@ -1,5 +1,7 @@
 package io.swagger.workflow.api;
 
+import io.consonance.webservice.core.ConsonanceUser;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiParam;
 import io.swagger.workflow.api.factories.RunApiServiceFactory;
@@ -14,7 +16,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.io.InputStream;
 
@@ -40,8 +41,8 @@ public class RunApi  {
         @ApiParam(value = "URL to descriptor for workflow",required=true) @QueryParam("wf") String wf,
         @FormDataParam("file") InputStream inputStream,
         @FormDataParam("file") FormDataContentDisposition fileDetail,
-        @Context SecurityContext securityContext)
+            @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.runPost(wf,inputStream, fileDetail,securityContext, uriInfo);
+        return delegate.runPost(wf,inputStream, fileDetail,user, uriInfo);
     }
 }

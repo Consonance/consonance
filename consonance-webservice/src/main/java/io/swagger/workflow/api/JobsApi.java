@@ -1,5 +1,7 @@
 package io.swagger.workflow.api;
 
+import io.consonance.webservice.core.ConsonanceUser;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiParam;
 import io.swagger.workflow.api.factories.JobsApiServiceFactory;
@@ -11,7 +13,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 
 @Path("/jobs")
@@ -34,8 +35,8 @@ public class JobsApi  {
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description of job including its status", response = JobStatus.class) })
     public Response jobsDescriptorUrlGet(
         @ApiParam(value = "URL to descriptor for workflow",required=true) @PathParam("jobId") String jobId,
-        @Context SecurityContext securityContext)
+            @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.jobsDescriptorUrlGet(jobId,securityContext, uriInfo);
+        return delegate.jobsDescriptorUrlGet(jobId, user, uriInfo);
     }
 }

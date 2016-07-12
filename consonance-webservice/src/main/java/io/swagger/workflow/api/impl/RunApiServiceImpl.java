@@ -32,7 +32,6 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,13 +54,10 @@ public class RunApiServiceImpl extends RunApiService {
 
     @Override
     public Response runPost(String wf, InputStream inputStream, FormDataContentDisposition fileDetail,
-            SecurityContext securityContext, UriInfo uriInfo) throws NotFoundException {
+            ConsonanceUser user, UriInfo uriInfo) throws NotFoundException {
         try {
             final List<String> strings = IOUtils.readLines(inputStream);
             final String join = Joiner.on('\n').join(strings);
-            //TODO: what user does this get added as?
-            ConsonanceUser user = new ConsonanceUser();
-            user.setAdmin(true);
             Job job = new Job();
             job.setContainerImageDescriptor(wf);
             job.setContainerRuntimeDescriptor(join);
