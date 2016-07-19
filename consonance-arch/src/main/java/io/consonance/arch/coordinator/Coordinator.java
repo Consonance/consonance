@@ -118,7 +118,7 @@ public class Coordinator extends Base {
 
         private Set<String> existingJobQueues = new HashSet<>();
 
-        public CoordinatorOrders(String config, boolean endless) throws InterruptedException {
+        CoordinatorOrders(String config, boolean endless) throws InterruptedException {
             this.endless = endless;
             this.configFile = config;
         }
@@ -263,11 +263,11 @@ public class Coordinator extends Base {
      * This looks like a duplicate class from ContainerProvisionerThreads.
      */
     private static class CleanupJobs implements Callable<Void> {
-        protected static final Logger LOG = LoggerFactory.getLogger(CleanupJobs.class);
+        static final Logger LOG = LoggerFactory.getLogger(CleanupJobs.class);
         private final boolean endless;
         private String configFile = null;
 
-        public CleanupJobs(String config, boolean endless) throws InterruptedException {
+        CleanupJobs(String config, boolean endless) throws InterruptedException {
             this.endless = endless;
             this.configFile = config;
         }
@@ -355,7 +355,7 @@ public class Coordinator extends Base {
         private final String configFile;
         private final Logger log = LoggerFactory.getLogger(getClass());
 
-        public FlagJobs(String config, boolean endless) {
+        FlagJobs(String config, boolean endless) {
             this.endless = endless;
             this.configFile = config;
         }

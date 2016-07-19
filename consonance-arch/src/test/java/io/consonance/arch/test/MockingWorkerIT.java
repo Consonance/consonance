@@ -35,10 +35,15 @@ import io.consonance.arch.worker.WorkflowResult;
 import io.consonance.arch.worker.WorkflowRunner;
 import io.consonance.common.CommonTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.StatusLine;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicStatusLine;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -103,10 +108,16 @@ public class MockingWorkerIT {
     private ArgumentCaptor<LoggingEvent> argCaptor;
     
     @Mock
-    private GetMethod mockMethod;
+    private HttpGet mockMethod;
+
+    @Mock
+    private CloseableHttpResponse mockResponse;
+
+    @Mock
+    private HttpEntity mockEntity;
     
     @Mock
-    private HttpClient mockClient;
+    private DefaultHttpClient mockClient;
     
     @Before
     public void setup() throws Exception {
@@ -133,13 +144,15 @@ public class MockingWorkerIT {
         // Always return this heartbeat object.
         PowerMockito.whenNew(WorkerHeartbeat.class).withNoArguments().thenReturn(heartbeat);
         
-        StatusLine sl = new StatusLine("HTTP/1.0 200 OK");
-        Mockito.when(mockMethod.getStatusLine()).thenReturn(sl);
-        Mockito.when(mockMethod.getResponseBodyAsString()).thenReturn("m3.large");
-        
-        PowerMockito.whenNew(GetMethod.class).withAnyArguments().thenReturn(mockMethod);
-        Mockito.when(mockClient.executeMethod(any())).thenReturn(new Integer(200));
-        PowerMockito.whenNew(HttpClient.class).withNoArguments().thenReturn(mockClient);
+        StatusLine sl = new BasicStatusLine(new ProtocolVersion("HTTP",1,0), 200, "OK");
+        Mockito.when(mockResponse.getStatusLine()).thenReturn(sl);
+        Mockito.when(mockResponse.getEntity()).thenReturn(mockEntity);
+        Mockito.when(mockEntity.getContent()).thenReturn(IOUtils.toInputStream("m3.large"));
+
+
+        PowerMockito.whenNew(HttpGet.class).withAnyArguments().thenReturn(mockMethod);
+        Mockito.when(mockClient.execute(any())).thenReturn(mockResponse);
+        PowerMockito.whenNew(DefaultHttpClient.class).withAnyArguments().thenReturn(mockClient);
     }
 
     @Test

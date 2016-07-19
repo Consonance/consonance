@@ -100,6 +100,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>commons-dbutils</groupId>
@@ -137,7 +138,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>4.3.5.Final</version>
+            <version>4.3.11.Final</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.javassist</groupId>
