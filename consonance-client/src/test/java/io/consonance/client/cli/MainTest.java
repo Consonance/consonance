@@ -81,7 +81,6 @@ public class MainTest {
         // check out the output
         final String s = stream.toString();
         assertTrue(s, s.contains("foobar"));
-        assertTrue(s, s.contains("Client response received on thread"));
         assertTrue(s, s.contains("Sending client request on thread"));
     }
 
