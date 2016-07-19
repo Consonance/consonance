@@ -32,12 +32,13 @@ import io.consonance.arch.utils.CommonServerTestUtilities;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,22 +161,20 @@ public class WorkerRunnable implements Runnable {
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
 
-            HttpClient client = new HttpClient();
+            HttpClient client = new DefaultHttpClient();
             // make really sure that we get a flavour
             while (flavour == null) {
                 String responseBody;
                 // if no OpenStack uuid is found, grab a normal instance_id from AWS
                 String instanceTypeURL = "http://169.254.169.254/latest/meta-data/instance-type";
-                HttpMethod method = new GetMethod(instanceTypeURL);
+                final HttpGet method = new HttpGet(instanceTypeURL);
                 try {
-                    client.executeMethod(method);
-                    responseBody = method.getResponseBodyAsString();
-                    if (responseBody != null && method.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                    final HttpResponse execute = client.execute(method);
+                    responseBody = IOUtils.toString(execute.getEntity().getContent(), StandardCharsets.UTF_8);
+                    if (responseBody != null && execute.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                         flavour = responseBody;
                         log.info(" flavour chosen using cloud ini meta-data as: '" + flavour + "'");
                     }
-                } catch (HttpException he) {
-                    Log.warn("Http error connecting to '" + instanceTypeURL + "'");
                 } catch (IOException ioe) {
                     Log.warn("Unable to connect to '" + instanceTypeURL + "'");
                 }
