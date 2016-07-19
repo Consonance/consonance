@@ -1,1 +1,27 @@
-../../../../consonance-common/src/test/resources/config
+[webservice]
+base_path = http://localhost:8080
+token = 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+
+[rabbit]
+rabbitMQHost = localhost
+rabbitMQUser = guest
+rabbitMQPass = guest
+rabbitMQQueueName : consonance_arch
+
+[database]
+postgresHost = 127.0.0.1
+postgresUser = queue_user
+postgresPass = queue
+postgresDBName = queue_status
+  
+[generator]
+results = consonance_arch.json
+
+
+[provision]
+max_running_containers = 5
+
+  
+[coordinator]
+check_previous_job_hash = true
+max_seconds_before_lost = 10
