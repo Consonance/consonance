@@ -372,7 +372,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlets</artifactId>
-            <version>9.2.13.v20150730</version>
+            <version>9.2.17.v20160517</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -468,6 +468,15 @@
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
+                    <!--
+                    <execution>
+                        <id>test-resources</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>testResources</goal>
+                        </goals>
+                    </execution>
+                    -->
                     <execution>
                         <id>copy-resources</id>
                         <phase>compile</phase>
