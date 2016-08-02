@@ -14,7 +14,7 @@
   ~     GNU General Public License for more details.
   ~
   ~     You should have received a copy of the GNU General Public License
-  ~     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ~     along with this program.  If not, see <http://www.gnu.org/licenses />.
   ~
   -->
 
@@ -24,7 +24,7 @@
     <artifactId>pancancer-reporting</artifactId>
 
     <parent>
-        <version>1.1-rc.4-SNAPSHOT</version>
+        <version>1.1-rc.4</version>
         <groupId>io.cancer.collaboratory</groupId>
         <artifactId>sandbox</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -121,7 +121,7 @@
         <dependency>
             <groupId>io.cancer.collaboratory</groupId>
             <artifactId>pancancer-common</artifactId>
-            <version>1.1-rc.4-SNAPSHOT</version>
+            <version>1.1-rc.4</version>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.cobertura</groupId>
