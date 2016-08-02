@@ -39,7 +39,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:CancerCollaboratory/sandbox.git</github.url>
         <skipITs>true</skipITs>
-        <youxia.version>1.1.0-rc.6</youxia.version>
+        <youxia.version>1.1.0-rc.8</youxia.version>
         <cobertura.version>2.1.1</cobertura.version>
         <seqware.version>1.1.1</seqware.version>
     </properties>
