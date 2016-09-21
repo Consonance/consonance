@@ -157,7 +157,7 @@ if [ "$1" = "self-install" ]; then
 	# for testing, if you have a local release version, just use it
         CONSONANCE_URL="file:///$HOME/.m2/repository/io/consonance/consonance-client/$CONSONANCE_VERSION/consonance-client-$CONSONANCE_VERSION.jar"
     else
-        CONSONANCE_URL="http://wrench.res.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-client/$CONSONANCE_VERSION/consonance-client-$CONSONANCE_VERSION.jar"
+        CONSONANCE_URL="https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-client/$CONSONANCE_VERSION/consonance-client-$CONSONANCE_VERSION.jar"
     fi
 
     $HTTP_CLIENT "$CONSONANCE_JAR.pending" "$CONSONANCE_URL"
