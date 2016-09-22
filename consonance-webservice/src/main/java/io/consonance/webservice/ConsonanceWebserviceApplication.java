@@ -32,20 +32,30 @@ import io.consonance.webservice.resources.TemplateHealthCheck;
 import io.consonance.webservice.resources.UserResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.auth.AuthFactory;
+import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
-import io.dropwizard.auth.oauth.OAuthFactory;
+import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
+import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.task.api.V1Api;
+import io.swagger.task.api.impl.V1ApiServiceImpl;
+import io.swagger.workflow.api.JobsApi;
+import io.swagger.workflow.api.RunApi;
+import io.swagger.workflow.api.impl.JobsApiServiceImpl;
+import io.swagger.workflow.api.impl.RunApiServiceImpl;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +96,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         beanConfig.setSchemes(new String[] { "http" });
         beanConfig.setHost("localhost:8080");
         beanConfig.setBasePath("/");
-        beanConfig.setResourcePackage("io.consonance.webservice.resources");
+        beanConfig.setResourcePackage("io.consonance.webservice.resources,io.swagger.workflow.api,io.swagger.task.api");
         beanConfig.setScan(true);
         beanConfig.setTitle("Swagger Consonance Prototype");
 
@@ -121,9 +131,29 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.getObjectMapper().enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-        environment.jersey().register(new OrderResource(dao, provisionDAO, configuration.getConsonanceConfig()));
+        final OrderResource orderResource = new OrderResource(dao, provisionDAO, configuration.getConsonanceConfig());
+        environment.jersey().register(orderResource);
         environment.jersey().register(new UserResource(userDAO));
         environment.jersey().register(new ConfigurationResource(configuration));
+
+        environment.jersey().register(MultiPartFeature.class);
+
+        // attach the container dao statically to avoid too much modification of generated code
+        V1ApiServiceImpl.setConfig(configuration);
+        V1ApiServiceImpl.setOrderResource(orderResource);
+        JobsApiServiceImpl.setConfig(configuration);
+        JobsApiServiceImpl.setOrderResource(orderResource);
+        RunApiServiceImpl.setConfig(configuration);
+        RunApiServiceImpl.setOrderResource(orderResource);
+
+        // hook up GA4GH APIs
+        environment.jersey().register(new V1Api());
+        environment.jersey().register(new RunApi());
+        environment.jersey().register(new JobsApi());
+
+        // implement
+        JobsApiServiceImpl.setConfig(configuration);
+        RunApiServiceImpl.setConfig(configuration);
 
         // swagger stuff
 
@@ -131,12 +161,23 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
         LOG.info("This is our custom logger saying that we're about to load authenticators");
-        // setup authentication
-        SimpleJPAAuthenticator authenticator = new SimpleJPAAuthenticator(userDAO);
-        CachingAuthenticator<String, ConsonanceUser> cachingAuthenticator = new CachingAuthenticator<String, ConsonanceUser>(
-                environment.metrics(), authenticator, configuration.getAuthenticationCachePolicy());
-        environment.jersey().register(
-                AuthFactory.binder(new OAuthFactory<>(cachingAuthenticator, "SUPER SECRET STUFF", ConsonanceUser.class)));
+
+        // setup authentication to allow session access in authenticators, see https://github.com/dropwizard/dropwizard/pull/1361
+        SimpleJPAAuthenticator authenticator = new UnitOfWorkAwareProxyFactory(getHibernate()).create(SimpleJPAAuthenticator.class,
+                new Class[]{ConsonanceUserDAO.class}, new Object[]{userDAO});
+        CachingAuthenticator<String, ConsonanceUser> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
+                configuration.getAuthenticationCachePolicy());
+        //environment.jersey().register(new AuthDynamicFeature(new OAuthCredentialAuthFilter.Builder<ConsonanceUser>().setAuthenticator(cachingAuthenticator)
+        //        .setAuthorizer(new SimpleAuthorizer()).setPrefix("Bearer").setRealm("SUPER SECRET STUFF").buildAuthFilter()));
+
+        environment.jersey().register(new AuthDynamicFeature(
+                new OAuthCredentialAuthFilter.Builder<ConsonanceUser>()
+                        .setAuthenticator(cachingAuthenticator)
+                        .setAuthorizer(new SimpleAuthorizer())
+                        .setPrefix("Bearer")
+                        .buildAuthFilter()));
+        environment.jersey().register(new AuthValueFactoryProvider.Binder<>(ConsonanceUser.class));
+        environment.jersey().register(RolesAllowedDynamicFeature.class);
 
         // optional CORS support
         // Enable CORS headers
@@ -155,5 +196,9 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
 
         // Add URL mapping
         cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
+    }
+
+    public HibernateBundle<ConsonanceWebserviceConfiguration> getHibernate() {
+        return hibernate;
     }
 }

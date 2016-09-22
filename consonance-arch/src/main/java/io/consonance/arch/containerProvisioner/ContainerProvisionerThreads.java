@@ -77,7 +77,7 @@ public class ContainerProvisionerThreads extends Base {
     private static final int TWO_MINUTE_IN_MILLISECONDS = 2 * 60 * 1000;
 
     private final OptionSpecBuilder testSpec;
-    protected static final Logger LOG = LoggerFactory.getLogger(ContainerProvisionerThreads.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ContainerProvisionerThreads.class);
 
     public static void main(String[] argv) throws Exception {
         ContainerProvisionerThreads containerProvisionerThreads = new ContainerProvisionerThreads(argv);
@@ -90,7 +90,7 @@ public class ContainerProvisionerThreads extends Base {
         super.parseOptions(argv);
     }
 
-    public void startThreads() throws InterruptedException {
+    private void startThreads() throws InterruptedException {
         ExecutorService pool = Executors.newFixedThreadPool(DEFAULT_THREADS);
         ProcessVMOrders processVMOrders = new ProcessVMOrders(this.configFile, this.options.has(this.endlessSpec));
         ProvisionVMs provisionVMs = new ProvisionVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec));
@@ -117,11 +117,11 @@ public class ContainerProvisionerThreads extends Base {
      */
     private static class ProcessVMOrders implements Callable<Void> {
 
-        protected static final Logger LOG = LoggerFactory.getLogger(ProcessVMOrders.class);
+        static final Logger LOG = LoggerFactory.getLogger(ProcessVMOrders.class);
         private final boolean endless;
         private final String config;
 
-        public ProcessVMOrders(String config, boolean endless) {
+        ProcessVMOrders(String config, boolean endless) {
             this.endless = endless;
             this.config = config;
         }
@@ -182,13 +182,13 @@ public class ContainerProvisionerThreads extends Base {
      * than the max number. If so it picks the oldest pending, switches to running, and launches a worker thread.
      */
     private static class ProvisionVMs implements Callable<Void> {
-        protected static final Logger LOG = LoggerFactory.getLogger(ProvisionVMs.class);
+        static final Logger LOG = LoggerFactory.getLogger(ProvisionVMs.class);
         private long maxWorkers = 0;
         private final String configFile;
         private final boolean endless;
         private final boolean testMode;
 
-        public ProvisionVMs(String configFile, boolean endless, boolean testMode) {
+        ProvisionVMs(String configFile, boolean endless, boolean testMode) {
             this.configFile = configFile;
             this.endless = endless;
             this.testMode = testMode;
@@ -304,11 +304,11 @@ public class ContainerProvisionerThreads extends Base {
      * This keeps an eye on the results queue. It updates the database with finished jobs. Presumably it should also kill VMs.
      */
     private static class CleanupVMs implements Callable<Void> {
-        protected static final Logger LOG = LoggerFactory.getLogger(CleanupVMs.class);
+        static final Logger LOG = LoggerFactory.getLogger(CleanupVMs.class);
         private final String configFile;
         private final boolean endless;
 
-        public CleanupVMs(String configFile, boolean endless) {
+        CleanupVMs(String configFile, boolean endless) {
             this.configFile = configFile;
             this.endless = endless;
         }
