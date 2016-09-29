@@ -57,7 +57,6 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.3</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -67,6 +66,11 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cwl</groupId>
+            <artifactId>cwlavro-generated</artifactId>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
@@ -277,14 +281,30 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+		<!--
             <groupId>io.github.collaboratory.launcher</groupId>
             <artifactId>io.github.collaboratory.launcher</artifactId>
-            <version>1.0.7</version>
+	    <version>1.0.7</version>
+	      -->
+	             <groupId>io.dockstore</groupId>
+	             <artifactId>dockstore-launcher</artifactId>
+	             <version>0.4-beta.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
             <version>2.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore-osgi</artifactId>
+            <version>4.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient-osgi</artifactId>
+            <version>4.2.5</version>
         </dependency>
     </dependencies>
 
@@ -296,6 +316,8 @@
                     <usedDependencies>
                         <usedDependency>org.apache.commons:commons-pool2</usedDependency>
                         <usedDependency>org.apache.commons:commons-vfs2</usedDependency>
+                        <usedDependency>org.apache.httpcomponents:httpcore-osgi</usedDependency>
+                        <usedDependency>org.apache.httpcomponents:httpclient-osgi</usedDependency>
                     </usedDependencies>
                 </configuration>
             </plugin>
