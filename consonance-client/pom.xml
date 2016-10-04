@@ -74,7 +74,6 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.9</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -91,7 +90,6 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.4</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>

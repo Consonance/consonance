@@ -19,7 +19,6 @@
 
 package io.consonance.webservice;
 
-import com.google.common.base.Optional;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.jdbi.ConsonanceUserDAO;
 import io.dropwizard.auth.AuthenticationException;
@@ -27,6 +26,8 @@ import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 
 /**
  * @author dyuen
@@ -48,6 +49,6 @@ public class SimpleJPAAuthenticator implements Authenticator<String, ConsonanceU
                 if (userByName != null){
                         return Optional.of(userByName);
                 }
-                return Optional.absent();
+                return Optional.empty();
         }
 }
