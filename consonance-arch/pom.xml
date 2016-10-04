@@ -70,7 +70,6 @@
         <dependency>
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-generated</artifactId>
-            <version>v1.0</version>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
@@ -282,7 +281,6 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
-            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
