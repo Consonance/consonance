@@ -390,7 +390,6 @@
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
-            <version>3.5.3</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
