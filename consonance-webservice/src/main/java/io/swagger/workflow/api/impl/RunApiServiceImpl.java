@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-29T18:39:51.024Z")
@@ -56,7 +57,7 @@ public class RunApiServiceImpl extends RunApiService {
     public Response runPost(String wf, InputStream inputStream, FormDataContentDisposition fileDetail,
             ConsonanceUser user, UriInfo uriInfo) throws NotFoundException {
         try {
-            final List<String> strings = IOUtils.readLines(inputStream);
+            final List<String> strings = IOUtils.readLines(inputStream, StandardCharsets.UTF_8);
             final String join = Joiner.on('\n').join(strings);
             Job job = new Job();
             job.setContainerImageDescriptor(wf);

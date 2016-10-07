@@ -147,6 +147,25 @@
             <artifactId>jackson-annotations</artifactId>
             <version>${jackson.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-validator/commons-validator -->
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.code.gson</groupId>
+                    <artifactId>gson</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -202,6 +221,8 @@
                             <ignoreNonCompile>true</ignoreNonCompile>
                             <usedDependencies>
                                 <usedDependency>joda-time:joda-time</usedDependency>
+                                <!-- needed as part of excluding gson 2.7 from dependency since it breaks jclouds -->
+                                <usedDependency>com.google.code.gson:gson</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

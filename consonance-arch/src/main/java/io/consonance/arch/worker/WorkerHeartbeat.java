@@ -43,21 +43,19 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author sshorser
  *
  */
-public class WorkerHeartbeat implements Runnable {
+class WorkerHeartbeat implements Runnable {
 
     private String queueName;
     private double secondsDelay = DEFAULT_DELAY;
-    public static final double DEFAULT_DELAY = 30.0;
-    private final int stdoutSnipSize = DEFAULT_SNIP_SIZE;
-    private final int stderrSnipSize = DEFAULT_SNIP_SIZE;
-    public static final int DEFAULT_SNIP_SIZE = 10;
+    static final double DEFAULT_DELAY = 30.0;
+    private static final int DEFAULT_SNIP_SIZE = 10;
     private WorkflowRunner statusSource;
     private String networkID;
     private String vmUuid;
     private String jobUuid;
     private HierarchicalINIConfiguration settings;
 
-    protected static final Logger LOG = LoggerFactory.getLogger(WorkerHeartbeat.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WorkerHeartbeat.class);
 
     @Override
     public void run() {
@@ -87,8 +85,8 @@ public class WorkerHeartbeat implements Runnable {
                     // String stdOut = this.statusSource.getStdOut();
                     Lock lock = new ReentrantLock();
                     lock.lock();
-                    String stdOut = this.statusSource.getStdOut(stdoutSnipSize);
-                    String stdErr = this.statusSource.getStdErr(stderrSnipSize);
+                    String stdOut = this.statusSource.getStdOut(DEFAULT_SNIP_SIZE);
+                    String stdErr = this.statusSource.getStdErr(DEFAULT_SNIP_SIZE);
                     lock.unlock();
                     heartbeatStatus.setStdout(stdOut);
                     heartbeatStatus.setStderr(stdErr);
@@ -130,66 +128,35 @@ public class WorkerHeartbeat implements Runnable {
         }
     }
 
-    public void setStatusSource(WorkflowRunner runner) {
+    void setStatusSource(WorkflowRunner runner) {
         this.statusSource = runner;
     }
 
-    public String getQueueName() {
-        return queueName;
-    }
-
-    public void setQueueName(String queueName) {
+    void setQueueName(String queueName) {
         this.queueName = queueName;
     }
 
-    public double getSecondsDelay() {
-        return secondsDelay;
-    }
-
-    public void setSecondsDelay(double secondsDelay) {
+    void setSecondsDelay(double secondsDelay) {
         this.secondsDelay = secondsDelay;
     }
 
-    public String getNetworkID() {
-        return networkID;
-    }
-
-    public void setNetworkID(String networkID) {
+    void setNetworkID(String networkID) {
         this.networkID = networkID;
     }
 
-    public String getVmUuid() {
-        return vmUuid;
-    }
-
-    public void setVmUuid(String vmUuid) {
+    void setVmUuid(String vmUuid) {
         this.vmUuid = vmUuid;
     }
 
-    public WorkflowRunner getStatusSource() {
-        return statusSource;
-    }
-
-    public String getJobUuid() {
-        return jobUuid;
-    }
-
-    public void setJobUuid(String jobUuid) {
+    void setJobUuid(String jobUuid) {
         this.jobUuid = jobUuid;
-    }
-
-    /**
-     * @return the settings
-     */
-    public HierarchicalINIConfiguration getSettings() {
-        return settings;
     }
 
     /**
      * @param settings
      *            the settings to set
      */
-    public void setSettings(HierarchicalINIConfiguration settings) {
+    void setSettings(HierarchicalINIConfiguration settings) {
         this.settings = settings;
     }
 

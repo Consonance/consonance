@@ -67,7 +67,6 @@ public class WorkerRunnable implements Runnable {
 
     private static final String NO_MESSAGE_FROM_QUEUE_MESSAGE = " [x] Job request came back null/empty! ";
     protected final Logger log = LoggerFactory.getLogger(getClass());
-    private final String configFile;
     private HierarchicalINIConfiguration settings = null;
     private Channel resultsChannel = null;
     private String queueName = null;
@@ -106,7 +105,7 @@ public class WorkerRunnable implements Runnable {
      * @param endless have the worker pick up new jobs as the current job finishes successfully
      * @param flavourOverride override detection of instance type
      */
-    public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
+    WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
         log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
                 + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
@@ -145,7 +144,6 @@ public class WorkerRunnable implements Runnable {
         this.maxRuns = maxRuns;
         this.testMode = testMode;
         this.flavour = flavourOverride;
-        this.configFile = configFile;
     }
 
     @Override
@@ -242,8 +240,6 @@ public class WorkerRunnable implements Runnable {
                             workflowResult.setWorkflowStdout("everything is awesome");
                             workflowResult.setExitCode(0);
                         } else {
-                            String seqwareEngine = settings.getString(Constants.WORKER_SEQWARE_ENGINE, Constants.SEQWARE_WHITESTAR_ENGINE);
-                            String seqwareSettingsFile = settings.getString(Constants.WORKER_SEQWARE_SETTINGS_FILE);
                             workflowResult = launchJob(statusJSON, job);
                         }
 
@@ -339,13 +335,11 @@ public class WorkerRunnable implements Runnable {
 
             // write out extra files
             for(Map.Entry<String, Job.ExtraFile> entry : job.getExtraFiles().entrySet()){
-                FileUtils.write(new File(entry.getKey()), entry.getValue().getContents());
+                FileUtils.write(new File(entry.getKey()), entry.getValue().getContents(), StandardCharsets.UTF_8);
             }
 
             workflowRunner.setPreworkDelay(presleepMillis);
             workflowRunner.setPostworkDelay(postsleepMillis);
-            // Submit both
-            @SuppressWarnings("unused")
             // We will never actually do submit.get(), because the heartbeat should keep running until it is terminated by
             // exService.shutdownNow().
             Future<?> submit = exService.submit(heartbeat);
@@ -355,9 +349,6 @@ public class WorkerRunnable implements Runnable {
             // don't get the heartbeat if the workflow is complete already
 
             log.info("Docker execution result: " + workflowResult.getWorkflowStdout());
-        } catch (SocketException e) {
-            // This comes from trying to get the IP address.
-            log.error(e.getMessage(), e);
         } catch (IOException e) {
             // This could be caused by a problem writing the file, or publishing a message to the queue.
             log.error(e.getMessage(), e);
@@ -376,9 +367,9 @@ public class WorkerRunnable implements Runnable {
      * Get the IP address of this machine, preference is given to returning an IPv4 address, if there is one.
      *
      * @return An InetAddress object.
-     * @throws SocketException
+     * @throws SocketException thrown when unable to get access to network interface
      */
-    public InetAddress getFirstNonLoopbackAddress() throws SocketException {
+    InetAddress getFirstNonLoopbackAddress() throws SocketException {
         final String dockerInterfaceName = "docker";
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
             if (i.getName().contains(dockerInterfaceName)) {
