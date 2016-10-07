@@ -271,7 +271,7 @@ public class Main {
             out("");
         } else {
             String flavour = reqVal(args, "--flavour");
-            String imageDescriptor = reqVal(args, "--image-descriptor");
+            String imageDescriptor = optVal(args, "--image-descriptor", "/foobar");
             String runDescriptor = reqVal(args, "--run-descriptor");
             List<String> extraFiles = optVals(args, "--extra-file");
             try {
