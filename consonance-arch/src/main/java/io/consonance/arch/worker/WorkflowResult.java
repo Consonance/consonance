@@ -22,7 +22,7 @@ package io.consonance.arch.worker;
  *
  * @author dyuen
  */
-public class WorkflowResult {
+class WorkflowResult {
     private String workflowStdout = "no stdout";
     private String workflowStdErr = "no stderr";
     private int exitCode = Integer.MIN_VALUE;
@@ -30,7 +30,7 @@ public class WorkflowResult {
     /**
      * @return the workflowStdout
      */
-    public String getWorkflowStdout() {
+    String getWorkflowStdout() {
         return workflowStdout;
     }
 
@@ -38,14 +38,14 @@ public class WorkflowResult {
      * @param workflowStdout
      *            the workflowStdout to set
      */
-    public void setWorkflowStdout(String workflowStdout) {
+    void setWorkflowStdout(String workflowStdout) {
         this.workflowStdout = workflowStdout;
     }
 
     /**
      * @return the exitCode
      */
-    public int getExitCode() {
+    int getExitCode() {
         return exitCode;
     }
 
@@ -53,21 +53,21 @@ public class WorkflowResult {
      * @param exitCode
      *            the exitCode to set
      */
-    public void setExitCode(int exitCode) {
+    void setExitCode(int exitCode) {
         this.exitCode = exitCode;
     }
 
     /**
      * @return the workflowStdErr
      */
-    public String getWorkflowStdErr() {
+    String getWorkflowStdErr() {
         return workflowStdErr;
     }
 
     /**
      * @param workflowStdErr the workflowStdErr to set
      */
-    public void setWorkflowStdErr(String workflowStdErr) {
+    void setWorkflowStdErr(String workflowStdErr) {
         this.workflowStdErr = workflowStdErr;
     }
 

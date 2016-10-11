@@ -294,7 +294,7 @@
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
-            <artifactId>dockstore-launcher</artifactId>
+            <artifactId>dockstore-client</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.code.gson</groupId>

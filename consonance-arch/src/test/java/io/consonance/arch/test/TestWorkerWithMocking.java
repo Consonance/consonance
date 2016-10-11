@@ -32,7 +32,6 @@ import io.consonance.arch.worker.WorkerRunnable;
 import io.consonance.arch.worker.WorkflowRunner;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
-import io.github.collaboratory.LauncherCWL;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
@@ -68,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.LinkedList;
@@ -148,7 +148,7 @@ public class TestWorkerWithMocking {
         StatusLine sl = new BasicStatusLine(new ProtocolVersion("HTTP",1,0), 200, "OK");
         Mockito.when(mockResponse.getStatusLine()).thenReturn(sl);
         Mockito.when(mockResponse.getEntity()).thenReturn(mockEntity);
-        Mockito.when(mockEntity.getContent()).thenReturn(IOUtils.toInputStream("m3.large"));
+        Mockito.when(mockEntity.getContent()).thenReturn(IOUtils.toInputStream("m3.large", StandardCharsets.UTF_8));
         
         PowerMockito.whenNew(HttpGet.class).withAnyArguments().thenReturn(mockMethod);
         Mockito.when(mockClient.execute(any())).thenReturn(mockResponse);
@@ -198,9 +198,9 @@ public class TestWorkerWithMocking {
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
         File engineFile = FileUtils.getFile("src", "test", "resources", "node-engine.cwl");
 
-        j.setContainerImageDescriptor(FileUtils.readFileToString(cwlFile));
-        j.setContainerRuntimeDescriptor(FileUtils.readFileToString(jobFile));
-        j.getExtraFiles().put("node-engine.cwl", new Job.ExtraFile(FileUtils.readFileToString(engineFile), true));
+        j.setContainerImageDescriptor(FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8));
+        j.setContainerRuntimeDescriptor(FileUtils.readFileToString(jobFile, StandardCharsets.UTF_8));
+        j.getExtraFiles().put("node-engine.cwl", new Job.ExtraFile(FileUtils.readFileToString(engineFile, StandardCharsets.UTF_8), true));
 
         String json = j.toJSON();
         byte[] body = json.getBytes();

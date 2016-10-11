@@ -264,7 +264,7 @@ public class ContainerProvisionerThreads extends Base {
                             Gson gson = new GsonBuilder().setPrettyPrinting().create();
                             final String required = gson.toJson(clientTypes);
                             final File tempFile = Files.createTempFile("neededVMs", "json").toFile();
-                            FileUtils.write(tempFile, required);
+                            FileUtils.write(tempFile, required, StandardCharsets.UTF_8);
 
                             String param = settings.getString(Constants.PROVISION_YOUXIA_DEPLOYER);
                             CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));

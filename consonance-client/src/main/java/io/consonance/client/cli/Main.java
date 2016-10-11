@@ -22,24 +22,32 @@ package io.consonance.client.cli;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.Lists;
 import io.consonance.client.WebClient;
 import io.consonance.client.mix.JobMixIn;
 import io.consonance.common.Constants;
 import io.consonance.common.Utilities;
+import io.dockstore.client.cli.Client;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ConfigurationApi;
 import io.swagger.client.api.OrderApi;
 import io.swagger.client.model.ExtraFile;
 import io.swagger.client.model.Job;
+import io.swagger.client.model.SourceFile;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 
 import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -76,11 +84,11 @@ public class Main {
         System.err.println(String.format(format, args));
     }
 
-    public WebClient getWebClient() {
+    private WebClient getWebClient() {
         return webClient;
     }
 
-    public void setWebClient(WebClient webClient) {
+    void setWebClient(WebClient webClient) {
         this.webClient = webClient;
     }
 
@@ -96,6 +104,7 @@ public class Main {
         kill("consonance: '%s' is not a consonance command. See 'consonance --help'.", cmd);
     }
 
+    @SuppressWarnings("unused")
     private static void invalid(String cmd, String sub) {
         kill("consonance: '%s %s' is not a consonance command. See 'consonance %s --help'.", cmd, sub, cmd);
     }
@@ -118,7 +127,7 @@ public class Main {
     private static List<String> optVals(List<String> args, String key) {
         List<String> vals = new ArrayList<>();
 
-        for (int i = 0; i < args.size(); /** do nothing */ i = i) {
+        for (int i = 0; i < args.size();) {
             String s = args.get(i);
             if (key.equals(s)) {
                 args.remove(i);
@@ -141,6 +150,7 @@ public class Main {
         return vals;
     }
 
+    @SuppressWarnings("unused")
     private static List<String> reqVals(List<String> args, String key) {
         List<String> vals = optVals(args, key);
 
@@ -183,8 +193,8 @@ public class Main {
         return first.equals("-h") || first.equals("--help");
     }
 
-    public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
-    public static final AtomicBoolean QUIET = new AtomicBoolean(false);
+    private static final AtomicBoolean DEBUG = new AtomicBoolean(false);
+    private static final AtomicBoolean QUIET = new AtomicBoolean(false);
 
     private static String serialize(Object obj) throws ApiException {
         try {
@@ -248,8 +258,12 @@ public class Main {
             out("  Schedule a job to be run.");
             out("");
             out("Required parameters (one of):");
+            out("  --image-descriptor       <file>      Path to the image descriptor, supports http");
+            out("  --tool-dockstore-id      <id>        Dockstore id, ex: quay.io/pancancer/pcawg-sanger-cgp-workflow:2.0.0-cwl1");
+            out("  --workflow-dockstore-id  <id>        Dockstore id, ex:  denis-yuen/dockstore-whalesay:1.0");
+            out("");
+            out("Required parameters:");
             out("  --flavour <flavour>              The type of machine that the job should execute on");
-            out("  --image-descriptor <file>        Path to the image descriptor, supports http");
             out("  --run-descriptor <file>          Path to the runtime descriptor, supports http");
             out("Optional parameters:");
             out("  --extra-file <path=file=keep>    The path where a particular file should be provisioned, a path to the contents "
@@ -257,29 +271,63 @@ public class Main {
             out("");
         } else {
             String flavour = reqVal(args, "--flavour");
-            String imageDescriptor = reqVal(args, "--image-descriptor");
+            String imageDescriptor = optVal(args, "--image-descriptor", "/foobar");
             String runDescriptor = reqVal(args, "--run-descriptor");
             List<String> extraFiles = optVals(args, "--extra-file");
             try {
                 Job job = new Job();
                 job.setFlavour(flavour);
                 // attempt to read descriptors from URIs
-                try {
+                UrlValidator urlValidator = new UrlValidator();
+                if (Files.exists(Paths.get(imageDescriptor))){
+                    // if we're dealing with a local file
+                    job.setContainerImageDescriptor(FileUtils.readFileToString(new File(imageDescriptor), StandardCharsets.UTF_8));
+                } else if (urlValidator.isValid(imageDescriptor)){
+                    // if we're dealing with a URL
                     URL jobURL = new URL(imageDescriptor);
                     final Path tempFile = Files.createTempFile("image", "cwl");
                     FileUtils.copyURLToFile(jobURL, tempFile.toFile());
-                    job.setContainerImageDescriptor(FileUtils.readFileToString(tempFile.toFile()));
-                } catch (IOException e){
-                    job.setContainerImageDescriptor(FileUtils.readFileToString(new File(imageDescriptor)));
+                    job.setContainerImageDescriptor(FileUtils.readFileToString(tempFile.toFile(), StandardCharsets.UTF_8));
+                } else{
+                    // if we're dealing with a Dockstore id
+                    String toolDockstoreID = optVal(args, "--tool-dockstore-id", null);
+                    String workflowDockstoreID = optVal(args, "--workflow-dockstore-id", null);
+                    Client client = new Client();
+                    try {
+                        client.setupClientEnvironment(Lists.newArrayList());
+                    } catch (ConfigurationException e) {
+                        kill("consonance: need dockstore config file to schedule dockstore entries");
+                    }
+                    final File tempDir = Files.createTempDirectory("tmp").toFile();
+                    AbstractEntryClient actualClient = null;
+                    if (toolDockstoreID != null){
+                        actualClient = client.getToolClient();
+                    } else if (workflowDockstoreID != null){
+                        actualClient = client.getWorkflowClient();
+                    } else{
+                        kill("consonance: missing required parameter for scheduling jobs");
+                    }
+                    // TODO: this should determine whether we want to launch a cwl or wdl version of a tool
+                    final SourceFile cwlFromServer = actualClient.getDescriptorFromServer(toolDockstoreID, "cwl");
+                    job.setContainerImageDescriptor(cwlFromServer.getContent());
+                    final List<SourceFile> descriptors = actualClient.downloadDescriptors(toolDockstoreID, "cwl", tempDir);
+                    for(SourceFile file : descriptors) {
+                        ExtraFile extraFile = new ExtraFile();
+                        extraFile.setContents(file.getContent());
+                        extraFile.setKeep(true);
+                        job.getExtraFiles().put(file.getPath(), extraFile);
+                    }
                 }
 
-                try {
+                if (Files.exists(Paths.get(runDescriptor))){
+                    // if we're dealing with a local file
+                    job.setContainerRuntimeDescriptor(FileUtils.readFileToString(new File(runDescriptor), StandardCharsets.UTF_8));
+                } else if (urlValidator.isValid(imageDescriptor)){
+                    // if we're dealing with a URL
                     URL runURL = new URL(runDescriptor);
                     final Path tempFile = Files.createTempFile("run", "json");
                     FileUtils.copyURLToFile(runURL, tempFile.toFile());
-                    job.setContainerRuntimeDescriptor(FileUtils.readFileToString(tempFile.toFile()));
-                } catch (IOException e){
-                    job.setContainerRuntimeDescriptor(FileUtils.readFileToString(new File(runDescriptor)));
+                    job.setContainerRuntimeDescriptor(FileUtils.readFileToString(tempFile.toFile(), StandardCharsets.UTF_8));
                 }
 
                 // grab extra files from this run
@@ -313,12 +361,12 @@ public class Main {
             kill("consonance: failure parsing: '%s'.", extraFile);
         }
         ExtraFile file =  new ExtraFile();
-        file.setContents(FileUtils.readFileToString(new File(values[1])));
+        file.setContents(FileUtils.readFileToString(new File(values[1]), StandardCharsets.UTF_8));
         file.setKeep(Boolean.valueOf(values[2]));
         job.getExtraFiles().put(values[0],file);
     }
 
-    protected void runMain(String[] argv)
+    void runMain(String[] argv)
             throws OperationNotSupportedException, IOException, TimeoutException, ApiException {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
         if (flag(args, "--debug") || flag(args, "--d")) {
@@ -372,7 +420,6 @@ public class Main {
                         break;
                     case "update":
                         throw new OperationNotSupportedException("Not implemented yet");
-                        //break;
                     case "run":
                         jobSchedule(args, new OrderApi(client));
                         break;

@@ -17,7 +17,7 @@
  *
  */
 
-package io.consonance.arch.test;
+package io.consonance.arch.worker;
 
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
@@ -28,11 +28,6 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.QueueingConsumer.Delivery;
 import io.consonance.arch.beans.Job;
 import io.consonance.arch.utils.CommonServerTestUtilities;
-import io.consonance.arch.worker.Worker;
-import io.consonance.arch.worker.WorkerHeartbeat;
-import io.consonance.arch.worker.WorkerRunnable;
-import io.consonance.arch.worker.WorkflowResult;
-import io.consonance.arch.worker.WorkflowRunner;
 import io.consonance.common.CommonTestUtilities;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.IOUtils;

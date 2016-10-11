@@ -19,11 +19,12 @@
 
 package io.consonance.arch.worker;
 
+import io.cwl.avro.CommandLineTool;
 import io.github.collaboratory.LauncherCWL;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.cwl.avro.CommandLineTool;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -45,7 +46,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
     private String configFilePath;
     private String imageDescriptorPath;
     private String runtimeDescriptorPath;
-    public static final int DEFAULT_OUTPUT_LINE_LIMIT = 1000;
+    private static final int DEFAULT_OUTPUT_LINE_LIMIT = 1000;
 
     /**
      * Get the last *n* lines of output.
@@ -54,7 +55,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
      *            - the number of lines to get.
      * @return A string with *n* lines.
      */
-    public String getStdOut(int n) {
+    String getStdOut(int n) {
         return StringUtils.join(this.outputStream.getLastNLines(n), "\n");
     }
 
@@ -65,22 +66,20 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
      *            - the number of lines to get.
      * @return A string with *n* lines.
      */
-    public String getStdErr(int n) {
+    String getStdErr(int n) {
         return StringUtils.join(this.errorStream.getLastNLines(n), "\n");
     }
 
 
     @Override
-    public WorkflowResult call() throws IOException {
+    public WorkflowResult call() throws IOException, ConfigurationException {
         LOG.info("Executing cwlLauncher:");
         LOG.info("Image descriptor is: " + imageDescriptorPath);
         LOG.info("Runtime descriptor is: " + runtimeDescriptorPath);
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
 
-        //LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, this.outputStream, this.errorStream);
-        // FIXME: we need a way to pass back the stderr/stdout
-        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath);
+        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
 
         try {
             if (this.preworkDelay > 0) {
@@ -110,43 +109,23 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         return result;
     }
 
-    public long getPreworkDelay() {
-        return preworkDelay;
-    }
-
-    public void setPreworkDelay(long preworkDelay) {
+    void setPreworkDelay(long preworkDelay) {
         this.preworkDelay = preworkDelay;
     }
 
-    public long getPostworkDelay() {
-        return postworkDelay;
-    }
-
-    public void setPostworkDelay(long postworkDelay) {
+    void setPostworkDelay(long postworkDelay) {
         this.postworkDelay = postworkDelay;
     }
 
-    public String getConfigFilePath() {
-        return configFilePath;
-    }
-
-    public void setConfigFilePath(String configFilePath) {
+    void setConfigFilePath(String configFilePath) {
         this.configFilePath = configFilePath;
     }
 
-    public String getImageDescriptorPath() {
-        return imageDescriptorPath;
-    }
-
-    public void setImageDescriptorPath(String imageDescriptorPath) {
+    void setImageDescriptorPath(String imageDescriptorPath) {
         this.imageDescriptorPath = imageDescriptorPath;
     }
 
-    public String getRuntimeDescriptorPath() {
-        return runtimeDescriptorPath;
-    }
-
-    public void setRuntimeDescriptorPath(String runtimeDescriptorPath) {
+    void setRuntimeDescriptorPath(String runtimeDescriptorPath) {
         this.runtimeDescriptorPath = runtimeDescriptorPath;
     }
 }
