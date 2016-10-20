@@ -29,6 +29,7 @@ services:
       dockerfile: Dockerfile_client
     links:
       - webservice 
+      - postgres
     volumes:
       - log_volume:/consonance_logs
     

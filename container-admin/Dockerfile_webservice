@@ -7,8 +7,12 @@ RUN apt-get update \
     && apt-get install -y \
     python-software-properties \
     software-properties-common \
-    postgresql-client \
     && apt-get clean
+
+RUN apt-get install software-properties-common \
+    && apt-add-repository ppa:ansible/ansible \
+    && apt-get update \ 
+    && apt-get install -y ansible
 
 # grab oracle java (auto accept licence)
 RUN add-apt-repository -y ppa:webupd8team/java \
@@ -31,7 +35,6 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
 COPY config .
 COPY web.yml .
 ADD init.sh .
-RUN echo "postgres:5432:*:*:postgres" > /root/.pgpass && chmod 600 /root/.pgpass
 
 
 RUN chmod u+x init.sh
@@ -46,6 +49,7 @@ RUN mkdir /consonance_logs && chmod a+rx /consonance_logs
 
 # the Ansible-based setup
 COPY bag_params.json /container-host-bag/example_params.json
+COPY example_tags.json /container-host-bag/example_tags.json
 
 # TODO: 1) update the above to have my AWS creds in it and 2) create the admin user in postgres db
 # Waiting for postgres and rabbitmq services 
