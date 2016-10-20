@@ -11,7 +11,7 @@ Install [docker-compose](https://docs.docker.com/compose/install/) on a Ubuntu 1
 To run the webservice and command-line tools (still a work in progress, the ip address for swagger and other app level issues persist)
 
     docker-compose build
-    docker-compose run client bash
+    docker-compose run client
 
 **NOTE:** this `docker-compose up` currently isn't working since you need to do some manual configuration before you can start the daemons. See the next section.
 
@@ -31,7 +31,7 @@ Build with
 
 Start with
 
-    docker-compose run client bash
+    docker-compose run client
 
 Now, inside the admin container you just launched:
 
