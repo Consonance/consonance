@@ -11,7 +11,7 @@ Install [docker-compose](https://docs.docker.com/compose/install/) on a Ubuntu 1
 To run the webservice and command-line tools (still a work in progress, the ip address for swagger and other app level issues persist)
 
     docker-compose build
-    docker-compose up
+    docker-compose run client bash
 
 **NOTE:** this `docker-compose up` currently isn't working since you need to do some manual configuration before you can start the daemons. See the next section.
 
@@ -31,18 +31,9 @@ Build with
 
 Start with
 
-    docker-compose run admin bash
+    docker-compose run client bash
 
 Now, inside the admin container you just launched:
-
-Start the webservice in the container
-
-    nohup java -jar consonance-webservice-*.jar server web.yml &> web.log &
-
-You need to create the database, password is postgres (unless you changed it)
-
-    psql -h postgres -U postgres -W postgres
-    > insert into consonance_user(user_id, admin, hashed_password, name) VALUES (1,true,'8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918','admin@admin.com');
 
 Customize `/container-host-bag/example_params.json`, specifically, you need to add your aws keys.  You might also want to customize `/container-host-bag/example_tags.json`.
 
@@ -66,16 +57,11 @@ You are now ready to submit some work (from within the admin docker container).
     #    --extra-file /root/.aws/config=/home/ubuntu/.aws/config=false
 
 
-TODO: there's some sort of problem with the admin user getting wiped, need to disable in web.yml
 
 TODO: I need a /root/.aws/config file after all -- DONE
-
-TODO: chmod the key.pem -- DONE
 
 TODO: note about security group ssh to itself
 
 TODO: how to get Youxia to launch m1.xlarge and have it attach all 4 ephemerial drives, only 1 is attached -- WORKED AROUND
 
 TODO: the ecryptfs setup is using a hard-coded password for now, see lvm/tasks/mount.yml
-
-TODO: need to download the latest CLI and depenencies for Dockstore and then write an updated launcher that uses it instead of the CWL launcher from an older release
