@@ -13,6 +13,11 @@ To run the webservice and command-line tools (still a work in progress, the ip a
     docker-compose build
     docker-compose run client
 
+You can exit and re-enter via:
+
+    exit
+    docker-compose run client
+
 **NOTE:** this `docker-compose up` currently isn't working since you need to do some manual configuration before you can start the daemons. See the next section.
 
 ## Developing
