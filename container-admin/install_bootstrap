@@ -80,7 +80,7 @@ while [[ "${install_consonance_launcher^^}" != 'Y' &&  "${install_consonance_lau
 			echo "Installing docker..."
 			
 			set +e
-			sudo apt-get install wget curl ruby-mustache git --yes &> install_wget_curl.log
+			sudo apt-get install wget curl ruby-mustache jq git --yes &> install_wget_curl.log
 			install_wget_result=$?
 			set -e
 			
@@ -150,7 +150,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
     if [ "${run_consonance_launcher^^}" = 'Y' ] ; then
         #Read the config file if it exists and then show previous values...
         if [ -f consonance_launcher_config/compose.config ] ; then
-		source <(cat consonance_launcher_config/compose.config)
+		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config)
         fi
 
         user_cloud_env=''
@@ -367,7 +367,12 @@ CONFIG
     [[ -d "consonance_launcher_config" ]] || mkdir "consonance_launcher_config"
     # cp ~/.consonance/compose.config consonance_launcher_config/compose.config
     # template out stuff
-    mustache 
+    mustache consonance_launcher_config/compose.config aws.config.template > aws.config
+    mustache consonance_launcher_config/compose.config bag_params.json.template  > bag_params.json
+    mustache consonance_launcher_config/compose.config config.template  > config 
+    mustache consonance_launcher_config/compose.config youxia_config.template  > youxia_config 
+    cat ${user_pem_path} > key.pem
+
     docker-compose build
     docker-compose run client
     elif [ "${run_consonance_launcher^^}" = 'N' ] ; then
