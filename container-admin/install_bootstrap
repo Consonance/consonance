@@ -189,10 +189,10 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
             ############################
 
 			user_aws_key='user_aws_key'
-			ask_question "What is your AWS Key?" "$AWS_KEY" "AWS Key name" $user_aws_key
+			ask_question "What is your AWS Key?" "$AWS_ACCESS_KEY_ID" "AWS Key name" $user_aws_key
     
 			user_aws_secret_key='user_aws_secret_key'
-			ask_question "What is your AWS Secret Key?" "$AWS_SECRET_KEY" "AWS Secret Key name" $user_aws_secret_key
+			ask_question "What is your AWS Secret Key?" "$AWS_SECRET_ACCESS_KEY" "AWS Secret Key name" $user_aws_secret_key
 
 			user_sec_grp='user_sec_grp'
 			ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
