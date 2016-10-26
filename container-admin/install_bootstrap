@@ -102,7 +102,7 @@ while [[ "${install_consonance_launcher^^}" != 'Y' &&  "${install_consonance_lau
 			fi
 
 			set +e
-			curl -L https://github.com/docker/compose/releases/download/1.8.1/run.sh > /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose  &> install_compose.log
+			sudo wget https://github.com/docker/compose/releases/download/1.8.1/run.sh -O /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose  &> install_compose.log
 			install_compose_result=$?
 			set -e
 			
