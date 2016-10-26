@@ -80,7 +80,7 @@ while [[ "${install_consonance_launcher^^}" != 'Y' &&  "${install_consonance_lau
 			echo "Installing docker..."
 			
 			set +e
-			sudo apt-get install wget curl ruby-mustache jq git --yes &> install_wget_curl.log
+			sudo apt-get install wget curl ruby-mustache=1.0.2-1 jq git --yes &> install_wget_curl.log
 			install_wget_result=$?
 			set -e
 			
@@ -123,18 +123,6 @@ while [[ "${install_consonance_launcher^^}" != 'Y' &&  "${install_consonance_lau
 		if [ -z "$DOCKER_PATH" ] ; then
 			echo "You need to install docker before pulling docker images. Please ensure that docker is properly installed and then re-run this script with the command \"bash install_bootstrap\""
 			exit 1
-		else
-			echo "Do something..."
-			#set +e
-			#sudo docker pull consonance/consonance_launcher:"${user_consonance_version}" &> pull_image.log
-			#pull_result=$?
-			#set -e
-			#if [ $pull_result -ne  0 ] ; then
-			#	echo "It looks like there might have been an error when pulling the docker image. The consonance_launcher cannot be run until this is resolved. Error is:" 
-			#	cat pull_image.log
-			#	exit 1
-			#fi
-			echo "Not really!"
 		fi
 	elif [ "${install_consonance_launcher^^}" = 'N' ] ; then
 		echo "You are exiting the installer now, but you can always run it again when you are ready."
