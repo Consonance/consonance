@@ -58,4 +58,4 @@ RUN wget --no-verbose https://raw.githubusercontent.com/briandoconnor/dockstore-
 
 ENV PATH="/home/ubuntu/bin:${PATH}"
 
-CMD ["dockerize", "-wait", "tcp://webservice:8080", "-timeout", "10s", "/home/ubuntu/initclient.sh"]
+CMD ["dockerize", "-wait", "tcp://webservice:8080", "-timeout", "60s", "/home/ubuntu/initclient.sh"]

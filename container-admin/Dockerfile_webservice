@@ -54,4 +54,4 @@ COPY example_tags.json /container-host-bag/example_tags.json
 
 # TODO: 1) update the above to have my AWS creds in it and 2) create the admin user in postgres db
 # Waiting for postgres and rabbitmq services 
-CMD ["dockerize", "-wait", "tcp://postgres:5432", "-wait", "tcp://rabbitmq:5672", "-timeout", "10s", "./init.sh"]
+CMD ["dockerize", "-wait", "tcp://postgres:5432", "-wait", "tcp://rabbitmq:5672", "-timeout", "60s", "./init.sh"]
