@@ -38,6 +38,8 @@ COPY config .
 ADD init_provisioner.sh .
 
 RUN git clone https://github.com/ICGC-TCGA-PanCancer/container-host-bag.git  /container-host-bag
+# we need the branch that is compatible with Ansible 2
+RUN (cd /tmp/test && git checkout develop_2)
 
 RUN chmod u+x init_provisioner.sh
 # TODO: make sure you create these from the .template files and customize them
