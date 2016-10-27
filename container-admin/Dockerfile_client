@@ -9,6 +9,8 @@ RUN apt-get update \
     software-properties-common \
     tree \
     vim \
+    sudo \
+    less \
     postgresql-client \
     && apt-get clean
 
