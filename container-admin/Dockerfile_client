@@ -11,6 +11,7 @@ RUN apt-get update \
     vim \
     sudo \
     less \
+    telnet \
     postgresql-client \
     && apt-get clean
 
@@ -40,10 +41,10 @@ RUN wget --no-verbose https://github.com/jwilder/dockerize/releases/download/$DO
 RUN mkdir -p /home/ubuntu/.youxia /home/ubuntu/.consonance /home/ubuntu/.consonance/self-installs /home/ubuntu/.ssh /home/ubuntu/bin
 COPY config /home/ubuntu/.consonance/config
 COPY key.pem /home/ubuntu/.ssh/key.pem
-COPY initclient.sh /home/ubuntu/initclient.sh
+COPY init_client.sh /home/ubuntu/init_client.sh
 
 RUN chmod 600 /home/ubuntu/.ssh/key.pem 
-RUN chmod a+wrx /home/ubuntu/initclient.sh
+RUN chmod a+wrx /home/ubuntu/init_client.sh
 RUN chown -R ubuntu /home/ubuntu
 USER ubuntu
 RUN echo "postgres:5432:*:*:postgres" > /home/ubuntu/.pgpass && chmod 600 /home/ubuntu/.pgpass
@@ -51,7 +52,7 @@ RUN echo "postgres:5432:*:*:postgres" > /home/ubuntu/.pgpass && chmod 600 /home/
 
 # for youxia and the consonance command line on the main box 
 RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance && mv consonance /home/ubuntu/bin && chmod a+x /home/ubuntu/bin/consonance
-RUN wget --no-verbose --no-check-certificate http://wrench.res.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-client/${consonance_version}/consonance-client-${consonance_version}.jar && mv consonance-client-${consonance_version}.jar /home/ubuntu/.consonance/self-installs/
+RUN wget --no-verbose --no-check-certificate http://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-client/${consonance_version}/consonance-client-${consonance_version}.jar && mv consonance-client-${consonance_version}.jar /home/ubuntu/.consonance/self-installs/
 
 # now get a sample CWL and test JSON
 RUN wget --no-verbose https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/Dockstore.cwl
@@ -60,4 +61,4 @@ RUN wget --no-verbose https://raw.githubusercontent.com/briandoconnor/dockstore-
 
 ENV PATH="/home/ubuntu/bin:${PATH}"
 
-CMD ["dockerize", "-wait", "tcp://webservice:8080", "-timeout", "60s", "/home/ubuntu/initclient.sh"]
+CMD ["dockerize", "-wait", "tcp://webservice:8080", "-timeout", "60s", "/home/ubuntu/init_client.sh"]

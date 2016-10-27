@@ -23,6 +23,26 @@ services:
     volumes:
       - log_volume:/consonance_logs
 
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile_coordinator
+    links:
+      - webservice
+      - rabbitmq
+    volumes:
+      - log_volume:/consonance_logs
+
+  provisioner:
+    build:
+      context: .
+      dockerfile: Dockerfile_provisioner
+    links:
+      - webservice
+      - rabbitmq
+    volumes:
+      - log_volume:/consonance_logs
+
   client:
     build:
       context: .
@@ -30,6 +50,8 @@ services:
     links:
       - webservice 
       - postgres
+      - coordinator
+      - provisioner
     volumes:
       - log_volume:/consonance_logs
     

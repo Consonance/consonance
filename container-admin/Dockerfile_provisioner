@@ -7,8 +7,14 @@ RUN apt-get update \
     && apt-get install -y \
     python-software-properties \
     software-properties-common \
+    git \
     telnet \
     && apt-get clean
+
+RUN apt-get install software-properties-common \
+    && apt-add-repository ppa:ansible/ansible \
+    && apt-get update \ 
+    && apt-get install -y ansible
 
 # grab oracle java (auto accept licence)
 RUN add-apt-repository -y ppa:webupd8team/java \
@@ -19,7 +25,7 @@ RUN add-apt-repository -y ppa:webupd8team/java \
 # install Consonance services
 ENV consonance_version=2.0-alpha.9
 
-RUN wget --no-verbose https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-webservice/${consonance_version}/consonance-webservice-${consonance_version}.jar
+RUN wget --no-verbose https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar
 
 # install dockerize 
 ENV DOCKERIZE_VERSION v0.2.0
@@ -29,14 +35,24 @@ RUN wget --no-verbose https://github.com/jwilder/dockerize/releases/download/$DO
 
 # the web and Consonance config
 COPY config .
-COPY web.yml .
-ADD init_webservice.sh .
+ADD init_provisioner.sh .
 
-RUN chmod u+x init_webservice.sh
+RUN git clone https://github.com/ICGC-TCGA-PanCancer/container-host-bag.git  /container-host-bag
+
+RUN chmod u+x init_provisioner.sh
 # TODO: make sure you create these from the .template files and customize them
+RUN mkdir -p /root/.youxia /root/.consonance /root/.consonance/self-installs /root/.ssh
+COPY youxia_config /root/.youxia/config
 COPY config /root/.consonance/config
+COPY key.pem /root/.ssh/key.pem
+RUN chmod 600 /root/.ssh/key.pem
+COPY aws.config /root/.aws/config
 RUN mkdir /consonance_logs && chmod a+rx /consonance_logs
+
+# the Ansible-based setup
+COPY bag_params.json /container-host-bag/example_params.json
+COPY example_tags.json /container-host-bag/example_tags.json
 
 # TODO: 1) update the above to have my AWS creds in it and 2) create the admin user in postgres db
 # Waiting for postgres and rabbitmq services 
-CMD ["dockerize", "-wait", "tcp://postgres:5432", "-wait", "tcp://rabbitmq:5672", "-timeout", "60s", "./init_webservice.sh"]
+CMD ["dockerize", "-wait", "tcp://webservice:8080", "-timeout", "60s", "./init_provisioner.sh"]
