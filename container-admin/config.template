@@ -1,5 +1,5 @@
 [webservice]
-base_path = http://localhost:8080
+base_path = http://webservice:8080
 token = 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
 
 [rabbit]
@@ -21,5 +21,5 @@ check_previous_job_hash = false
 
 [provision]
 max_running_containers = 5
-youxia_deployer_parameters = --max-spot-price 1 --batch-size 1 --total-nodes-num 1 --ansible-playbook /container-host-bag/install.yml  -e /container-host-bag/example_params.json --server-tag-file /container-host-bag/example_tags.json
+youxia_deployer_parameters = --max-spot-price 0.01 --batch-size 1 --total-nodes-num 1 --ansible-playbook /container-host-bag/install.yml  -e /container-host-bag/example_params.json --server-tag-file /container-host-bag/example_tags.json
 youxia_reaper_parameters = --test

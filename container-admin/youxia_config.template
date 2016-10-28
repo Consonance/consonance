@@ -8,7 +8,7 @@ slack_webhook =
 
 # aws settings
 aws_ssh_key = /root/.ssh/key.pem
-aws_key_name = brian-ucsc-east-1
+aws_key_name = {{ KEY_NAME }} 
 region = us-east-1
 zone = us-east-1c
 
@@ -22,7 +22,7 @@ openstack_zone = RegionOne
 
 [deployer]
 ami_image = ami-b2e3c6d8
-security_group = brian-security-group-from-ucsc
+security_group = {{ SECURITY_GROUP }}
 product = Linux/UNIX
 instance_type = m1.xlarge
 

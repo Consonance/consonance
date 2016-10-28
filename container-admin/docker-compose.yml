@@ -1,17 +1,60 @@
-admin:
-   build: .
-   ports:
-    - "8080:8080"
-    - "8081:8081"
-   links:
-    - postgres
-    - rabbitmq
+version: '2'
 
-postgres:
-  image: postgres:9.4
 
-rabbitmq:
-  image: rabbitmq:3.5.6-management
-  ports:
-    - "15672:15672"
-    - "5672:5672"
+services:
+  postgres:
+    image: postgres:9.5
+
+  rabbitmq:
+    image: rabbitmq:3.5.6-management
+    ports:
+      - "15672:15672"
+      - "5672:5672" 
+  
+  webservice: 
+    build:
+      context: .
+      dockerfile: Dockerfile_webservice
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    links:
+      - postgres
+      - rabbitmq
+    volumes:
+      - log_volume:/consonance_logs
+
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile_coordinator
+    links:
+      - webservice
+      - rabbitmq
+    volumes:
+      - log_volume:/consonance_logs
+
+  provisioner:
+    build:
+      context: .
+      dockerfile: Dockerfile_provisioner
+    links:
+      - webservice
+      - rabbitmq
+    volumes:
+      - log_volume:/consonance_logs
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile_client
+    links:
+      - webservice 
+      - postgres
+      - coordinator
+      - provisioner
+    volumes:
+      - log_volume:/consonance_logs
+    
+volumes:
+  log_volume: 

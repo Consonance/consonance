@@ -1,6 +1,6 @@
 ## Prereqs
 
-Install [docker-compose](https://docs.docker.com/compose/install/) on a Ubuntu 14.04+ VM and it's dependencies.
+Install [docker-compose](https://docs.docker.com/compose/install/) on a Ubuntu 16.04+ VM and it's dependencies.
 
 **NOTE:** this isn't production ready, there is some manual config you need to do. Read all the directions below before running.
 
@@ -10,14 +10,18 @@ Install [docker-compose](https://docs.docker.com/compose/install/) on a Ubuntu 1
 
 To run the webservice and command-line tools (still a work in progress, the ip address for swagger and other app level issues persist)
 
-    docker-compose build
-    docker-compose up
+    bash install_bootstrap
 
-**NOTE:** this `docker-compose up` currently isn't working since you need to do some manual configuration before you can start the daemons. See the next section.
+You can exit and re-enter via:
+
+    exit
+    docker-compose run client
+
+**NOTE:** The Bash install_bootstrap script depends on Ubuntu 16.04 but sets up the templates required to run `docker-compose up` if needed. 
 
 ## Developing
 
-Create these files from templates:
+The following files are created from templates by the install script:
 
 * youxia_config -> need to update aws key and various settings
 * config -> not much to do
@@ -25,57 +29,16 @@ Create these files from templates:
 * aws.config -> need your AWS API keys
 * *the above files won’t be checked in due to the .gitignore policy*
 
-Build with
-
-    docker-compose build
-
-Start with
-
-    docker-compose run admin bash
-
-Now, inside the admin container you just launched:
-
-Start the webservice in the container
-
-    nohup java -jar consonance-webservice-*.jar server web.yml &> web.log &
-
-You need to create the database, password is postgres (unless you changed it)
-
-    psql -h postgres -U postgres -W postgres
-    > insert into consonance_user(user_id, admin, hashed_password, name) VALUES (1,true,'8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918','admin@admin.com');
-
-Customize `/container-host-bag/example_params.json`, specifically, you need to add your aws keys.  You might also want to customize `/container-host-bag/example_tags.json`.
-
-Start the two daemons
-
-    nohup java -cp consonance-arch-*.jar io.consonance.arch.coordinator.Coordinator --config config --endless &> coordinator.log &
-    nohup java -cp consonance-arch-*.jar io.consonance.arch.containerProvisioner.ContainerProvisionerThreads --config config --endless &> provisioner.log &
-
 Now, you should have your webservice running on port 8080, you can monitor rabbitmq on port 15672.
 
 You are now ready to submit some work (from within the admin docker container).
 
-    # get a sample CWL and JSON param file
-    wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/Dockstore.cwl
-    wget https://raw.githubusercontent.com/briandoconnor/dockstore-tool-bamstats/develop/sample_configs.json
-    export CONSONANCE_ROOT=1
-    consonance run  --flavour m1.xlarge \
-        --image-descriptor Dockstore.cwl \
-        --run-descriptor sample_configs.json
-
-    #    --extra-file /root/.aws/config=/home/ubuntu/.aws/config=false
-
-
-TODO: there's some sort of problem with the admin user getting wiped, need to disable in web.yml
-
-TODO: I need a /root/.aws/config file after all -- DONE
-
-TODO: chmod the key.pem -- DONE
-
-TODO: note about security group ssh to itself
+    consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
+    
+Note that you will also need to configure your security group to allow for SSH access between nodes in the security group on public IP addresses.
 
 TODO: how to get Youxia to launch m1.xlarge and have it attach all 4 ephemerial drives, only 1 is attached -- WORKED AROUND
 
-TODO: the ecryptfs setup is using a hard-coded password for now, see lvm/tasks/mount.yml
+NOTE: We make the simplfying assumption that the ip address at eth0 of the launcher is reachable from the children. If it is different (i.e. a public ip address is preferred, modify sample_params.json in /container-host-bag in the provisioner container before launching jobs)
 
-TODO: need to download the latest CLI and depenencies for Dockstore and then write an updated launcher that uses it instead of the CWL launcher from an older release
+Take a look at `/consonance_logs` for daemon and webservice logs in any container
