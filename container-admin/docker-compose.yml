@@ -55,6 +55,11 @@ services:
       - provisioner
     volumes:
       - log_volume:/consonance_logs
+    environment:
+      - PGHOST=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=postgres
     
 volumes:
   log_volume: 

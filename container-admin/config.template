@@ -22,4 +22,4 @@ check_previous_job_hash = false
 [provision]
 max_running_containers = 5
 youxia_deployer_parameters = --max-spot-price 0.01 --batch-size 1 --total-nodes-num 1 --ansible-playbook /container-host-bag/install.yml  -e /container-host-bag/example_params.json --server-tag-file /container-host-bag/example_tags.json
-youxia_reaper_parameters = --test
+youxia_reaper_parameters =

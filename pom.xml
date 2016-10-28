@@ -765,10 +765,6 @@
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>3.0.2</version>
                     <configuration>
-                        <excludes>
-                            <exclude>**/logback.xml</exclude>
-                            <exclude>**/logback-test.xml</exclude>
-                        </excludes>
                         <archive>
                             <manifest>
                                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>

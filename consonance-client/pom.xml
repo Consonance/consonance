@@ -166,6 +166,11 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
@@ -223,6 +228,7 @@
                                 <usedDependency>joda-time:joda-time</usedDependency>
                                 <!-- needed as part of excluding gson 2.7 from dependency since it breaks jclouds -->
                                 <usedDependency>com.google.code.gson:gson</usedDependency>
+                                <usedDependency>ch.qos.logback:logback-classic</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
