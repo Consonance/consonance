@@ -215,9 +215,10 @@ public class ContainerProvisionerThreads extends Base {
 
                     // read from DB
                     final List<Job> pendingJobs = db.getJobs(JobState.PENDING);
-                    long numberRunningContainers = pendingJobs.size();
+                    long numberPendingContainers = pendingJobs.size();
                     final List<Job> runningJobs = db.getJobs(JobState.RUNNING);
-                    long numberPendingContainers = runningJobs.size();
+                    long numberRunningContainers = runningJobs.size();
+                    
                     LOG.info("Found " + numberRunningContainers + " pending containers and " + numberPendingContainers + " running containers.");
 
                     if (testMode) {
