@@ -272,6 +272,9 @@ public class ContainerProvisionerThreads extends Base {
                             arguments.addAll(Arrays.asList(parse.getArguments()));
                             arguments.add("--instance-types");
                             arguments.add(tempFile.getAbsolutePath());
+                            // I think this needs to be passed in each time
+                            arguments.add("--total-nodes-num");
+                            arguments.add(new Long(requiredVMs).toString());
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
                             LOG.info("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
                             // need to make sure reaper and deployer do not overlap
