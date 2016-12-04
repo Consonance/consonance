@@ -221,8 +221,10 @@ public class ContainerProvisionerThreads extends Base {
                     long numberPendingContainers = pendingJobs.size();
                     final List<Job> runningJobs = db.getJobs(JobState.RUNNING);
                     long numberRunningContainers = runningJobs.size();
+                    final List<Job> lostJobs = db.getJobs(JobState.LOST);
+                    long numberLostContainers = lostJobs.size();
                     
-                    LOG.info("Found " + numberRunningContainers + " pending containers and " + numberPendingContainers + " running containers.");
+                    LOG.info("Found " + numberRunningContainers + " pending containers, " + numberPendingContainers + " running containers, and " + numberLostContainers + " lost containers.");
 
                     if (testMode) {
                         LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
@@ -243,13 +245,16 @@ public class ContainerProvisionerThreads extends Base {
                             LOG.info("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
                         }
                     } else {
-                        long requiredVMs = numberRunningContainers + numberPendingContainers;
+                        long requiredVMs = numberRunningContainers + numberPendingContainers + numberLostContainers;
                         // determine mix of VMs required
                         Map<String, Integer> clientTypes = new HashMap<>();
                         for(Job j : pendingJobs){
                             clientTypes.compute(j.getFlavour(), (k, v) -> (v == null ? 1 : v + 1));
                         }
                         for(Job j : runningJobs){
+                            clientTypes.compute(j.getFlavour(), (k,v) -> (v == null? 1 : v+1));
+                        }
+                        for(Job j : lostJobs){
                             clientTypes.compute(j.getFlavour(), (k,v) -> (v == null? 1 : v+1));
                         }
 
