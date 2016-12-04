@@ -320,7 +320,6 @@ public class ContainerProvisionerThreads extends Base {
         private final String configFile;
         private final boolean endless;
         private Set<String> existingJobQueues = new HashSet<>();
-        private Channel jobChannel = null;
 
         CleanupVMs(String configFile, boolean endless) {
             this.configFile = configFile;
@@ -330,6 +329,7 @@ public class ContainerProvisionerThreads extends Base {
         @Override
         public Void call() throws Exception {
             Channel resultsChannel = null;
+            Channel jobChannel = null;
             try {
 
                 HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
@@ -346,9 +346,8 @@ public class ContainerProvisionerThreads extends Base {
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
-                // create the job exchange
-                String exchange = queueName + "_job_exchange";
-                jobChannel = CommonServerTestUtilities.setupExchange(settings, exchange, "direct");
+                // create the job exchange for resubmission of lost jobs
+                jobChannel = CommonServerTestUtilities.setupExchange(settings, queueName + "_job_exchange", "direct");
 
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
@@ -362,7 +361,8 @@ public class ContainerProvisionerThreads extends Base {
 
                     LOG.debug("CHECKING DB FOR LOST JOB VMS TO REAP");
 
-                    // TODO: this could be dangerous if we loose a job but the worker is in endless mode and has picked up another
+                    // TODO: this could be dangerous if we loose a job but the worker is in endless mode and has picked up another since the machine previously
+                    // running the lost job will be reaped
 
                     final List<Job> lostJobs = db.getJobs(JobState.LOST);
                     for(Job j : lostJobs){
@@ -448,6 +448,10 @@ public class ContainerProvisionerThreads extends Base {
                 if (resultsChannel != null) {
                     resultsChannel.close();
                     resultsChannel.getConnection().close();
+                }
+                // jobChannel.close();
+                if (jobChannel != null) {
+                    jobChannel.getConnection().close();
                 }
             }
             return null;
