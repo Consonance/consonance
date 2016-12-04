@@ -346,6 +346,24 @@ public class ContainerProvisionerThreads extends Base {
 
                     LOG.debug("CHECKING FOR VMs TO REAP!");
 
+                    LOG.debug("CHECKING DB FOR LOST JOB VMS TO REAP");
+
+                    // TODO: this could be dangerous if we loose a job but the worker is in endless mode and has picked up another
+
+                    final List<Job> lostJobs = db.getJobs(JobState.LOST);
+                    for(Job j : lostJobs){
+                        List<Provision> provisions = db.getProvisions(ProvisionState.RUNNING);
+                        for(Provision p : provisions) {
+                            if (j.getUuid().equals(p.getJobUUID())) {
+                                synchronized (ContainerProvisionerThreads.class) {
+                                    runReaper(settings, p.getIpAddress(), j.getVmUuid());
+                                }
+                            }
+                        }
+                    }
+
+                    LOG.debug("CHECKING QUEUE FOR VMS TO REAP");
+
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
                         continue;
