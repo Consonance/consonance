@@ -156,7 +156,7 @@ public class Coordinator extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    log.info(" [x] RECEIVED ORDER:\n'" + message + "'\n");
+                    log.debug(" [x] RECEIVED ORDER:\n'" + message + "'\n");
 
                     // run the job
                     Order order = new Order().fromJSON(message);
@@ -206,13 +206,13 @@ public class Coordinator extends Base {
                 log.info(" + SENDING VM ORDER! " + queueName + "_vms");
 
                 int messages = vmChannel.queueDeclarePassive(queueName + "_vms").getMessageCount();
-                log.info("  + VM QUEUE SIZE: " + messages);
+                log.debug("  + VM QUEUE SIZE: " + messages);
 
                 vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
                 vmChannel.waitForConfirms();
 
-                log.info(" + MESSAGE SENT!\n" + message + "\n");
+                log.debug(" + MESSAGE SENT!\n" + message + "\n");
 
             } catch (IOException | InterruptedException ex) {
                 throw new RuntimeException(ex);
@@ -248,7 +248,7 @@ public class Coordinator extends Base {
                 jobChannel.basicPublish(exchangeName, newJob.getFlavour() , MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
 
-                log.info(" + message sent!\n" + message + "\n");
+                log.debug(" + message sent!\n" + message + "\n");
                 return message;
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -302,7 +302,7 @@ public class Coordinator extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    LOG.info(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
+                    LOG.debug(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);

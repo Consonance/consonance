@@ -149,14 +149,14 @@ public class ContainerProvisionerThreads extends Base {
 
                 // TODO: need threads that each read from orders and another that reads results
                 do {
-                    LOG.debug("CHECKING FOR NEW VM ORDER!");
+                    LOG.info("CHECKING FOR NEW VM ORDER!");
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
                         continue;
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    LOG.info(" [x] Received New VM Request '" + message + "'");
+                    LOG.debug(" [x] Received New VM Request '" + message + "'");
 
                     // now parse it as a VM order
                     Provision p = new Provision();
@@ -227,7 +227,7 @@ public class ContainerProvisionerThreads extends Base {
                     LOG.info("Found " + numberRunningContainers + " pending containers, " + numberPendingContainers + " running containers, and " + numberLostContainers + " lost containers.");
 
                     if (testMode) {
-                        LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
+                        LOG.info("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
                         maxWorkers = settings.getLong(Constants.PROVISION_MAX_RUNNING_CONTAINERS);
 
                         // if this is true need to launch another container
@@ -357,9 +357,9 @@ public class ContainerProvisionerThreads extends Base {
                 // TODO: need threads that each read from orders and another that reads results
                 do {
 
-                    LOG.debug("CHECKING FOR VMs TO REAP!");
+                    LOG.info("CHECKING FOR VMs TO REAP!");
 
-                    LOG.debug("CHECKING DB FOR LOST JOB VMS TO REAP");
+                    LOG.info("CHECKING DB FOR LOST JOB VMS TO REAP");
 
                     // TODO: this could be dangerous if we loose a job but the worker is in endless mode and has picked up another since the machine previously
                     // running the lost job will be reaped
@@ -393,14 +393,14 @@ public class ContainerProvisionerThreads extends Base {
 
                     }
 
-                    LOG.debug("CHECKING QUEUE FOR VMS TO REAP");
+                    LOG.info("CHECKING QUEUE FOR VMS TO REAP");
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
                         continue;
                     }
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    LOG.info(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
+                    LOG.debug(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
