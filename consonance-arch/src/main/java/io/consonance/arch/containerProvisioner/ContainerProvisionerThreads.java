@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import io.cloudbindle.youxia.deployer.Deployer;
@@ -57,8 +58,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -311,6 +314,8 @@ public class ContainerProvisionerThreads extends Base {
         static final Logger LOG = LoggerFactory.getLogger(CleanupVMs.class);
         private final String configFile;
         private final boolean endless;
+        private Set<String> existingJobQueues = new HashSet<>();
+        private Channel jobChannel = null;
 
         CleanupVMs(String configFile, boolean endless) {
             this.configFile = configFile;
@@ -336,6 +341,10 @@ public class ContainerProvisionerThreads extends Base {
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
+                // create the job exchange
+                String exchange = queueName + "_job_exchange";
+                jobChannel = CommonServerTestUtilities.setupExchange(settings, exchange, "direct");
+
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
 
@@ -352,6 +361,7 @@ public class ContainerProvisionerThreads extends Base {
 
                     final List<Job> lostJobs = db.getJobs(JobState.LOST);
                     for(Job j : lostJobs){
+                        // if the VM assigned is running, reap it
                         List<Provision> provisions = db.getProvisions(ProvisionState.RUNNING);
                         for(Provision p : provisions) {
                             if (j.getUuid().equals(p.getJobUUID())) {
@@ -360,6 +370,22 @@ public class ContainerProvisionerThreads extends Base {
                                 }
                             }
                         }
+                        // now re-enqueue this job and update the DB state to pending
+                        db.updateJob(j.getUuid(), j.getVmUuid(), JobState.PENDING);
+                        j.setState(JobState.PENDING);
+                        final String routingKey = j.getFlavour();
+                        // see if a particular queue type exist yet
+                        if (!existingJobQueues.contains(routingKey)){
+                            existingJobQueues.add(routingKey);
+                            final String finalQueueName = CommonServerTestUtilities
+                                    .setupQueueOnExchange(jobChannel, queueName + "_jobs", j.getFlavour());
+                            jobChannel.queueBind(finalQueueName, queueName + "_job_exchange", j.getFlavour());
+                        }
+                        jobChannel.basicPublish(queueName + "_job_exchange", j.getFlavour() , MessageProperties.PERSISTENT_TEXT_PLAIN,
+                                j.toJSON().getBytes(StandardCharsets.UTF_8));
+
+                        LOG.info(" + message re-sent to job queue!\n" + j.toJSON() + "\n");
+
                     }
 
                     LOG.debug("CHECKING QUEUE FOR VMS TO REAP");
