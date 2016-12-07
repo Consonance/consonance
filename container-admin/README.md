@@ -37,6 +37,10 @@ You are now ready to submit some work (from within the admin docker container).
     
 Note that you will also need to configure your security group to allow for SSH access between nodes in the security group on public IP addresses.
 
+Check status:
+
+    consonance status --job_uuid 37180f53-e8e1-4079-bf39-89c9bfc8d79c
+
 TODO: how to get Youxia to launch m1.xlarge and have it attach all 4 ephemerial drives, only 1 is attached -- WORKED AROUND
 
 NOTE: We make the simplfying assumption that the ip address at eth0 of the launcher is reachable from the children. If it is different (i.e. a public ip address is preferred, modify sample_params.json in /container-host-bag in the provisioner container before launching jobs)

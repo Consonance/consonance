@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
+import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
 import io.cloudbindle.youxia.deployer.Deployer;
@@ -57,8 +58,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -146,14 +149,14 @@ public class ContainerProvisionerThreads extends Base {
 
                 // TODO: need threads that each read from orders and another that reads results
                 do {
-                    LOG.debug("CHECKING FOR NEW VM ORDER!");
+                    LOG.info("CHECKING FOR NEW VM ORDER!");
                     QueueingConsumer.Delivery delivery = consumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
                         continue;
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    LOG.info(" [x] Received New VM Request '" + message + "'");
+                    LOG.debug(" [x] Received New VM Request '" + message + "'");
 
                     // now parse it as a VM order
                     Provision p = new Provision();
@@ -215,13 +218,16 @@ public class ContainerProvisionerThreads extends Base {
 
                     // read from DB
                     final List<Job> pendingJobs = db.getJobs(JobState.PENDING);
-                    long numberRunningContainers = pendingJobs.size();
+                    long numberPendingContainers = pendingJobs.size();
                     final List<Job> runningJobs = db.getJobs(JobState.RUNNING);
-                    long numberPendingContainers = runningJobs.size();
-                    LOG.info("Found " + numberRunningContainers + " pending containers and " + numberPendingContainers + " running containers.");
+                    long numberRunningContainers = runningJobs.size();
+                    final List<Job> lostJobs = db.getJobs(JobState.LOST);
+                    long numberLostContainers = lostJobs.size();
+                    
+                    LOG.info("Found " + numberRunningContainers + " pending containers, " + numberPendingContainers + " running containers, and " + numberLostContainers + " lost containers.");
 
                     if (testMode) {
-                        LOG.debug("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
+                        LOG.info("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
                         maxWorkers = settings.getLong(Constants.PROVISION_MAX_RUNNING_CONTAINERS);
 
                         // if this is true need to launch another container
@@ -239,13 +245,16 @@ public class ContainerProvisionerThreads extends Base {
                             LOG.info("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
                         }
                     } else {
-                        long requiredVMs = numberRunningContainers + numberPendingContainers;
+                        long requiredVMs = numberRunningContainers + numberPendingContainers + numberLostContainers;
                         // determine mix of VMs required
                         Map<String, Integer> clientTypes = new HashMap<>();
                         for(Job j : pendingJobs){
                             clientTypes.compute(j.getFlavour(), (k, v) -> (v == null ? 1 : v + 1));
                         }
                         for(Job j : runningJobs){
+                            clientTypes.compute(j.getFlavour(), (k,v) -> (v == null? 1 : v+1));
+                        }
+                        for(Job j : lostJobs){
                             clientTypes.compute(j.getFlavour(), (k,v) -> (v == null? 1 : v+1));
                         }
 
@@ -272,6 +281,9 @@ public class ContainerProvisionerThreads extends Base {
                             arguments.addAll(Arrays.asList(parse.getArguments()));
                             arguments.add("--instance-types");
                             arguments.add(tempFile.getAbsolutePath());
+                            // I think this needs to be passed in each time
+                            arguments.add("--total-nodes-num");
+                            arguments.add(new Long(requiredVMs).toString());
                             String[] toArray = arguments.toArray(new String[arguments.size()]);
                             LOG.info("Running youxia deployer with following parameters:" + Arrays.toString(toArray));
                             // need to make sure reaper and deployer do not overlap
@@ -307,6 +319,7 @@ public class ContainerProvisionerThreads extends Base {
         static final Logger LOG = LoggerFactory.getLogger(CleanupVMs.class);
         private final String configFile;
         private final boolean endless;
+        private Set<String> existingJobQueues = new HashSet<>();
 
         CleanupVMs(String configFile, boolean endless) {
             this.configFile = configFile;
@@ -316,6 +329,7 @@ public class ContainerProvisionerThreads extends Base {
         @Override
         public Void call() throws Exception {
             Channel resultsChannel = null;
+            Channel jobChannel = null;
             try {
 
                 HierarchicalINIConfiguration settings = CommonTestUtilities.parseConfig(configFile);
@@ -332,6 +346,9 @@ public class ContainerProvisionerThreads extends Base {
                 QueueingConsumer resultsConsumer = new QueueingConsumer(resultsChannel);
                 resultsChannel.basicConsume(resultsQueue, false, resultsConsumer);
 
+                // create the job exchange for resubmission of lost jobs
+                jobChannel = CommonServerTestUtilities.setupExchange(settings, queueName + "_job_exchange", "direct");
+
                 // writes to DB as well
                 PostgreSQL db = new PostgreSQL(settings);
 
@@ -340,14 +357,50 @@ public class ContainerProvisionerThreads extends Base {
                 // TODO: need threads that each read from orders and another that reads results
                 do {
 
-                    LOG.debug("CHECKING FOR VMs TO REAP!");
+                    LOG.info("CHECKING FOR VMs TO REAP!");
+
+                    LOG.info("CHECKING DB FOR LOST JOB VMS TO REAP");
+
+                    // TODO: this could be dangerous if we loose a job but the worker is in endless mode and has picked up another since the machine previously
+                    // running the lost job will be reaped
+
+                    final List<Job> lostJobs = db.getJobs(JobState.LOST);
+                    for(Job j : lostJobs){
+                        // if the VM assigned is running, reap it
+                        List<Provision> provisions = db.getProvisions(ProvisionState.RUNNING);
+                        for(Provision p : provisions) {
+                            if (j.getUuid().equals(p.getJobUUID())) {
+                                synchronized (ContainerProvisionerThreads.class) {
+                                    runReaper(settings, p.getIpAddress(), j.getVmUuid());
+                                }
+                            }
+                        }
+                        // now re-enqueue this job and update the DB state to pending
+                        db.updateJob(j.getUuid(), j.getVmUuid(), JobState.PENDING);
+                        j.setState(JobState.PENDING);
+                        final String routingKey = j.getFlavour();
+                        // see if a particular queue type exist yet
+                        if (!existingJobQueues.contains(routingKey)){
+                            existingJobQueues.add(routingKey);
+                            final String finalQueueName = CommonServerTestUtilities
+                                    .setupQueueOnExchange(jobChannel, queueName + "_jobs", j.getFlavour());
+                            jobChannel.queueBind(finalQueueName, queueName + "_job_exchange", j.getFlavour());
+                        }
+                        jobChannel.basicPublish(queueName + "_job_exchange", j.getFlavour() , MessageProperties.PERSISTENT_TEXT_PLAIN,
+                                j.toJSON().getBytes(StandardCharsets.UTF_8));
+
+                        LOG.info(" + message re-sent to job queue!\n" + j.toJSON() + "\n");
+
+                    }
+
+                    LOG.info("CHECKING QUEUE FOR VMS TO REAP");
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
                     if (delivery == null) {
                         continue;
                     }
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    LOG.info(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
+                    LOG.debug(" [x] RECEIVED RESULT MESSAGE - ContainerProvisioner: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
@@ -395,6 +448,10 @@ public class ContainerProvisionerThreads extends Base {
                 if (resultsChannel != null) {
                     resultsChannel.close();
                     resultsChannel.getConnection().close();
+                }
+                // jobChannel.close();
+                if (jobChannel != null) {
+                    jobChannel.getConnection().close();
                 }
             }
             return null;
