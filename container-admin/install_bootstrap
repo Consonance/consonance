@@ -157,6 +157,13 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config)
         fi
 
+        eth_dev=''
+        if [ ! -z $ETH_DEV ] ; then
+                read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). Previous value: \n' -i "$ETH_DEV" eth_dev
+            else
+                read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). \n' eth_dev
+        fi
+
         user_cloud_env=''
 		while [[ -z "${user_cloud_env// /}" ]] ; do
             if [ ! -z $CLOUD_ENV ] ; then
@@ -343,10 +350,10 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
         # we need to override the ethernet device on some systems
        
                 echo "Installing various apt packages"
-        if [ -z ${CONSONANCE_ETH_DEV+x} ]; CONSONANCE_ETH_DEV=eth0; else echo "the eth dev is '$CONSONANCE_ETH_DEV'"; fi
         cat > consonance_launcher_config/compose.config <<CONFIG
 {
-"LAUNCHER_IP_ADDRESS":"`ifconfig $CONSONANCE_ETH_DEV | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`",
+"ETH_DEV":"${eth_dev}",
+"LAUNCHER_IP_ADDRESS":"`ifconfig ${eth_dev} | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "PEM_PATH":"${user_pem_path}",
@@ -382,8 +389,8 @@ CONFIG
     mustache consonance_launcher_config/compose.config youxia_config.template  > youxia_config 
     cat ${user_pem_path} > key.pem
 
-    docker-compose build
-    docker-compose run client
+    sudo docker-compose build
+    sudo docker-compose run client
     elif [ "${run_consonance_launcher^^}" = 'N' ] ; then
         echo "You can run this script at another time to run the consonance launcher"
         exit 0
