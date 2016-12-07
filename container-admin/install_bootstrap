@@ -2,26 +2,40 @@
 
 # Created by Solomon Shorser
 # Hacked by Denis Yuen
+# Hacked by Brian O'Connor <briandoconnor@gmail.com>
 
 set -e
 CONSONANCE_LAUNCHER_VERSION=feature/consonance_cleanup
 
 cat <<MSG
-CONSONANCE COMMAND LINE INTERFACE - INSTALLATION
------------------------------------------------
-This tool will setup a "launcher" host which has all of the infrastructure we used to align and variant call
-the PanCancer donors.  This launcher host can then launch one or more worker VMs to launch generic tools 
-and workflows registered on Dockstore.
+CONSONANCE INSTALLATION BOOTSTRAPPER
+-----------------------------------------------------------------------------
+This tool will setup a "launcher" host which has all of the infrastructure we
+use to run Consonance.  This launcher host can then launch one or more worker
+VMs to run generic tools and workflows from Dockstore (http://dockstore.org).
 
 This system requires the following:
-* Docker support in your Linux distribution (Ubuntu 14.04 is officially supported by the Consonance Launcher).
-* AWS credentials, if you are using Amazon EC2.
-MSG
+* Docker support in your Linux distribution (Ubuntu 16.04 is officially supported by the Consonance Launcher).
+* Azure credentials, if you are using Microsoft Azure.
+* AWS credentials, if you are using Amazon AWS.
+* OpenStack credentials, if you are using OpenStack.
 
-## Commented text
-#* A GNOS key (or keys) which are used to both download Docker images for our workflows, dependencies, as well as data from from GNOS servers used in the project.
-#  Please ensure that these files are in ~/.gnos
-#* Alternatively (or in addition to) the GNOS keys, a token for downloading workflows, dependencies, as well as donor data files from S3.
+Note: this system currently is configured per cloud, per worker type.  A single
+launcher supporting multiple clouds and multiple worker types is not supported.
+You can, however, run multiple launchers to achieve the dersired result.
+
+Note: by default the ethernet device is assumed to be eth0 and this is used to
+find the IP address of the host. In some instances on AWS the default ethernet
+device is ens3 for example. You can override the eth0 by setting the
+CONSONANCE_ETH_DEV env variable before running this script.
+
+For more information see:
+
+* the main GitHub page: https://github.com/Consonance/consonance
+* the project wiki: https://github.com/Consonance/consonance/wiki
+* the Bootstrapper docs: https://github.com/Consonance/consonance/tree/develop/container-admin
+
+MSG
 
 
 # Ask the user a question and save the answer.
@@ -70,6 +84,18 @@ while [[ "${install_consonance_launcher^^}" != 'Y' &&  "${install_consonance_lau
 				read user_install_docker
 			done
 		fi
+                echo "Installing various apt packages"
+                # need to install regardless
+		set +e
+		sudo apt-get install wget curl ruby-mustache=1.0.2-1 jq git --yes &> install_wget_curl.log
+		install_wget_result=$?
+		set -e
+		
+		if [ $install_wget_result -ne  0 ] ; then
+			echo "It looks like there may have been a problem installing or updated wget and curl:" 
+			cat install_wget_curl.log
+			exit 1
+		fi
 		if [ "${user_install_docker^^}" = 'Y' ] ; then
 			# Remove eXecute permission from /etc/grub.d/30_os-prober because sometimes the docker installer will hang when this hangs. This has happened in OpenStack
 			# and could happen elsewhere.
@@ -79,16 +105,6 @@ while [[ "${install_consonance_launcher^^}" != 'Y' &&  "${install_consonance_lau
 
 			echo "Installing docker..."
 			
-			set +e
-			sudo apt-get install wget curl ruby-mustache=1.0.2-1 jq git --yes &> install_wget_curl.log
-			install_wget_result=$?
-			set -e
-			
-			if [ $install_wget_result -ne  0 ] ; then
-				echo "It looks like there may have been a problem installing or updated wget and curl:" 
-				cat install_wget_curl.log
-				exit 1
-			fi
 			
 			set +e
 			curl -sSL https://get.docker.com/ | sh &> install_docker.log
@@ -324,9 +340,13 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
         # Now write a config for this file.
         [[ -f consonance_launcher_config/compose.config ]] || mkdir -p consonance_launcher_config
 		# Note: You can't have ANY blank lines in .consonance/consonance.config because the python library that will eventually process it does not like blank lines and will fail. 
+        # we need to override the ethernet device on some systems
+       
+                echo "Installing various apt packages"
+        if [ -z ${CONSONANCE_ETH_DEV+x} ]; CONSONANCE_ETH_DEV=eth0; else echo "the eth dev is '$CONSONANCE_ETH_DEV'"; fi
         cat > consonance_launcher_config/compose.config <<CONFIG
 {
-"LAUNCHER_IP_ADDRESS":"`ifconfig eth0 | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`",
+"LAUNCHER_IP_ADDRESS":"`ifconfig $CONSONANCE_ETH_DEV | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "PEM_PATH":"${user_pem_path}",
