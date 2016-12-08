@@ -17,7 +17,7 @@ You can exit and re-enter via:
     exit
     docker-compose run client
 
-**NOTE:** The Bash install_bootstrap script depends on Ubuntu 16.04 but sets up the templates required to run `docker-compose up` if needed. 
+**NOTE:** The Bash install_bootstrap script depends on Ubuntu 16.04 but sets up the templates required to run `docker-compose up` if needed.
 
 ## Developing
 
@@ -34,7 +34,7 @@ Now, you should have your webservice running on port 8080, you can monitor rabbi
 You are now ready to submit some work (from within the admin docker container).
 
     consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
-    
+
 Note that you will also need to configure your security group to allow for SSH access between nodes in the security group on public IP addresses.
 
 Check status:
@@ -46,10 +46,13 @@ NOTE: We make the simplfying assumption that the ip address at eth0 of the launc
 Take a look at `/consonance_logs` for daemon and webservice logs in any container
 
 When developing on the Dockerfile, since there is no way to inherit or inject environment variables, replace the Consonance version with:
- 
+
     sed -i 's/2.0-alpha.9/2.0-alpha.10/g' {} \;
 
 ## TODO
 
 * can the indivdual images be hosted on Quay.io so the install_boostrap doesn't need to spend time building them?
-
+* there are a ton of settings that the bootstrapper should expose to end users.  Regions, AMI, etc
+* need to setup the previous job hash and expose that through as a callable parameter to the consonance command line
+* should generate new token for admin on each deployment, should also use better passwords assigned at build time for rabbitmq and postgres
+* it seems like the instance type is hard-coded for Youxia yet it's a param for Consonance.  It really should be a param otherwise a given deployment will only work for a particular AMI/instance type.
