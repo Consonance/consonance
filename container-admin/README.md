@@ -31,7 +31,10 @@ The following files are created from templates by the install script:
 
 Now, you should have your webservice running on port 8080, you can monitor rabbitmq on port 15672.
 
-You are now ready to submit some work (from within the admin docker container).
+You are now ready to submit some work (from within the admin docker container).  I suggest you use the `bamstats` Dockstore tool for testing purposes.  See:
+
+* [Dockstore.cwl](https://github.com/briandoconnor/dockstore-tool-bamstats/blob/develop/Dockstore.cwl)
+* [sample_configs.json](https://github.com/briandoconnor/dockstore-tool-bamstats/blob/develop/sample_configs.json)
 
     consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
 
