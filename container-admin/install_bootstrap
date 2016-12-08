@@ -381,14 +381,12 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 "LAUNCHER_IP_ADDRESS":"`ifconfig ${eth_dev} | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
-
-"AWS_MAX_SPOT_PRICE":"{aws_max_spot_price}",
-"FLEET_BATCH_SIZE":"{user_fleet_batch_size}",
-region = us-east-1
-zone = us-east-1c
-ami_image = ami-b2e3c6d8
-instance_type = m1.xlarge
-
+"AWS_MAX_SPOT_PRICE":"${aws_max_spot_price}",
+"FLEET_BATCH_SIZE":"${user_fleet_batch_size}",
+"AWS_REGION":"${aws_region}",
+"AWS_ZONE":"${aws_zone}",
+"AWS_AMI_IMAGE":"${aws_ami_image}",
+"AWS_INSTANCE_TYPE":"${aws_instance_type}",
 "PEM_PATH":"${user_pem_path}",
 "KEY_NAME":"${user_key_name}",
 "FLEET_NAME":"${user_fleet_name}",
