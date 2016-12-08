@@ -9,8 +9,8 @@ slack_webhook =
 # aws settings
 aws_ssh_key = /root/.ssh/key.pem
 aws_key_name = {{ KEY_NAME }}
-region = us-east-1
-zone = us-east-1c
+region = {{ AWS_REGION }}
+zone = {{ AWS_ZONE }}
 
 # openstack settings
 openstack_username = foobar
@@ -21,10 +21,10 @@ openstack_ssh_key = /home/foobar/.ssh/foobar.pem
 openstack_zone = RegionOne
 
 [deployer]
-ami_image = ami-b2e3c6d8
+ami_image = {{ AWS_AMI_IMAGE }}
 security_group = {{ SECURITY_GROUP }}
 product = Linux/UNIX
-instance_type = m1.xlarge
+instance_type = {{ AWS_INSTANCE_TYPE }}
 
 [deployer_openstack]
 min_cores = 8

@@ -211,6 +211,18 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 			aws_max_spot_price='0.0'
 			ask_question "What is your AWS max spot price?" "$AWS_MAX_SPOT_PRICE" "Max spot price" $aws_max_spot_price
 
+			aws_region='us-east-1'
+			ask_question "What is your AWS region (e.g. us-east-1 for Virginia)?" "$AWS_REGION" "AWS region" $aws_region
+
+			aws_zone='us-east-1c'
+			ask_question "What is your AWS zone within the selected region (e.g. us-east-1c for the us-east-1 region)?" "$AWS_ZONE" "AWS zone" $aws_zone
+
+			aws_instance_type='m1.xlarge'
+			ask_question "What is your AWS instance type (e.g. m1.xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
+
+			aws_ami_image='ami-b2e3c6d8'
+			ask_question "What is your AWS image (e.g. AMI such as ami-b2e3c6d8 for Ubuntu, we recommend the Ubuntu 14.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
+
 
         elif [ $user_cloud_env == 'Azure' ] ; then
 	        ############################
@@ -372,7 +384,10 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 
 "AWS_MAX_SPOT_PRICE":"{aws_max_spot_price}",
 "FLEET_BATCH_SIZE":"{user_fleet_batch_size}",
-
+region = us-east-1
+zone = us-east-1c
+ami_image = ami-b2e3c6d8
+instance_type = m1.xlarge
 
 "PEM_PATH":"${user_pem_path}",
 "KEY_NAME":"${user_key_name}",
