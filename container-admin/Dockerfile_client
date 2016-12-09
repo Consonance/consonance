@@ -24,13 +24,13 @@ RUN add-apt-repository -y ppa:webupd8team/java \
 # install Consonance services
 ENV consonance_version=2.0-alpha.10
 
-RUN wget --no-verbose https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar 
+RUN wget --no-verbose https://www.dropbox.com/s/giy9ayxlvpoohiz/consonance-arch-2.0-alpha.11-SNAPSHOT.jar #https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar 
 
-RUN useradd -ms /bin/bash ubuntu 
+RUN useradd -ms /bin/bash ubuntu
 # the web and Consonance config
 WORKDIR /home/ubuntu
 
-# install dockerize 
+# install dockerize
 ENV DOCKERIZE_VERSION v0.2.0
 
 RUN wget --no-verbose https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
@@ -43,14 +43,14 @@ COPY config /home/ubuntu/.consonance/config
 COPY key.pem /home/ubuntu/.ssh/key.pem
 COPY init_client.sh /home/ubuntu/init_client.sh
 
-RUN chmod 600 /home/ubuntu/.ssh/key.pem 
+RUN chmod 600 /home/ubuntu/.ssh/key.pem
 RUN chmod a+wrx /home/ubuntu/init_client.sh
 RUN chown -R ubuntu /home/ubuntu
 USER ubuntu
 RUN echo "postgres:5432:*:*:postgres" > /home/ubuntu/.pgpass && chmod 600 /home/ubuntu/.pgpass
 
 
-# for youxia and the consonance command line on the main box 
+# for youxia and the consonance command line on the main box
 RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance && mv consonance /home/ubuntu/bin && chmod a+x /home/ubuntu/bin/consonance
 RUN wget --no-verbose --no-check-certificate http://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-client/${consonance_version}/consonance-client-${consonance_version}.jar && mv consonance-client-${consonance_version}.jar /home/ubuntu/.consonance/self-installs/
 
