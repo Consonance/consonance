@@ -208,7 +208,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 			user_sec_grp='user_sec_grp'
 			ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
 
-			aws_max_spot_price='0.0'
+			aws_max_spot_price='aws_max_spot_price'
 			ask_question "What is your AWS max spot price?" "$AWS_MAX_SPOT_PRICE" "Max spot price" $aws_max_spot_price
 
 			aws_region='us-east-1'
