@@ -52,10 +52,3 @@ When developing on the Dockerfile, since there is no way to inherit or inject en
 
     sed -i 's/2.0-alpha.9/2.0-alpha.10/g' {} \;
 
-## TODO
-
-* can the indivdual images be hosted on Quay.io so the install_boostrap doesn't need to spend time building them?
-* there are a ton of settings that the bootstrapper should expose to end users.  Regions, AMI, etc
-* need to setup the previous job hash and expose that through as a callable parameter to the consonance command line
-* should generate new token for admin on each deployment, should also use better passwords assigned at build time for rabbitmq and postgres
-* it seems like the instance type is hard-coded for Youxia yet it's a param for Consonance.  It really should be a param otherwise a given deployment will only work for a particular AMI/instance type.
