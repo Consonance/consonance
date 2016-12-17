@@ -20,3 +20,15 @@ See the Consonance [wiki](https://github.com/Consonance/consonance/wiki) for mor
 ## Installation
 
 See the container-admin [README](container-admin/README.md) for information on quickly setting up Consonance via Docker-compose and an interactive bootstrap configuration script.
+
+## TODO
+
+Consonance is a work in progress, there are many features and bugs that need to be fleshed out. Here are the most imporant issues.
+
+* can the indivdual images be hosted on Quay.io so the install_boostrap doesn't need to spend time building them?
+* there are a ton of settings that the bootstrapper should expose to end users.  Regions, AMI, etc
+* need to setup the previous job hash and expose that through as a callable parameter to the consonance command line
+* should generate new token for admin on each deployment, should also use better passwords assigned at build time for rabbitmq and postgres
+* it seems like the instance type is hard-coded for Youxia yet it's a param for Consonance.  It really should be a param otherwise a given deployment will only work for a particular AMI/instance type.
+* the initial job submitted seem to go into the START state and never get processed
+* re-enqueing work for lost jobs ultimately fails
