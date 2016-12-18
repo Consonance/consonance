@@ -32,3 +32,4 @@ Consonance is a work in progress, there are many features and bugs that need to 
 * it seems like the instance type is hard-coded for Youxia yet it's a param for Consonance.  It really should be a param otherwise a given deployment will only work for a particular AMI/instance type.
 * the initial job submitted seem to go into the START state and never get processed
 * re-enqueing work for lost jobs ultimately fails
+* we need to improve the worker deamon, it fails to launch properly on occasion which menas we have workers that never process jobs
