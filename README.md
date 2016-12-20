@@ -33,3 +33,4 @@ Consonance is a work in progress, there are many features and bugs that need to 
 * the initial job submitted seem to go into the START state and never get processed
 * re-enqueing work for lost jobs ultimately fails
 * we need to improve the worker deamon, it fails to launch properly on occasion which menas we have workers that never process jobs
+* we need to monitor worker instances/daemons. If the worker daemon on a given worker instance has not sent a ping in a while we need to reap the instance.  This will prevent the situation where a woker daemon has died on a worker host but it's kept around since there are running jobs.
