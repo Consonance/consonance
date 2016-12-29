@@ -34,3 +34,4 @@ Consonance is a work in progress, there are many features and bugs that need to 
 * re-enqueing work for lost jobs ultimately fails
 * we need to improve the worker deamon, it fails to launch properly on occasion which menas we have workers that never process jobs
 * we need to monitor worker instances/daemons. If the worker daemon on a given worker instance has not sent a ping in a while we need to reap the instance.  This will prevent the situation where a woker daemon has died on a worker host but it's kept around since there are running jobs.
+* a large number of submissions will eventually see the provisioner stop provisioning new hosts, even when the total running is under the total fleet size. I saw this when all workers running where zombie workers e.g. the worker daemons had crashed so nothing was scheduled to these nodes.  Once I restarted the worker daemons, the provisioner started provisioning new additional nodes.  Very strange.
