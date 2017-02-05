@@ -125,9 +125,9 @@ public class Job extends BaseBean{
             this.keep = keep;
         }
 
-	    public void setContents(String contents){
-	    this.contents = contents;
-	}
+        public void setContents(String contents){
+        this.contents = contents;
+        }
 
         public String getContents() {
             return contents;
