@@ -257,6 +257,7 @@ public class Coordinator extends Base {
 
     }
 
+    // TODO: look for jobs w.o heartbeat, reap them. Here && FlagJobs -Thomas
     /**
      * This de-queues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
      *

@@ -240,7 +240,7 @@ public class WorkerRunnable implements Runnable {
                             workflowResult.setWorkflowStdout("everything is awesome");
                             workflowResult.setExitCode(0);
                         } else {
-                            workflowResult = launchJob(statusJSON, job);
+                            workflowResult = launchJob(statusJSON, job); //TODO : may lose job here, look in to this - Thomas
                         }
 
                         status = new Status(vmUuid, job.getUuid(),
@@ -278,10 +278,12 @@ public class WorkerRunnable implements Runnable {
             log.debug("result channel open: " + (resultsChannel != null ? resultsChannel.isOpen() : null));
             log.debug("result channel connection open: " + (resultsChannel != null ? resultsChannel.getConnection().isOpen() : null));
         } catch (Exception ex) {
+            // TODO : exit vm here? -thomas
             log.error(ex.getMessage(), ex);
         }
     }
 
+    // TODO: find where jobs are lost here - Thomas
     // TODO: obviously, this will need to launch something using Youxia in the future
     /**
      * This function will execute a workflow, based on the content of the Job object that is passed in.
