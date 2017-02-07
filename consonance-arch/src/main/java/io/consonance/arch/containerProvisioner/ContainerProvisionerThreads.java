@@ -71,6 +71,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 /**
+ * This consumes vm requests and provisions VMs as needed.  It processes VM orders, provisions VMs, and cleans up VMs.
+ *
  * @author boconnor
  * @author dyuen
  */

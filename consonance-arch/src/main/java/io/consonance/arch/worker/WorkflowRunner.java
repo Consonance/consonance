@@ -94,15 +94,24 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             result.setWorkflowStdErr(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
             // exit code is artificial since the CWL runner actually runs more than one command
             // we use 0 to indicate success, 1 to indicate failure (and the streams will have more detail)
+            // TODO: I don't see any logic here for checking the actual error code!!!
             result.setExitCode(0);
             if (this.postworkDelay > 0) {
                 LOG.info("Sleeping after executing workflow for " + this.postworkDelay + " ms.");
                 Thread.sleep(this.postworkDelay);
             }
         } catch (InterruptedException | RuntimeException e) {
-            LOG.error(e.getMessage(), e);
+            LOG.error("Worker interrupt or runtime exception!!! "+e.getMessage(), e);
+            result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
             result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
-            // TODO: add catch for other types
+            // if there's an exception then indicate via exit code
+            result.setExitCode(1);
+        } catch (Exception e) {
+            LOG.error("Worker general exception!!! "+e.getMessage(), e);
+            result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
+            result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
+            // if there's an exception then indicate via exit code
+            result.setExitCode(1);
         } finally {
             this.outputStream.close();
             this.errorStream.close();
