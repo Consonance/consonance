@@ -79,6 +79,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
 
+        // TODO: wrap with try
         LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
 
         try {
@@ -101,6 +102,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         } catch (InterruptedException | RuntimeException e) {
             LOG.error(e.getMessage(), e);
             result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
+            // TODO: add catch for other types
         } finally {
             this.outputStream.close();
             this.errorStream.close();

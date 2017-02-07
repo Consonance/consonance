@@ -106,44 +106,54 @@ public class WorkerRunnable implements Runnable {
      * @param flavourOverride override detection of instance type
      */
     WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
-        log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
-                + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
         try {
-            this.networkAddress = getFirstNonLoopbackAddress().toString().substring(1);
-        } catch (SocketException e) {
-            // TODO Auto-generated catch block
-            log.error("Could not get network address: " + e.getMessage(), e);
-            throw new RuntimeException("Could not get network address: " + e.getMessage());
-        }
 
-        this.maxRuns = maxRuns;
-        settings = CommonTestUtilities.parseConfig(configFile);
+            log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
+                    + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
-        // TODO: Dynamically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
-        // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)
-        // ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
-        // appender.setFile("SomePath");
+            try {
+                this.networkAddress = getFirstNonLoopbackAddress().toString().substring(1);
+            } catch (SocketException e) {
+                // TODO Auto-generated catch block
+                log.error("Could not get network address: " + e.getMessage(), e);
+                //FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
+                //throw new RuntimeException("Could not get network address: " + e.getMessage());
+            }
 
-        this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
-        if (this.queueName == null) {
-            throw new NullPointerException(
-                    "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
+            this.maxRuns = maxRuns;
+            settings = CommonTestUtilities.parseConfig(configFile);
+
+            // TODO: Dynamically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
+            // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)
+            // ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
+            // appender.setFile("SomePath");
+
+            this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
+            if (this.queueName == null) {
+                //throw new NullPointerException(
+                //        "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
+                // FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
+                log.error("Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
+            }
+            this.jobQueueName = this.queueName + "_jobs";
+            this.resultsQueueName = this.queueName + "_results";
+            /*
+             * If the user specified "--endless" on the CLI, then this.endless=true Else: check to see if "endless" is in the config file, and
+             * if it is, parse the value of it and use that. If not in the config file, then use "false".
+             */
+            this.endless = endless || settings.getBoolean(Constants.WORKER_ENDLESS, false);
+            if (this.endless) {
+                log.info("The \"--endless\" flag was set, this worker will run endlessly!");
+            }
+            this.vmUuid = vmUuid;
+            this.maxRuns = maxRuns;
+            this.testMode = testMode;
+            this.flavour = flavourOverride;
+
+        } catch (Exception e) {
+            log.error("There was a problem in the WorkerRunnable constructor!!! "+e.getMessage(), e);
         }
-        this.jobQueueName = this.queueName + "_jobs";
-        this.resultsQueueName = this.queueName + "_results";
-        /*
-         * If the user specified "--endless" on the CLI, then this.endless=true Else: check to see if "endless" is in the config file, and
-         * if it is, parse the value of it and use that. If not in the config file, then use "false".
-         */
-        this.endless = endless || settings.getBoolean(Constants.WORKER_ENDLESS, false);
-        if (this.endless) {
-            log.info("The \"--endless\" flag was set, this worker will run endlessly!");
-        }
-        this.vmUuid = vmUuid;
-        this.maxRuns = maxRuns;
-        this.testMode = testMode;
-        this.flavour = flavourOverride;
     }
 
     @Override
@@ -152,6 +162,7 @@ public class WorkerRunnable implements Runnable {
         int max = maxRuns;
 
         try {
+
             // worker will need to pull from a specific queue
             // for aws: curl http://169.254.169.254/latest/meta-data/instance-type
             // for openstack: curl http://169.254.169.254/latest/meta-data/instance-type
@@ -183,6 +194,9 @@ public class WorkerRunnable implements Runnable {
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
             resultsChannel = CommonServerTestUtilities.setupExchange(settings, this.resultsQueueName);
+
+            // variables
+            Job job = null;
 
             while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
@@ -216,7 +230,7 @@ public class WorkerRunnable implements Runnable {
 
                         log.info(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
 
-                        Job job = new Job().fromJSON(message);
+                        job = new Job().fromJSON(message);
 
                         Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
                                 "job is starting", this.networkAddress);
@@ -277,8 +291,24 @@ public class WorkerRunnable implements Runnable {
             }
             log.debug("result channel open: " + (resultsChannel != null ? resultsChannel.isOpen() : null));
             log.debug("result channel connection open: " + (resultsChannel != null ? resultsChannel.getConnection().isOpen() : null));
+
         } catch (Exception ex) {
+
             log.error(ex.getMessage(), ex);
+
+            // any problems should trigger the failure of this workflow?
+            // TODO: make sure variables are in scope
+            Status status = new Status(vmUuid, job.getUuid(),
+                    StatusState.FAILED, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
+                    "job is failed", networkAddress);
+            status.setStderr(workflowResult.getWorkflowStdErr());
+            status.setStdout(workflowResult.getWorkflowStdout());
+            statusJSON = status.toJSON();
+
+            log.info(" WORKER FAILED JOB");
+
+            finishJob(statusJSON);
+
         }
     }
 
