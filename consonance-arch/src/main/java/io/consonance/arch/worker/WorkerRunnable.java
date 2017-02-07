@@ -159,13 +159,13 @@ public class WorkerRunnable implements Runnable {
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
 
-            HttpClient client = new DefaultHttpClient();
+            HttpClient client = new DefaultHttpClient(); 
             // make really sure that we get a flavour
             while (flavour == null) {
                 String responseBody;
                 // if no OpenStack uuid is found, grab a normal instance_id from AWS
                 String instanceTypeURL = "http://169.254.169.254/latest/meta-data/instance-type";
-                final HttpGet method = new HttpGet(instanceTypeURL);
+                final HttpGet method = new HttpGet(instanceTypeURL); // need to release method?
                 try {
                     final HttpResponse execute = client.execute(method);
                     responseBody = IOUtils.toString(execute.getEntity().getContent(), StandardCharsets.UTF_8);
@@ -173,8 +173,12 @@ public class WorkerRunnable implements Runnable {
                         flavour = responseBody;
                         log.info(" flavour chosen using cloud ini meta-data as: '" + flavour + "'");
                     }
+                } catch (HttpException he){
+                    Log.warn("Unable to execute protocol. Message: " + he.message());
                 } catch (IOException ioe) {
                     Log.warn("Unable to connect to '" + instanceTypeURL + "'");
+                } finally{
+                    method.releaseConnection(); // - outside loop?
                 }
             }
 
@@ -362,7 +366,7 @@ public class WorkerRunnable implements Runnable {
             exService.shutdownNow();
         }
 
-        return workflowResult;
+        return workflowResult; //does exit state get updated correctly? - thomas
     }
 
     /**
