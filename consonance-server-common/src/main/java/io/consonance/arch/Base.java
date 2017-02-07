@@ -42,6 +42,7 @@ public class Base {
     public static final int DEFAULT_DISKSPACE = 1024;
     public static final int DEFAULT_MEMORY = 128;
     public static final int DEFAULT_NUM_CORES = 8;
+    public static final int DEFAULT_NETWORK_RETRIES = 5;
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
     protected OptionParser parser;

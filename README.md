@@ -17,9 +17,27 @@ The latest stable releases on master support the pancancer project https://icgc.
 
 See the Consonance [wiki](https://github.com/Consonance/consonance/wiki) for more information on this project.
 
+## Building
+
+The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run:
+
+    mvn clean install
+
+ To avoid tests (probably a bad idea!):
+
+    mvn -Dmaven.test.skip=true clean install
+
+## Releasing
+
+See the [developer page](https://github.com/Consonance/consonance/wiki/developers) on our wiki.
+
 ## Installation
 
 See the container-admin [README](container-admin/README.md) for information on quickly setting up Consonance via Docker-compose and an interactive bootstrap configuration script.
+
+## Using
+
+See the [quickstart guide](https://github.com/Consonance/consonance/wiki/quickstart) and the [non-quickstart guide](https://github.com/Consonance/consonance/wiki/non-quickstart-users) on our wiki.
 
 ## TODO
 
