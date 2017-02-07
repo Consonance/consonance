@@ -79,7 +79,6 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
 
-<<<<<<< HEAD
         try {
             LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
         } catch (GsonBuildException ge) {
@@ -89,11 +88,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             LOG.error("Unable to initialize LauncherCWL with error: " + ex.getMessage(), ex);
             // try initializing again? set status failed, exit? can we even do that from here? return -1?
         }
-=======
-        // TODO: wrap with try
-        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
->>>>>>> 0e346ab8222d0712ffaf12e90e742763f61fa43d
-
+        
         try {
             if (this.preworkDelay > 0) {
                 LOG.info("Sleeping before executing workflow for " + this.preworkDelay + " ms.");
@@ -118,18 +113,11 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
             // if there's an exception then indicate via exit code
             result.setExitCode(1);
-        } catch (Exception e) {
-            LOG.error("Worker general exception!!! "+e.getMessage(), e);
-            result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
-            result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
-<<<<<<< HEAD
         } catch (Exception ex) {
             LOG.error("Unexpected exception: " + ex.getMessage(), ex); //what would this be?
             result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
-=======
             // if there's an exception then indicate via exit code
             result.setExitCode(1);
->>>>>>> 0e346ab8222d0712ffaf12e90e742763f61fa43d
         } finally {
             this.outputStream.close();
             this.errorStream.close();

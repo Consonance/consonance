@@ -106,6 +106,10 @@ public class WorkerRunnable implements Runnable {
      * @param flavourOverride override detection of instance type
      */
     WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
+        // slightly weird idea - thomas
+        //Job setup = new Job().fromJSON(setupJSON) //need to create some generic json with no real info
+        // add to to jobs queue with this vmUuid
+        
         try {
             log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
                     + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
@@ -119,6 +123,9 @@ public class WorkerRunnable implements Runnable {
                     tries--;
                     Thread.sleep(Base.FIVE_SECOND_IN_MILLISECONDS);
                     log.error("Could not get network address: " + e.getMessage(), e);
+
+                    //setup.setState(LOST?) - in case of error, provisioner will pick up this worker as lost and reap
+
                     //FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
                     //throw new RuntimeException("Could not get network address: " + e.getMessage());
                 }
@@ -137,6 +144,9 @@ public class WorkerRunnable implements Runnable {
                 //throw new NullPointerException(
                 //        "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
                 // FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
+                
+                //setup.setState(LOST?) - in case of error, provisioner will pick up this worker as lost and reap
+
                 log.error("Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
             }
             this.jobQueueName = this.queueName + "_jobs";
@@ -153,7 +163,12 @@ public class WorkerRunnable implements Runnable {
             this.maxRuns = maxRuns;
             this.testMode = testMode;
             this.flavour = flavourOverride;
+
+            //setup.setState(SUCCESS) - worker setup success
         } catch (Exception e) {
+            
+            //setup.setState(LOST?) - in case of error, provisioner will pick up this VM as lost job and reap
+
             log.error("There was a problem in the WorkerRunnable constructor!!! The worker daemon is likely to not work properly!!! "+e.getMessage(), e);
         }
     }
@@ -177,6 +192,7 @@ public class WorkerRunnable implements Runnable {
 
             HttpClient client = new DefaultHttpClient(); 
             // make really sure that we get a flavour
+            // is it guaranteed we get a flavour? starvation potential here? - thomas
             while (flavour == null) {
                 String responseBody;
                 // if no OpenStack uuid is found, grab a normal instance_id from AWS
@@ -203,9 +219,6 @@ public class WorkerRunnable implements Runnable {
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
             resultsChannel = CommonServerTestUtilities.setupExchange(settings, this.resultsQueueName);
-
-            // variables
-            job = null;
 
             while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
