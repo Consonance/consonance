@@ -79,7 +79,15 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
 
-        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
+        try {
+            LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
+        } catch (GsonBuildException ge) {
+            // is this right?
+            LOG.error("Bad image descriptor given: " + ge.getMessage(), ex);
+        } catch (Exception ex) {
+            LOG.error("Unable to initialize LauncherCWL with error: " + ex.getMessage(), ex);
+            // try initializing again? set status failed, exit? can we even do that from here? return -1?
+        }
 
         try {
             if (this.preworkDelay > 0) {
@@ -100,6 +108,9 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             }
         } catch (InterruptedException | RuntimeException e) {
             LOG.error(e.getMessage(), e);
+            result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
+        } catch (Exception ex) {
+            LOG.error("Unexpected exception: " + ex.getMessage(), ex); //what would this be?
             result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
         } finally {
             this.outputStream.close();
