@@ -106,27 +106,7 @@ public class WorkerRunnable implements Runnable {
      * @param flavourOverride override detection of instance type
      */
     WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
-<<<<<<< HEAD
-        try{
-            log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
-                    + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
-
-            try {
-                this.networkAddress = getFirstNonLoopbackAddress().toString().substring(1);
-            } catch (SocketException e) {
-                // TODO Auto-generated catch block
-                log.error("Could not get network address: " + e.getMessage(), e);
-                //throw new RuntimeException("Could not get network address: " + e.getMessage());
-                //retry this?
-            }
-
-            this.maxRuns = maxRuns;
-            settings = CommonTestUtilities.parseConfig(configFile);
-
-=======
-
         try {
-
             log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
                     + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
@@ -138,7 +118,6 @@ public class WorkerRunnable implements Runnable {
                 } catch (SocketException e) {
                     tries--;
                     Thread.sleep(Base.FIVE_SECOND_IN_MILLISECONDS);
-                    // TODO Auto-generated catch block
                     log.error("Could not get network address: " + e.getMessage(), e);
                     //FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
                     //throw new RuntimeException("Could not get network address: " + e.getMessage());
@@ -148,7 +127,6 @@ public class WorkerRunnable implements Runnable {
             this.maxRuns = maxRuns;
             settings = CommonTestUtilities.parseConfig(configFile);
 
->>>>>>> 0e346ab8222d0712ffaf12e90e742763f61fa43d
             // TODO: Dynamically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
             // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)
             // ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
@@ -156,18 +134,10 @@ public class WorkerRunnable implements Runnable {
 
             this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
             if (this.queueName == null) {
-<<<<<<< HEAD
-                log.error("Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
-                // TODO : make sure something happens if queueName == NULL
-                // may want to add a status to worker, change worker status here and just reap immediately if this fails?
-                //throw new NullPointerException(
-                //        "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
-=======
                 //throw new NullPointerException(
                 //        "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
                 // FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
                 log.error("Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
->>>>>>> 0e346ab8222d0712ffaf12e90e742763f61fa43d
             }
             this.jobQueueName = this.queueName + "_jobs";
             this.resultsQueueName = this.queueName + "_results";
@@ -183,19 +153,10 @@ public class WorkerRunnable implements Runnable {
             this.maxRuns = maxRuns;
             this.testMode = testMode;
             this.flavour = flavourOverride;
-<<<<<<< HEAD
-        } catch (Exception e) {
-            //can use this to find other exceptions we may need to handle?
-            log.error("There was a problem in the WorkerRunnable constructor!!! "+e.getMessage(), e);
-        }
-    } 
-=======
-
         } catch (Exception e) {
             log.error("There was a problem in the WorkerRunnable constructor!!! The worker daemon is likely to not work properly!!! "+e.getMessage(), e);
         }
     }
->>>>>>> 0e346ab8222d0712ffaf12e90e742763f61fa43d
 
     @Override
     public void run() {
@@ -244,11 +205,7 @@ public class WorkerRunnable implements Runnable {
             resultsChannel = CommonServerTestUtilities.setupExchange(settings, this.resultsQueueName);
 
             // variables
-<<<<<<< HEAD
-            Job job = null;
-=======
             job = null;
->>>>>>> 0e346ab8222d0712ffaf12e90e742763f61fa43d
 
             while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
@@ -261,7 +218,6 @@ public class WorkerRunnable implements Runnable {
                 // Do the actual work
                 processJobMessage(workflowResult, statusJSON, job);
 
-<<<<<<< HEAD
                 // create the job exchange
                 String exchange = queueName + "_job_exchange";
                 Channel jobChannel = CommonServerTestUtilities.setupExchange(settings, exchange, "direct");
@@ -334,8 +290,6 @@ public class WorkerRunnable implements Runnable {
                 } else {
                     log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
                 }
-=======
->>>>>>> 0e346ab8222d0712ffaf12e90e742763f61fa43d
             }
 
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
@@ -349,25 +303,7 @@ public class WorkerRunnable implements Runnable {
             log.debug("result channel connection open: " + (resultsChannel != null ? resultsChannel.getConnection().isOpen() : null));
 
         } catch (Exception ex) {
-<<<<<<< HEAD
             log.error(ex.getMessage(), ex);
-
-            // any problems should trigger the failure of this workflow?
-            // TODO: make sure variables are in scope
-            Status status = new Status(vmUuid, job.getUuid(),
-                    StatusState.FAILED, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
-                    "job is failed", networkAddress);
-            status.setStderr(workflowResult.getWorkflowStdErr());
-            status.setStdout(workflowResult.getWorkflowStdout());
-            statusJSON = status.toJSON();
-
-            log.info(" WORKER FAILED JOB");
-
-            finishJob(statusJSON);
-=======
-
-            log.error("EXCEPTION IN WORKER THREAD!!!!" + ex.getMessage(), ex);
-
             try {
                 // any problems should trigger the failure of this workflow?
                 // TODO: make sure variables are in scope
@@ -384,7 +320,6 @@ public class WorkerRunnable implements Runnable {
             } catch (Exception e) {
                 log.error("EXCEPTION IN WORKER THREAD ATTEMPTING TO WRITE BACK FAILURE TO DB!!!  THE WORKER DAEMON WAS ATTEMPTING TO REPORT BACK A FAILED WORKFLOW AND THIS HAPPENED: " + ex.getMessage(), ex);
             }
-
         }
     }
 
@@ -471,11 +406,8 @@ public class WorkerRunnable implements Runnable {
                 jobChannel.getConnection().close();
             }
         } else {
-
             log.error(NO_MESSAGE_FROM_QUEUE_MESSAGE);
             throw new Exception("NO MESSAGE FROM JOB QUEUE!!!  MESSAGE SHOULD NOT BE NULL!!!");
-
->>>>>>> 0e346ab8222d0712ffaf12e90e742763f61fa43d
         }
     }
 
