@@ -258,6 +258,7 @@ public class Coordinator extends Base {
     }
 
     // TODO: look for jobs w.o heartbeat, reap them. Here && FlagJobs -Thomas
+    // TODO: if jobs state is lost why not reap worker, end vm, spin up new worker? 
     /**
      * This de-queues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
      *
@@ -389,9 +390,11 @@ public class Coordinator extends Base {
                     log.info(job.getUuid() + " DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
 
                     JobState state = job.getState();
+                    // Why does this not also handle lost workers? - Thomas
                     // if this is true need to mark the job as lost!
                     if (state == JobState.RUNNING && diffSec > secBeforeLost) {
                         // it must be lost
+                        // TODO: clear out job when state == LOST, FAILED. in CleanJobs()? - Thomas
                         log.error("Running job " + job.getUuid() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
                         db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
                     }

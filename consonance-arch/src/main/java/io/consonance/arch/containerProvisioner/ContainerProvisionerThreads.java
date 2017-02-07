@@ -312,6 +312,7 @@ public class ContainerProvisionerThreads extends Base {
 
     }
 
+    // TOOD: kill lost VMs here... currently kills VM with job status set as lost.
     /**
      * This keeps an eye on the results queue. It updates the database with finished jobs. Presumably it should also kill VMs.
      */
