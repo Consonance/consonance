@@ -395,6 +395,7 @@ public class ContainerProvisionerThreads extends Base {
 
                     }
 
+                    // TODO: this logic isnt' quite right to find orphan workers VMs... the DB has none as RUNNING now... so I'm not sure what I will need to do to see if these are actually running
                     LOG.info("CHECKING DB FOR SUCCESS/FAILED JOB VMS TO REAP");
                     final List<Job> doneJobs = db.getJobs(JobState.SUCCESS);
                     final List<Job> failedJobs = db.getJobs(JobState.FAILED);
