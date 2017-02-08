@@ -19,6 +19,10 @@ results = consonance_arch.json
 check_previous_job_hash = false
 
 [provision]
+reap_failed_workers = true
 max_running_containers = {{ FLEET_SIZE }}
 youxia_deployer_parameters = --max-spot-price {{ AWS_MAX_SPOT_PRICE }} --batch-size {{ FLEET_BATCH_SIZE }} --ansible-playbook /container-host-bag/install.yml  -e /container-host-bag/example_params.json --server-tag-file /container-host-bag/example_tags.json
 youxia_reaper_parameters =
+
+[coordinator]
+max_seconds_before_lost=60
