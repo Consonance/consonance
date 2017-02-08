@@ -185,6 +185,9 @@ public class PostgreSQL extends BasicPostgreSQL{
             j.setStdout((String) entry.getValue().get("stdout"));
             j.setStderr((String) entry.getValue().get("stderr"));
             j.setFlavour((String) entry.getValue().get("flavour"));
+            j.setJobId(Integer.parseInt((String) entry.getValue().get("job_id")));
+            j.setContainerImageDescriptor((String) entry.getValue().get("container_image_descriptor"));
+            j.setContainerRuntimeDescriptor((String) entry.getValue().get("container_runtime_descriptor"));
 
             // timestamp
             Timestamp createTs = (Timestamp) entry.getValue().get("create_timestamp");
