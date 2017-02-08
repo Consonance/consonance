@@ -106,7 +106,10 @@ public class WorkerRunnable implements Runnable {
      * @param flavourOverride override detection of instance type
      */
     WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
-        // slightly weird idea - thomas
+        // idea - create an 'empty' job for our setup that reports if there's failure here.
+        // as for rabbitmq connection not properly working i think it may be worth waiting for confirmation of message delivery
+        // when the runnable starts - https://www.rabbitmq.com/confirms.html
+        //
         //Job setup = new Job().fromJSON(setupJSON) //need to create some generic json with no real info
         // add to to jobs queue with this vmUuid
         
@@ -190,7 +193,7 @@ public class WorkerRunnable implements Runnable {
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
 
-            HttpClient client = new DefaultHttpClient(); 
+            HttpClient client = new DefaultHttpClient();
             // make really sure that we get a flavour
             // is it guaranteed we get a flavour? starvation potential here? - thomas
             while (flavour == null) {
@@ -503,7 +506,7 @@ public class WorkerRunnable implements Runnable {
             exService.shutdownNow();
         }
 
-        return workflowResult; //does exit state get updated correctly? - thomas
+        return workflowResult;
     }
 
     /**

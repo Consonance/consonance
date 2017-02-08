@@ -257,8 +257,6 @@ public class Coordinator extends Base {
 
     }
 
-    // TODO: look for jobs w.o heartbeat, reap them. Here && FlagJobs -Thomas
-    // TODO: if jobs state is lost why not reap worker, end vm, spin up new worker? 
     /**
      * This de-queues the VM requests and stages them in the DB as pending so I can keep a count of what's running/pending/finished.
      *
