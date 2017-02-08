@@ -218,10 +218,10 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 			ask_question "What is your AWS zone within the selected region (e.g. us-east-1c for the us-east-1 region)?" "$AWS_ZONE" "AWS zone" $aws_zone
 
 			aws_instance_type='aws_instance_type'
-			ask_question "What is your AWS instance type (e.g. m1.xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
+			ask_question "What is your AWS instance type (e.g. c4.2xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
 
 			aws_ami_image='aws_ami_image'
-			ask_question "What is your AWS image (e.g. AMI such as ami-b2e3c6d8 for Ubuntu, we recommend the Ubuntu 14.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
+			ask_question "What is your AWS image (e.g. AMI such as ami-6edd3078 for Ubuntu, we recommend the Ubuntu 16.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
 
 
         elif [ $user_cloud_env == 'Azure' ] ; then
