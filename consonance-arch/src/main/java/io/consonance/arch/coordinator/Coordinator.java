@@ -370,31 +370,40 @@ public class Coordinator extends Base {
             // TODO: need threads that each read from orders and another that reads results
             do {
 
-                // checks the jobs in the database and sees if any have become "lost"
-                List<Job> jobs = db.getJobs(JobState.RUNNING);
+                try {
+                    // checks the jobs in the database and sees if any have become "lost"
+                    List<Job> jobs = db.getJobs(JobState.RUNNING);
+                    log.info("CHECKING FOR LOST JOBS!!: Number of jobs: "+jobs.size());
 
-                // how long before we call something lost?
-                // it is tempting to un-lose jobs here, but the problem is that we only have the update timestamp and that is modified when
-                // jobs are lost, meaning they instantly flip back
-                long secBeforeLost = settings.getLong(Constants.COORDINATOR_SECONDS_BEFORE_LOST);
+                    // how long before we call something lost?
+                    // it is tempting to un-lose jobs here, but the problem is that we only have the update timestamp and that is modified when
+                    // jobs are lost, meaning they instantly flip back
+                    long secBeforeLost = settings.getLong(Constants.COORDINATOR_SECONDS_BEFORE_LOST);
 
-                for (Job job : jobs) {
-                    Timestamp nowTs = new Timestamp(new Date().getTime());
-                    Timestamp updateTs = job.getUpdateTimestamp();
+                    log.info("CHECKING FOR LOST JOBS 2!!: Number of jobs: "+jobs.size());
 
-                    long diff = nowTs.getTime() - updateTs.getTime();
-                    long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);
+                    for (Job job : jobs) {
+                        Timestamp nowTs = new Timestamp(new Date().getTime());
+                        Timestamp updateTs = job.getUpdateTimestamp();
 
-                    log.info(job.getUuid() + " DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
+                        log.info("TIMES!!: nowTs: " + nowTs + " updateTs: " + updateTs);
 
-                    JobState state = job.getState();
-                    // if this is true need to mark the job as lost!
-                    if (state == JobState.RUNNING && diffSec > secBeforeLost) {
-                        // it must be lost
-                        log.error("Running job " + job.getUuid() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
-                        db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
+                        long diff = nowTs.getTime() - updateTs.getTime();
+                        long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);
+
+                        log.info(job.getUuid() + " DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
+
+                        JobState state = job.getState();
+                        // if this is true need to mark the job as lost!
+                        if (state == JobState.RUNNING && diffSec > secBeforeLost) {
+                            // it must be lost
+                            log.error("Running job " + job.getUuid() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
+                            db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
+                        }
                     }
 
+                } catch (Exception e) {
+                    log.info(" ERROR WITH LOST JOB CHECK!!!! "+e.getMessage());
                 }
 
                 try {
