@@ -395,6 +395,22 @@ public class ContainerProvisionerThreads extends Base {
 
                     }
 
+                    LOG.info("CHECKING DB FOR SUCCESS/FAILED JOB VMS TO REAP");
+                    final List<Job> doneJobs = db.getJobs(JobState.SUCCESS);
+                    final List<Job> failedJobs = db.getJobs(JobState.FAILED);
+                    doneJobs.addAll(failedJobs);
+                    for(Job j : doneJobs) {
+                        // if the VM assigned is running, reap it
+                        List<Provision> provisions = db.getProvisions(ProvisionState.RUNNING);
+                        for (Provision p : provisions) {
+                            if (j.getUuid().equals(p.getJobUUID())) {
+                                synchronized (ContainerProvisionerThreads.class) {
+                                    runReaper(settings, p.getIpAddress(), j.getVmUuid());
+                                }
+                            }
+                        }
+                    }
+
                     LOG.info("CHECKING QUEUE FOR VMS TO REAP");
 
                     QueueingConsumer.Delivery delivery = resultsConsumer.nextDelivery(FIVE_SECOND_IN_MILLISECONDS);
