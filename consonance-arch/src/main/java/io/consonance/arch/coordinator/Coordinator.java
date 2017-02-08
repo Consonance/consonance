@@ -393,16 +393,6 @@ public class Coordinator extends Base {
                         long diff = nowTs.getTime() - updateTs.getTime();
                         long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);
 
-<<<<<<< HEAD
-                    JobState state = job.getState();
-                    // Why does this not also handle lost workers? - Thomas
-                    // if this is true need to mark the job as lost!
-                    if (state == JobState.RUNNING && diffSec > secBeforeLost) {
-                        // it must be lost
-                        // TODO: clear out job when state == LOST, FAILED. in CleanJobs()? - Thomas
-                        log.error("Running job " + job.getUuid() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
-                        db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
-=======
                         log.info(job.getUuid() + " DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
 
                         JobState state = job.getState();
@@ -412,7 +402,6 @@ public class Coordinator extends Base {
                             log.error("Running job " + job.getUuid().toString() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
                             db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
                         }
->>>>>>> 4eb3542269f6351a04f6972f7def539c3c787293
                     }
 
                 } catch (Exception e) {
