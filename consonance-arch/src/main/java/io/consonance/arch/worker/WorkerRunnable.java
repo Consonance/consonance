@@ -209,8 +209,8 @@ public class WorkerRunnable implements Runnable {
                     }
                 } catch (IOException ioe) {
                     Log.warn("Unable to connect to '" + instanceTypeURL + "'");
-                } catch (HttpException he){
-                    Log.warn("Unable to execute protocol. Message: " + he.message());
+                } catch (Exception ex) {
+                    Log.warn("Unable to execute protocol. Message: " + ex.message());
                 } finally {
                     method.releaseConnection();
                 }

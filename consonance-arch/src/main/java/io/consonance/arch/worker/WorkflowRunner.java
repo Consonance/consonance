@@ -78,12 +78,13 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         LOG.info("Runtime descriptor is: " + runtimeDescriptorPath);
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
+        LauncherCWL launcher = null;
 
         try {
-            LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
+            launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
         } catch (GsonBuildException ge) {
             // is this right?
-            LOG.error("Bad image descriptor given: " + ge.getMessage(), ex);
+            LOG.error("Bad image descriptor given: " + ge.getMessage(), ge);
         } catch (Exception ex) {
             LOG.error("Unable to initialize LauncherCWL with error: " + ex.getMessage(), ex);
             // try initializing again? set status failed, exit? can we even do that from here? return -1?
