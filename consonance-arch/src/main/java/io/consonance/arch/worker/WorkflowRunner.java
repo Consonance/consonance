@@ -78,10 +78,15 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         LOG.info("Runtime descriptor is: " + runtimeDescriptorPath);
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
+        LauncherCWL launcher = null;
 
-        // TODO: wrap with try
-        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
-
+        try {
+            launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
+        } catch (Exception ex) {
+            LOG.error("Unable to initialize LauncherCWL with error: " + ex.getMessage(), ex);
+            // try initializing again? set status failed, exit? can we even do that from here? return -1?
+        }
+        
         try {
             if (this.preworkDelay > 0) {
                 LOG.info("Sleeping before executing workflow for " + this.preworkDelay + " ms.");
@@ -106,9 +111,8 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
             // if there's an exception then indicate via exit code
             result.setExitCode(1);
-        } catch (Exception e) {
-            LOG.error("Worker general exception!!! "+e.getMessage(), e);
-            result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
+        } catch (Exception ex) {
+            LOG.error("Unexpected exception: " + ex.getMessage(), ex); //what would this be?
             result.setWorkflowStdout(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
             // if there's an exception then indicate via exit code
             result.setExitCode(1);

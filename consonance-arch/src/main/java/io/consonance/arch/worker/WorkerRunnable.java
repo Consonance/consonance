@@ -106,9 +106,14 @@ public class WorkerRunnable implements Runnable {
      * @param flavourOverride override detection of instance type
      */
     WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
-
+        // idea - create an 'empty' job for our setup that reports if there's failure here.
+        // as for rabbitmq connection not properly working i think it may be worth waiting for confirmation of message delivery
+        // when the runnable starts - https://www.rabbitmq.com/confirms.html
+        //
+        //Job setup = new Job().fromJSON(setupJSON) //need to create some generic json with no real info
+        // add to to jobs queue with this vmUuid
+        
         try {
-
             log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
                     + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
@@ -120,8 +125,10 @@ public class WorkerRunnable implements Runnable {
                 } catch (SocketException e) {
                     tries--;
                     Thread.sleep(Base.FIVE_SECOND_IN_MILLISECONDS);
-                    // TODO Auto-generated catch block
                     log.error("Could not get network address: " + e.getMessage(), e);
+
+                    //setup.setState(LOST?) - in case of error, provisioner will pick up this worker as lost and reap
+
                     //FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
                     //throw new RuntimeException("Could not get network address: " + e.getMessage());
                 }
@@ -140,6 +147,9 @@ public class WorkerRunnable implements Runnable {
                 //throw new NullPointerException(
                 //        "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
                 // FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
+                
+                //setup.setState(LOST?) - in case of error, provisioner will pick up this worker as lost and reap
+
                 log.error("Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
             }
             this.jobQueueName = this.queueName + "_jobs";
@@ -157,7 +167,11 @@ public class WorkerRunnable implements Runnable {
             this.testMode = testMode;
             this.flavour = flavourOverride;
 
+            //setup.setState(SUCCESS) - worker setup success
         } catch (Exception e) {
+            
+            //setup.setState(LOST?) - in case of error, provisioner will pick up this VM as lost job and reap
+
             log.error("There was a problem in the WorkerRunnable constructor!!! The worker daemon is likely to not work properly!!! "+e.getMessage(), e);
         }
     }
@@ -194,7 +208,11 @@ public class WorkerRunnable implements Runnable {
                         log.info(" flavour chosen using cloud ini meta-data as: '" + flavour + "'");
                     }
                 } catch (IOException ioe) {
-                    Log.warn("Unable to connect to '" + instanceTypeURL + "'");
+                    log.warn("Unable to connect to '" + instanceTypeURL + "'");
+                } catch (Exception ex) {
+                    log.error("Unable to execute protocol. Message: " + ex.getMessage(), ex);
+                } finally {
+                    method.releaseConnection();
                 }
             }
 
@@ -337,13 +355,12 @@ public class WorkerRunnable implements Runnable {
                 jobChannel.getConnection().close();
             }
         } else {
-
             log.error(NO_MESSAGE_FROM_QUEUE_MESSAGE);
             throw new Exception("NO MESSAGE FROM JOB QUEUE!!!  MESSAGE SHOULD NOT BE NULL!!!");
-
         }
     }
 
+    // TODO: find where jobs are lost here - Thomas
     // TODO: obviously, this will need to launch something using Youxia in the future
     /**
      * This function will execute a workflow, based on the content of the Job object that is passed in.
