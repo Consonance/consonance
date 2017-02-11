@@ -195,12 +195,11 @@ public class WorkerRunnable implements Runnable {
 
             HttpClient client = new DefaultHttpClient();
             // make really sure that we get a flavour
-            // is it guaranteed we get a flavour? starvation potential here? - thomas
             while (flavour == null) {
                 String responseBody;
                 // if no OpenStack uuid is found, grab a normal instance_id from AWS
                 String instanceTypeURL = "http://169.254.169.254/latest/meta-data/instance-type";
-                final HttpGet method = new HttpGet(instanceTypeURL); // need to release method?
+                final HttpGet method = new HttpGet(instanceTypeURL);
                 try {
                     final HttpResponse execute = client.execute(method);
                     responseBody = IOUtils.toString(execute.getEntity().getContent(), StandardCharsets.UTF_8);
@@ -208,12 +207,12 @@ public class WorkerRunnable implements Runnable {
                         flavour = responseBody;
                         log.info(" flavour chosen using cloud ini meta-data as: '" + flavour + "'");
                     }
-                } catch (HttpException he){
-                    Log.warn("Unable to execute protocol. Message: " + he.message());
                 } catch (IOException ioe) {
                     Log.warn("Unable to connect to '" + instanceTypeURL + "'");
-                } finally{
-                    method.releaseConnection(); // - outside loop?
+                } catch (HttpException he){
+                    Log.warn("Unable to execute protocol. Message: " + he.message());
+                } finally {
+                    method.releaseConnection();
                 }
             }
 
@@ -222,6 +221,9 @@ public class WorkerRunnable implements Runnable {
             // workstation can declare the queue if it doesn't exist. Normally, the results queue is
             // created by the Coordinator.
             resultsChannel = CommonServerTestUtilities.setupExchange(settings, this.resultsQueueName);
+
+            // variables
+            job = null;
 
             while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
@@ -234,6 +236,8 @@ public class WorkerRunnable implements Runnable {
                 // Do the actual work
                 processJobMessage(workflowResult, statusJSON, job);
 
+            }
+
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
@@ -245,7 +249,9 @@ public class WorkerRunnable implements Runnable {
             log.debug("result channel connection open: " + (resultsChannel != null ? resultsChannel.getConnection().isOpen() : null));
 
         } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
+
+            log.error("EXCEPTION IN WORKER THREAD!!!!" + ex.getMessage(), ex);
+
             try {
                 // any problems should trigger the failure of this workflow?
                 // TODO: make sure variables are in scope
@@ -262,6 +268,7 @@ public class WorkerRunnable implements Runnable {
             } catch (Exception e) {
                 log.error("EXCEPTION IN WORKER THREAD ATTEMPTING TO WRITE BACK FAILURE TO DB!!!  THE WORKER DAEMON WAS ATTEMPTING TO REPORT BACK A FAILED WORKFLOW AND THIS HAPPENED: " + ex.getMessage(), ex);
             }
+
         }
     }
 
