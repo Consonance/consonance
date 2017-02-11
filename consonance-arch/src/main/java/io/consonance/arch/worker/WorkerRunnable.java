@@ -208,9 +208,9 @@ public class WorkerRunnable implements Runnable {
                         log.info(" flavour chosen using cloud ini meta-data as: '" + flavour + "'");
                     }
                 } catch (IOException ioe) {
-                    Log.warn("Unable to connect to '" + instanceTypeURL + "'");
+                    log.warn("Unable to connect to '" + instanceTypeURL + "'");
                 } catch (Exception ex) {
-                    Log.warn("Unable to execute protocol. Message: " + ex.message());
+                    log.error("Unable to execute protocol. Message: " + ex.getMessage(), ex);
                 } finally {
                     method.releaseConnection();
                 }
