@@ -431,7 +431,7 @@ public class WorkerRunnable implements Runnable {
      * @return An InetAddress object.
      * @throws SocketException thrown when unable to get access to network interface
      */
-    private InetAddress getFirstNonLoopbackAddress() throws SocketException {
+    protected InetAddress getFirstNonLoopbackAddress() throws SocketException {
         final String dockerInterfaceName = "docker";
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
             if (i.getName().contains(dockerInterfaceName)) {
