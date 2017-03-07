@@ -23,7 +23,7 @@ RUN add-apt-repository -y ppa:webupd8team/java \
     && apt-get install -y oracle-java8-installer
 
 # install Consonance services
-ENV consonance_version=2.0-alpha.10
+ENV consonance_version=2.0-alpha.12
 
 RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
 
