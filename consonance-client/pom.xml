@@ -234,6 +234,10 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>de.jutzig</groupId>
+                <artifactId>github-release-plugin</artifactId>
+            </plugin>
         </plugins>
 
         <resources>
