@@ -35,8 +35,8 @@ import io.swagger.client.api.OrderApi;
 import io.swagger.client.model.ExtraFile;
 import io.swagger.client.model.Job;
 import io.swagger.client.model.SourceFile;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 
