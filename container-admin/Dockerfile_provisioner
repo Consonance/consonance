@@ -25,8 +25,7 @@ RUN add-apt-repository -y ppa:webupd8team/java \
 # install Consonance services
 ENV consonance_version=2.0-alpha.10
 
-RUN wget --no-verbose https://www.dropbox.com/s/giy9ayxlvpoohiz/consonance-arch-2.0-alpha.11-SNAPSHOT.jar
-# https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar
+RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
 
 # install dockerize
 ENV DOCKERIZE_VERSION v0.2.0
