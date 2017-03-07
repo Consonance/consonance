@@ -17,9 +17,10 @@ RUN add-apt-repository -y ppa:webupd8team/java \
     && apt-get install -y oracle-java8-installer
 
 # install Consonance services
-ENV consonance_version=2.0-alpha.9
+ENV consonance_version=2.0-alpha.11
 
-RUN wget --no-verbose https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-webservice/${consonance_version}/consonance-webservice-${consonance_version}.jar
+RUN wget --no-verbose https://www.dropbox.com/s/3izdg4g6wv44xl4/consonance-webservice-2.0-alpha.11-SNAPSHOT.jar
+#RUN wget --no-verbose https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-webservice/${consonance_version}/consonance-webservice-${consonance_version}.jar
 
 # install dockerize 
 ENV DOCKERIZE_VERSION v0.2.0

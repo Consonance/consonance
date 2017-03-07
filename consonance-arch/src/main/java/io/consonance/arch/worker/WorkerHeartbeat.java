@@ -47,7 +47,7 @@ class WorkerHeartbeat implements Runnable {
 
     private String queueName;
     private double secondsDelay = DEFAULT_DELAY;
-    static final double DEFAULT_DELAY = 30.0;
+    static final double DEFAULT_DELAY = 2.0;
     private static final int DEFAULT_SNIP_SIZE = 10;
     private WorkflowRunner statusSource;
     private String networkID;
@@ -65,7 +65,7 @@ class WorkerHeartbeat implements Runnable {
             reportingChannel = CommonServerTestUtilities.setupExchange(settings, this.queueName);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.info("Caught interrupt signal, heartbeat shutting down.", e);
+            LOG.error("Caught interrupt signal, heartbeat shutting down.", e);
             return;
         }
 
@@ -96,14 +96,15 @@ class WorkerHeartbeat implements Runnable {
                             heartBeatMessage.getBytes(StandardCharsets.UTF_8));
                     reportingChannel.waitForConfirms();
 
-                    Thread.sleep(Base.ONE_SECOND_IN_MILLISECONDS);
+                    Thread.sleep(Base.ONE_SECOND_IN_MILLISECONDS * (long)secondsDelay);
+
                 } catch (IOException | AlreadyClosedException e) {
                     LOG.error("IOException caught! Message may not have been published. Exception is: " + e.getMessage(), e);
                     // retry after a minute, do not die simply because the launcher is unavailable, it may come back
                     Thread.sleep(Base.ONE_MINUTE_IN_MILLISECONDS);
                 }
             } catch (InterruptedException e) {
-                LOG.info("Heartbeat shutting down.");
+                LOG.error("Heartbeat shutting down.");
                 if (reportingChannel.getConnection().isOpen()) {
                     try {
                         reportingChannel.getConnection().close();

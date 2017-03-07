@@ -341,6 +341,8 @@ public class Main {
                     parseExtraFiles(job, extraFile);
                 }
 
+                // TODO: need to add job hash!!!
+                //job.setJobHash("TODO");
                 final Job workflowRun = jobApi.addOrder(job);
                 if (workflowRun == null){
                     kill("consonance: failure reading back scheduled job");

@@ -17,7 +17,7 @@ You can exit and re-enter via:
     exit
     docker-compose run client
 
-**NOTE:** The Bash install_bootstrap script depends on Ubuntu 16.04 but sets up the templates required to run `docker-compose up` if needed. 
+**NOTE:** The Bash install_bootstrap script depends on Ubuntu 16.04 but sets up the templates required to run `docker-compose up` if needed.
 
 ## Developing
 
@@ -31,14 +31,24 @@ The following files are created from templates by the install script:
 
 Now, you should have your webservice running on port 8080, you can monitor rabbitmq on port 15672.
 
-You are now ready to submit some work (from within the admin docker container).
+You are now ready to submit some work (from within the admin docker container).  I suggest you use the `bamstats` Dockstore tool for testing purposes.  See:
+
+* [Dockstore.cwl](https://github.com/briandoconnor/dockstore-tool-bamstats/blob/develop/Dockstore.cwl)
+* [sample_configs.json](https://github.com/briandoconnor/dockstore-tool-bamstats/blob/develop/sample_configs.json)
 
     consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
-    
+
 Note that you will also need to configure your security group to allow for SSH access between nodes in the security group on public IP addresses.
 
-TODO: how to get Youxia to launch m1.xlarge and have it attach all 4 ephemerial drives, only 1 is attached -- WORKED AROUND
+Check status:
+
+    consonance status --job_uuid 37180f53-e8e1-4079-bf39-89c9bfc8d79c
 
 NOTE: We make the simplfying assumption that the ip address at eth0 of the launcher is reachable from the children. If it is different (i.e. a public ip address is preferred, modify sample_params.json in /container-host-bag in the provisioner container before launching jobs)
 
 Take a look at `/consonance_logs` for daemon and webservice logs in any container
+
+When developing on the Dockerfile, since there is no way to inherit or inject environment variables, replace the Consonance version with:
+
+    sed -i 's/2.0-alpha.9/2.0-alpha.10/g' {} \;
+

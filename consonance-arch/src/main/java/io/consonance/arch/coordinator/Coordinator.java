@@ -156,7 +156,7 @@ public class Coordinator extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    log.info(" [x] RECEIVED ORDER:\n'" + message + "'\n");
+                    log.debug(" [x] RECEIVED ORDER:\n'" + message + "'\n");
 
                     // run the job
                     Order order = new Order().fromJSON(message);
@@ -206,13 +206,13 @@ public class Coordinator extends Base {
                 log.info(" + SENDING VM ORDER! " + queueName + "_vms");
 
                 int messages = vmChannel.queueDeclarePassive(queueName + "_vms").getMessageCount();
-                log.info("  + VM QUEUE SIZE: " + messages);
+                log.debug("  + VM QUEUE SIZE: " + messages);
 
                 vmChannel.basicPublish("", queueName + "_vms", MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
                 vmChannel.waitForConfirms();
 
-                log.info(" + MESSAGE SENT!\n" + message + "\n");
+                log.debug(" + MESSAGE SENT!\n" + message + "\n");
 
             } catch (IOException | InterruptedException ex) {
                 throw new RuntimeException(ex);
@@ -248,7 +248,7 @@ public class Coordinator extends Base {
                 jobChannel.basicPublish(exchangeName, newJob.getFlavour() , MessageProperties.PERSISTENT_TEXT_PLAIN,
                         message.getBytes(StandardCharsets.UTF_8));
 
-                log.info(" + message sent!\n" + message + "\n");
+                log.debug(" + message sent!\n" + message + "\n");
                 return message;
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -302,7 +302,7 @@ public class Coordinator extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    LOG.info(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
+                    LOG.debug(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
@@ -370,30 +370,40 @@ public class Coordinator extends Base {
             // TODO: need threads that each read from orders and another that reads results
             do {
 
-                // checks the jobs in the database and sees if any have become "lost"
-                List<Job> jobs = db.getJobs(JobState.RUNNING);
+                try {
+                    // checks the jobs in the database and sees if any have become "lost"
+                    List<Job> jobs = db.getJobs(JobState.RUNNING);
+                    log.info("CHECKING FOR LOST JOBS!!: Number of jobs: "+jobs.size());
 
-                // how long before we call something lost?
-                // it is tempting to un-lose jobs here, but the problem is that we only have the update timestamp and that is modified when
-                // jobs are lost, meaning they instantly flip back
-                long secBeforeLost = settings.getLong(Constants.COORDINATOR_SECONDS_BEFORE_LOST);
+                    // how long before we call something lost?
+                    // it is tempting to un-lose jobs here, but the problem is that we only have the update timestamp and that is modified when
+                    // jobs are lost, meaning they instantly flip back
+                    long secBeforeLost = settings.getLong(Constants.COORDINATOR_SECONDS_BEFORE_LOST);
 
-                for (Job job : jobs) {
-                    Timestamp nowTs = new Timestamp(new Date().getTime());
-                    Timestamp updateTs = job.getUpdateTimestamp();
+                    log.info("CHECKING FOR LOST JOBS 2!!: Number of jobs: "+jobs.size());
 
-                    long diff = nowTs.getTime() - updateTs.getTime();
-                    long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);
+                    for (Job job : jobs) {
+                        Timestamp nowTs = new Timestamp(new Date().getTime());
+                        Timestamp updateTs = job.getUpdateTimestamp();
 
-                    log.info(job.getUuid() + " DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
+                        log.info("TIMES!!: nowTs: " + nowTs.toString() + " updateTs: " + updateTs.toString());
 
-                    JobState state = job.getState();
-                    // if this is true need to mark the job as lost!
-                    if (state == JobState.RUNNING && diffSec > secBeforeLost) {
-                        // it must be lost
-                        log.error("Running job " + job.getUuid() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
-                        db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
+                        long diff = nowTs.getTime() - updateTs.getTime();
+                        long diffSec = Math.abs(diff / Base.ONE_SECOND_IN_MILLISECONDS);
+
+                        log.info(job.getUuid() + " DIFF SEC: " + diffSec + " MAX: " + secBeforeLost);
+
+                        JobState state = job.getState();
+                        // if this is true need to mark the job as lost!
+                        if (state == JobState.RUNNING && diffSec > secBeforeLost) {
+                            // it must be lost
+                            log.error("Running job " + job.getUuid().toString() + " not seen in " + diffSec + " > " + secBeforeLost + " MARKING AS LOST!");
+                            db.updateJob(job.getUuid(), job.getVmUuid(), JobState.LOST);
+                        }
                     }
+
+                } catch (Exception e) {
+                    log.info(" ERROR WITH LOST JOB CHECK!!!! "+e.getMessage(), e);
 
                 }
 

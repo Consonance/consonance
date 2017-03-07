@@ -313,6 +313,9 @@ public class Job extends BaseBean{
         return jobId;
     }
 
+    public void setJobId(int jobId) {
+        this.jobId = jobId;
+    }
 
     public String getContainerImageDescriptor() {
         return containerImageDescriptor;

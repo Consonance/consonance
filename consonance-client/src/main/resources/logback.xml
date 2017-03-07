@@ -19,24 +19,6 @@
 
 <configuration>
 
-    <appender name="FILE_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- encoders are assigned the type
-        ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
-        <file>./arch3.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <maxHistory>7</maxHistory>
-            <fileNamePattern>./arch3.%d{YYYY-MM-dd}.%i.log.zip</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>2GB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-        </rollingPolicy>
-
-        <append>true</append>
-        <encoder>
-            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <!-- encoders are assigned the type
         ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
@@ -49,7 +31,6 @@
     </appender>
 
     <root level="DEBUG">
-        <appender-ref ref="FILE_APPENDER" />
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

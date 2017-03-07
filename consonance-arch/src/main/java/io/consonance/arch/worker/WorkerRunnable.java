@@ -106,52 +106,72 @@ public class WorkerRunnable implements Runnable {
      * @param flavourOverride override detection of instance type
      */
     WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
-        log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
-                + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
         try {
-            this.networkAddress = getFirstNonLoopbackAddress().toString().substring(1);
-        } catch (SocketException e) {
-            // TODO Auto-generated catch block
-            log.error("Could not get network address: " + e.getMessage(), e);
-            throw new RuntimeException("Could not get network address: " + e.getMessage());
-        }
 
-        this.maxRuns = maxRuns;
-        settings = CommonTestUtilities.parseConfig(configFile);
+            log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
+                    + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
-        // TODO: Dynamically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
-        // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)
-        // ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
-        // appender.setFile("SomePath");
+            int tries = Base.DEFAULT_NETWORK_RETRIES;
+            while(tries > 0) {
+                try {
+                    this.networkAddress = getFirstNonLoopbackAddress().toString().substring(1);
+                    tries = 0;
+                } catch (SocketException e) {
+                    tries--;
+                    Thread.sleep(Base.FIVE_SECOND_IN_MILLISECONDS);
+                    // TODO Auto-generated catch block
+                    log.error("Could not get network address: " + e.getMessage(), e);
+                    //FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
+                    //throw new RuntimeException("Could not get network address: " + e.getMessage());
+                }
+            }
 
-        this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
-        if (this.queueName == null) {
-            throw new NullPointerException(
-                    "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
+            this.maxRuns = maxRuns;
+            settings = CommonTestUtilities.parseConfig(configFile);
+
+            // TODO: Dynamically change path to log file, it should be /var/log/arch3.log in production, but for test, ./arch3.log
+            // FileAppender<ILoggingEvent> appender = (FileAppender<ILoggingEvent>)
+            // ((ch.qos.logback.classic.Logger)log).getAppender("FILE_APPENDER");
+            // appender.setFile("SomePath");
+
+            this.queueName = settings.getString(Constants.RABBIT_QUEUE_NAME);
+            if (this.queueName == null) {
+                //throw new NullPointerException(
+                //        "Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
+                // FIXME: this is a problem since an exception here would cause the worker daemon to exit with no info being sent back to the master
+                log.error("Queue name was null! Please ensure that you have properly configured \"rabbitMQQueueName\" in your config file.");
+            }
+            this.jobQueueName = this.queueName + "_jobs";
+            this.resultsQueueName = this.queueName + "_results";
+            /*
+             * If the user specified "--endless" on the CLI, then this.endless=true Else: check to see if "endless" is in the config file, and
+             * if it is, parse the value of it and use that. If not in the config file, then use "false".
+             */
+            this.endless = endless || settings.getBoolean(Constants.WORKER_ENDLESS, false);
+            if (this.endless) {
+                log.info("The \"--endless\" flag was set, this worker will run endlessly!");
+            }
+            this.vmUuid = vmUuid;
+            this.maxRuns = maxRuns;
+            this.testMode = testMode;
+            this.flavour = flavourOverride;
+
+        } catch (Exception e) {
+            log.error("There was a problem in the WorkerRunnable constructor!!! The worker daemon is likely to not work properly!!! "+e.getMessage(), e);
         }
-        this.jobQueueName = this.queueName + "_jobs";
-        this.resultsQueueName = this.queueName + "_results";
-        /*
-         * If the user specified "--endless" on the CLI, then this.endless=true Else: check to see if "endless" is in the config file, and
-         * if it is, parse the value of it and use that. If not in the config file, then use "false".
-         */
-        this.endless = endless || settings.getBoolean(Constants.WORKER_ENDLESS, false);
-        if (this.endless) {
-            log.info("The \"--endless\" flag was set, this worker will run endlessly!");
-        }
-        this.vmUuid = vmUuid;
-        this.maxRuns = maxRuns;
-        this.testMode = testMode;
-        this.flavour = flavourOverride;
     }
 
     @Override
     public void run() {
 
         int max = maxRuns;
+        WorkflowResult workflowResult = null;
+        String statusJSON = null;
+        Job job = null;
 
         try {
+
             // worker will need to pull from a specific queue
             // for aws: curl http://169.254.169.254/latest/meta-data/instance-type
             // for openstack: curl http://169.254.169.254/latest/meta-data/instance-type
@@ -184,6 +204,9 @@ public class WorkerRunnable implements Runnable {
             // created by the Coordinator.
             resultsChannel = CommonServerTestUtilities.setupExchange(settings, this.resultsQueueName);
 
+            // variables
+            job = null;
+
             while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
@@ -192,82 +215,11 @@ public class WorkerRunnable implements Runnable {
                     max--;
                 }
 
-                // jobChannel needs to be created inside the loop because it is closed inside the loop, and it is closed inside this loop to
-                // prevent pre-fetching.
+                // Do the actual work
+                processJobMessage(workflowResult, statusJSON, job);
 
-                // create the job exchange
-                String exchange = queueName + "_job_exchange";
-                Channel jobChannel = CommonServerTestUtilities.setupExchange(settings, exchange, "direct");
-                if (jobChannel == null) {
-                    throw new NullPointerException("jobChannel is null for queue: " + this.jobQueueName
-                            + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
-                }
-                final String finalQueueName = CommonServerTestUtilities.setupQueueOnExchange(jobChannel, queueName + "_jobs", flavour);
-                jobChannel.queueBind(finalQueueName, exchange,flavour);
-
-                QueueingConsumer consumer = new QueueingConsumer(jobChannel);
-                jobChannel.basicConsume(finalQueueName, false, consumer);
-
-                QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-                log.info(vmUuid + "  received " + delivery.getEnvelope().toString());
-                if (delivery.getBody() != null) {
-                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    if (message.trim().length() > 0) {
-
-                        log.info(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
-
-                        Job job = new Job().fromJSON(message);
-
-                        Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
-                                "job is starting", this.networkAddress);
-                        status.setStderr("");
-                        status.setStdout("");
-                        String statusJSON = status.toJSON();
-
-                        log.info(" WORKER LAUNCHING JOB");
-
-                        // greedy acknowledge, it will be easier to deal with lost jobs than zombie workers in hostile OpenStack
-                        // environments
-                        log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
-                        jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                        // we need to close the channel IMMEDIATELY to complete the ACK.
-                        jobChannel.close();
-                        // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
-                        jobChannel.getConnection().close();
-
-                        WorkflowResult workflowResult = new WorkflowResult();
-                        if (testMode) {
-                            workflowResult.setWorkflowStdout("everything is awesome");
-                            workflowResult.setExitCode(0);
-                        } else {
-                            workflowResult = launchJob(statusJSON, job);
-                        }
-
-                        status = new Status(vmUuid, job.getUuid(),
-                                workflowResult.getExitCode() == 0 ? StatusState.SUCCESS : StatusState.FAILED, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
-                                "job is finished", networkAddress);
-                        status.setStderr(workflowResult.getWorkflowStdErr());
-                        status.setStdout(workflowResult.getWorkflowStdout());
-                        statusJSON = status.toJSON();
-
-                        log.info(" WORKER FINISHING JOB");
-
-                        finishJob(statusJSON);
-                    } else {
-                        log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
-                    }
-                    // we need to close the channel *conditionally*
-                    if (jobChannel.isOpen()) {
-                        jobChannel.close();
-                    }
-                    // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
-                    if (jobChannel.getConnection().isOpen()) {
-                        jobChannel.getConnection().close();
-                    }
-                } else {
-                    log.info(NO_MESSAGE_FROM_QUEUE_MESSAGE);
-                }
             }
+
             log.info(" \n\n\nWORKER FOR VM UUID HAS FINISHED!!!: '" + vmUuid + "'\n\n");
             // turns out this is needed when multiple threads are reading from the same
             // queue otherwise you end up with multiple unacknowledged messages being undeliverable to other workers!!!
@@ -277,8 +229,118 @@ public class WorkerRunnable implements Runnable {
             }
             log.debug("result channel open: " + (resultsChannel != null ? resultsChannel.isOpen() : null));
             log.debug("result channel connection open: " + (resultsChannel != null ? resultsChannel.getConnection().isOpen() : null));
+
         } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
+
+            log.error("EXCEPTION IN WORKER THREAD!!!!" + ex.getMessage(), ex);
+
+            try {
+                // any problems should trigger the failure of this workflow?
+                // TODO: make sure variables are in scope
+                Status status = new Status(vmUuid, job.getUuid(),
+                        StatusState.FAILED, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
+                        "job is failed", networkAddress);
+                status.setStderr(workflowResult.getWorkflowStdErr());
+                status.setStdout(workflowResult.getWorkflowStdout());
+                statusJSON = status.toJSON();
+
+                log.error(" WORKER FAILED JOB");
+
+                finishJob(statusJSON);
+            } catch (Exception e) {
+                log.error("EXCEPTION IN WORKER THREAD ATTEMPTING TO WRITE BACK FAILURE TO DB!!!  THE WORKER DAEMON WAS ATTEMPTING TO REPORT BACK A FAILED WORKFLOW AND THIS HAPPENED: " + ex.getMessage(), ex);
+            }
+
+        }
+    }
+
+    /**
+     * The method for actually processing a job
+     * @param workflowResult
+     * @param statusJSON
+     * @param job
+     * @throws Exception
+     */
+    private void processJobMessage(WorkflowResult workflowResult, String statusJSON, Job job) throws Exception {
+
+        // jobChannel needs to be created inside the loop because it is closed inside the loop, and it is closed inside this loop to
+        // prevent pre-fetching.
+
+        // create the job exchange
+        String exchange = queueName + "_job_exchange";
+        Channel jobChannel = CommonServerTestUtilities.setupExchange(settings, exchange, "direct");
+        if (jobChannel == null) {
+            throw new NullPointerException("jobChannel is null for queue: " + this.jobQueueName
+                    + ". Something bad must have happened while trying to set up the queue connections. Please ensure that your configuration is correct.");
+        }
+        final String finalQueueName = CommonServerTestUtilities.setupQueueOnExchange(jobChannel, queueName + "_jobs", flavour);
+        jobChannel.queueBind(finalQueueName, exchange,flavour);
+
+        QueueingConsumer consumer = new QueueingConsumer(jobChannel);
+        jobChannel.basicConsume(finalQueueName, false, consumer);
+
+        QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+        log.info(vmUuid + "  received " + delivery.getEnvelope().toString());
+        if (delivery.getBody() != null) {
+            String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+            if (message.trim().length() > 0) {
+
+                log.info(" [x] Received JOBS REQUEST '" + message + "' @ " + vmUuid);
+
+                job = new Job().fromJSON(message);
+
+                Status status = new Status(vmUuid, job.getUuid(), StatusState.RUNNING, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
+                        "job is starting", this.networkAddress);
+                status.setStderr("");
+                status.setStdout("");
+                statusJSON = status.toJSON();
+
+                log.info(" WORKER LAUNCHING JOB");
+
+                // greedy acknowledge, it will be easier to deal with lost jobs than zombie workers in hostile OpenStack
+                // environments
+                log.info(vmUuid + " acknowledges " + delivery.getEnvelope().toString());
+                jobChannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                // we need to close the channel IMMEDIATELY to complete the ACK.
+                jobChannel.close();
+                // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
+                jobChannel.getConnection().close();
+
+                workflowResult = new WorkflowResult();
+                if (testMode) {
+                    workflowResult.setWorkflowStdout("everything is awesome");
+                    workflowResult.setExitCode(0);
+                } else {
+                    workflowResult = launchJob(statusJSON, job);
+                }
+
+                status = new Status(vmUuid, job.getUuid(),
+                        workflowResult.getExitCode() == 0 ? StatusState.SUCCESS : StatusState.FAILED, CommonServerTestUtilities.JOB_MESSAGE_TYPE,
+                        "job is finished", networkAddress);
+                status.setStderr(workflowResult.getWorkflowStdErr());
+                status.setStdout(workflowResult.getWorkflowStdout());
+                statusJSON = status.toJSON();
+
+                log.info(" WORKER FINISHING JOB");
+
+                finishJob(statusJSON);
+            } else {
+                log.error(NO_MESSAGE_FROM_QUEUE_MESSAGE);
+                throw new Exception("NO MESSAGE FROM JOB QUEUE!!!  MESSAGE SHOULD NOT BE NULL!!!");
+            }
+            // we need to close the channel *conditionally*
+            if (jobChannel.isOpen()) {
+                jobChannel.close();
+            }
+            // Close the connection object as well, or the main thread may not exit because of still-open-and-in-use resources.
+            if (jobChannel.getConnection().isOpen()) {
+                jobChannel.getConnection().close();
+            }
+        } else {
+
+            log.error(NO_MESSAGE_FROM_QUEUE_MESSAGE);
+            throw new Exception("NO MESSAGE FROM JOB QUEUE!!!  MESSAGE SHOULD NOT BE NULL!!!");
+
         }
     }
 
@@ -369,7 +431,7 @@ public class WorkerRunnable implements Runnable {
      * @return An InetAddress object.
      * @throws SocketException thrown when unable to get access to network interface
      */
-    InetAddress getFirstNonLoopbackAddress() throws SocketException {
+    protected InetAddress getFirstNonLoopbackAddress() throws SocketException {
         final String dockerInterfaceName = "docker";
         for (NetworkInterface i : Collections.list(NetworkInterface.getNetworkInterfaces())) {
             if (i.getName().contains(dockerInterfaceName)) {
