@@ -48,11 +48,11 @@
         <powermock.version>1.6.3</powermock.version>
         <assertj.version>3.4.1</assertj.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
-        <jackson.version>2.7.6</jackson.version>
-        <jersey.version>2.23.1</jersey.version>
+        <jackson.version>2.7.8</jackson.version>
+        <jersey.version>2.23.2</jersey.version>
         <hibernate.version>5.1.0.Final</hibernate.version>
-        <dockstore.version>1.1-alpha.0</dockstore.version>
-        <cwlavro.version>1.0.4</cwlavro.version>
+        <dockstore.version>1.2.0-alpha.5</dockstore.version>
+        <cwlavro.version>1.0.7</cwlavro.version>
     </properties>
 
     <scm>
@@ -208,6 +208,17 @@
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-client</artifactId>
                 <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2.external</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>2.5.0-b05</version>
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/com.sun.jersey.contribs/jersey-multipart -->
@@ -458,7 +469,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.6.2</version>
+                <version>2.7</version>
             </dependency>
 
             <dependency>
@@ -559,6 +570,11 @@
             </dependency>
             <dependency>
                 <groupId>io.dockstore</groupId>
+                <artifactId>swagger-java-client</artifactId>
+                <version>${dockstore.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dockstore</groupId>
                 <artifactId>dockstore-client</artifactId>
                 <version>${dockstore.version}</version>
                 <exclusions>
@@ -600,7 +616,12 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
-                <version>2.11.7</version>
+                <version>2.11.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>2.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -870,7 +891,7 @@
                             <goal>analyze-only</goal>
                         </goals>
                         <configuration>
-                            <failOnWarning>false</failOnWarning>
+                            <failOnWarning>true</failOnWarning>
                             <outputXML>true</outputXML>
                             <ignoreNonCompile>true</ignoreNonCompile>
                         </configuration>
