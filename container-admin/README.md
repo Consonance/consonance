@@ -36,6 +36,8 @@ You are now ready to submit some work (from within the admin docker container). 
 * [Dockstore.cwl](https://github.com/briandoconnor/dockstore-tool-bamstats/blob/develop/Dockstore.cwl)
 * [sample_configs.json](https://github.com/briandoconnor/dockstore-tool-bamstats/blob/develop/sample_configs.json)
 
+With the actual command
+
     consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
 
 Note that you will also need to configure your security group to allow for SSH access between nodes in the security group on public IP addresses.
