@@ -163,6 +163,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
             else
                 read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). \n' eth_dev
         fi
+        ifconfig $eth_dev
 
         user_cloud_env=''
 		while [[ -z "${user_cloud_env// /}" ]] ; do
