@@ -1,3 +1,5 @@
+launcherIPAddress: {{ PUBLIC_LAUNCHER_IP_ADDRESS }}
+launcherPort: 8080
 
 template: Funky
 

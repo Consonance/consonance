@@ -8,6 +8,7 @@ RUN apt-get update \
     python-software-properties \
     software-properties-common \
     telnet \
+    vim \
     && apt-get clean
 
 # grab oracle java (auto accept licence)
