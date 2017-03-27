@@ -69,6 +69,14 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
     }
 
     @JsonProperty
+    @NotNull
+    private String launcherIPAddress;
+
+    @JsonProperty
+    @NotNull
+    private String launcherPort;
+
+    @JsonProperty
     public String getConsonanceConfig() {
         return consonanceConfig;
     }
@@ -102,5 +110,13 @@ public class ConsonanceWebserviceConfiguration extends Configuration {
 
     public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
         this.authenticationCachePolicy = authenticationCachePolicy;
+    }
+
+    public String getLauncherIPAddress() {
+        return launcherIPAddress;
+    }
+
+    public String getLauncherPort() {
+        return launcherPort;
     }
 }
