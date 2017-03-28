@@ -8,6 +8,7 @@ RUN apt-get update \
     python-software-properties \
     software-properties-common \
     git \
+    vim \
     telnet \
     && apt-get clean
 

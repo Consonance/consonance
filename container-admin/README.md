@@ -1,7 +1,6 @@
 ## Prereqs
 
 Install [docker-compose](https://docs.docker.com/compose/install/) on a Ubuntu 16.04+ VM and it's dependencies.
-You will also require ruby-mustache (`sudo apt-get install ruby-mustache`)
 
 **NOTE:** this isn't production ready, there is some manual config you need to do. Read all the directions below before running.
 
@@ -10,9 +9,14 @@ You will also require ruby-mustache (`sudo apt-get install ruby-mustache`)
 ## Usage
 
 Before you run the `install_bootstrap` script, you will want to edit a security group that defines the rules for your
-launcher and the worker nodes that it creates. Generally, you will need at least two rules. The inbound rule should be 
-a security group should be able to access hosts in its own security group. You will also want to be able to access 
-all ports from your own ip address for trouble-shooting. 
+launcher and the worker nodes that it creates. Generally, you will need at least three rules. The inbound rule should be 
+that hosts in a security group should be able to access other hosts in its own security group. You will also want to be able to access 
+all ports from your own ip address for trouble-shooting. Lastly, a quirk with the current version is that the public 
+ ip address of the launcher should be whitelisted for access to hosts in the security group. 
+ 
+A screen shot follows with an example of the public ip address of the launcher being ():
+ 
+ 
 
 To run the webservice and command-line tools (still a work in progress, the ip address for swagger and other app level issues persist)
 
@@ -41,6 +45,8 @@ You are now ready to submit some work (from within the admin docker container). 
 
 * [Dockstore.cwl](https://github.com/briandoconnor/dockstore-tool-bamstats/blob/develop/Dockstore.cwl)
 * [sample\_configs.json](https://github.com/briandoconnor/dockstore-tool-bamstats/blob/develop/sample_configs.json)
+
+The following command submits a job and requests a m1.xlarge for it to run on. 
 
     consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
 
