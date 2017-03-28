@@ -21,8 +21,10 @@ ip addresses. The second row indicates that all ports are accessible from your o
 for trouble-shooting. Lastly, the third row is due to a quirk with the current version of Consonance. It indicates that 
 the public ip address of the launcher is whitelisted for access to hosts in the security group.
 
-To run the webservice and command-line tools
+To run the webservice and command-line tools, download the script and run it (the script will download templates and
+fill them in in the working directory)
 
+    wget https://github.com/Consonance/consonance/releases/download/2.0.0-alpha.13/consonance
     bash install_bootstrap
 
 You can exit and re-enter via:
