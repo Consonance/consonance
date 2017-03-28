@@ -18,25 +18,26 @@ RUN add-apt-repository -y ppa:webupd8team/java \
     && apt-get install -y oracle-java8-installer
 
 # install Consonance services
-ENV consonance_version=2.0.0-alpha.13
+ENV consonance_version={{ CONSONANCE_BINARY_VERSION }}
 
-RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
+RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-webservice-${consonance_version}.jar
 
-# install dockerize
+# install dockerize 
 ENV DOCKERIZE_VERSION v0.2.0
 
 RUN wget --no-verbose https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 
+# the web and Consonance config
 COPY config .
-ADD init_coordinator.sh .
+COPY web.yml .
+ADD init_webservice.sh .
 
-
-RUN chmod u+x init_coordinator.sh
+RUN chmod u+x init_webservice.sh
+# TODO: make sure you create these from the .template files and customize them
 COPY config /root/.consonance/config
 RUN mkdir /consonance_logs && chmod a+rx /consonance_logs
 
-
 # TODO: 1) update the above to have my AWS creds in it and 2) create the admin user in postgres db
-# Waiting for postgres and rabbitmq services
-CMD ["dockerize", "-wait", "tcp://webservice:8080", "-timeout", "60s", "./init_coordinator.sh"]
+# Waiting for postgres and rabbitmq services 
+CMD ["dockerize", "-wait", "tcp://postgres:5432", "-wait", "tcp://rabbitmq:5672", "-timeout", "60s", "./init_webservice.sh"]
