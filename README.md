@@ -38,25 +38,3 @@ See the container-admin [README](container-admin/README.md) for information on q
 ## Using
 
 See the [quickstart guide](https://github.com/Consonance/consonance/wiki/quickstart) and the [non-quickstart guide](https://github.com/Consonance/consonance/wiki/non-quickstart-users) on our wiki.
-
-## TODO
-
-Consonance is a work in progress, there are many features and bugs that need to be fleshed out. Here are the most imporant issues.
-
-* can the indivdual images be hosted on Quay.io so the install_boostrap doesn't need to spend time building them?
-* there are a ton of settings that the bootstrapper should expose to end users.  Regions, AMI, etc
-* need to setup the previous job hash and expose that through as a callable parameter to the consonance command line
-* should generate new token for admin on each deployment, should also use better passwords assigned at build time for rabbitmq and postgres
-* it seems like the instance type is hard-coded for Youxia yet it's a param for Consonance.  It really should be a param otherwise a given deployment will only work for a particular AMI/instance type.
-* the initial job submitted seem to go into the START state and never get processed
-* re-enqueing work for lost jobs ultimately fails
-* we need to improve the worker deamon, it fails to launch properly on occasion which menas we have workers that never process jobs
-* we need to monitor worker instances/daemons. If the worker daemon on a given worker instance has not sent a ping in a while we need to reap the instance.  This will prevent the situation where a woker daemon has died on a worker host but it's kept around since there are running jobs.
-* a large number of submissions will eventually see the provisioner stop provisioning new hosts, even when the total running is under the total fleet size. I saw this when all workers running where zombie workers e.g. the worker daemons had crashed so nothing was scheduled to these nodes.  Once I restarted the worker daemons, the provisioner started provisioning new additional nodes.  Very strange.
-* seems like the provisioner will not detect that a VM has been terminated... doesn't detect `State: {Code: 48,Name: terminated}`
-* Walt items:
-    * saw single job not being picked up, job present in queue, DB says START
-    * worker daemon crashes and VM continues running
-    * stderr and stdout are merged in consonance status call
-    * need to be able to cancel a job and or resubmit a job
-    * consonance only starts a VM flavor that is in consonance config; whether it is in correct Rabbit queue or not

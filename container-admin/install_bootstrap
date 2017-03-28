@@ -5,10 +5,17 @@
 # Hacked by Brian O'Connor <briandoconnor@gmail.com>
 
 set -e
+
+# When changing these versions, you will probably need to delete all files in the working directory
+# except for the consonance_launcher_config directory in order to get a clean new copy of
+# the Docker compose templates
+
 # version of consonance code used for this script
 CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
 # version of consonance jar files used
 CONSONANCE_BINARY_VERSION=2.0.0-alpha.13
+# version of container host bag (an ansible script) used to setup workers
+CONTAINER_HOST_BAG_VERSION=2.0.0-alpha.2
 
 cat <<MSG
 CONSONANCE INSTALLATION BOOTSTRAPPER
@@ -375,6 +382,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 "LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/local-ipv4`",
 "PUBLIC_LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/public-ipv4`",
 "CONSONANCE_BINARY_VERSION":"${CONSONANCE_BINARY_VERSION}",
+"CONTAINER_HOST_BAG_VERSION":"${CONTAINER_HOST_BAG_VERSION}",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "AWS_MAX_SPOT_PRICE":"${aws_max_spot_price}",
