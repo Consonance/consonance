@@ -5,7 +5,10 @@
 # Hacked by Brian O'Connor <briandoconnor@gmail.com>
 
 set -e
+# version of consonance code used for this script
 CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
+# version of consonance jar files used
+CONSONANCE_BINARY_VERSION=2.0.0-alpha.13
 
 cat <<MSG
 CONSONANCE INSTALLATION BOOTSTRAPPER
@@ -371,6 +374,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 {
 "LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/local-ipv4`",
 "PUBLIC_LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/public-ipv4`",
+"CONSONANCE_BINARY_VERSION":"${CONSONANCE_BINARY_VERSION}",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "AWS_MAX_SPOT_PRICE":"${aws_max_spot_price}",
@@ -407,10 +411,10 @@ CONFIG
     # cp ~/.consonance/compose.config consonance_launcher_config/compose.config
     # template out stuff, grab template files for convenience if not running in a git repo
     # note there should really be a better way of grabbing a directory, see https://github.com/dear-github/dear-github/issues/95
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_client
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_coordinator
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_provisioner
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_webservice
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_client.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_coordinator.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_provisioner.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_webservice.template
     wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/aws.config.template
     wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/bag_params.json.template
     wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/config.template
@@ -425,6 +429,10 @@ CONFIG
     wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/web.yml.template
     wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/youxia_config.template
 
+    mustache consonance_launcher_config/compose.config Dockerfile_client.template > Dockerfile_client
+    mustache consonance_launcher_config/compose.config Dockerfile_coordinator.template > Dockerfile_coordinator
+    mustache consonance_launcher_config/compose.config Dockerfile_provisioner.template > Dockerfile_provisioner
+    mustache consonance_launcher_config/compose.config Dockerfile_webservice.template > Dockerfile_webservice
     mustache consonance_launcher_config/compose.config aws.config.template > aws.config
     mustache consonance_launcher_config/compose.config bag_params.json.template  > bag_params.json
     mustache consonance_launcher_config/compose.config config.template  > config
