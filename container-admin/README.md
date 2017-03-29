@@ -21,7 +21,9 @@ ip addresses. The second row indicates that all ports are accessible from your o
 for trouble-shooting. Lastly, the third row is due to a quirk with the current version of Consonance. It indicates that 
 the public ip address of the launcher (54.209.46.192 in this example) is whitelisted for access to hosts in the security group.
 
-To run the webservice and command-line tools, download the script and run it (the script will download templates and
+First, start a VM on AWS to function as your launcher. 
+
+Login and setup the prerequities above. To run the webservice and command-line tools, download the script and run it (the script will download templates and
 fill them in in the working directory)
 
     wget https://github.com/Consonance/consonance/releases/download/2.0.0-alpha.13/consonance
@@ -67,3 +69,11 @@ workers are set at the beginning of the [install_bootstrap](install_bootstrap)
 
 Lastly, it can be worthwhile looking at the log directory (`/consonance_logs`) which collects logs from the Consonance 
 webservice, provisioner, and coordinators.
+
+## FAQ
+
+* How do I change versions of Consonance or its dependencies that are used? 
+Versions are specified at the beginning of the `install_bootstrap` script and are templated out to the relevant files
+* Can I stop and restart the underlying VM? 
+An instance's private and public IP addresses are baked into the configuration of several services. 
+For the time being, when restarting you will need to re-create your Docker compose instance.

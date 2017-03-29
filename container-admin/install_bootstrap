@@ -5,6 +5,11 @@
 # Hacked by Brian O'Connor <briandoconnor@gmail.com>
 
 set -e
+
+# When changing these versions, you will probably need to delete all files in the working directory
+# except for the consonance_launcher_config directory in order to get a clean new copy of
+# the Docker compose templates
+
 # version of consonance code used for this script
 CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
 # version of consonance jar files used
