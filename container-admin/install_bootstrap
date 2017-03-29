@@ -15,7 +15,7 @@ CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
 # version of consonance jar files used
 CONSONANCE_BINARY_VERSION=2.0.0-alpha.13
 # version of container host bag (an ansible script) used to setup workers
-CONTAINER_HOST_BAG_VERSION=2.0.0-alpha.2
+CONSONANCE_HOST_BAG_VERSION=2.0.0-alpha.2
 
 cat <<MSG
 CONSONANCE INSTALLATION BOOTSTRAPPER
@@ -161,9 +161,9 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
     read run_consonance_launcher
     # If the user would like to run consonance_launcher, then we have to get some config settings from them OR read them from an existing file
     if [ "${run_consonance_launcher^^}" = 'Y' ] ; then
-        #Read the config file if it exists and then show previous values...
+        #Read the config file if it exists and then show previous values (but do not override variables in this script)
         if [ -f consonance_launcher_config/compose.config ] ; then
-		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config)
+		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config | grep -v "CONSONANCE")
         fi
 
         user_cloud_env=''
@@ -220,7 +220,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 			ask_question "What is your AWS zone within the selected region (e.g. us-east-1c for the us-east-1 region)?" "$AWS_ZONE" "AWS zone" $aws_zone
 
 			aws_instance_type='aws_instance_type'
-			ask_question "What is your AWS instance type (e.g. c4.2xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
+			ask_question "What is your default AWS instance type (e.g. c4.2xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
 
 			aws_ami_image='aws_ami_image'
 			ask_question "What is your AWS image (e.g. AMI such as ami-6edd3078 for Ubuntu, we recommend the Ubuntu 16.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
@@ -382,7 +382,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 "LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/local-ipv4`",
 "PUBLIC_LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/public-ipv4`",
 "CONSONANCE_BINARY_VERSION":"${CONSONANCE_BINARY_VERSION}",
-"CONTAINER_HOST_BAG_VERSION":"${CONTAINER_HOST_BAG_VERSION}",
+"CONSONANCE_HOST_BAG_VERSION":"${CONSONANCE_HOST_BAG_VERSION}",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "AWS_MAX_SPOT_PRICE":"${aws_max_spot_price}",

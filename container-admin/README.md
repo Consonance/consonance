@@ -6,6 +6,9 @@ Install [docker-compose](https://docs.docker.com/compose/install/) on a Ubuntu 1
 
 **NOTE:** We currently test on AWS. We recommend working through the [EC2 tutorial](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html) if you have not already.
 
+Consonance uses cwltool and schema-salad on provisioned worker nodes to launch and run CWL. 
+Version numbers currently live in the Ansible playbook used to deploy workers.
+
 ## Usage
 
 Before you run the `install_bootstrap` script, you will want to create a SSH key used to secure communication with the 
