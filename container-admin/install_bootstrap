@@ -13,7 +13,7 @@ set -e
 # version of consonance code used for this script
 CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
 # version of consonance jar files used
-CONSONANCE_BINARY_VERSION=2.0.0-alpha.13
+CONSONANCE_BINARY_VERSION=2.0.0-alpha.15
 # version of container host bag (an ansible script) used to setup workers
 CONSONANCE_HOST_BAG_VERSION=2.0.0-alpha.2
 
