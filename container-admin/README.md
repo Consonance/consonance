@@ -43,6 +43,7 @@ You are now ready to submit some work (from within the admin docker container). 
 
 The following command submits a job and requests a m1.xlarge for it to run on: 
 
+
     consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
 
 The following command checks the status of a job:
