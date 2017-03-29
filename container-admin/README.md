@@ -47,6 +47,23 @@ You are now ready to submit some work (from within the admin docker container). 
 The following command submits a job and requests a m1.xlarge for it to run on: 
 
     consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
+    
+The following command creates a parameter file for a tool on Dockstore.org and then runs it:
+
+    dockstore tool convert entry2json --entry quay.io/briandoconnor/dockstore-tool-md5sum:1.0.3 > Dockstore.json
+    vim Dockstore.json # to fill in your file paths or an example follows
+    cat Dockstore.json
+    {
+      "input_file": {
+        "path": "https://raw.githubusercontent.com/briandoconnor/dockstore-tool-md5sum/master/md5sum.input",
+        "class": "File"
+      },
+      "output_file": {
+        "path": "/tmp/md5sum.txt",
+        "class": "File"
+      }
+    }
+    consonance run --flavour m1.xlarge --tool-dockstore-id quay.io/briandoconnor/dockstore-tool-md5sum:1.0.3 --run-descriptor test.dockstore.json
 
 The following command checks the status of a job:
 

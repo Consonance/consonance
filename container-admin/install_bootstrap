@@ -16,6 +16,9 @@ CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
 CONSONANCE_BINARY_VERSION=2.0.0-alpha.15
 # version of container host bag (an ansible script) used to setup workers
 CONSONANCE_HOST_BAG_VERSION=2.0.0-alpha.2
+# version of Dockstore CLI installed in client container
+CONSONANCE_DOCKSTORE_VERSION=1.1.5
+
 
 cat <<MSG
 CONSONANCE INSTALLATION BOOTSTRAPPER
@@ -383,6 +386,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 "PUBLIC_LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/public-ipv4`",
 "CONSONANCE_BINARY_VERSION":"${CONSONANCE_BINARY_VERSION}",
 "CONSONANCE_HOST_BAG_VERSION":"${CONSONANCE_HOST_BAG_VERSION}",
+"CONSONANCE_DOCKSTORE_VERSION":"${CONSONANCE_DOCKSTORE_VERSION}",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "AWS_MAX_SPOT_PRICE":"${aws_max_spot_price}",
