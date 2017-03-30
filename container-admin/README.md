@@ -1,6 +1,7 @@
 ## Prereqs
 
 Install [docker-compose](https://docs.docker.com/compose/install/) on a Ubuntu 16.04+ VM and it's dependencies.
+Consonance has been tested with Docker 17.03.1-ce and Docker-compose 1.11.2
 
 **NOTE:** This project is fairly DIY, read all the directions below before running.
 
@@ -48,7 +49,7 @@ The following command submits a job and requests a m1.xlarge for it to run on:
 
     consonance run  --flavour m1.xlarge --image-descriptor Dockstore.cwl --run-descriptor sample_configs.json
     
-The following command creates a parameter file for a tool on Dockstore.org and then runs it:
+The following command creates a parameter file for a tool on Dockstore.org and then runs it on a m1.large:
 
     dockstore tool convert entry2json --entry quay.io/briandoconnor/dockstore-tool-md5sum:1.0.3 > Dockstore.json
     vim Dockstore.json # to fill in your file paths or an example follows
@@ -63,7 +64,7 @@ The following command creates a parameter file for a tool on Dockstore.org and t
         "class": "File"
       }
     }
-    consonance run --flavour m1.xlarge --tool-dockstore-id quay.io/briandoconnor/dockstore-tool-md5sum:1.0.3 --run-descriptor test.dockstore.json
+    consonance run --flavour m1.large --tool-dockstore-id quay.io/briandoconnor/dockstore-tool-md5sum:1.0.3 --run-descriptor test.dockstore.json
 
 The following command checks the status of a job:
 
