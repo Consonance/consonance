@@ -29,9 +29,7 @@ VMs to run generic tools and workflows from Dockstore (http://dockstore.org).
 
 This system requires the following:
 * Docker support in your Linux distribution (Ubuntu 16.04 is officially supported by the Consonance Launcher).
-* Azure credentials, if you are using Microsoft Azure.
 * AWS credentials, if you are using Amazon AWS.
-* OpenStack credentials, if you are using OpenStack.
 
 Note: this system currently is configured per cloud, per worker type.  A single
 launcher supporting multiple clouds and multiple worker types is not supported.
@@ -169,18 +167,19 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config | grep -v "CONSONANCE")
         fi
 
-        user_cloud_env=''
-		while [[ -z "${user_cloud_env// /}" ]] ; do
-            if [ ! -z $CLOUD_ENV ] ; then
-                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". Previous value: \n' -i "$CLOUD_ENV" user_cloud_env
-            else
-                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". \n' user_cloud_env
-            fi
-            if [[ -z "${user_cloud_env// /}" || ( ${user_cloud_env} != 'AWS' && ${user_cloud_env} != 'OpenStack' && ${user_cloud_env} != 'Azure' ) ]] ; then
-                echo 'Cloud environment must be one of: "AWS", "OpenStack", "Azure".'
-                user_cloud_env=''
-            fi
-        done
+        user_cloud_env='AWS'
+# OpenStack support seems to be broken as of 2017 and OpenStack Mitaka
+#		while [[ -z "${user_cloud_env// /}" ]] ; do
+#            if [ ! -z $CLOUD_ENV ] ; then
+#                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". Previous value: \n' -i "$CLOUD_ENV" user_cloud_env
+#            else
+#                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". \n' user_cloud_env
+#            fi
+#            if [[ -z "${user_cloud_env// /}" || ( ${user_cloud_env} != 'AWS' && ${user_cloud_env} != 'OpenStack' && ${user_cloud_env} != 'Azure' ) ]] ; then
+#                echo 'Cloud environment must be one of: "AWS", "OpenStack", "Azure".'
+#                user_cloud_env=''
+#            fi
+#        done
 
         user_pem_path=''
         while [[ ! -f $user_pem_path || ! -e $user_pem_path || -z "${user_pem_path// /}" ]] ; do
