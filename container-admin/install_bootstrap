@@ -5,7 +5,20 @@
 # Hacked by Brian O'Connor <briandoconnor@gmail.com>
 
 set -e
-CONSONANCE_LAUNCHER_VERSION=feature/consonance_cleanup
+
+# When changing these versions, you will probably need to delete all files in the working directory
+# except for the consonance_launcher_config directory in order to get a clean new copy of
+# the Docker compose templates
+
+# version of consonance code used for this script
+CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
+# version of consonance jar files used
+CONSONANCE_BINARY_VERSION=2.0.0-alpha.15
+# version of container host bag (an ansible script) used to setup workers
+CONSONANCE_HOST_BAG_VERSION=2.0.0-alpha.2
+# version of Dockstore CLI installed in client container
+CONSONANCE_DOCKSTORE_VERSION=1.1.5
+
 
 cat <<MSG
 CONSONANCE INSTALLATION BOOTSTRAPPER
@@ -16,18 +29,15 @@ VMs to run generic tools and workflows from Dockstore (http://dockstore.org).
 
 This system requires the following:
 * Docker support in your Linux distribution (Ubuntu 16.04 is officially supported by the Consonance Launcher).
-* Azure credentials, if you are using Microsoft Azure.
 * AWS credentials, if you are using Amazon AWS.
-* OpenStack credentials, if you are using OpenStack.
 
 Note: this system currently is configured per cloud, per worker type.  A single
 launcher supporting multiple clouds and multiple worker types is not supported.
 You can, however, run multiple launchers to achieve the dersired result.
 
-Note: by default the ethernet device is assumed to be eth0 and this is used to
-find the IP address of the host. In some instances on AWS the default ethernet
-device is ens3 for example. You can override the eth0 by setting the
-CONSONANCE_ETH_DEV env variable before running this script.
+Note: by default we detect the IP address of the host using AWS instance metadata.
+This has not been tested with alternative clouds but AWS instance metadata should be available 
+in OpenStack https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
 
 For more information see:
 
@@ -152,30 +162,24 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
     read run_consonance_launcher
     # If the user would like to run consonance_launcher, then we have to get some config settings from them OR read them from an existing file
     if [ "${run_consonance_launcher^^}" = 'Y' ] ; then
-        #Read the config file if it exists and then show previous values...
+        #Read the config file if it exists and then show previous values (but do not override variables in this script)
         if [ -f consonance_launcher_config/compose.config ] ; then
-		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config)
+		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config | grep -v "CONSONANCE")
         fi
 
-        eth_dev=''
-        if [ ! -z $ETH_DEV ] ; then
-                read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). Previous value: \n' -i "$ETH_DEV" eth_dev
-            else
-                read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). \n' eth_dev
-        fi
-
-        user_cloud_env=''
-		while [[ -z "${user_cloud_env// /}" ]] ; do
-            if [ ! -z $CLOUD_ENV ] ; then
-                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". Previous value: \n' -i "$CLOUD_ENV" user_cloud_env
-            else
-                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". \n' user_cloud_env
-            fi
-            if [[ -z "${user_cloud_env// /}" || ( ${user_cloud_env} != 'AWS' && ${user_cloud_env} != 'OpenStack' && ${user_cloud_env} != 'Azure' ) ]] ; then
-                echo 'Cloud environment must be one of: "AWS", "OpenStack", "Azure".'
-                user_cloud_env=''
-            fi
-        done
+        user_cloud_env='AWS'
+# OpenStack support seems to be broken as of 2017 and OpenStack Mitaka
+#		while [[ -z "${user_cloud_env// /}" ]] ; do
+#            if [ ! -z $CLOUD_ENV ] ; then
+#                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". Previous value: \n' -i "$CLOUD_ENV" user_cloud_env
+#            else
+#                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". \n' user_cloud_env
+#            fi
+#            if [[ -z "${user_cloud_env// /}" || ( ${user_cloud_env} != 'AWS' && ${user_cloud_env} != 'OpenStack' && ${user_cloud_env} != 'Azure' ) ]] ; then
+#                echo 'Cloud environment must be one of: "AWS", "OpenStack", "Azure".'
+#                user_cloud_env=''
+#            fi
+#        done
 
         user_pem_path=''
         while [[ ! -f $user_pem_path || ! -e $user_pem_path || -z "${user_pem_path// /}" ]] ; do
@@ -218,7 +222,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 			ask_question "What is your AWS zone within the selected region (e.g. us-east-1c for the us-east-1 region)?" "$AWS_ZONE" "AWS zone" $aws_zone
 
 			aws_instance_type='aws_instance_type'
-			ask_question "What is your AWS instance type (e.g. c4.2xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
+			ask_question "What is your default AWS instance type (e.g. c4.2xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
 
 			aws_ami_image='aws_ami_image'
 			ask_question "What is your AWS image (e.g. AMI such as ami-6edd3078 for Ubuntu, we recommend the Ubuntu 16.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
@@ -377,8 +381,11 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
                 echo "Installing various apt packages"
         cat > consonance_launcher_config/compose.config <<CONFIG
 {
-"ETH_DEV":"${eth_dev}",
-"LAUNCHER_IP_ADDRESS":"`ifconfig ${eth_dev} | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`",
+"LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/local-ipv4`",
+"PUBLIC_LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/public-ipv4`",
+"CONSONANCE_BINARY_VERSION":"${CONSONANCE_BINARY_VERSION}",
+"CONSONANCE_HOST_BAG_VERSION":"${CONSONANCE_HOST_BAG_VERSION}",
+"CONSONANCE_DOCKSTORE_VERSION":"${CONSONANCE_DOCKSTORE_VERSION}",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "AWS_MAX_SPOT_PRICE":"${aws_max_spot_price}",
@@ -413,11 +420,35 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 CONFIG
     [[ -d "consonance_launcher_config" ]] || mkdir "consonance_launcher_config"
     # cp ~/.consonance/compose.config consonance_launcher_config/compose.config
-    # template out stuff
+    # template out stuff, grab template files for convenience if not running in a git repo
+    # note there should really be a better way of grabbing a directory, see https://github.com/dear-github/dear-github/issues/95
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_client.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_coordinator.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_provisioner.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_webservice.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/aws.config.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/bag_params.json.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/config.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/docker-compose.yml
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/example_tags.json
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_client.sh
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_coordinator.sh
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_provisioner.sh
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_webservice.sh
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/key.pem.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/ssh.py
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/web.yml.template
+    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/youxia_config.template
+
+    mustache consonance_launcher_config/compose.config Dockerfile_client.template > Dockerfile_client
+    mustache consonance_launcher_config/compose.config Dockerfile_coordinator.template > Dockerfile_coordinator
+    mustache consonance_launcher_config/compose.config Dockerfile_provisioner.template > Dockerfile_provisioner
+    mustache consonance_launcher_config/compose.config Dockerfile_webservice.template > Dockerfile_webservice
     mustache consonance_launcher_config/compose.config aws.config.template > aws.config
     mustache consonance_launcher_config/compose.config bag_params.json.template  > bag_params.json
     mustache consonance_launcher_config/compose.config config.template  > config
     mustache consonance_launcher_config/compose.config youxia_config.template  > youxia_config
+    mustache consonance_launcher_config/compose.config web.yml.template  > web.yml
     cat ${user_pem_path} > key.pem
 
     sudo docker-compose build

@@ -1,3 +1,6 @@
+launcherIPAddress: 127.0.0.1
+launcherPort: 8080
+
 template: Funky
 
 logging:

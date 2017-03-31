@@ -8,6 +8,7 @@ RUN apt-get update \
     python-software-properties \
     software-properties-common \
     telnet \
+    vim \
     && apt-get clean
 
 # grab oracle java (auto accept licence)
@@ -17,9 +18,9 @@ RUN add-apt-repository -y ppa:webupd8team/java \
     && apt-get install -y oracle-java8-installer
 
 # install Consonance services
-ENV consonance_version=2.0-alpha.10
+ENV consonance_version={{ CONSONANCE_BINARY_VERSION }}
 
-RUN wget --no-verbose https://www.dropbox.com/s/giy9ayxlvpoohiz/consonance-arch-2.0-alpha.11-SNAPSHOT.jar #https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar
+RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
 
 # install dockerize
 ENV DOCKERIZE_VERSION v0.2.0

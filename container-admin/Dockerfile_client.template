@@ -12,6 +12,7 @@ RUN apt-get update \
     sudo \
     less \
     telnet \
+    python-pip \
     postgresql-client \
     && apt-get clean
 
@@ -21,10 +22,14 @@ RUN add-apt-repository -y ppa:webupd8team/java \
     && echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections \
     && apt-get install -y oracle-java8-installer
 
-# install Consonance services
-ENV consonance_version=2.0-alpha.10
+# setup cwltool to support Dockstore
+RUN pip install setuptools==34.2.0
+RUN pip install cwl-runner cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
 
-RUN wget --no-verbose https://www.dropbox.com/s/giy9ayxlvpoohiz/consonance-arch-2.0-alpha.11-SNAPSHOT.jar #https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar 
+# install Consonance services
+ENV consonance_version={{ CONSONANCE_BINARY_VERSION }}
+
+RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
 
 RUN useradd -ms /bin/bash ubuntu
 # the web and Consonance config
@@ -52,8 +57,10 @@ RUN echo "postgres:5432:*:*:postgres" > /home/ubuntu/.pgpass && chmod 600 /home/
 
 # for youxia and the consonance command line on the main box
 RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance && mv consonance /home/ubuntu/bin && chmod a+x /home/ubuntu/bin/consonance
-RUN wget --no-verbose --no-check-certificate https://www.dropbox.com/s/32hrcqgose2fpzz/consonance-client-2.0-alpha.11-SNAPSHOT.jar && mv consonance-client-*.jar /home/ubuntu/.consonance/self-installs/consonance-client-${consonance_version}.jar
-#RUN wget --no-verbose --no-check-certificate http://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-client/${consonance_version}/consonance-client-${consonance_version}.jar && mv consonance-client-${consonance_version}.jar /home/ubuntu/.consonance/self-installs/
+RUN wget --no-verbose --no-check-certificate https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-client-${consonance_version}.jar && mv consonance-client-*.jar /home/ubuntu/.consonance/self-installs/consonance-client-${consonance_version}.jar
+RUN mkdir /home/ubuntu/.dockstore && printf "server-url: https://dockstore.org:8443\ntoken: dummy-token" > /home/ubuntu/.dockstore/config
+RUN mkdir /home/ubuntu/.dockstore/self-installs && wget --no-verbose --no-check-certificate https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/dockstore-client/{{ CONSONANCE_DOCKSTORE_VERSION }}/dockstore-client-{{ CONSONANCE_DOCKSTORE_VERSION }}.jar && mv dockstore-client-*.jar /home/ubuntu/.dockstore/self-installs/dockstore-client-{{ CONSONANCE_DOCKSTORE_VERSION }}.jar
+RUN wget --no-verbose https://github.com/ga4gh/dockstore/releases/download/{{ CONSONANCE_DOCKSTORE_VERSION }}/dockstore && mv dockstore /home/ubuntu/bin && chmod a+x /home/ubuntu/bin/dockstore
 
 # now get a sample CWL and test JSON
 RUN wget --no-verbose https://raw.githubusercontent.com/CancerCollaboratory/dockstore-tool-bamstats/1.25-6_1.0/Dockstore.cwl
