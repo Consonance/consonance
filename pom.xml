@@ -572,7 +572,7 @@
             <dependency>
                 <groupId>io.dockstore</groupId>
                 <artifactId>dockstore-launcher</artifactId>
-                <version>${dockstore.version}</version>
+                <version>1.2.6</version>
                 <exclusions>
                     <exclusion>
                         <groupId>io.dropwizard</groupId>
