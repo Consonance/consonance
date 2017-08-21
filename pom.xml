@@ -44,15 +44,26 @@
         <seqware.version>1.1.1</seqware.version>
         <dropwizard.version>1.0.2</dropwizard.version>
         <swagger.version>1.5.9</swagger.version>
+        <swagger-annotations-version>1.5.9</swagger-annotations-version>
         <aws.version>1.10.77</aws.version>
         <powermock.version>1.6.3</powermock.version>
         <assertj.version>3.4.1</assertj.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
         <jackson.version>2.7.8</jackson.version>
         <jersey.version>2.23.2</jersey.version>
+        <jersey-version>2.23.2</jersey-version>
         <hibernate.version>5.1.0.Final</hibernate.version>
         <dockstore.version>1.2.0-alpha.5</dockstore.version>
-        <cwlavro.version>1.0.7</cwlavro.version>
+        <cwlavro.version>2.0.0</cwlavro.version>
+        <junit-version>4.12</junit-version>
+        <logback.version>1.1.7</logback.version>
+        <aws.version>1.11.86</aws.version>
+        <powermock.version>1.6.5</powermock.version>
+        <okhttp.version>3.2.0</okhttp.version>
+        <slf4j.version>1.7.21</slf4j.version>
+        <maven-surefire.version>2.20</maven-surefire.version>
+        <maven-failsafe.version>2.19.1</maven-failsafe.version>
+        <httpcomponents.version>4.4.5</httpcomponents.version>
     </properties>
 
     <scm>
