@@ -19,8 +19,8 @@
 
 package io.consonance.arch.worker;
 
-import io.cwl.avro.CommandLineTool;
-import io.github.collaboratory.LauncherCWL;
+//import io.cwl.avro.CommandLineTool;
+//import io.github.collaboratory.LauncherCWL;
 import io.dockstore.client.cli.Client;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
