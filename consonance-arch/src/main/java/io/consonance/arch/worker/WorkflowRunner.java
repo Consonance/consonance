@@ -21,6 +21,7 @@ package io.consonance.arch.worker;
 
 import io.cwl.avro.CommandLineTool;
 import io.github.collaboratory.LauncherCWL;
+import io.dockstore.client.cli.Client;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -73,14 +74,14 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
 
     @Override
     public WorkflowResult call() throws IOException, ConfigurationException {
-        LOG.info("Executing cwlLauncher:");
+        LOG.info("Executing Dockstore CLI programmatically:");
         LOG.info("Image descriptor is: " + imageDescriptorPath);
         LOG.info("Runtime descriptor is: " + runtimeDescriptorPath);
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
 
         // TODO: wrap with try
-        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
+        //LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
 
         try {
             if (this.preworkDelay > 0) {
@@ -89,7 +90,15 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             }
             // this is a blocking call, but the HeartbeatThread appears to be a in a separate thread
             // TODO: this assumes consonance just takes CWL tool call requests
-            launcher.run(CommandLineTool.class);
+            //launcher.run(CommandLineTool.class);
+
+            // TODO: this needs to expose stderr/stdout!
+            // example Dockstore launch: dockstore workflow launch --entry briandoconnor/dockstore-workflow-md5sum/dockstore-wdl-workflow-md5sum:1.3.0 --json run.wdl_workflow.json
+            // using the main Dockstore CLI class rather than reaching into the Dockstore CLI API, should be more stable/maintainable
+            final String[] s = { "workflow", "launch", "--local-entry", imageDescriptorPath, "--json", runtimeDescriptorPath};
+            Client.main(s);
+
+            // FIXME: this needs to use the streams from the Dockstore CLI
             result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
             result.setWorkflowStdErr(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
             // exit code is artificial since the CWL runner actually runs more than one command
