@@ -67,6 +67,65 @@
         <mockito.version>1.10.19</mockito.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>artifacts.oicr.on.ca</id>
+            <name>artifacts.oicr.on.ca</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+        </repository>
+        <repository>
+            <id>seqware.sourceforge.net</id>
+            <name>SeqWare Maven Repository</name>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>seqwaremaven.oicr.on.ca</id>
+            <name>seqwaremaven.oicr.on.ca-releases</name>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
+        </repository>
+        <repository>
+            <id>apache-releases</id>
+            <name>Apache Releases repository</name>
+            <url>https://repository.apache.org/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>eclipse-egit-github</id>
+            <name>Eclipse egit github repository</name>
+            <url>https://repo.eclipse.org/content/repositories/egit-releases</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>jcenter</id>
+            <name>bintray</name>
+            <url>http://jcenter.bintray.com</url>
+        </repository>
+        <!-- broad -->
+        <repository>
+            <id>artifactory.broadinstitute.org</id>
+            <name>artifactory.broadinstitute.org</name>
+            <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>sagebionetworks</id>
+            <name>sagebionetworks-releases</name>
+            <url>http://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
+        </repository>
+    </repositories>
+
     <scm>
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
