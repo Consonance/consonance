@@ -25,7 +25,7 @@ The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run
 
  To avoid tests (probably a bad idea!):
 
-    mvn -Daven.test.skip=true clean install
+    mvn -DskipTests=true clean install
 
 ## Releasing
 
