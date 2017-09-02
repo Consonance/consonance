@@ -21,7 +21,7 @@ package io.consonance.arch.worker;
 
 //import io.cwl.avro.CommandLineTool;
 //import io.github.collaboratory.LauncherCWL;
-//import io.dockstore.client.cli.Client;
+import io.dockstore.client.cli.Client;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -96,7 +96,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             // example Dockstore launch: dockstore workflow launch --entry briandoconnor/dockstore-workflow-md5sum/dockstore-wdl-workflow-md5sum:1.3.0 --json run.wdl_workflow.json
             // using the main Dockstore CLI class rather than reaching into the Dockstore CLI API, should be more stable/maintainable
             final String[] s = { "workflow", "launch", "--local-entry", imageDescriptorPath, "--json", runtimeDescriptorPath};
-            //Client.main(s);
+            Client.main(s);
 
             // FIXME: this needs to use the streams from the Dockstore CLI
             result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
