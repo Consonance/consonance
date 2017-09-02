@@ -524,25 +524,42 @@
             <artifactId>jersey-client</artifactId>
             <version>${jersey-version}</version>
         </dependency>
-<dependency>
-                <groupId>io.dockstore</groupId>
-                <artifactId>dockstore-client</artifactId>
-                <version>${dockstore.version}</version>
-                <!--exclusions>
-                    <exclusion>
-                        <groupId>io.dropwizard</groupId>
-                        <artifactId>dropwizard-testing</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.broadinstitute</groupId>
-                        <artifactId>cromwell_2.11</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.broadinstitute</groupId>
-                        <artifactId>wdl4s_2.11</artifactId>
-                    </exclusion>
-                </exclusions-->
-            </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-launcher</artifactId>
+            <version>${dockstore.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.dropwizard</groupId>
+                    <artifactId>dropwizard-testing</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>swagger-java-client</artifactId>
+            <version>${dockstore.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-client</artifactId>
+            <version>${dockstore.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.dropwizard</groupId>
+                    <artifactId>dropwizard-testing</artifactId>
+                </exclusion>
+                <!-- ignore cromwell for now -->
+                <exclusion>
+                    <groupId>org.broadinstitute</groupId>
+                    <artifactId>cromwell_2.11</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.broadinstitute</groupId>
+                    <artifactId>wdl4s_2.11</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
