@@ -518,12 +518,11 @@
                 <groupId>io.dockstore</groupId>
                 <artifactId>dockstore-client</artifactId>
                 <version>${dockstore.version}</version>
-                <exclusions>
+                <!--exclusions>
                     <exclusion>
                         <groupId>io.dropwizard</groupId>
                         <artifactId>dropwizard-testing</artifactId>
                     </exclusion>
-                    <!-- ignore cromwell for now -->
                     <exclusion>
                         <groupId>org.broadinstitute</groupId>
                         <artifactId>cromwell_2.11</artifactId>
@@ -532,7 +531,7 @@
                         <groupId>org.broadinstitute</groupId>
                         <artifactId>wdl4s_2.11</artifactId>
                     </exclusion>
-                </exclusions>
+                </exclusions-->
             </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
