@@ -525,6 +525,11 @@
             <version>${jersey-version}</version>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
             <version>${dockstore.version}</version>
