@@ -21,11 +21,11 @@ package io.consonance.arch.worker;
 
 //import io.cwl.avro.CommandLineTool;
 //import io.github.collaboratory.LauncherCWL;
-import io.dockstore.client.cli.Client;
+//import io.dockstore.client.cli.Client;
 import io.dockstore.common.Utilities;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+//import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
