@@ -22,12 +22,15 @@ package io.consonance.arch.worker;
 //import io.cwl.avro.CommandLineTool;
 //import io.github.collaboratory.LauncherCWL;
 import io.dockstore.client.cli.Client;
+import io.dockstore.common.Utilities;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 /**
@@ -97,10 +100,15 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
             // using the main Dockstore CLI class rather than reaching into the Dockstore CLI API, should be more stable/maintainable
             final String[] s = { "workflow", "launch", "--local-entry", imageDescriptorPath, "--json", runtimeDescriptorPath};
             try {
-                Client.main(s);
-                //LOG.error("command: dockstore "+s.toString());
-                // LEFT OFF HERE: try switching to direct bash call, I cannot figure out the problem with
+                // FIXME: for some reason when I call this directly I get a:
                 // java.lang.RuntimeException: java.lang.ClassNotFoundException: com.sun.ws.rs.ext.RuntimeDelegateImpl
+                // but that seems to not be present in the Dockstore client jar either... or the Jersey jars.  Not sure where this is coming from
+                //Client.main(s);
+                LOG.error("command: dockstore "+ Arrays.toString(s));
+                Utilities.executeCommand("dockstore " + Arrays.toString(s));
+                // LEFT OFF HERE: try switching to direct bash call, I cannot figure out the problem with
+
+
             } catch (NoClassDefFoundError e) {
                 e.printStackTrace();
             }
