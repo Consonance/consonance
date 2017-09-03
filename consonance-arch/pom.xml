@@ -510,11 +510,11 @@
             <artifactId>commons-pool2</artifactId>
             <scope>compile</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
         </dependency>
-        <!--dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-common</artifactId>
             <version>${jersey-version}</version>
