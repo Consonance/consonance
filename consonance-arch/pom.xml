@@ -514,7 +514,7 @@
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-common</artifactId>
             <version>${jersey-version}</version>
@@ -528,8 +528,8 @@
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
             <version>${jersey.version}</version>
-        </dependency>
-        
+        </dependency-->
+
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
