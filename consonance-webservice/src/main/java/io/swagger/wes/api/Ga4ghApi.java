@@ -1,22 +1,22 @@
-package io.swagger.api;
+package io.swagger.wes.api;
 
-import io.swagger.model.*;
-import io.swagger.api.Ga4ghApiService;
-import io.swagger.api.factories.Ga4ghApiServiceFactory;
+import io.swagger.wes.model.*;
+import io.swagger.wes.api.Ga4ghApiService;
+import io.swagger.wes.api.factories.Ga4ghApiServiceFactory;
 
 import io.swagger.annotations.ApiParam;
 import io.swagger.jaxrs.*;
 
-import io.swagger.model.Ga4ghWesServiceInfo;
-import io.swagger.model.Ga4ghWesWorkflowListResponse;
-import io.swagger.model.Ga4ghWesWorkflowLog;
-import io.swagger.model.Ga4ghWesWorkflowRequest;
-import io.swagger.model.Ga4ghWesWorkflowRunId;
-import io.swagger.model.Ga4ghWesWorkflowStatus;
+import io.swagger.wes.model.Ga4ghWesServiceInfo;
+import io.swagger.wes.model.Ga4ghWesWorkflowListResponse;
+import io.swagger.wes.model.Ga4ghWesWorkflowLog;
+import io.swagger.wes.model.Ga4ghWesWorkflowRequest;
+import io.swagger.wes.model.Ga4ghWesWorkflowRunId;
+import io.swagger.wes.model.Ga4ghWesWorkflowStatus;
 
 import java.util.Map;
 import java.util.List;
-import io.swagger.api.NotFoundException;
+import io.swagger.wes.api.NotFoundException;
 
 import java.io.InputStream;
 
@@ -71,6 +71,7 @@ public class Ga4ghApi  {
     throws NotFoundException {
         return delegate.cancelJob(workflowId,securityContext);
     }
+
     @GET
     @Path("/wes/v1/service-info")
     @Consumes({ "application/json" })
@@ -82,6 +83,7 @@ public class Ga4ghApi  {
     throws NotFoundException {
         return delegate.getServiceInfo(securityContext);
     }
+
     @GET
     @Path("/wes/v1/workflows/{workflow_id}")
     @Consumes({ "application/json" })
@@ -94,6 +96,7 @@ public class Ga4ghApi  {
     throws NotFoundException {
         return delegate.getWorkflowLog(workflowId,securityContext);
     }
+
     @GET
     @Path("/wes/v1/workflows/{workflow_id}/status")
     @Consumes({ "application/json" })
@@ -106,6 +109,7 @@ public class Ga4ghApi  {
     throws NotFoundException {
         return delegate.getWorkflowStatus(workflowId,securityContext);
     }
+
     @GET
     @Path("/wes/v1/workflows")
     @Consumes({ "application/json" })
@@ -120,6 +124,7 @@ public class Ga4ghApi  {
     throws NotFoundException {
         return delegate.listWorkflows(pageSize,pageToken,keyValueSearch,securityContext);
     }
+
     @POST
     @Path("/wes/v1/workflows")
     @Consumes({ "application/json" })
