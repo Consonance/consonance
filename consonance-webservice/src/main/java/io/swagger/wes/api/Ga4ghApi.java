@@ -33,7 +33,7 @@ import javax.validation.constraints.*;
 @Path("/ga4gh")
 @Consumes({ "application/json" })
 @Produces({ "application/json" })
-@io.swagger.annotations.Api(description = "the ga4gh API")
+@io.swagger.annotations.Api(description = "the ga4gh WES API")
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2017-09-15T17:06:31.319-07:00")
 public class Ga4ghApi  {
    private final Ga4ghApiService delegate;
