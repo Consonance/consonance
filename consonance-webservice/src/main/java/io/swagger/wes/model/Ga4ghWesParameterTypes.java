@@ -11,7 +11,7 @@
  */
 
 
-package io.swagger.model;
+package io.swagger.wes.model;
 
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonValue;

@@ -1,4 +1,4 @@
-package io.swagger.api;
+package io.swagger.wes.api;
 
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;

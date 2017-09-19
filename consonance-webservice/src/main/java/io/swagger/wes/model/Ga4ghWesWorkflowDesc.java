@@ -11,14 +11,14 @@
  */
 
 
-package io.swagger.model;
+package io.swagger.wes.model;
 
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.model.Ga4ghWesState;
+import io.swagger.wes.model.Ga4ghWesState;
 import javax.validation.constraints.*;
 
 /**

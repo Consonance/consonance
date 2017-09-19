@@ -1,4 +1,4 @@
-package io.swagger.api;
+package io.swagger.wes.api;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

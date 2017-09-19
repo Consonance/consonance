@@ -13,7 +13,7 @@ import io.swagger.wes.model.Ga4ghWesWorkflowRunId;
 import io.swagger.wes.model.Ga4ghWesWorkflowStatus;
 
 import java.util.List;
-import io.swagger.api.NotFoundException;
+import io.swagger.wes.api.NotFoundException;
 
 import java.io.InputStream;
 
@@ -33,9 +33,6 @@ import org.slf4j.LoggerFactory;
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2017-09-15T17:06:31.319-07:00")
 public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
-	//TODO Verify this function exists
-	private final Ga4ghApiService delegate = Ga4ghApiService.getGa4ghApi();
-
     private static final Logger LOG = LoggerFactory.getLogger(Ga4ghApiServiceImpl.class);
 
     private static ConsonanceWebserviceConfiguration config;
@@ -53,37 +50,37 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
     @Override
     public Response cancelJob(String workflowId, ConsonanceUser user) throws NotFoundException {
         // do some magic!
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.cancelJob()")
+        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.cancelJob()");
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
     @Override
     public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
         // do some magic!
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getServiceInfo()")
+        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getServiceInfo()");
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
     @Override
     public Response getWorkflowLog(String workflowId, ConsonanceUser user) throws NotFoundException {
         // do some magic!
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowLog()")
+        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowLog()");
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
     @Override
     public Response getWorkflowStatus(String workflowId, ConsonanceUser user) throws NotFoundException {
         // do some magic!
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowStatus()")
+        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowStatus()");
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
     @Override
     public Response listWorkflows(Long pageSize, String pageToken, String keyValueSearch, ConsonanceUser user) throws NotFoundException {
         // do some magic!
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.listWorkflows()")
+        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.listWorkflows()");
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
     @Override
     public Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException {
         // do some magic!
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.runWorkflow()")
+        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.runWorkflow()");
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
 }

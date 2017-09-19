@@ -1,4 +1,4 @@
-package io.swagger.api;
+package io.swagger.wes.api;
 
 import javax.xml.bind.annotation.XmlTransient;
 

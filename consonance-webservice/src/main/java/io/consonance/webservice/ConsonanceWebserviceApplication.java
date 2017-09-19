@@ -55,8 +55,7 @@ import io.swagger.workflow.api.impl.JobsApiServiceImpl;
 import io.swagger.workflow.api.impl.RunApiServiceImpl;
 
 import io.swagger.wes.api.impl.Ga4ghApiServiceImpl;
-import io.swagger.wes.api.impl.Ga4ghApiService;
-import io.swagger.wes.api.impl.Ga4ghApi;
+import io.swagger.wes.api.Ga4ghApi;
 
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;

@@ -1,4 +1,4 @@
-package io.swagger.api;
+package io.swagger.wes.api;
 
 import io.swagger.jaxrs.config.SwaggerContextService;
 import io.swagger.models.*;

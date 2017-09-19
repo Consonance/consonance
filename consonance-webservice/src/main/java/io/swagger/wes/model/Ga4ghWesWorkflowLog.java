@@ -11,17 +11,17 @@
  */
 
 
-package io.swagger.model;
+package io.swagger.wes.model;
 
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.model.Ga4ghWesLog;
-import io.swagger.model.Ga4ghWesParameter;
-import io.swagger.model.Ga4ghWesState;
-import io.swagger.model.Ga4ghWesWorkflowRequest;
+import io.swagger.wes.model.Ga4ghWesLog;
+import io.swagger.wes.model.Ga4ghWesParameter;
+import io.swagger.wes.model.Ga4ghWesState;
+import io.swagger.wes.model.Ga4ghWesWorkflowRequest;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.*;
