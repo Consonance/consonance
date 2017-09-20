@@ -22,6 +22,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.resources.OrderResource;
+import io.consonance.arch.beans.Job;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -49,38 +50,58 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
     @Override
     public Response cancelJob(String workflowId, ConsonanceUser user) throws NotFoundException {
-        // do some magic!
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.cancelJob()");
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+        LOG.info("Cancelling job " + workflowId);
+
+        final Job workflowRun = orderResource.getWorkflowRun(user, workflowId);
+        // no-op, Consonance doesn't really support cancellation
+        Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
+        id.setValue(workflowRun.getUuid());
+        return Response.ok().entity(workflowId)).build();
     }
+
     @Override
     public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
-        // do some magic!
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getServiceInfo()");
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+
+        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "Consonance WES API")).build();
     }
+
     @Override
     public Response getWorkflowLog(String workflowId, ConsonanceUser user) throws NotFoundException {
-        // do some magic!
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowLog()");
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+        LOG.info("Getting workflow log for " + workflowId);
+
+        return Response.ok().entity(workflowId)).build();
     }
+
     @Override
     public Response getWorkflowStatus(String workflowId, ConsonanceUser user) throws NotFoundException {
-        // do some magic!
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowStatus()");
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+        LOG.info("Getting workflow status for " + workflowId);
+
+        return Response.ok().entity(workflowId)).build();
     }
+
     @Override
     public Response listWorkflows(Long pageSize, String pageToken, String keyValueSearch, ConsonanceUser user) throws NotFoundException {
-        // do some magic!
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.listWorkflows()");
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+        LOG.info("Listing workflows with page size " + pageSize + ", pageToken=" + pageToken + ", and keyValueSearch=" + keyValueSearch);
+
+        Ga4ghWesWorkflowListResponse list = new Ga4ghWesWorkflowListResponse();
+        return Response.ok().entity(list).build();
     }
+
     @Override
     public Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException {
-        // do some magic!
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.runWorkflow()");
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+        LOG.info("Running workflow request " + body.toString());
+
+        Job job = new Job();
+        job.setEndUser(user.getName());
+        orderResource.addOrder(user, job);
+
+        Ga4ghWesWorkflowRequest request = new Ga4ghWesWorkflowRequest();
+        return Response.ok().entity(request)).build();
     }
 }

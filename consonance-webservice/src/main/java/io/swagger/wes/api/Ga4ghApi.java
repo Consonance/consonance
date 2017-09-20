@@ -47,8 +47,7 @@ public class Ga4ghApi  {
     @io.swagger.annotations.ApiOperation(value = "Cancel a running workflow", notes = "", response = Ga4ghWesWorkflowRunId.class, tags={ "WorkflowExecutionService", })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowRunId.class) })
-    public Response cancelJob(
-        @ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId, @Auth ConsonanceUser user)
+    public Response cancelJob(@ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId, @Auth ConsonanceUser user)
     throws NotFoundException {
         return delegate.cancelJob(workflowId, user);
     }
@@ -72,8 +71,7 @@ public class Ga4ghApi  {
     @io.swagger.annotations.ApiOperation(value = "Get detailed info about a running workflow", notes = "", response = Ga4ghWesWorkflowLog.class, tags={ "WorkflowExecutionService", })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowLog.class) })
-    public Response getWorkflowLog(@ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId
-,@Auth ConsonanceUser user)
+    public Response getWorkflowLog(@ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId, @Auth ConsonanceUser user)
     throws NotFoundException {
         return delegate.getWorkflowLog(workflowId, user);
     }
@@ -85,8 +83,7 @@ public class Ga4ghApi  {
     @io.swagger.annotations.ApiOperation(value = "Get quick status info about a running workflow", notes = "", response = Ga4ghWesWorkflowStatus.class, tags={ "WorkflowExecutionService", })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowStatus.class) })
-    public Response getWorkflowStatus(@ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId
-,@Auth ConsonanceUser user)
+    public Response getWorkflowStatus(@ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId, @Auth ConsonanceUser user)
     throws NotFoundException {
         return delegate.getWorkflowStatus(workflowId, user);
     }
@@ -113,8 +110,7 @@ public class Ga4ghApi  {
     @io.swagger.annotations.ApiOperation(value = "Run a workflow, this endpoint will allow you to create a new workflow request and retrieve its tracking ID to monitor its progress.  An important assumption in this endpoint is that the workflow_params JSON will include parameterizations along with input and output files.  The latter two may be on S3, Google object storage, local filesystems, etc.  This specification makes no distinction.  However, it is assumed that the submitter is using URLs that this system both understands and can access. For Amazon S3, this could be accomplished by given the credentials associated with a WES service access to a particular bucket.  The details are important for a production system and user on-boarding but outside the scope of this spec.", notes = "", response = Ga4ghWesWorkflowRunId.class, tags={ "WorkflowExecutionService", })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowRunId.class) })
-    public Response runWorkflow(@ApiParam(value = "" ,required=true) Ga4ghWesWorkflowRequest body
-,@Auth ConsonanceUser user)
+    public Response runWorkflow(@ApiParam(value = "", required=true) Ga4ghWesWorkflowRequest body, @Auth ConsonanceUser user)
     throws NotFoundException {
         return delegate.runWorkflow(body, user);
     }
