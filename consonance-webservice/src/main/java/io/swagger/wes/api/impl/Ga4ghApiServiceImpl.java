@@ -55,6 +55,14 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
         final Job workflowRun = orderResource.getWorkflowRun(user, workflowId);
         // no-op, Consonance doesn't really support cancellation
+        Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
+        id.setValue(workflowRun.getUuid());
+        return Response.ok().entity(workflowId)).build();
+    }
+
+    @Override
+    public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
+        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getServiceInfo()");
         String serviceInfo = '{
     "workflow_type_versions": {
         "CWL": ["v1.0"]
@@ -65,16 +73,8 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
     "system_state_counts": {},
     "key_values": {}
 }'
-        Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
-        id.setValue(workflowRun.getUuid());
+
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, serviceInfo).build();
-    }
-
-    @Override
-    public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getServiceInfo()");
-
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "Consonance WES API")).build();
     }
 
     @Override
@@ -111,7 +111,8 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         job.setEndUser(user.getName());
         orderResource.addOrder(user, job);
 
+        Ga4ghWesWorkflowRunId runID = new Ga4ghWesWorkflowRunId();
         Ga4ghWesWorkflowRequest request = new Ga4ghWesWorkflowRequest();
-        return Response.ok().entity(request)).build();
+        return Response.ok().entity(request).build();
     }
 }
