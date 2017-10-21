@@ -55,9 +55,19 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
         final Job workflowRun = orderResource.getWorkflowRun(user, workflowId);
         // no-op, Consonance doesn't really support cancellation
+        String serviceInfo = '{
+    "workflow_type_versions": {
+        "CWL": ["v1.0"]
+    },
+    "supported_wes_versions": "0.1.0",
+    "supported_filesystem_protocols": ["file"],
+    "engine_versions": "cwl-runner",
+    "system_state_counts": {},
+    "key_values": {}
+}'
         Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
         id.setValue(workflowRun.getUuid());
-        return Response.ok().entity(workflowId)).build();
+        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, serviceInfo).build();
     }
 
     @Override
