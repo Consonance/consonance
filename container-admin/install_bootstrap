@@ -4,49 +4,43 @@
 # Hacked by Denis Yuen
 # Hacked by Brian O'Connor <briandoconnor@gmail.com>
 
+# TODO:
+# * we need a mechanism to shutdown since this script launches services in daemon mode
+
 set -e
+CONSONANCE_LAUNCHER_VERSION=feature/consonance_cleanup
 
-# When changing these versions, you will probably need to delete all files in the working directory
-# except for the consonance_launcher_config directory in order to get a clean new copy of
-# the Docker compose templates
-
-# version of consonance code used for this script
-CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
-# version of consonance jar files used
-CONSONANCE_BINARY_VERSION=2.0.0-alpha.15
-# version of container host bag (an ansible script) used to setup workers
-CONSONANCE_HOST_BAG_VERSION=2.0.0-alpha.2
-# version of Dockstore CLI installed in client container
-CONSONANCE_DOCKSTORE_VERSION=1.1.5
-
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root" 1>&2
+    exit 1
+fi
 
 cat <<MSG
-CONSONANCE INSTALLATION BOOTSTRAPPER
+UCSC CLOUD COMMONS INSTALLATION BOOTSTRAPPER
 -----------------------------------------------------------------------------
-This tool will setup a "launcher" host which has all of the infrastructure we
-use to run Consonance.  This launcher host can then launch one or more worker
-VMs to run generic tools and workflows from Dockstore (http://dockstore.org).
+This tool will setup a single host which has all of the infrastructure we
+use to run the UCSC Cloud Commons reference implemenation used by the
+UCSC Genomics Institute.  See https://github.com/BD2KGenomics/dcc-ops
 
 This system requires the following:
-* Docker support in your Linux distribution (Ubuntu 16.04 is officially supported by the Consonance Launcher).
+* Docker support in your Linux distribution (Ubuntu 16.04 is officially supported).
 * AWS credentials, if you are using Amazon AWS.
 
-Note: this system currently is configured per cloud, per worker type.  A single
-launcher supporting multiple clouds and multiple worker types is not supported.
-You can, however, run multiple launchers to achieve the dersired result.
-
-Note: by default we detect the IP address of the host using AWS instance metadata.
-This has not been tested with alternative clouds but AWS instance metadata should be available 
-in OpenStack https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
+Note: by default the ethernet device is assumed to be eth0 and this is used to
+find the IP address of the host. In some instances on AWS the default ethernet
+device is ens3 for example. You can override the eth0 by setting the
+ETH_DEV env variable before running this script.
 
 For more information see:
 
-* the main GitHub page: https://github.com/Consonance/consonance
-* the project wiki: https://github.com/Consonance/consonance/wiki
-* the Bootstrapper docs: https://github.com/Consonance/consonance/tree/develop/container-admin
+* the main GitHub page: https://github.com/BD2KGenomics/dcc-ops
+* the UCSC Genomics Institute - Analysis Core: http://ucsc-cgl.org
 
 MSG
 
+function generate_password {
+    tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1
+}
 
 # Ask the user a question and save the answer.
 # They MUST give an answer, they cannot leave their answer blank. In the future, that could be parameterized...
@@ -56,14 +50,14 @@ MSG
 # $4 - reference to the user's answer.
 function ask_question()
 {
-	question_str=$1
-	prev_val=$2
-	val_name=$3
-	answer=''
+  question_str=$1
+  prev_val=$2
+  val_name=$3
+  answer=''
 
     while [[ -z ${answer// /} ]] ; do
         if [[ -n $prev_val ]] ; then
-			read -ep "${question_str} Previous value: "$'\n' -i "$prev_val" answer
+      read -ep "${question_str} Previous value: "$'\n' -i "$prev_val" answer
         else
             read -ep "$question_str"$'\n' answer
         fi
@@ -72,320 +66,333 @@ function ask_question()
         fi
     done
     # Set the user's value in the reference. See here: http://stackoverflow.com/a/14852461/192801 to get an idea of how this works.
-	eval "${!4}=\"$answer\""
+  eval "${!4}=\"$answer\""
 }
 
-user_consonance_version=latest
-#FYI: The weird "^^" is to make the user input into uppercase so that if they enter "y" the installer will still run.
-install_consonance_launcher=''
-while [[ "${install_consonance_launcher^^}" != 'Y' &&  "${install_consonance_launcher^^}" != 'N' ]] ; do
-	echo "DO YOU WISH TO CONTINUE [Y/N]:"
-	read install_consonance_launcher
-	if [ "${install_consonance_launcher^^}" = 'Y' ] ; then
-		user_install_docker=''
-		set +e
-		DOCKER_PATH="$(which docker)"
-		set -e
-		if [ -z "$DOCKER_PATH" ] ; then
-			user_install_docker='Y'
-		else
-			while [[ "${user_install_docker^^}" != 'Y' &&  "${user_install_docker^^}" != 'N' ]] ; do
-				echo "It looks like docker may already be installed. Would you like to run this step anyway, which may attempt to upgrade docker? [Y/N]"
-				read user_install_docker
-			done
-		fi
-                echo "Installing various apt packages"
-                # need to install regardless
-		set +e
-		sudo apt-get install wget curl ruby-mustache=1.0.2-1 jq git --yes &> install_wget_curl.log
-		install_wget_result=$?
-		set -e
+# RUN BASIC INSTALLERS
+# FYI: The weird "^^" is to make the user input into uppercase so that if they enter "y" the installer will still run.
+install_commons_launcher=''
+while [[ "${install_commons_launcher^^}" != 'Y' &&  "${install_commons_launcher^^}" != 'N' ]] ; do
+  echo "DO YOU WISH TO CONTINUE [Y/N]:"
+  read install_commons_launcher
+  if [ "${install_commons_launcher^^}" = 'Y' ] ; then
+    user_install_docker=''
+    set +e
+    DOCKER_PATH="$(which docker)"
+    set -e
+    if [ -z "$DOCKER_PATH" ] ; then
+      user_install_docker='Y'
+    else
+      while [[ "${user_install_docker^^}" != 'Y' &&  "${user_install_docker^^}" != 'N' ]] ; do
+        echo "It looks like docker may already be installed. Would you like to run this step anyway, which may attempt to upgrade docker? [Y/N]"
+        read user_install_docker
+      done
+    fi
 
-		if [ $install_wget_result -ne  0 ] ; then
-			echo "It looks like there may have been a problem installing or updated wget and curl:"
-			cat install_wget_curl.log
-			exit 1
-		fi
-		if [ "${user_install_docker^^}" = 'Y' ] ; then
-			# Remove eXecute permission from /etc/grub.d/30_os-prober because sometimes the docker installer will hang when this hangs. This has happened in OpenStack
-			# and could happen elsewhere.
-			if [ -f /etc/grub.d/30_os-prober ] ; then
-				sudo chmod a-x /etc/grub.d/30_os-prober
-			fi
+    echo "Installing various apt packages"
+    # need to install regardless
+    set +e
+    sudo apt-get -y update
+    sudo apt-get install wget curl ruby-mustache=1.0.2-1 jq git --yes &> install_wget_curl.log
+    install_wget_result=$?
+    set -e
 
-			echo "Installing docker..."
+    if [ $install_wget_result -ne  0 ] ; then
+      echo "It looks like there may have been a problem installing or updated wget and curl:"
+      cat install_wget_curl.log
+      exit 1
+    fi
 
+    if [ "${user_install_docker^^}" = 'Y' ] ; then
+      # Remove eXecute permission from /etc/grub.d/30_os-prober because sometimes the docker installer will hang when this hangs. This has happened in OpenStack
+      # and could happen elsewhere.
+      if [ -f /etc/grub.d/30_os-prober ] ; then
+        sudo chmod a-x /etc/grub.d/30_os-prober
+      fi
 
-			set +e
-			curl -sSL https://get.docker.com/ | sh &> install_docker.log
-			install_docker_result=$?
-			set -e
+      echo "Installing docker..."
 
-			if [ $install_docker_result -ne  0 ] ; then
-				echo "It looks like there may have been a problem installing docker:"
-				cat install_wget_curl.log
-				exit 1
-			fi
+      set +e
+      curl -sSL https://get.docker.com/ | sh &> install_docker.log
+      install_docker_result=$?
+      set -e
 
-			set +e
-			sudo wget https://github.com/docker/compose/releases/download/1.8.1/run.sh -O /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose  &> install_compose.log
-			install_compose_result=$?
-			set -e
+      if [ $install_docker_result -ne  0 ] ; then
+        echo "It looks like there may have been a problem installing docker:"
+        cat install_wget_curl.log
+        exit 1
+      fi
 
-			if [ $install_compose_result -ne  0 ] ; then
-				echo "It looks like there may have been a problem installing docker compose:"
-				cat install_compose.log
-				exit 1
-			fi
+      set +e
+      sudo wget https://github.com/docker/compose/releases/download/1.8.1/run.sh -O /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose  &> install_compose.log
+      install_compose_result=$?
+      set -e
 
+      if [ $install_compose_result -ne  0 ] ; then
+        echo "It looks like there may have been a problem installing docker compose:"
+        cat install_compose.log
+        exit 1
+      fi
 
+      echo "Done installing docker!"
+      DOCKER_PATH="$(which docker)"
+    else
+      echo "Skipping docker installation..."
+    fi
 
-			echo "Done installing docker!"
-			DOCKER_PATH="$(which docker)"
-		else
-			echo "Skipping docker installation..."
-		fi
-
-		if [ -z "$DOCKER_PATH" ] ; then
-			echo "You need to install docker before pulling docker images. Please ensure that docker is properly installed and then re-run this script with the command \"bash install_bootstrap\""
-			exit 1
-		fi
-	elif [ "${install_consonance_launcher^^}" = 'N' ] ; then
-		echo "You are exiting the installer now, but you can always run it again when you are ready."
-		exit 0
-	fi
+    if [ -z "$DOCKER_PATH" ] ; then
+      echo "You need to install docker before pulling docker images. Please ensure that docker is properly installed and then re-run this script with the command \"bash install_bootstrap\""
+      exit 1
+    fi
+  elif [ "${install_commons_launcher^^}" = 'N' ] ; then
+    echo "You are exiting the installer now, but you can always run it again when you are ready."
+    exit 0
+  fi
 done
 
+# CORE COMMONS: initial steps
+if [[ $(sudo docker network ls | grep core_public | wc -l) = "0" ]]; then
+    echo "creating core_public docker network"
+    sudo docker network create core_public
+else
+    echo "core_public docker network already exists"
+fi
+
+# CORE COMMONS: setup elastic search network
+if [[ $(sudo docker network ls | grep esnet | wc -l) = "0" ]]; then
+    echo "creating esnet docker network"
+    sudo docker network create esnet
+else
+    echo "esnet docker network already exists"
+fi
+
+#add the command to
+#start the UCSC Computational Genomics Platform (CGP) container that sets up the
+#Nginx config template with the uuids for each of the containers in the CGP
+#at boot time
+echo "Attempting to add docker start core-config-gen to rc.local"
+sudo ./put_core_start_cmd_in_rc.sh
+
+# RUN THE CONSONANCE INSTALLER
 run_consonance_launcher=''
 while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}" != 'N' ]] ; do
-    echo "Would you like to run the consonance_launcher now? [Y/N]"
-    read run_consonance_launcher
-    # If the user would like to run consonance_launcher, then we have to get some config settings from them OR read them from an existing file
-    if [ "${run_consonance_launcher^^}" = 'Y' ] ; then
-        #Read the config file if it exists and then show previous values (but do not override variables in this script)
-        if [ -f consonance_launcher_config/compose.config ] ; then
-		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config | grep -v "CONSONANCE")
-        fi
+  echo "Would you like to run the Consonance installer now? [Y/N]"
+  read run_consonance_launcher
+  # If the user would like to run consonance_launcher, then we have to get some config settings from them OR read them from an existing file
+  if [ "${run_consonance_launcher^^}" = 'Y' ] ; then
+      #Read the config file if it exists and then show previous values...
+      if [ -f commons_launcher_config/consonance.config ] ; then
+        source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" commons_launcher_config/consonance.config)
+      fi
 
-        user_cloud_env='AWS'
-# OpenStack support seems to be broken as of 2017 and OpenStack Mitaka
-#		while [[ -z "${user_cloud_env// /}" ]] ; do
-#            if [ ! -z $CLOUD_ENV ] ; then
-#                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". Previous value: \n' -i "$CLOUD_ENV" user_cloud_env
-#            else
-#                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". \n' user_cloud_env
-#            fi
-#            if [[ -z "${user_cloud_env// /}" || ( ${user_cloud_env} != 'AWS' && ${user_cloud_env} != 'OpenStack' && ${user_cloud_env} != 'Azure' ) ]] ; then
-#                echo 'Cloud environment must be one of: "AWS", "OpenStack", "Azure".'
-#                user_cloud_env=''
-#            fi
-#        done
+      eth_dev=''
+      if [ ! -z $ETH_DEV ] ; then
+              read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). Previous value: \n' -i "$ETH_DEV" eth_dev
+          else
+              read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). \n' eth_dev
+      fi
 
-        user_pem_path=''
-        while [[ ! -f $user_pem_path || ! -e $user_pem_path || -z "${user_pem_path// /}" ]] ; do
-            if [ ! -z $PEM_PATH ] ; then
-                read -ep $'What is the path to the pem key file you will use to authenticate in this environment? Previous value: \n' -i "$PEM_PATH" user_pem_path
-                user_pem_path="${user_pem_path/#\~/$HOME}"
-            else
-                read -ep $'What is the path to the pem key file you will use to authenticate in this environment?\n' user_pem_path
-                user_pem_path="${user_pem_path/#\~/$HOME}"
-            fi
-            if [[ ! -f $user_pem_path || ! -e $user_pem_path ]] ; then
-                echo "The path you pass for the key file must be valid. Please ensure that \"$user_pem_path\" is a valid path."
-            fi
-        done
+      user_cloud_env=''
+      while [[ -z "${user_cloud_env// /}" ]] ; do
+          if [ ! -z $CLOUD_ENV ] ; then
+              read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". Previous value: \n' -i "$CLOUD_ENV" user_cloud_env
+          else
+              read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". \n' user_cloud_env
+          fi
+          if [[ -z "${user_cloud_env// /}" || ( ${user_cloud_env} != 'AWS' && ${user_cloud_env} != 'OpenStack' && ${user_cloud_env} != 'Azure' ) ]] ; then
+              echo 'Cloud environment must be one of: "AWS", "OpenStack", "Azure".'
+              user_cloud_env=''
+          fi
+      done
 
-		user_key_name='user_key_name'
-		ask_question "What is the name of this key?" "$KEY_NAME" "Key name" $user_key_name
+      user_pem_path=''
+      while [[ ! -f $user_pem_path || ! -e $user_pem_path || -z "${user_pem_path// /}" ]] ; do
+          if [ ! -z $PEM_PATH ] ; then
+              read -ep $'What is the path to the pem key file you will use to authenticate in this environment? Previous value: \n' -i "$PEM_PATH" user_pem_path
+              user_pem_path="${user_pem_path/#\~/$HOME}"
+          else
+              read -ep $'What is the path to the pem key file you will use to authenticate in this environment?\n' user_pem_path
+              user_pem_path="${user_pem_path/#\~/$HOME}"
+          fi
+          if [[ ! -f $user_pem_path || ! -e $user_pem_path ]] ; then
+              echo "The path you pass for the key file must be valid. Please ensure that \"$user_pem_path\" is a valid path."
+          fi
+      done
 
-        if [ $user_cloud_env == 'AWS' ] ; then
-            ############################
-            # AWS questions
-            ############################
+      user_key_name='user_key_name'
+      ask_question "What is the name of this key?" "$KEY_NAME" "Key name" $user_key_name
 
-			user_aws_key='user_aws_key'
-			ask_question "What is your AWS Key?" "$AWS_ACCESS_KEY_ID" "AWS Key name" $user_aws_key
+      if [ $user_cloud_env == 'AWS' ] ; then
+        ############################
+        # AWS questions
+        ############################
 
-			user_aws_secret_key='user_aws_secret_key'
-			ask_question "What is your AWS Secret Key?" "$AWS_SECRET_ACCESS_KEY" "AWS Secret Key name" $user_aws_secret_key
+        user_aws_key='user_aws_key'
+        ask_question "What is your AWS Key?" "$AWS_ACCESS_KEY_ID" "AWS Key name" $user_aws_key
 
-			user_sec_grp='user_sec_grp'
-			ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
+        user_aws_secret_key='user_aws_secret_key'
+        ask_question "What is your AWS Secret Key?" "$AWS_SECRET_ACCESS_KEY" "AWS Secret Key name" $user_aws_secret_key
 
-			aws_max_spot_price='aws_max_spot_price'
-			ask_question "What is your AWS max spot price?" "$AWS_MAX_SPOT_PRICE" "Max spot price" $aws_max_spot_price
+        user_sec_grp='user_sec_grp'
+        ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
 
-			aws_region='aws_region'
-			ask_question "What is your AWS region (e.g. us-east-1 for Virginia)?" "$AWS_REGION" "AWS region" $aws_region
+        aws_max_spot_price='aws_max_spot_price'
+        ask_question "What is your AWS max spot price?" "$AWS_MAX_SPOT_PRICE" "Max spot price" $aws_max_spot_price
 
-			aws_zone='aws_zone'
-			ask_question "What is your AWS zone within the selected region (e.g. us-east-1c for the us-east-1 region)?" "$AWS_ZONE" "AWS zone" $aws_zone
+        aws_region='aws_region'
+        ask_question "What is your AWS region (e.g. us-east-1 for Virginia)?" "$AWS_REGION" "AWS region" $aws_region
 
-			aws_instance_type='aws_instance_type'
-			ask_question "What is your default AWS instance type (e.g. c4.2xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
+        aws_zone='aws_zone'
+        ask_question "What is your AWS zone within the selected region (e.g. us-east-1c for the us-east-1 region)?" "$AWS_ZONE" "AWS zone" $aws_zone
 
-			aws_ami_image='aws_ami_image'
-			ask_question "What is your AWS image (e.g. AMI such as ami-6edd3078 for Ubuntu, we recommend the Ubuntu 16.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
+        aws_instance_type='aws_instance_type'
+        ask_question "What is your AWS instance type (e.g. m1.xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
 
+        aws_ami_image='aws_ami_image'
+        ask_question "What is your AWS image (e.g. AMI such as ami-b2e3c6d8 for Ubuntu, we recommend the Ubuntu 14.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
 
-        elif [ $user_cloud_env == 'Azure' ] ; then
-	        ############################
-	        # AZURE QUESTIONS
-	        ############################
-			user_azure_subscription_id='user_azure_subscription_id'
-			ask_question "What is your Azure subscription?" "$AZURE_SUBSCRIPTION" "Azure subscription" $user_azure_subscription_id
+      elif [ $user_cloud_env == 'Azure' ] ; then
+        ############################
+        # AZURE QUESTIONS
+        ############################
+        user_azure_subscription_id='user_azure_subscription_id'
+        ask_question "What is your Azure subscription?" "$AZURE_SUBSCRIPTION" "Azure subscription" $user_azure_subscription_id
 
-			user_azure_storage_account_name='user_azure_storage_account_name'
-			ask_question "What is your Azure storage account name?" "$AZURE_STORAGE_ACCOUNT" "Azure storage account name" $user_azure_storage_account_name
+        user_azure_storage_account_name='user_azure_storage_account_name'
+        ask_question "What is your Azure storage account name?" "$AZURE_STORAGE_ACCOUNT" "Azure storage account name" $user_azure_storage_account_name
 
-			user_azure_storage_account_key='user_azure_storage_account_key'
-			ask_question "What is your Azure storage account key?" "$AZURE_STORAGE_ACCOUNT_KEY" "Azure storage account key" $user_azure_storage_account_key
+        user_azure_storage_account_key='user_azure_storage_account_key'
+        ask_question "What is your Azure storage account key?" "$AZURE_STORAGE_ACCOUNT_KEY" "Azure storage account key" $user_azure_storage_account_key
 
-			user_azure_AD_user='user_azure_AD_user'
-			ask_question "What is your Azure Active Directory user name?" "$AZURE_AD_USER" "Azure Active Directory user name" $user_azure_AD_user
+        user_azure_AD_user='user_azure_AD_user'
+        ask_question "What is your Azure Active Directory user name?" "$AZURE_AD_USER" "Azure Active Directory user name" $user_azure_AD_user
 
-			user_azure_AD_passwd='user_azure_AD_passwd'
-			ask_question "What is your Azure Active Directory password?" "$AZURE_AD_PASSWD" "Azure Active Directory user name" $user_azure_AD_passwd
+        user_azure_AD_passwd='user_azure_AD_passwd'
+        ask_question "What is your Azure Active Directory password?" "$AZURE_AD_PASSWD" "Azure Active Directory user name" $user_azure_AD_passwd
 
-			user_azure_AD_tenant='user_azure_AD_tenant'
-			ask_question "What is your Azure Active Directory tenant?" "$AZURE_AD_TENANT" "Azure Active Directory tenant" $user_azure_AD_tenant
+        user_azure_AD_tenant='user_azure_AD_tenant'
+        ask_question "What is your Azure Active Directory tenant?" "$AZURE_AD_TENANT" "Azure Active Directory tenant" $user_azure_AD_tenant
 
-			user_azure_AD_client='user_azure_AD_client'
-			ask_question "What is your Azure Active Directory client?" "$AZURE_AD_CLIENT" "Azure Active Directory client" $user_azure_AD_client
+        user_azure_AD_client='user_azure_AD_client'
+        ask_question "What is your Azure Active Directory client?" "$AZURE_AD_CLIENT" "Azure Active Directory client" $user_azure_AD_client
 
-			user_azure_virtual_network='user_azure_virtual_network'
-			ask_question "What is the name of the Virtual Network for this fleet?" "$AZURE_VIRTUAL_NETWORK" "Azure Virtual Network Name" $user_azure_virtual_network
+        user_azure_virtual_network='user_azure_virtual_network'
+        ask_question "What is the name of the Virtual Network for this fleet?" "$AZURE_VIRTUAL_NETWORK" "Azure Virtual Network Name" $user_azure_virtual_network
 
-			user_azure_location='user_azure_location'
-			ask_question "What Location do you want to use for this fleet?" "$AZURE_LOCATION" "Location" $user_azure_location
+        user_azure_location='user_azure_location'
+        ask_question "What Location do you want to use for this fleet?" "$AZURE_LOCATION" "Location" $user_azure_location
 
-            # TODO: Get public and private Azure IP addresses, or ask the user to provide them since it seems rather difficult to get them from the Azure API directly.
+        # TODO: Get public and private Azure IP addresses, or ask the user to provide them since it seems rather difficult to get them from the Azure API directly.
 
-        elif [ $user_cloud_env == 'OpenStack' ] ; then
-            ############################
-            # OpenStack questions
-            ############################
-			user_os_username='user_os_username'
-			ask_question "What is your OpenStack username (formatted as <tenant>:<username>)?" "$OS_USERNAME" "OpenStack username" $user_os_username
+      elif [ $user_cloud_env == 'OpenStack' ] ; then
+        ############################
+        # OpenStack questions
+        ############################
+        user_os_username='user_os_username'
+        ask_question "What is your OpenStack username (formatted as <tenant>:<username>)?" "$OS_USERNAME" "OpenStack username" $user_os_username
 
-			user_os_password='user_os_password'
-			ask_question "What is your OpenStack password?" "$OS_PASSWORD" "OpenStack password" $user_os_password
+        user_os_password='user_os_password'
+        ask_question "What is your OpenStack password?" "$OS_PASSWORD" "OpenStack password" $user_os_password
 
-			user_os_endpoint='user_os_endpoint'
-			ask_question "What is your OpenStack endpoint?" "$OS_ENDPOINT" "OpenStack endpoint" $user_os_endpoint
+        user_os_endpoint='user_os_endpoint'
+        ask_question "What is your OpenStack endpoint?" "$OS_ENDPOINT" "OpenStack endpoint" $user_os_endpoint
 
-			user_os_region='user_os_region'
-			ask_question "What is your OpenStack region?" "$OS_REGION" "OpenStack region" $user_os_region
+        user_os_region='user_os_region'
+        ask_question "What is your OpenStack region?" "$OS_REGION" "OpenStack region" $user_os_region
 
-            user_sec_grp='user_sec_grp'
-            ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
+        user_sec_grp='user_sec_grp'
+        ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
 
-            user_os_network_id='user_os_network_id'
-            ask_question "What is your OpenStack network ID?" "$OS_NETWORK_ID" "Network ID" $user_os_network_id
+        user_os_network_id='user_os_network_id'
+        ask_question "What is your OpenStack network ID?" "$OS_NETWORK_ID" "Network ID" $user_os_network_id
 
-            user_os_zone=''
-            if [ ! -z $OS_ZONE ] ; then
-                read -ep $'What is your OpenStack zone? Previous value: \n' -i $OS_REGION user_os_zone
-            else
-                read -ep $'What is your OpenStack zone?\n' user_os_zone
-            fi
+        user_os_zone=''
+        if [ ! -z $OS_ZONE ] ; then
+            read -ep $'What is your OpenStack zone? Previous value: \n' -i $OS_REGION user_os_zone
         else
-        	 # Just in case some other value somehow gets in to $user_cloud_env
-            echo "Unrecognized cloud environment: $user_cloud_env, exiting..."
-            exit 1
+            read -ep $'What is your OpenStack zone?\n' user_os_zone
         fi
-        # echo "What version of the consonance_launcher do you wish to run (default will be \"latest\")?"
-        # read user_consonance_version
-        # They already pulled "latest", earlier in this script, so just stick with that. Future versions could ask this question, if necessary...
-        user_consonance_version="latest"
-
-
-		user_fleet_name=''
-
-        if [ $user_cloud_env == 'Azure' ] ; then
-        	# In Azure, the fleet name also gets used for the storage account name which may only contain lowercase letters, numbers, and dashes.
-	        if [ ! -z "$FLEET_NAME" ] ; then
-	            read -ep $'What would you like to name your fleet? Azure fleet names may only contain lowercase letter, numbers, and dashes. If you do not specify a name, a name will be generated randomly for you. Previous value: \n' -i "$FLEET_NAME" user_fleet_name
-	        else
-	            read -ep $'What would you like to name your fleet? Azure fleet names may only contain lowercase letter, numbers, and dashes. If you do not specify a name, a name will be generated randomly for you.\n' user_fleet_name
-	        fi
-	        user_fleet_name=${user_fleet_name,,}
-       		user_fleet_name=${user_fleet_name//[^[:alnum:]]/}
-       		# If the user didn't specify a fleet name we need to do it HERE because the start_launcher_container.sh script may generate fleet names
-			# that are not Azure-friendly.
-       		if [ -z $user_fleet_name ] ; then
-       			user_fleet_name=$(cat /dev/urandom | tr -dc 'a-z0-9-' | fold -w 10 | head -n 1)
-       		fi
-       		echo "Your Azure fleet name: $user_fleet_name"
+      else
+         # Just in case some other value somehow gets in to $user_cloud_env
+          echo "Unrecognized cloud environment: $user_cloud_env, exiting..."
+          exit 1
+      fi
+      # echo "What version of the consonance_launcher do you wish to run (default will be \"latest\")?"
+      # read user_consonance_version
+      # They already pulled "latest", earlier in this script, so just stick with that. Future versions could ask this question, if necessary...
+      user_consonance_version="latest"
+      user_fleet_name=''
+      if [ $user_cloud_env == 'Azure' ] ; then
+        # In Azure, the fleet name also gets used for the storage account name which may only contain lowercase letters, numbers, and dashes.
+        if [ ! -z "$FLEET_NAME" ] ; then
+            read -ep $'What would you like to name your fleet? Azure fleet names may only contain lowercase letter, numbers, and dashes. If you do not specify a name, a name will be generated randomly for you. Previous value: \n' -i "$FLEET_NAME" user_fleet_name
         else
-	        if [ ! -z "$FLEET_NAME" ] ; then
-	            read -ep $'What would you like to name your fleet? If you do not specify a name, a name will be generated randomly for you. Previous value: \n' -i "$FLEET_NAME" user_fleet_name
-	        else
-	            read -ep $'What would you like to name your fleet? If you do not specify a name, a name will be generated randomly for you.\n' user_fleet_name
-	        fi
-       	fi
-
-        # Build a flag for fleet names to get passed to the next script...
-        FLEET_NAME_STR=''
-        if [ ! -z "$user_fleet_name" ] ; then
-            # remove quotes from the fleet names, could have come from quoted previous fleet name in config
-            user_fleet_name=${user_fleet_name//\"/}
-            # replace space with underscore so we can pass to the next script without having to surround in quotes because that
-            # causes problems for other systems.
-            user_fleet_name=${user_fleet_name// /_}
-            FLEET_NAME_STR=" -f $user_fleet_name "
+            read -ep $'What would you like to name your fleet? Azure fleet names may only contain lowercase letter, numbers, and dashes. If you do not specify a name, a name will be generated randomly for you.\n' user_fleet_name
         fi
+        user_fleet_name=${user_fleet_name,,}
+         user_fleet_name=${user_fleet_name//[^[:alnum:]]/}
+         # If the user didn't specify a fleet name we need to do it HERE because the start_launcher_container.sh script may generate fleet names
+         # that are not Azure-friendly.
+         if [ -z $user_fleet_name ] ; then
+           user_fleet_name=$(cat /dev/urandom | tr -dc 'a-z0-9-' | fold -w 10 | head -n 1)
+         fi
+         echo "Your Azure fleet name: $user_fleet_name"
+      else
+        if [ ! -z "$FLEET_NAME" ] ; then
+            read -ep $'What would you like to name your fleet? If you do not specify a name, a name will be generated randomly for you. Previous value: \n' -i "$FLEET_NAME" user_fleet_name
+        else
+            read -ep $'What would you like to name your fleet? If you do not specify a name, a name will be generated randomly for you.\n' user_fleet_name
+        fi
+       fi
 
-		user_fleet_size='user_fleet_size'
-		# Loop until the user gives a valid integer.
-		while [[ -n ${user_fleet_size//[0-9]/} ]] ; do
-		  	user_fleet_size='user_fleet_size'
-			ask_question "What is the maximum number of worker VMs you want to run in your fleet?" "$FLEET_SIZE" "Maximum fleet size" $user_fleet_size
-			if [[ -n ${user_fleet_size//[0-9]/} ]] ; then
-				echo "Only positive integers are allowed."
-			fi
-		done
+      # Build a flag for fleet names to get passed to the next script...
+      FLEET_NAME_STR=''
+      if [ ! -z "$user_fleet_name" ] ; then
+          # remove quotes from the fleet names, could have come from quoted previous fleet name in config
+          user_fleet_name=${user_fleet_name//\"/}
+          # replace space with underscore so we can pass to the next script without having to surround in quotes because that
+          # causes problems for other systems.
+          user_fleet_name=${user_fleet_name// /_}
+          FLEET_NAME_STR=" -f $user_fleet_name "
+      fi
 
-		user_fleet_batch_size='user_fleet_batch_size'
-		# Loop until the user gives a valid integer.
-		while [[ -n ${user_fleet_batch_size//[0-9]/} ]] ; do
-		  	user_fleet_batch_size='user_fleet_batch_size'
-			ask_question "What is the maximum number of worker VMs you want to launch at a time?" "$FLEET_BATCH_SIZE" "Maximum fleet batch size" $user_fleet_batch_size
-			if [[ -n ${user_fleet_batch_size//[0-9]/} ]] ; then
-				echo "Only positive integers are allowed."
-			fi
-		done
+  user_fleet_size='user_fleet_size'
+  # Loop until the user gives a valid integer.
+  while [[ -n ${user_fleet_size//[0-9]/} ]] ; do
+      user_fleet_size='user_fleet_size'
+    ask_question "What is the maximum number of worker VMs you want to run in your fleet?" "$FLEET_SIZE" "Maximum fleet size" $user_fleet_size
+    if [[ -n ${user_fleet_size//[0-9]/} ]] ; then
+      echo "Only positive integers are allowed."
+    fi
+  done
 
-        # now wget the start_launcher_container script and call it with the values from above:
-        #$(wget -q -O start_launcher_container.sh https://github.com/ICGC-TCGA-PanCancer/consonance_launcher/releases/download/$PANCANCER_LAUNCHER_VERSION/start_launcher_container.sh)
- #		starter_script_url="https://github.com/ICGC-TCGA-PanCancer/consonance_launcher/releases/download/$PANCANCER_LAUNCHER_VERSION/start_launcher_container.sh"
+  user_fleet_batch_size='user_fleet_batch_size'
+  # Loop until the user gives a valid integer.
+  while [[ -n ${user_fleet_batch_size//[0-9]/} ]] ; do
+      user_fleet_batch_size='user_fleet_batch_size'
+    ask_question "What is the maximum number of worker VMs you want to launch at a time?" "$FLEET_BATCH_SIZE" "Maximum fleet batch size" $user_fleet_batch_size
+    if [[ -n ${user_fleet_batch_size//[0-9]/} ]] ; then
+      echo "Only positive integers are allowed."
+    fi
+  done
 
-#        set +e
-#        wget -O start_launcher_container.sh $starter_script_url 2>get_start_launcher_container.err
-#        get_starter_script_result=$?
-#        set -e
-#        if [ $get_starter_script_result -ne 0 ] ; then
-#            echo "There seems to have been a problem downloading the startup script from:   $starter_script_url"
-#            echo "Error is:"
-#            cat ./get_start_launcher_container.err
-#        fi
 
- #       chmod u+x start_launcher_container.sh
- #       CMD_STR="bash start_launcher_container.sh -p $user_pem_path -i $user_consonance_version -e ${user_cloud_env^^} $FLEET_NAME_STR"
+  email_address_for_owner_tag='email_address_for_owner_tag'
+  ask_question "What is the email address for the 'Owner' tag on the worker VM?" "$EMAIL_FOR_VM_OWNER_TAG" "Email for VM Owner tag" $email_address_for_owner_tag
+  sed -ie "s~{.*}~{\"Owner\":\"${email_address_for_owner_tag}\"}~" ./consonance/example_tags.json
 
-        # Now write a config for this file.
-        [[ -f consonance_launcher_config/compose.config ]] || mkdir -p consonance_launcher_config
-		# Note: You can't have ANY blank lines in .consonance/consonance.config because the python library that will eventually process it does not like blank lines and will fail.
-        # we need to override the ethernet device on some systems
 
-                echo "Installing various apt packages"
-        cat > consonance_launcher_config/compose.config <<CONFIG
+  # Now write a config for this file.
+  [[ -f commons_launcher_config/consonance.config ]] || mkdir -p commons_launcher_config
+  # Note: You can't have ANY blank lines in .consonance/consonance.config because the python library that will eventually process it does not like blank lines and will fail.
+  # we need to override the ethernet device on some systems
+
+  echo "Installing various apt packages"
+  cat > commons_launcher_config/consonance.config <<CONFIG
 {
-"LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/local-ipv4`",
+"ETH_DEV":"${eth_dev}",
+"LAUNCHER_IP_ADDRESS":"`ifconfig ${eth_dev} | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`",
 "PUBLIC_LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/public-ipv4`",
-"CONSONANCE_BINARY_VERSION":"${CONSONANCE_BINARY_VERSION}",
-"CONSONANCE_HOST_BAG_VERSION":"${CONSONANCE_HOST_BAG_VERSION}",
-"CONSONANCE_DOCKSTORE_VERSION":"${CONSONANCE_DOCKSTORE_VERSION}",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "AWS_MAX_SPOT_PRICE":"${aws_max_spot_price}",
@@ -415,48 +422,660 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 "OS_ENDPOINT":"${user_os_endpoint}",
 "OS_NETWORK_ID":"${user_os_network_id}",
 "OS_REGION":"${user_os_region}",
-"OS_ZONE":"${user_os_zone}"
+"OS_ZONE":"${user_os_zone}",
+"EMAIL_FOR_VM_OWNER_TAG":"${email_address_for_owner_tag}"
 }
 CONFIG
-    [[ -d "consonance_launcher_config" ]] || mkdir "consonance_launcher_config"
-    # cp ~/.consonance/compose.config consonance_launcher_config/compose.config
-    # template out stuff, grab template files for convenience if not running in a git repo
-    # note there should really be a better way of grabbing a directory, see https://github.com/dear-github/dear-github/issues/95
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_client.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_coordinator.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_provisioner.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_webservice.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/aws.config.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/bag_params.json.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/config.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/docker-compose.yml
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/example_tags.json
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_client.sh
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_coordinator.sh
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_provisioner.sh
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_webservice.sh
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/key.pem.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/ssh.py
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/web.yml.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/youxia_config.template
+  [[ -d "commons_launcher_config" ]] || mkdir "commons_launcher_config"
+  # cp ~/.consonance/consonance.config commons_launcher_config/consonance.config
+  # template out stuff
+  mustache commons_launcher_config/consonance.config consonance/aws.config.template > consonance/aws.config
+  mustache commons_launcher_config/consonance.config consonance/bag_params.json.template  > consonance/bag_params.json
+  mustache commons_launcher_config/consonance.config consonance/config.template  > consonance/config
+  mustache commons_launcher_config/consonance.config consonance/youxia_config.template  > consonance/youxia_config
+  mustache commons_launcher_config/consonance.config consonance/web.yml.template  > consonance/web.yml
+  mustache commons_launcher_config/consonance.config consonance/boto.config.template > consonance/boto.config
+  cat ${user_pem_path} > consonance/key.pem
 
-    mustache consonance_launcher_config/compose.config Dockerfile_client.template > Dockerfile_client
-    mustache consonance_launcher_config/compose.config Dockerfile_coordinator.template > Dockerfile_coordinator
-    mustache consonance_launcher_config/compose.config Dockerfile_provisioner.template > Dockerfile_provisioner
-    mustache consonance_launcher_config/compose.config Dockerfile_webservice.template > Dockerfile_webservice
-    mustache consonance_launcher_config/compose.config aws.config.template > aws.config
-    mustache consonance_launcher_config/compose.config bag_params.json.template  > bag_params.json
-    mustache consonance_launcher_config/compose.config config.template  > config
-    mustache consonance_launcher_config/compose.config youxia_config.template  > youxia_config
-    mustache consonance_launcher_config/compose.config web.yml.template  > web.yml
-    cat ${user_pem_path} > key.pem
+  cd consonance
+  sudo docker-compose -f docker-compose.yml build
+  sudo docker-compose -f docker-compose.yml up -d
+  ################sudo docker-compose run client
+  cd ..
 
-    sudo docker-compose build
-    sudo docker-compose run client
-    elif [ "${run_consonance_launcher^^}" = 'N' ] ; then
-        echo "You can run this script at another time to run the consonance launcher"
-        exit 0
+  # TODO: need to setup the consonance command line and config on the box, so can skip the launching the client docker
+
+  elif [ "${run_consonance_launcher^^}" = 'N' ] ; then
+    echo "You can run this script at another time to run the consonance installer"
+  fi
+done
+
+
+
+
+
+
+
+
+# RUN THE REDWOOD INSTALLER
+run_redwood=''
+while [[ "${run_redwood^^}" != 'Y' &&  "${run_redwood^^}" != 'N' ]] ; do
+    echo "Would you like to run the redwood installer now? [Y/N]"
+    read run_redwood
+
+    if [ "${run_redwood^^}" = 'Y' ] ; then
+
+      # Read the config file if it exists and then show previous values...
+      if [ -f redwood_launcher_config/redwood.config ] ; then
+        source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" redwood_launcher_config/redwood.config)
+      fi
+
+      base_url=''
+      if [ ! -z $BASE_URL ] ; then
+          read -ep $'What is the name of the base URL?  Previous value: \n' -i "$BASE_URL" base_url
+      else
+          read -ep $'What is the name of the base URL? \n' base_url
+      fi
+
+      # this should move to the COMMON section
+      email_address=''
+      if [ ! -z $EMAIL_ADDRESS ] ; then
+          read -ep $'What is the email address for notification?  Previous value: \n' -i "$EMAIL_ADDRESS" email_address
+      else
+          read -ep $'What is the email address for notification? \n' email_address
+      fi
+      user_aws_key='user_aws_key'
+      ask_question "What is your AWS Key?" "$AWS_ACCESS_KEY_ID" "AWS Key name" $user_aws_key
+
+      user_aws_secret_key='user_aws_secret_key'
+      ask_question "What is your AWS Secret Key?" "$AWS_SECRET_ACCESS_KEY" "AWS Secret Key name" $user_aws_secret_key
+
+      s3_bucket='s3_bucket'
+      ask_question "What is your AWS S3 bucket?" "$S3_BUCKET" "S3 bucket name" $s3_bucket
+
+      s3_bucket_backup='s3_bucket_backup'
+      ask_question "What is your AWS S3 backup bucket?" "$S3_BUCKET_BACKUP" "S3 bucket backup name" $s3_bucket_backup
+
+      s3_endpoint='s3_endpoint'
+      ask_question "What is your AWS S3 endpoint?" "$S3_ENDPOINT" "S3 endpoint" $s3_endpoint
+
+      # KMS key
+      read -rep $'What is your AWS IAM Encryption Key ID? (leave blank for no SSE) Previous value: \n' -i "${KMS_KEY}" kms_key
+
+      # install aws cli if not already installed
+      which aws || (
+          echo "installing aws cli"
+          sudo apt-get install -y python-pip;
+          sudo -H pip install botocore==1.5.43;
+          sudo -H pip install awscli==1.11.80
+      ) >install_pip_aws.log 2>&1
+
+      mkdir -p ~/.aws
+      {
+          echo ''
+          echo '[redwood_install]'
+          echo "aws_access_key_id=${user_aws_key}"
+          echo "aws_secret_access_key=${user_aws_secret_key}"
+      } >> ~/.aws/credentials
+
+      echo "creating sentinel object for s3 connectivity verification"
+      echo "this sentinel file is used for verifying s3 connectivity" >/tmp/heliograph
+      aws --profile redwood_install --endpoint-url http://${s3_endpoint} s3 mv /tmp/heliograph s3://${s3_bucket}/data/heliograph
+
+      sed -ie '/\[redwood_install\]/,+3d' ~/.aws/credentials
+
+      # use external redwood dbs or compose db containers here
+      external_redwood_dbs=''
+      while [[ "${external_redwood_dbs^^}" != 'Y' && "${external_redwood_dbs^^}" != 'N' ]] ; do
+          echo "Would you like to use external redwood databases? [Y/N]"
+          read external_redwood_dbs
+
+          if [ "${external_redwood_dbs^^}" = 'Y' ] ; then
+              # metadata db
+              redwood_metadata_db_host='redwood_metadata_db_host'
+              ask_question "Enter your (mongodb) redwood metadata db host. You can include port number." "$REDWOOD_METADATA_DB_HOST" "redwood metadata db host" $redwood_metadata_db_host
+              redwood_metadata_db='redwood_metadata_db'
+              ask_question "Enter your (mongodb) redwood metadata db database name" "$REDWOOD_METADATA_DB" "redwood metadata db database name" $redwood_metadata_db
+              redwood_metadata_db_username='redwood_metadata_db_username'
+              ask_question "Enter your (mongodb) redwood metadata db username" "$REDWOOD_METADATA_DB_USERNAME" "redwood metadata db username" $redwood_metadata_db_username
+              redwood_metadata_db_password='redwood_metadata_db_password'
+              ask_question "Enter your (mongodb) redwood metadata db password" "$REDWOOD_METADATA_DB_PASSWORD" "redwood metadata db password" $redwood_metadata_db_password
+
+              # auth db
+              redwood_auth_db_host='redwood_auth_db_host'
+              ask_question "Enter your (mongodb) redwood auth db host. You can include port number." "$REDWOOD_AUTH_DB_HOST" "redwood auth db host" $redwood_auth_db_host
+              redwood_auth_db='redwood_auth_db'
+              ask_question "Enter your (mongodb) redwood auth db database name" "$REDWOOD_AUTH_DB" "redwood auth db database name" $redwood_auth_db
+              redwood_auth_db_username='redwood_auth_db_username'
+              ask_question "Enter your (mongodb) redwood auth db username" "$REDWOOD_AUTH_DB_USERNAME" "redwood auth db username" $redwood_auth_db_username
+              redwood_auth_db_password='redwood_auth_db_password'
+              ask_question "Enter your (mongodb) redwood auth db password" "$REDWOOD_AUTH_DB_PASSWORD" "redwood auth db password" $redwood_auth_db_password
+
+          elif [ "${external_redwood_dbs^^}" = 'N' ]; then
+              # metadata db
+              echo "using local mongodb redwood-metadata-db container"
+              redwood_metadata_db_host="redwood-metadata-db"
+              redwood_metadata_db="dcc-metadata"
+              redwood_metadata_db_username="metadata"
+              redwood_metadata_db_password="password"
+
+              echo "generating redwood-metadata-db metadata db password"
+              redwood_metadata_db_password="$(generate_password)"
+
+              echo "generating redwood-metadata-db admin password"
+              redwood_metadata_db_admin_password="$(generate_password)"
+
+              # auth db
+              echo "using local mongodb redwood-auth-db container"
+              redwood_auth_db_host="redwood-auth-db"
+              redwood_auth_db="dcc"
+              redwood_auth_db_username="dcc_auth"
+
+              echo "generating redwood-auth-db postgresql superuser (postgres) password"
+              redwood_auth_db_admin_password="$(generate_password)"
+
+              echo "generating redwood-auth-db user (dcc_auth) password"
+              redwood_auth_db_password="$(generate_password)"
+
+              echo "generating random auth-server admin password"
+              redwood_auth_server_admin_pass="$(generate_password)"
+          else
+              echo "ERROR: bad input: ${external_redwood_dbs}"
+              external_redwood_dbs=''
+          fi
+      done
+
+      echo "generating random metadata-server oauth client secret"
+      metadata_client_secret="$(generate_password)"
+
+      echo "generating random storage-server oauth client secret"
+      storage_client_secret="$(generate_password)"
+
+      echo "generating random management oauth client secret"
+      mgmt_client_secret="$(generate_password)"
+
+      # Now write a config for this file.
+      [[ -d "redwood_launcher_config" ]] || mkdir "redwood_launcher_config"
+      # Note: You can't have ANY blank lines in .consonance/redwood.config because the python library that will eventually process it does not like blank lines and will fail.
+
+      cat > redwood_launcher_config/redwood.config <<CONFIG
+{
+"BASE_URL":"${base_url}",
+"EMAIL_ADDRESS":"${email_address}",
+"AWS_ACCESS_KEY_ID":"${user_aws_key}",
+"AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
+"S3_BUCKET":"${s3_bucket}",
+"S3_BUCKET_BACKUP":"${s3_bucket_backup}",
+"S3_ENDPOINT":"${s3_endpoint}",
+"KMS_KEY":"${kms_key}",
+"METADATA_DB_HOST":"${redwood_metadata_db_host}",
+"METADATA_DB":"${redwood_metadata_db}",
+"METADATA_DB_USERNAME":"${redwood_metadata_db_username}",
+"METADATA_DB_PASSWORD":"${redwood_metadata_db_password}",
+"METADATA_DB_ADMIN_PASSWORD":"${redwood_metadata_db_admin_password}",
+"AUTH_DB_HOST":"${redwood_auth_db_host}",
+"AUTH_DB":"${redwood_auth_db}",
+"AUTH_DB_USERNAME":"${redwood_auth_db_username}",
+"AUTH_DB_PASSWORD":"${redwood_auth_db_password}",
+"AUTH_DB_ADMIN_PASSWORD":"${redwood_auth_db_admin_password}",
+"AUTH_SERVER_ADMIN_PASSWORD":"${redwood_auth_server_admin_pass}",
+"METADATA_CLIENT_SECRET":"${metadata_client_secret}",
+"STORAGE_CLIENT_SECRET":"${storage_client_secret}",
+"MGMT_CLIENT_SECRET":"${mgmt_client_secret}"
+}
+CONFIG
+      # template out stuff
+      mustache redwood_launcher_config/redwood.config redwood/conf/redwood.config.template > redwood/.env
+      echo "Redwood config has been written to $(pwd)/redwood/.env"
+
+      launch_redwood=""
+      while [[ "${launch_redwood}" = "" ]]; do
+          read -ep $'Are you ready to launch redwood now? [Y/N] \n' launch_redwood
+          if [[ "${launch_redwood^^}" = 'Y' ]]; then
+              cd redwood
+
+              # remove old redwood instance and data volumes if they exist
+              echo "Removing old redwood containers, volumes, etc. if they exist"
+              sudo cli/bin/redwood down
+              redwood_data_volumes=$(sudo docker volume ls | grep 'redwood_redwood-.*-data' | awk '{print $2}')
+              if [[ ! -z ${redwood_data_volumes} ]]; then
+                  sudo docker volume rm ${redwood_data_volumes}
+              fi
+
+              # start redwood
+              echo "Starting redwood"
+              sudo cli/bin/redwood up
+              cd ..
+
+              # optionally recover backup and run migrations
+              recover_metadata=-1
+              read -ep $'Do you want to recover metadata from a backup? [Y/N]\n' recover_metadata_response
+              while [[ "${recover_metadata}" = "-1" ]]; do
+                  if [[ "${recover_metadata_response^^}" =~ ^(Y|YES)$ ]]; then
+                      recover_metadata=1
+                  elif [[ "${recover_metadata_response^^}" =~ ^(N|NO)$ ]]; then
+                      recover_metadata=0
+                  else
+                      echo "bad input: ${recover_metadata_response}"
+                      recover_metadata=-1
+                  fi
+              done
+              if [[ ${recover_metadata} -eq 1 ]]; then # run recovery and (optionally) migrations
+                  read -ep $'Enter the path to your metdata-backup (.tar.gz) file.\n' metadata_backup_file
+                  sudo redwood/cli/bin/redwood recover metadata "${metadata_backup_file}"
+
+                  migrate=-1
+                  while [[ "${migrate}" = "-1" ]]; do # suggest migrations
+                      case ${yes} in
+                          0) migrate_response=no ;;
+                          1) migrate_response=yes ;;
+                          *) read -rep $'Do you want to perform any migrations? [Y\N]\n' migrate_response ;;
+                      esac
+                      if [[ "${migrate_response^^}" =~ ^(Y|YES)$ ]]; then
+                          migrate=1
+                          sudo redwood/cli/bin/redwood migrate metadata "${metadata_backup_file}"
+                      elif [[ "${migrate_response^^}" =~ ^(N|NO)$ ]]; then migrate=0
+                      else echo "bad input: ${migrate_response}"
+                      fi
+                  done
+
+              fi
+
+          elif [[ "${launch_redwood^^}" = 'N' ]]; then
+              echo "You can start redwood later with: $ $(pwd)/redwood/cli/bin/redwood up"
+          fi
+      done
+
+    elif [ "${run_redwood^^}" = 'N' ] ; then
+      echo "You can run this script at another time to run the redwood installer"
     fi
 done
-echo "Exiting now."
+
+# CORE COMMON: bring up the primary nginx gateway server
+run_common=''
+while [[ "${run_common^^}" != 'Y' &&  "${run_common^^}" != 'N' ]] ; do
+    read -ep $'Are you ready to launch the public-facing gateway nginx server? [Y/N]\n' run_common
+done
+
+if [[ "${run_common^^}" = 'Y' ]]; then
+    if [[ $(sudo docker ps | grep 'core-' | wc -l) = "0" ]]; then
+      echo "Do you want to run the public-facing gateway nginx server in dev mode or prod? [dev/prod]"
+      common_mode=-1
+      while [[ "${common_mode}" = "-1" ]]; do
+            read common_mode
+            if [[ "${common_mode^^}" =~ ^(D|DEV|DEVELOP|DEVELOPMENT)$ ]]; then
+                common_mode=dev
+            elif [[ "${common_mode^^}" =~ ^(P|PROD|PRODUCTION)$ ]]; then
+                common_mode=prod
+            else
+                echo "bad input: ${common_mode}" >&2
+                common_mode=-1
+            fi
+        done
+
+        echo "starting core primary nginx gateway and common containers"
+        cd common
+        sudo docker-compose -f base.yml -f ${common_mode}.yml up -d
+        cd ..
+    else
+        echo "core common containers already running."
+    fi
+    echo 'you can stop the core common containers with `cd $(pwd)/common && docker-compose -f base.yml -f prod.yml down`'
+else
+    echo "the core won't be publicly accessible until the gateway is started"
+fi
+
+
+
+# RUN THE BOARDWALK INSTALLER
+run_boardwalk=''
+while [[ "${run_boardwalk^^}" != 'Y' &&  "${run_boardwalk^^}" != 'N' ]] ; do
+    echo "Would you like to run the boardwalk installer now? [Y/N]"
+    read run_boardwalk
+
+    if [ "${run_boardwalk^^}" = 'Y' ] ; then
+      #Per ES specifications to run their docker image on production:
+      #Set vm.max_map_count to 262144
+      #Set the default elasticsearch1 service name
+      es_service=elasticsearch1
+      dcc_dashboard_protocol=https
+      dcc_dashboard_port=8080
+      echo "Setting max VM for ElasticSearch"
+      sudo sysctl -w vm.max_map_count=262144
+      sudo echo "vm.max_map_count=262144" >> /etc/sysctl.conf
+
+      if [ -f boardwalk_launcher_config/boardwalk.config ] ; then
+        	source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" boardwalk_launcher_config/boardwalk.config)
+      fi
+
+      echo "Do you want to run boardwalk in dev mode or prod? [dev/prod]"
+      boardwalk_mode=-1
+      while [[ "${boardwalk_mode}" = "-1" ]]; do
+          read boardwalk_mode
+          if [[ "${boardwalk_mode^^}" =~ ^(D|DEV|DEVELOP|DEVELOPMENT)$ ]]; then
+              boardwalk_mode=dev
+          elif [[ "${boardwalk_mode^^}" =~ ^(P|PROD|PRODUCTION)$ ]]; then
+              boardwalk_mode=prod
+          else
+              echo "bad input: ${boardwalk_mode}" >&2
+              boardwalk_mode=-1
+          fi
+      done
+
+#      base_url=''
+#      if [ ! -z $BASE_URL ] ; then
+#            read -ep $'What is the name of the base URL?  Previous value: \n' -i "$BASE_URL" base_url
+#         else
+#            read -ep $'What is the name of the base URL? \n' base_url
+#      fi
+
+#      email_address=''
+#            read -ep $'What is the email address for notification?  Previous value: \n' -i "$EMAIL_ADDRESS" email_address
+#         else
+#            read -ep $'What is the email address for notification? \n' email_address
+#      fi
+
+      google_client_id='google_client_id'
+      ask_question "What is your Google Client ID?" "$GOOGLE_CLIENT_ID" "Google Client ID" $google_client_id
+
+      google_client_secret='google_client_secret'
+      ask_question "What is your Google Client Secret?" "$GOOGLE_CLIENT_SECRET" "Google Client Secret" $google_client_secret
+
+      # redwood auth-server admin user - most probably always 'admin'
+      # EDIT: The login function requires the mgmt user. admin wouldn't work.
+      redwood_admin='mgmt'
+      #ask_question "What is your Redwood auth-server admin username?" "$REDWOOD_ADMIN" "Redwood Admin" $redwood_admin
+
+      # redwood auth-server admin password - peek at redwood/.env
+      redwood_admin_password=$(cat redwood/.env | grep 'mgmt_client_secret=' | sed 's/[^=]*=//')
+      #ask_question "What is your Redwood auth-server admin user password?" "$REDWOOD_ADMIN_PASSWORD" "Redwood Admin Password" $redwood_admin_password
+
+      # redwood endpoint - peek at redwood/.env
+      redwood_server=$(cat redwood/.env | grep 'base_url=' | sed 's/[^=]*=//')
+      #ask_question "What is your Redwood endpoint?" "$REDWOOD_SERVER" "Redwood Server" $redwood_server
+
+      # not really relevant anymore; always 443 (but have to use auth-server vhost)
+      redwood_admin_port='443'
+      #ask_question "What is your Redwood auth-server Admin Port?" "$REDWOOD_ADMIN_PORT" "Redwood Admin Port" $redwood_admin_port
+
+      # generate redwood access token
+      redwood_access_token=$(sudo redwood/cli/bin/redwood token create -u indexer -s 'aws.upload aws.download')
+      #ask_question "What is your Redwood Access Token?" "$REDWOOD_ACCESS_TOKEN" "Redwood Access Token" $redwood_access_token
+
+      #dcc_dashboard_host='dcc_dashboard_host'
+      #ask_question "What is your DCC Dashboard Host (base URL)?" "$DCC_DASHBOARD_HOST" "DCC Dashboard Host" $dcc_dashboard_host
+      dcc_dashboard_host=$redwood_server
+
+#      dcc_dashboard_port='dcc_dashboard_port'
+#      ask_question "What is your DCC Dashboard Port?" "$DCC_DASHBOARD_PORT" "DCC Dashboard Port" $dcc_dashboard_port
+
+#      dcc_dashboard_protocol='dcc_dashboard_protocol'
+#      ask_question "What is your DCC Dashboard Protocol (http/https)?" "$DCC_DASHBOARD_PROTOCOL" "DCC Dashboard Protocol" $dcc_dashboard_protocol
+
+#      dcc_dashboard_service='dcc_dashboard_service'
+#      ask_question "Where is your DCC Dashboard Service domain?" "$DCC_DASHBOARD_SERVICE" "DCC Dashboard Service" $dcc_dashboard_service
+
+       dcc_dashboard_service=$dcc_dashboard_host
+
+#      dcc_invoicing_service='dcc_invoicing_service'
+#      ask_question "What is your DCC Invocing Service domain?" "$DCC_INVOICING_SERVICE" "DCC Invoicing Service" $dcc_invoicing_service
+
+       dcc_invoicing_service=$dcc_dashboard_host
+
+#      dcc_action_service='dcc_action_service'
+#      ask_question "What is your DCC Action Service domain?" "$DCC_ACTION_SERVICE" "DCC Action Service" $dcc_action_service
+
+       dcc_action_service=$dcc_dashboard_host
+
+#      dcc_letsencrypt_staging='dcc_letsencrypt_staging'
+#      ask_question "If you would like to add any additional flags to the Let's Encrypt image, such as --staging put the tags here." "$DCC_LETSENCRYPT_STAGING" "DCC Lets Encrypt tags" $dcc_letsencrypt_staging
+
+      # this should move to the COMMON section
+#      dcc_letsencrypt_email='dcc_letsencrypt_email'
+#      ask_question "What is the email to be associated with the letsencrypt certificates?" "$DCC_LETSENCRYPT_EMAIL" "DCC Lets Encrypt Email" $dcc_letsencrypt_email
+
+      #user_group='user_group'
+      #ask_question "What is the user and group that should own the files from the metadata-indexer? (Your current USER:GROUP is $(stat -c '%u:%g' $HOME))" "$USER_GROUP" "User Group" $user_group
+      user_group=$(stat -c '%u:%g' $HOME)
+
+#      es_service='es_service'
+#      ask_question "What will be the name for the elasticsearch service?" "$ES_SERVICE" "DCC Lets Encrypt tags" $es_service
+
+#      database_url='database_url'
+#      ask_question "What is the database url to store invoicing?" "$DATABASE_URL" "DCC Invoicing Database URL" $database_url
+
+      #billing_db='billing_db'
+      #ask_question "How should the database for billing should be called?" "$BILLING_DB" "Billing Database" $billing_db
+      billing_db='billing_db'
+
+      #billing_user='billing_user'
+      #ask_question "What should the username be for the billing database?" "$BILLING_USER" "Billing User" $billing_user
+      billing_user='billing_user'
+
+      #billing_password='billing_password'
+      #ask_question "What should the username password be for the billing database?" "$BILLING_PASSWORD" "Billing User Password" $billing_password
+      echo "generating billing_db postgresql (postgres) password"
+      billing_password="$(generate_password)"
+
+      database_url="postgresql://${billing_user}:${billing_password}@boardwalk-billing:5432/${billing_db}"
+
+      aws_profile='aws_profile'
+      ask_question "What is the AWS profile?" "$AWS_PROFILE" "AWS Profile" $aws_profile
+      #aws_profile=$(cat redwood/.env | grep 'email=' | sed 's/[^=]*=//')
+
+      #aws_access_key_id='aws_access_key_id'
+      #ask_question "What is the AWS Access key ID?" "$AWS_ACCESS_KEY_ID" "AWS Access key ID" $aws_access_key_id
+      aws_access_key_id=$(cat redwood/.env | grep 'access_key=' | sed 's/[^=]*=//')
+
+      #aws_secret_access_key='aws_secret_access_key'
+      #ask_question "What is the AWS secret access key?" "$AWS_SECRET_ACCESS_KEY" "AWS Secret Access Key" $aws_secret_access_key
+      aws_secret_access_key=$(cat redwood/.env | grep 'secret_key=' | sed 's/[^=]*=//')
+
+      #luigi_server='luigi_server'
+      #ask_question "What is the Luigi Server?" "$LUIGI_SERVER" "Luigi Server" $luigi_server
+
+      luigi_server="http://action-service"
+      luigi_port='8082'
+
+      #consonance_address='consonance_address'
+      #ask_question "What is the Consonance Address?" "$CONSONANCE_ADDRESS" "Consonance Address" $consonance_address
+
+      consonance_address="http://consonance-webservice:8080"
+
+#      consonance_token='consonance_token'
+#      ask_question "What is the Consonance Token?" "$CONSONANCE_TOKEN" "Consonance Token" $consonance_token
+      consonance_token=$(cat consonance/config | grep 'token =' | sed 's/[^=]*=//' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+      #postgres_db='postgres_db'
+      #ask_question "What is the Postgres Database name for the action service?" "$POSTGRES_DB" "Postgres Database Action Service" $postgres_db
+      postgres_db='monitor'
+
+      #postgres_user='postgres_user'
+      #ask_question "What is the Postgres Database user for the action service?" "$POSTGRES_USER" "Postgres Database User Action Service" $postgres_user
+      postgres_user='monitor'
+
+      #postgres_password='postgres_password'
+      #ask_question "What is the Postgres Database password for the action service?" "$POSTGRES_PASSWORD" "Postgres Database Password Action Service" $postgres_password
+      echo "generating monitor postgresql (postgres) password"
+      postgres_password="$(generate_password)"
+
+      #Setting up the database vars for login
+      login_user='login-user'
+      login_db='login-db'
+      echo "generating monitor postgresql (postgres) password"
+      login_password="$(generate_password)"
+      echo "generating SECRET_KEY for login"
+      secret_key="$(generate_password)"
+
+      #TODO: The script should snoop the .env file and check if it has a password assigned already and use that. Otherwise, generate a random password.
+      core_client_version='1.1.1'
+      # Now write a config for this file.
+      [[ -f boardwalk_launcher_config/boardwalk.config ]] || mkdir -p boardwalk_launcher_config
+
+      cat > boardwalk_launcher_config/boardwalk.config <<CONFIG
+{
+"GOOGLE_CLIENT_ID":"${google_client_id}",
+"GOOGLE_CLIENT_SECRET":"${google_client_secret}",
+"REDWOOD_ADMIN":"${redwood_admin}",
+"REDWOOD_ADMIN_PASSWORD":"${redwood_admin_password}",
+"REDWOOD_SERVER":"${redwood_server}",
+"REDWOOD_ENDPOINT":"${redwood_server}",
+"REDWOOD_ADMIN_PORT":"${redwood_admin_port}",
+"DCC_DASHBOARD_HOST":"${dcc_dashboard_host}",
+"DCC_DASHBOARD_PROTOCOL":"${dcc_dashboard_protocol}",
+"REDWOOD_ACCESS_TOKEN":"${redwood_access_token}",
+"DCC_DASHBOARD_SERVICE":"${dcc_dashboard_service}",
+"DCC_INVOICING_SERVICE":"${dcc_invoicing_service}",
+"DCC_ACTION_SERVICE":"${dcc_action_service}",
+"DATABASE_URL":"${database_url}",
+"BILLING_USER":"${billing_user}",
+"BILLING_PASSWORD":"${billing_password}",
+"BILLING_DB":"${billing_db}",
+"USER_GROUP":"${user_group}",
+"ES_SERVICE":"${es_service}",
+"CONSONANCE_ADDRESS":"${consonance_address}",
+"CONSONANCE_TOKEN":"${consonance_token}",
+"AWS_PROFILE":"${aws_profile}",
+"AWS_ACCESS_KEY_ID":"${aws_access_key_id}",
+"AWS_SECRET_ACCESS_KEY":"${aws_secret_access_key}",
+"LUIGI_SERVER":"${luigi_server}",
+"LUIGI_PORT":"${luigi_port}",
+"POSTGRES_USER":"${postgres_user}",
+"POSTGRES_PASSWORD":"${postgres_password}",
+"POSTGRES_DB":"${postgres_db}",
+"LOGIN_POSTGRES_USER":"${login_user}",
+"LOGIN_POSTGRES_DB":"${login_db}",
+"LOGIN_POSTGRES_PASSWORD":"${login_password}",
+"SECRET_KEY":"${secret_key}",
+"DCC_CORE_CLIENT_VERSION":"${core_client_version}"
+}
+CONFIG
+      # template out stuff
+      mustache boardwalk_launcher_config/boardwalk.config boardwalk/conf/boardwalk.config.template > boardwalk/.env
+      mustache boardwalk_launcher_config/boardwalk.config boardwalk/conf/aws.config.template > boardwalk/aws.config
+
+      cd boardwalk
+      #Bringing stuff down in case there are some cached containers
+      echo "Bringing down any existing Boardwalk container and volumes"
+      sudo docker-compose -f ${boardwalk_mode}.yml down -v
+      echo "Creating Boardwalk associated containers"
+      sudo docker-compose -f ${boardwalk_mode}.yml up -d
+      cd ..
+
+   elif [ "${run_boardwalk^^}" = 'N' ] ; then
+      echo "You can run this script at another time to run the boardwalk installer"
+   fi
+done
+
+
+# RUN THE ACTION INSTALLER
+run_action=''
+while [[ "${run_action^^}" != 'Y' &&  "${run_action^^}" != 'N' ]] ; do
+    echo "Would you like to run the action installer now? [Y/N]"
+    read run_action
+
+    if [ "${run_action^^}" = 'Y' ] ; then
+
+      #Read the config file if it exists and then show previous values...
+      if [ -f action_launcher_config/action.config ] ; then
+        source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" action_launcher_config/action.config)
+      fi
+
+
+      # Consonance - peek at consonance/config
+      consonance_access_token='consonance_access_token'
+      consonance_web_service_url='consonance_web_service_url'
+      if [ -f consonance/config ] ; then
+          consonance_access_token=$(cat consonance/config | grep 'token =' | sed 's/[^=]*=//' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          consonance_web_service_url=$(cat consonance/config | grep 'base_path =' | sed 's/[^=]*=//' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+      else
+          ask_question "What is the Consonance access token?" "$CONSONANCE_ACCESS_TOKEN" "Consonance access token" $consonance_access_token
+          ask_question "What is the Consonance web service URL?" "$CONSONANCE_WEB_SERVICE_URL" "Consonance web service URL" $consonance_web_service_url
+      fi
+
+      aws_region='aws_region'
+      aws_profile='aws_profile'
+      aws_access_key_id='aws_access_key_id'
+      aws_secret_access_key='aws_secret_access_key'
+      if [ -f consonance/aws.config ] ; then
+          aws_region=$(cat consonance/aws.config | grep 'region =' | sed 's/[^=]*=//' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          aws_access_key_id=$(cat consonance/aws.config | grep 'aws_access_key_id =' | sed 's/[^=]*=//' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          aws_secret_access_key=$(cat consonance/aws.config | grep 'aws_secret_access_key =' | sed 's/[^=]*=//' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          aws_profile="[default]"
+      else
+          ask_question "What is the AWS Access key ID?" "$AWS_ACCESS_KEY_ID" "AWS Access key ID" $aws_access_key_id
+          ask_question "What is the AWS secret access key?" "$AWS_SECRET_ACCESS_KEY" "AWS Secret Access Key" $aws_secret_access_key
+          ask_question "What is the AWS profile?" "$AWS_PROFILE" "AWS Profile" $aws_profile
+          ask_question "What is the AWS region?" "$AWS_REGION" "AWS Region" $aws_region
+      fi
+
+      # redwood endpoint - peek at redwood/.env
+      redwood_server='redwood_server'
+      if [ -f redwood/.env ] ; then
+          redwood_server=$(cat redwood/.env | grep 'base_url=' | sed 's/[^=]*=//' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+      else
+          ask_question "What is your Redwood endpoint?" "$STORAGE_SERVER" "Redwood Server" $redwood_server
+      fi
+
+      # generate redwood access token
+      redwood_access_token='redwood_access_token'
+      if [ -f redwood/cli/bin/redwood ] ; then
+           redwood_access_token=$(sudo redwood/cli/bin/redwood token create -u action_service -s 'aws.upload aws.download')
+      else
+          ask_question "What is your Redwood Access Token?" "$STORAGE_ACCESS_TOKEN" "Redwood Access Token" $redwood_access_token
+      fi
+
+      elastic_search_server='elastic_search_server'
+      elastic_search_port='elastic_search_port'
+      # boardwalk endpoint - peek at boardwalk/.env
+      if [ -f boardwalk/.env ] ; then
+          elastic_search_server=$(cat boardwalk/.env | grep 'es_service=' | sed 's/[^=]*=//' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          elastic_search_port='9200'
+      else
+          ask_question "What is your Elastic Search endpoint?" "$ELASTIC_SEARCH_SERVER" "Elastic Search Server" $elastic_search_server
+          ask_question "What is your Elastic Search endpoint port?" "$ELASTIC_SEARCH_PORT" "Elastic Search port" $elastic_search_port
+      fi
+
+      s3_touch_file_bucket='s3_touch_file_bucket'
+      ask_question "What is your AWS S3 touch file bucket?" "$TOUCH_FILE_DIRECTORY" "S3 touch file bucket name" $s3_touch_file_bucket
+
+      dockstore_token='0'
+      dockstore_server_url='https://dockstore.org:8443'
+
+      # Now write a config for this file.
+      [[ -f action_launcher_config/action.config ]] || mkdir -p action_launcher_config
+
+      cat > action_launcher_config/action.config <<CONFIG
+{
+"CONSONANCE_WEB_SERVICE_URL":"${consonance_web_service_url}",
+"CONSONANCE_ACCESS_TOKEN":"${consonance_access_token}",
+"STORAGE_ACCESS_TOKEN":"${redwood_access_token}",
+"STORAGE_SERVER":"${redwood_server}",
+"ELASTIC_SEARCH_SERVER":"${elastic_search_server}",
+"ELASTIC_SEARCH_PORT":"${elastic_search_port}",
+"AWS_PROFILE":"${aws_profile}",
+"AWS_REGION":"${aws_region}",
+"AWS_ACCESS_KEY_ID":"${aws_access_key_id}",
+"AWS_SECRET_ACCESS_KEY":"${aws_secret_access_key}",
+"TOUCH_FILE_DIRECTORY":"${s3_touch_file_bucket}",
+"DOCKSTORE_SERVER_URL":"${dockstore_server_url}",
+"DOCKSTORE_TOKEN":"${dockstore_token}"
+}
+CONFIG
+      # template out stuff
+      mustache action_launcher_config/action.config action/conf/action.config.template > action/.env
+      #mustache action_launcher_config/action.config action/conf/aws.config.template > action/aws.config
+
+      cd action
+      sudo docker-compose -f action_compose.yml up -d
+      cd ..
+
+   elif [ "${run_action^^}" = 'N' ] ; then
+      echo "You can run this script at another time to run the action installer"
+   fi
+done
+
+
+# FINISHED INSTALLER
+echo "Done with installation, exiting now."
 set +e
