@@ -17,15 +17,42 @@ The latest stable releases on master support the pancancer project https://icgc.
 
 See the Consonance [wiki](https://github.com/Consonance/consonance/wiki) for more information on this project.
 
-## Building
+## Dependencies
+
+I'm showing how to install dependencies on a Mac so adapt to your system/OS.
+
+### PostgreSQL
+
+You need a PostgreSQL server to run the tests, on the Mac try [Postgres.app](http://postgresapp.com/).
+
+Once you have this setup (using whatever technique is appropriate for your system) create the `queue_status` database.
+
+    $bash> "/Applications/Postgres.app/Contents/Versions/10/bin/psql" -p5432 -d "postgres"
+    postgres=# create database queue_status;
+    postgres=# create user queue_user;
+    postgres=# grant all privileges  on database queue_status to queue_user;
+
+Now load the schema:
+
+    $bash> cat ~/gitroot/Consonance/consonance/consonance-arch/sql/schema.sql | "/Applications/Postgres.app/Contents/Versions/10/bin/psql" -p5432 -d "queue_status"
+
+### Config File
+
+By default the client looks for `~/.consonance/config`. You need this file for
+tests to pass:
+
+    $bash> mkdir ~/.consonance/ && cp ./consonance-client/src/test/resources/config ~/.consonance/config
+
+
+## Building & Testing
 
 The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run:
 
-    mvn clean install
+    $bash> mvn clean install
 
  To avoid tests (probably a bad idea!):
 
-    mvn -Dmaven.test.skip=true clean install
+    $bash> mvn -Dmaven.test.skip=true clean install
 
 ## Releasing
 
