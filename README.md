@@ -70,6 +70,12 @@ Now run the full integration tests (assumes you have RabbitMQ and PostgreSQL ins
     cd ..
     mvn -B clean install -DskipITs=false
 
+## Monitoring Integration Tests
+
+### RabbitMQ
+
+See http://localhost:15672/#/queues for your queues, username and password is guest by default.
+
 ## Releasing
 
 See the [developer page](https://github.com/Consonance/consonance/wiki/developers) on our wiki.
