@@ -422,7 +422,6 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 }
 CONFIG
   [[ -d "commons_launcher_config" ]] || mkdir "commons_launcher_config"
-  # cp ~/.consonance/consonance.config commons_launcher_config/consonance.config
   # template out stuff
   mustache commons_launcher_config/consonance.config aws.config.template > aws.config
   mustache commons_launcher_config/consonance.config bag_params.json.template  > bag_params.json
@@ -430,9 +429,8 @@ CONFIG
   mustache commons_launcher_config/consonance.config youxia_config.template  > youxia_config
   mustache commons_launcher_config/consonance.config web.yml.template  > web.yml
   mustache commons_launcher_config/consonance.config boto.config.template > boto.config
-  cat ${user_pem_path} > consonance/key.pem
+  cat ${user_pem_path} > key.pem
 
-  cd consonance
   sudo docker-compose -f docker-compose.yml build
   sudo docker-compose -f docker-compose.yml up -d
   ################sudo docker-compose run client
