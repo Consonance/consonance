@@ -21,21 +21,16 @@ UCSC CLOUD COMMONS INSTALLATION BOOTSTRAPPER
 This tool will setup a single host which has all of the infrastructure we
 use to run the UCSC Cloud Commons reference implemenation used by the
 UCSC Genomics Institute.  See https://github.com/BD2KGenomics/dcc-ops
-
 This system requires the following:
 * Docker support in your Linux distribution (Ubuntu 16.04 is officially supported).
 * AWS credentials, if you are using Amazon AWS.
-
 Note: by default the ethernet device is assumed to be eth0 and this is used to
 find the IP address of the host. In some instances on AWS the default ethernet
 device is ens3 for example. You can override the eth0 by setting the
 ETH_DEV env variable before running this script.
-
 For more information see:
-
 * the main GitHub page: https://github.com/BD2KGenomics/dcc-ops
 * the UCSC Genomics Institute - Analysis Core: http://ucsc-cgl.org
-
 MSG
 
 function generate_password {
