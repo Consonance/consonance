@@ -10,6 +10,13 @@
 set -e
 CONSONANCE_LAUNCHER_VERSION=feature/consonance_cleanup
 
+# version of consonance jar files used
+CONSONANCE_BINARY_VERSION=cgp-2.0.0-alpha.16
+# version of container host bag (an ansible script) used to setup workers
+CONSONANCE_HOST_BAG_VERSION=develop_2
+# version of Dockstore CLI installed in client container
+CONSONANCE_DOCKSTORE_VERSION=1.1.5
+
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root" 1>&2
     exit 1
