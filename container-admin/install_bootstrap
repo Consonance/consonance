@@ -165,8 +165,8 @@ fi
 #start the UCSC Computational Genomics Platform (CGP) container that sets up the
 #Nginx config template with the uuids for each of the containers in the CGP
 #at boot time
-echo "Attempting to add docker start core-config-gen to rc.local"
-sudo ./put_core_start_cmd_in_rc.sh
+#echo "Attempting to add docker start core-config-gen to rc.local"
+#sudo ./put_core_start_cmd_in_rc.sh
 
 # RUN THE CONSONANCE INSTALLER
 run_consonance_launcher=''
@@ -374,7 +374,7 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 
   email_address_for_owner_tag='email_address_for_owner_tag'
   ask_question "What is the email address for the 'Owner' tag on the worker VM?" "$EMAIL_FOR_VM_OWNER_TAG" "Email for VM Owner tag" $email_address_for_owner_tag
-  sed -ie "s~{.*}~{\"Owner\":\"${email_address_for_owner_tag}\"}~" ./consonance/example_tags.json
+  sed -ie "s~{.*}~{\"Owner\":\"${email_address_for_owner_tag}\"}~" ./example_tags.json
 
 
   # Now write a config for this file.
@@ -424,12 +424,12 @@ CONFIG
   [[ -d "commons_launcher_config" ]] || mkdir "commons_launcher_config"
   # cp ~/.consonance/consonance.config commons_launcher_config/consonance.config
   # template out stuff
-  mustache commons_launcher_config/consonance.config consonance/aws.config.template > consonance/aws.config
-  mustache commons_launcher_config/consonance.config consonance/bag_params.json.template  > consonance/bag_params.json
-  mustache commons_launcher_config/consonance.config consonance/config.template  > consonance/config
-  mustache commons_launcher_config/consonance.config consonance/youxia_config.template  > consonance/youxia_config
-  mustache commons_launcher_config/consonance.config consonance/web.yml.template  > consonance/web.yml
-  mustache commons_launcher_config/consonance.config consonance/boto.config.template > consonance/boto.config
+  mustache commons_launcher_config/consonance.config aws.config.template > aws.config
+  mustache commons_launcher_config/consonance.config bag_params.json.template  > bag_params.json
+  mustache commons_launcher_config/consonance.config config.template  > config
+  mustache commons_launcher_config/consonance.config youxia_config.template  > youxia_config
+  mustache commons_launcher_config/consonance.config web.yml.template  > web.yml
+  mustache commons_launcher_config/consonance.config boto.config.template > boto.config
   cat ${user_pem_path} > consonance/key.pem
 
   cd consonance
