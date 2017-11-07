@@ -106,7 +106,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 //Client.main(s);
                 LOG.error("command: DOCKSTORE_ROOT=1 dockstore "+ Arrays.toString(s));
                 Utilities.executeCommand("DOCKSTORE_ROOT=1 dockstore " + Arrays.toString(s));
-                // LEFT OFF HERE: try switching to direct bash call, I cannot figure out the problem with
+                // LEFT OFF HERE: try switching to direct bash call, I cannot figure out the problem with calling the main in code!
 
 
             } catch (NoClassDefFoundError e) {

@@ -36,6 +36,14 @@ Now load the schema:
 
     $bash> cat ~/gitroot/Consonance/consonance/consonance-arch/sql/schema.sql | "/Applications/Postgres.app/Contents/Versions/10/bin/psql" -p5432 -d "queue_status"
 
+### RabbitMQ
+
+The integration tests require RabbitMQ, here's how to install
+via home brew:
+
+    brew install rabbitmq
+    /usr/local/sbin/rabbitmq-server
+
 ### Config File
 
 By default the client looks for `~/.consonance/config`. You need this file for
@@ -53,6 +61,14 @@ The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run
  To avoid tests (probably a bad idea!):
 
     $bash> mvn -Dmaven.test.skip=true clean install
+
+Now run the full integration tests (assumes you have RabbitMQ and PostgreSQL installed):
+
+    cd consonance-integration-testing
+    mvn -Dtest=SystemMainIT test
+    # or all ITs
+    cd ..
+    mvn -B clean install -DskipITs=false
 
 ## Releasing
 

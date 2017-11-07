@@ -91,7 +91,9 @@ public class SystemMainIT {
         main.setWebClient(SystemClientIT.getWebClient());
         final File file = Files.createTempFile("test", "test").toFile();
         main.runMain(new String[] { "run","--flavour","m1.test","--image-descriptor", file.getAbsolutePath() ,
-                "--run-descriptor", file.getAbsolutePath(), "--extra-file", "node-engine.cwl="+file.getAbsolutePath()+"=true",
+                "--run-descriptor", file.getAbsolutePath(),
+                "--format", "cwl",
+                "--extra-file", "node-engine.cwl="+file.getAbsolutePath()+"=true",
                 "--extra-file", "pointless.txt="+file.getAbsolutePath()+"=false"});
         // reset system.out
         // check out the output
@@ -122,7 +124,7 @@ public class SystemMainIT {
         main.setWebClient(SystemClientIT.getWebClient());
         final File file = Files.createTempFile("test", "test").toFile();
         main.runMain(new String[] { "run","--flavour","m1.test","--image-descriptor", "https://raw.githubusercontent.com/Consonance/consonance/develop/README.md" ,
-                "--run-descriptor", "https://raw.githubusercontent.com/Consonance/consonance/develop/README.md"});
+                "--run-descriptor", "https://raw.githubusercontent.com/Consonance/consonance/develop/README.md", "--format", "cwl"});
         // reset system.out
         // check out the output
         assertTrue(systemOutRule.getLog().contains("job_uuid"));
