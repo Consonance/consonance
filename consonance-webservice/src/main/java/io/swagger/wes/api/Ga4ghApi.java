@@ -38,26 +38,26 @@ import javax.validation.constraints.*;
 @io.swagger.annotations.Api(description = "the ga4gh WES API")
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2017-09-15T17:06:31.319-07:00")
 public class Ga4ghApi  {
-   private Ga4ghApiService delegate = Ga4ghApiServiceFactory.getGa4ghApi();
+   private final Ga4ghApiService delegate = Ga4ghApiServiceFactory.getGa4ghApi();
 
-   public Ga4ghApi(@Context ServletConfig servletContext){
-     Ga4ghApiService delegate = null;
-
-     if (servletContext != null){
-       String implClass = servletContext.getInitParameter("Ga4ghApi.implementation");
-       if (implClass != null && !"".equals(implClass.trim())){
-         try {
-          delegate = (Ga4ghApiService) Class.forName(implClass).newInstance();
-         } catch (Exception e){
-          throw new RuntimeException(e);
-         }
-       }
-     }
-     if (delegate == null){
-       delegate = Ga4ghApiServiceFactory.getGa4ghApi();
-     }
-     this.delegate = delegate;
-   }
+//   public Ga4ghApi(@Context ServletConfig servletContext){
+//     Ga4ghApiService delegate = null;
+//
+//     if (servletContext != null){
+//       String implClass = servletContext.getInitParameter("Ga4ghApi.implementation");
+//       if (implClass != null && !"".equals(implClass.trim())){
+//         try {
+//          delegate = (Ga4ghApiService) Class.forName(implClass).newInstance();
+//         } catch (Exception e){
+//          throw new RuntimeException(e);
+//         }
+//       }
+//     }
+//     if (delegate == null){
+//       delegate = Ga4ghApiServiceFactory.getGa4ghApi();
+//     }
+//     this.delegate = delegate;
+//   }
     @DELETE
     @Path("/wes/v1/workflows/{workflow_id}")
     @Consumes({ "application/json" })
