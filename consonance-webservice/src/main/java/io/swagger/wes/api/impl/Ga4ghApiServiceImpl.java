@@ -56,25 +56,25 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         final Job workflowRun = orderResource.getWorkflowRun(user, workflowId);
         // no-op, Consonance doesn't really support cancellation
         Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
-        id.setValue(workflowRun.getUuid());
-        return Response.ok().entity(workflowId)).build();
+        id.setWorkflowId(workflowRun.getUuid());
+        return Response.ok().entity(workflowId).build();
     }
 
     @Override
     public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getServiceInfo()");
-        String serviceInfo = '{
-    "workflow_type_versions": {
-        "CWL": ["v1.0"]
-    },
-    "supported_wes_versions": "0.1.0",
-    "supported_filesystem_protocols": ["file"],
-    "engine_versions": "cwl-runner",
-    "system_state_counts": {},
-    "key_values": {}
-}'
+        String serviceInfo = "\'{"+
+    "\n\"workflow_type_versions\": {" +
+        "\n\"CWL\": [\"v1.0\"]"+
+    "\n}," +
+    "\n\"supported_wes_versions\": \"0.1.0\"," +
+    "\n\"supported_filesystem_protocols\": [\"file\"]," +
+    "\n\"engine_versions\": \"cwl-runner\"," +
+    "\n\"system_state_counts\": {}," +
+    "\n\"key_values\": {}" +
+    "}\'" ;
 
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, serviceInfo).build();
+        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, serviceInfo)).build();
     }
 
     @Override
@@ -82,7 +82,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowLog()");
         LOG.info("Getting workflow log for " + workflowId);
 
-        return Response.ok().entity(workflowId)).build();
+        return Response.ok().entity(workflowId).build();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowStatus()");
         LOG.info("Getting workflow status for " + workflowId);
 
-        return Response.ok().entity(workflowId)).build();
+        return Response.ok().entity(workflowId).build();
     }
 
     @Override
