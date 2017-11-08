@@ -8,7 +8,6 @@ RUN apt-get update \
     python-software-properties \
     software-properties-common \
     telnet \
-    vim \
     && apt-get clean
 
 # grab oracle java (auto accept licence)
@@ -18,9 +17,12 @@ RUN add-apt-repository -y ppa:webupd8team/java \
     && apt-get install -y oracle-java8-installer
 
 # install Consonance services
-ENV consonance_version={{ CONSONANCE_BINARY_VERSION }}
+ENV consonance_version=cgp-2.0.0-alpha.16
 
-RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
+# Switch to BD2K fork over Consonance source for reaping fix
+RUN wget --no-verbose https://github.com/BD2KGenomics/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
+#RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
+#https://www.dropbox.com/s/giy9ayxlvpoohiz/consonance-arch-2.0-alpha.11-SNAPSHOT.jar #https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar
 
 # install dockerize
 ENV DOCKERIZE_VERSION v0.2.0
@@ -39,4 +41,4 @@ RUN mkdir /consonance_logs && chmod a+rx /consonance_logs
 
 # TODO: 1) update the above to have my AWS creds in it and 2) create the admin user in postgres db
 # Waiting for postgres and rabbitmq services
-CMD ["dockerize", "-wait", "tcp://webservice:8080", "-timeout", "60s", "./init_coordinator.sh"]
+CMD ["dockerize", "-wait", "tcp://consonance-webservice:8080", "-timeout", "60s", "./init_coordinator.sh"]

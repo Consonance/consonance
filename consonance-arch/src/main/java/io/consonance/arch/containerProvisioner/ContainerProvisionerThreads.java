@@ -393,21 +393,21 @@ public class ContainerProvisionerThreads extends Base {
                     }
 
                     // TODO: this logic isnt' quite right to find orphan workers VMs... the DB has none as RUNNING now... so I'm not sure what I will need to do to see if these are actually running
-                    LOG.info("CHECKING DB FOR SUCCESS/FAILED JOB VMS TO REAP");
-                    final List<Job> doneJobs = db.getJobs(JobState.SUCCESS);
-                    final List<Job> failedJobs = db.getJobs(JobState.FAILED);
-                    doneJobs.addAll(failedJobs);
-                    for(Job j : doneJobs) {
-                        // if the VM assigned is running, reap it
-                        List<Provision> provisions = db.getProvisions(ProvisionState.RUNNING);
-                        for (Provision p : provisions) {
-                            if (j.getUuid().equals(p.getJobUUID())) {
-                                synchronized (ContainerProvisionerThreads.class) {
-                                    runReaper(settings, p.getIpAddress(), j.getVmUuid());
-                                }
-                            }
-                        }
-                    }
+                    //LOG.info("CHECKING DB FOR SUCCESS/FAILED JOB VMS TO REAP");
+                    //final List<Job> doneJobs = db.getJobs(JobState.SUCCESS);
+                    //final List<Job> failedJobs = db.getJobs(JobState.FAILED);
+                    //doneJobs.addAll(failedJobs);
+                    //for(Job j : doneJobs) {
+                    //    // if the VM assigned is running, reap it
+                    //    List<Provision> provisions = db.getProvisions(ProvisionState.RUNNING);
+                    //    for (Provision p : provisions) {
+                    //        if (j.getUuid().equals(p.getJobUUID())) {
+                    //            synchronized (ContainerProvisionerThreads.class) {
+                    //                runReaper(settings, p.getIpAddress(), j.getVmUuid());
+                    //            }
+                    //        }
+                    //    }
+                    //}
 
                     LOG.info("CHECKING QUEUE FOR VMS TO REAP");
 

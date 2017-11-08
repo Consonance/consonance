@@ -4,49 +4,45 @@
 # Hacked by Denis Yuen
 # Hacked by Brian O'Connor <briandoconnor@gmail.com>
 
+# TODO:
+# * we need a mechanism to shutdown since this script launches services in daemon mode
+
 set -e
+CONSONANCE_LAUNCHER_VERSION=feature/consonance_cleanup
 
-# When changing these versions, you will probably need to delete all files in the working directory
-# except for the consonance_launcher_config directory in order to get a clean new copy of
-# the Docker compose templates
-
-# version of consonance code used for this script
-CONSONANCE_LAUNCHER_VERSION=feature/dockstore_1_2
 # version of consonance jar files used
-CONSONANCE_BINARY_VERSION=2.0.0-alpha.15
+CONSONANCE_BINARY_VERSION=cgp-2.0.0-alpha.16
 # version of container host bag (an ansible script) used to setup workers
-CONSONANCE_HOST_BAG_VERSION=2.0.0-alpha.2
+CONSONANCE_HOST_BAG_VERSION=develop_2
 # version of Dockstore CLI installed in client container
 CONSONANCE_DOCKSTORE_VERSION=1.1.5
 
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root" 1>&2
+    exit 1
+fi
 
 cat <<MSG
-CONSONANCE INSTALLATION BOOTSTRAPPER
+UCSC CLOUD COMMONS INSTALLATION BOOTSTRAPPER
 -----------------------------------------------------------------------------
-This tool will setup a "launcher" host which has all of the infrastructure we
-use to run Consonance.  This launcher host can then launch one or more worker
-VMs to run generic tools and workflows from Dockstore (http://dockstore.org).
-
+This tool will setup a single host which has all of the infrastructure we
+use to run the UCSC Cloud Commons reference implemenation used by the
+UCSC Genomics Institute.  See https://github.com/BD2KGenomics/dcc-ops
 This system requires the following:
-* Docker support in your Linux distribution (Ubuntu 16.04 is officially supported by the Consonance Launcher).
+* Docker support in your Linux distribution (Ubuntu 16.04 is officially supported).
 * AWS credentials, if you are using Amazon AWS.
-
-Note: this system currently is configured per cloud, per worker type.  A single
-launcher supporting multiple clouds and multiple worker types is not supported.
-You can, however, run multiple launchers to achieve the dersired result.
-
-Note: by default we detect the IP address of the host using AWS instance metadata.
-This has not been tested with alternative clouds but AWS instance metadata should be available 
-in OpenStack https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
-
+Note: by default the ethernet device is assumed to be eth0 and this is used to
+find the IP address of the host. In some instances on AWS the default ethernet
+device is ens3 for example. You can override the eth0 by setting the
+ETH_DEV env variable before running this script.
 For more information see:
-
-* the main GitHub page: https://github.com/Consonance/consonance
-* the project wiki: https://github.com/Consonance/consonance/wiki
-* the Bootstrapper docs: https://github.com/Consonance/consonance/tree/develop/container-admin
-
+* the main GitHub page: https://github.com/BD2KGenomics/dcc-ops
+* the UCSC Genomics Institute - Analysis Core: http://ucsc-cgl.org
 MSG
 
+function generate_password {
+    tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1
+}
 
 # Ask the user a question and save the answer.
 # They MUST give an answer, they cannot leave their answer blank. In the future, that could be parameterized...
@@ -56,14 +52,14 @@ MSG
 # $4 - reference to the user's answer.
 function ask_question()
 {
-	question_str=$1
-	prev_val=$2
-	val_name=$3
-	answer=''
+  question_str=$1
+  prev_val=$2
+  val_name=$3
+  answer=''
 
     while [[ -z ${answer// /} ]] ; do
         if [[ -n $prev_val ]] ; then
-			read -ep "${question_str} Previous value: "$'\n' -i "$prev_val" answer
+      read -ep "${question_str} Previous value: "$'\n' -i "$prev_val" answer
         else
             read -ep "$question_str"$'\n' answer
         fi
@@ -72,320 +68,333 @@ function ask_question()
         fi
     done
     # Set the user's value in the reference. See here: http://stackoverflow.com/a/14852461/192801 to get an idea of how this works.
-	eval "${!4}=\"$answer\""
+  eval "${!4}=\"$answer\""
 }
 
-user_consonance_version=latest
-#FYI: The weird "^^" is to make the user input into uppercase so that if they enter "y" the installer will still run.
-install_consonance_launcher=''
-while [[ "${install_consonance_launcher^^}" != 'Y' &&  "${install_consonance_launcher^^}" != 'N' ]] ; do
-	echo "DO YOU WISH TO CONTINUE [Y/N]:"
-	read install_consonance_launcher
-	if [ "${install_consonance_launcher^^}" = 'Y' ] ; then
-		user_install_docker=''
-		set +e
-		DOCKER_PATH="$(which docker)"
-		set -e
-		if [ -z "$DOCKER_PATH" ] ; then
-			user_install_docker='Y'
-		else
-			while [[ "${user_install_docker^^}" != 'Y' &&  "${user_install_docker^^}" != 'N' ]] ; do
-				echo "It looks like docker may already be installed. Would you like to run this step anyway, which may attempt to upgrade docker? [Y/N]"
-				read user_install_docker
-			done
-		fi
-                echo "Installing various apt packages"
-                # need to install regardless
-		set +e
-		sudo apt-get install wget curl ruby-mustache=1.0.2-1 jq git --yes &> install_wget_curl.log
-		install_wget_result=$?
-		set -e
+# RUN BASIC INSTALLERS
+# FYI: The weird "^^" is to make the user input into uppercase so that if they enter "y" the installer will still run.
+install_commons_launcher=''
+while [[ "${install_commons_launcher^^}" != 'Y' &&  "${install_commons_launcher^^}" != 'N' ]] ; do
+  echo "DO YOU WISH TO CONTINUE [Y/N]:"
+  read install_commons_launcher
+  if [ "${install_commons_launcher^^}" = 'Y' ] ; then
+    user_install_docker=''
+    set +e
+    DOCKER_PATH="$(which docker)"
+    set -e
+    if [ -z "$DOCKER_PATH" ] ; then
+      user_install_docker='Y'
+    else
+      while [[ "${user_install_docker^^}" != 'Y' &&  "${user_install_docker^^}" != 'N' ]] ; do
+        echo "It looks like docker may already be installed. Would you like to run this step anyway, which may attempt to upgrade docker? [Y/N]"
+        read user_install_docker
+      done
+    fi
 
-		if [ $install_wget_result -ne  0 ] ; then
-			echo "It looks like there may have been a problem installing or updated wget and curl:"
-			cat install_wget_curl.log
-			exit 1
-		fi
-		if [ "${user_install_docker^^}" = 'Y' ] ; then
-			# Remove eXecute permission from /etc/grub.d/30_os-prober because sometimes the docker installer will hang when this hangs. This has happened in OpenStack
-			# and could happen elsewhere.
-			if [ -f /etc/grub.d/30_os-prober ] ; then
-				sudo chmod a-x /etc/grub.d/30_os-prober
-			fi
+    echo "Installing various apt packages"
+    # need to install regardless
+    set +e
+    sudo apt-get -y update
+    sudo apt-get install wget curl ruby-mustache=1.0.2-1 jq git --yes &> install_wget_curl.log
+    install_wget_result=$?
+    set -e
 
-			echo "Installing docker..."
+    if [ $install_wget_result -ne  0 ] ; then
+      echo "It looks like there may have been a problem installing or updated wget and curl:"
+      cat install_wget_curl.log
+      exit 1
+    fi
 
+    if [ "${user_install_docker^^}" = 'Y' ] ; then
+      # Remove eXecute permission from /etc/grub.d/30_os-prober because sometimes the docker installer will hang when this hangs. This has happened in OpenStack
+      # and could happen elsewhere.
+      if [ -f /etc/grub.d/30_os-prober ] ; then
+        sudo chmod a-x /etc/grub.d/30_os-prober
+      fi
 
-			set +e
-			curl -sSL https://get.docker.com/ | sh &> install_docker.log
-			install_docker_result=$?
-			set -e
+      echo "Installing docker..."
 
-			if [ $install_docker_result -ne  0 ] ; then
-				echo "It looks like there may have been a problem installing docker:"
-				cat install_wget_curl.log
-				exit 1
-			fi
+      set +e
+      curl -sSL https://get.docker.com/ | sh &> install_docker.log
+      install_docker_result=$?
+      set -e
 
-			set +e
-			sudo wget https://github.com/docker/compose/releases/download/1.8.1/run.sh -O /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose  &> install_compose.log
-			install_compose_result=$?
-			set -e
+      if [ $install_docker_result -ne  0 ] ; then
+        echo "It looks like there may have been a problem installing docker:"
+        cat install_wget_curl.log
+        exit 1
+      fi
 
-			if [ $install_compose_result -ne  0 ] ; then
-				echo "It looks like there may have been a problem installing docker compose:"
-				cat install_compose.log
-				exit 1
-			fi
+      set +e
+      sudo wget https://github.com/docker/compose/releases/download/1.8.1/run.sh -O /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose  &> install_compose.log
+      install_compose_result=$?
+      set -e
 
+      if [ $install_compose_result -ne  0 ] ; then
+        echo "It looks like there may have been a problem installing docker compose:"
+        cat install_compose.log
+        exit 1
+      fi
 
+      echo "Done installing docker!"
+      DOCKER_PATH="$(which docker)"
+    else
+      echo "Skipping docker installation..."
+    fi
 
-			echo "Done installing docker!"
-			DOCKER_PATH="$(which docker)"
-		else
-			echo "Skipping docker installation..."
-		fi
-
-		if [ -z "$DOCKER_PATH" ] ; then
-			echo "You need to install docker before pulling docker images. Please ensure that docker is properly installed and then re-run this script with the command \"bash install_bootstrap\""
-			exit 1
-		fi
-	elif [ "${install_consonance_launcher^^}" = 'N' ] ; then
-		echo "You are exiting the installer now, but you can always run it again when you are ready."
-		exit 0
-	fi
+    if [ -z "$DOCKER_PATH" ] ; then
+      echo "You need to install docker before pulling docker images. Please ensure that docker is properly installed and then re-run this script with the command \"bash install_bootstrap\""
+      exit 1
+    fi
+  elif [ "${install_commons_launcher^^}" = 'N' ] ; then
+    echo "You are exiting the installer now, but you can always run it again when you are ready."
+    exit 0
+  fi
 done
 
+# CORE COMMONS: initial steps
+if [[ $(sudo docker network ls | grep core_public | wc -l) = "0" ]]; then
+    echo "creating core_public docker network"
+    sudo docker network create core_public
+else
+    echo "core_public docker network already exists"
+fi
+
+# CORE COMMONS: setup elastic search network
+if [[ $(sudo docker network ls | grep esnet | wc -l) = "0" ]]; then
+    echo "creating esnet docker network"
+    sudo docker network create esnet
+else
+    echo "esnet docker network already exists"
+fi
+
+#add the command to
+#start the UCSC Computational Genomics Platform (CGP) container that sets up the
+#Nginx config template with the uuids for each of the containers in the CGP
+#at boot time
+#echo "Attempting to add docker start core-config-gen to rc.local"
+#sudo ./put_core_start_cmd_in_rc.sh
+
+# RUN THE CONSONANCE INSTALLER
 run_consonance_launcher=''
 while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}" != 'N' ]] ; do
-    echo "Would you like to run the consonance_launcher now? [Y/N]"
-    read run_consonance_launcher
-    # If the user would like to run consonance_launcher, then we have to get some config settings from them OR read them from an existing file
-    if [ "${run_consonance_launcher^^}" = 'Y' ] ; then
-        #Read the config file if it exists and then show previous values (but do not override variables in this script)
-        if [ -f consonance_launcher_config/compose.config ] ; then
-		source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" consonance_launcher_config/compose.config | grep -v "CONSONANCE")
-        fi
+  echo "Would you like to run the Consonance installer now? [Y/N]"
+  read run_consonance_launcher
+  # If the user would like to run consonance_launcher, then we have to get some config settings from them OR read them from an existing file
+  if [ "${run_consonance_launcher^^}" = 'Y' ] ; then
+      #Read the config file if it exists and then show previous values...
+      if [ -f commons_launcher_config/consonance.config ] ; then
+        source <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" commons_launcher_config/consonance.config)
+      fi
 
-        user_cloud_env='AWS'
-# OpenStack support seems to be broken as of 2017 and OpenStack Mitaka
-#		while [[ -z "${user_cloud_env// /}" ]] ; do
-#            if [ ! -z $CLOUD_ENV ] ; then
-#                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". Previous value: \n' -i "$CLOUD_ENV" user_cloud_env
-#            else
-#                read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". \n' user_cloud_env
-#            fi
-#            if [[ -z "${user_cloud_env// /}" || ( ${user_cloud_env} != 'AWS' && ${user_cloud_env} != 'OpenStack' && ${user_cloud_env} != 'Azure' ) ]] ; then
-#                echo 'Cloud environment must be one of: "AWS", "OpenStack", "Azure".'
-#                user_cloud_env=''
-#            fi
-#        done
+      eth_dev=''
+      if [ ! -z $ETH_DEV ] ; then
+              read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). Previous value: \n' -i "$ETH_DEV" eth_dev
+          else
+              read -ep $'What ethernet device should I pull the IP address from (typically eth0, check with ifconfig). \n' eth_dev
+      fi
 
-        user_pem_path=''
-        while [[ ! -f $user_pem_path || ! -e $user_pem_path || -z "${user_pem_path// /}" ]] ; do
-            if [ ! -z $PEM_PATH ] ; then
-                read -ep $'What is the path to the pem key file you will use to authenticate in this environment? Previous value: \n' -i "$PEM_PATH" user_pem_path
-                user_pem_path="${user_pem_path/#\~/$HOME}"
-            else
-                read -ep $'What is the path to the pem key file you will use to authenticate in this environment?\n' user_pem_path
-                user_pem_path="${user_pem_path/#\~/$HOME}"
-            fi
-            if [[ ! -f $user_pem_path || ! -e $user_pem_path ]] ; then
-                echo "The path you pass for the key file must be valid. Please ensure that \"$user_pem_path\" is a valid path."
-            fi
-        done
+      user_cloud_env=''
+      while [[ -z "${user_cloud_env// /}" ]] ; do
+          if [ ! -z $CLOUD_ENV ] ; then
+              read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". Previous value: \n' -i "$CLOUD_ENV" user_cloud_env
+          else
+              read -ep $'What cloud environment are you working in? Allowed values are "AWS", "OpenStack", "Azure". \n' user_cloud_env
+          fi
+          if [[ -z "${user_cloud_env// /}" || ( ${user_cloud_env} != 'AWS' && ${user_cloud_env} != 'OpenStack' && ${user_cloud_env} != 'Azure' ) ]] ; then
+              echo 'Cloud environment must be one of: "AWS", "OpenStack", "Azure".'
+              user_cloud_env=''
+          fi
+      done
 
-		user_key_name='user_key_name'
-		ask_question "What is the name of this key?" "$KEY_NAME" "Key name" $user_key_name
+      user_pem_path=''
+      while [[ ! -f $user_pem_path || ! -e $user_pem_path || -z "${user_pem_path// /}" ]] ; do
+          if [ ! -z $PEM_PATH ] ; then
+              read -ep $'What is the path to the pem key file you will use to authenticate in this environment? Previous value: \n' -i "$PEM_PATH" user_pem_path
+              user_pem_path="${user_pem_path/#\~/$HOME}"
+          else
+              read -ep $'What is the path to the pem key file you will use to authenticate in this environment?\n' user_pem_path
+              user_pem_path="${user_pem_path/#\~/$HOME}"
+          fi
+          if [[ ! -f $user_pem_path || ! -e $user_pem_path ]] ; then
+              echo "The path you pass for the key file must be valid. Please ensure that \"$user_pem_path\" is a valid path."
+          fi
+      done
 
-        if [ $user_cloud_env == 'AWS' ] ; then
-            ############################
-            # AWS questions
-            ############################
+      user_key_name='user_key_name'
+      ask_question "What is the name of this key?" "$KEY_NAME" "Key name" $user_key_name
 
-			user_aws_key='user_aws_key'
-			ask_question "What is your AWS Key?" "$AWS_ACCESS_KEY_ID" "AWS Key name" $user_aws_key
+      if [ $user_cloud_env == 'AWS' ] ; then
+        ############################
+        # AWS questions
+        ############################
 
-			user_aws_secret_key='user_aws_secret_key'
-			ask_question "What is your AWS Secret Key?" "$AWS_SECRET_ACCESS_KEY" "AWS Secret Key name" $user_aws_secret_key
+        user_aws_key='user_aws_key'
+        ask_question "What is your AWS Key?" "$AWS_ACCESS_KEY_ID" "AWS Key name" $user_aws_key
 
-			user_sec_grp='user_sec_grp'
-			ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
+        user_aws_secret_key='user_aws_secret_key'
+        ask_question "What is your AWS Secret Key?" "$AWS_SECRET_ACCESS_KEY" "AWS Secret Key name" $user_aws_secret_key
 
-			aws_max_spot_price='aws_max_spot_price'
-			ask_question "What is your AWS max spot price?" "$AWS_MAX_SPOT_PRICE" "Max spot price" $aws_max_spot_price
+        user_sec_grp='user_sec_grp'
+        ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
 
-			aws_region='aws_region'
-			ask_question "What is your AWS region (e.g. us-east-1 for Virginia)?" "$AWS_REGION" "AWS region" $aws_region
+        aws_max_spot_price='aws_max_spot_price'
+        ask_question "What is your AWS max spot price?" "$AWS_MAX_SPOT_PRICE" "Max spot price" $aws_max_spot_price
 
-			aws_zone='aws_zone'
-			ask_question "What is your AWS zone within the selected region (e.g. us-east-1c for the us-east-1 region)?" "$AWS_ZONE" "AWS zone" $aws_zone
+        aws_region='aws_region'
+        ask_question "What is your AWS region (e.g. us-east-1 for Virginia)?" "$AWS_REGION" "AWS region" $aws_region
 
-			aws_instance_type='aws_instance_type'
-			ask_question "What is your default AWS instance type (e.g. c4.2xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
+        aws_zone='aws_zone'
+        ask_question "What is your AWS zone within the selected region (e.g. us-east-1c for the us-east-1 region)?" "$AWS_ZONE" "AWS zone" $aws_zone
 
-			aws_ami_image='aws_ami_image'
-			ask_question "What is your AWS image (e.g. AMI such as ami-6edd3078 for Ubuntu, we recommend the Ubuntu 16.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
+        aws_instance_type='aws_instance_type'
+        ask_question "What is your AWS instance type (e.g. m1.xlarge)?" "$AWS_INSTANCE_TYPE" "AWS instance type" $aws_instance_type
 
+        aws_ami_image='aws_ami_image'
+        ask_question "What is your AWS image (e.g. AMI such as ami-b2e3c6d8 for Ubuntu, we recommend the Ubuntu 14.04 base image that is appropriate for the instance type you just selected)?" "$AWS_AMI_IMAGE" "AWS AMI image" $aws_ami_image
 
-        elif [ $user_cloud_env == 'Azure' ] ; then
-	        ############################
-	        # AZURE QUESTIONS
-	        ############################
-			user_azure_subscription_id='user_azure_subscription_id'
-			ask_question "What is your Azure subscription?" "$AZURE_SUBSCRIPTION" "Azure subscription" $user_azure_subscription_id
+      elif [ $user_cloud_env == 'Azure' ] ; then
+        ############################
+        # AZURE QUESTIONS
+        ############################
+        user_azure_subscription_id='user_azure_subscription_id'
+        ask_question "What is your Azure subscription?" "$AZURE_SUBSCRIPTION" "Azure subscription" $user_azure_subscription_id
 
-			user_azure_storage_account_name='user_azure_storage_account_name'
-			ask_question "What is your Azure storage account name?" "$AZURE_STORAGE_ACCOUNT" "Azure storage account name" $user_azure_storage_account_name
+        user_azure_storage_account_name='user_azure_storage_account_name'
+        ask_question "What is your Azure storage account name?" "$AZURE_STORAGE_ACCOUNT" "Azure storage account name" $user_azure_storage_account_name
 
-			user_azure_storage_account_key='user_azure_storage_account_key'
-			ask_question "What is your Azure storage account key?" "$AZURE_STORAGE_ACCOUNT_KEY" "Azure storage account key" $user_azure_storage_account_key
+        user_azure_storage_account_key='user_azure_storage_account_key'
+        ask_question "What is your Azure storage account key?" "$AZURE_STORAGE_ACCOUNT_KEY" "Azure storage account key" $user_azure_storage_account_key
 
-			user_azure_AD_user='user_azure_AD_user'
-			ask_question "What is your Azure Active Directory user name?" "$AZURE_AD_USER" "Azure Active Directory user name" $user_azure_AD_user
+        user_azure_AD_user='user_azure_AD_user'
+        ask_question "What is your Azure Active Directory user name?" "$AZURE_AD_USER" "Azure Active Directory user name" $user_azure_AD_user
 
-			user_azure_AD_passwd='user_azure_AD_passwd'
-			ask_question "What is your Azure Active Directory password?" "$AZURE_AD_PASSWD" "Azure Active Directory user name" $user_azure_AD_passwd
+        user_azure_AD_passwd='user_azure_AD_passwd'
+        ask_question "What is your Azure Active Directory password?" "$AZURE_AD_PASSWD" "Azure Active Directory user name" $user_azure_AD_passwd
 
-			user_azure_AD_tenant='user_azure_AD_tenant'
-			ask_question "What is your Azure Active Directory tenant?" "$AZURE_AD_TENANT" "Azure Active Directory tenant" $user_azure_AD_tenant
+        user_azure_AD_tenant='user_azure_AD_tenant'
+        ask_question "What is your Azure Active Directory tenant?" "$AZURE_AD_TENANT" "Azure Active Directory tenant" $user_azure_AD_tenant
 
-			user_azure_AD_client='user_azure_AD_client'
-			ask_question "What is your Azure Active Directory client?" "$AZURE_AD_CLIENT" "Azure Active Directory client" $user_azure_AD_client
+        user_azure_AD_client='user_azure_AD_client'
+        ask_question "What is your Azure Active Directory client?" "$AZURE_AD_CLIENT" "Azure Active Directory client" $user_azure_AD_client
 
-			user_azure_virtual_network='user_azure_virtual_network'
-			ask_question "What is the name of the Virtual Network for this fleet?" "$AZURE_VIRTUAL_NETWORK" "Azure Virtual Network Name" $user_azure_virtual_network
+        user_azure_virtual_network='user_azure_virtual_network'
+        ask_question "What is the name of the Virtual Network for this fleet?" "$AZURE_VIRTUAL_NETWORK" "Azure Virtual Network Name" $user_azure_virtual_network
 
-			user_azure_location='user_azure_location'
-			ask_question "What Location do you want to use for this fleet?" "$AZURE_LOCATION" "Location" $user_azure_location
+        user_azure_location='user_azure_location'
+        ask_question "What Location do you want to use for this fleet?" "$AZURE_LOCATION" "Location" $user_azure_location
 
-            # TODO: Get public and private Azure IP addresses, or ask the user to provide them since it seems rather difficult to get them from the Azure API directly.
+        # TODO: Get public and private Azure IP addresses, or ask the user to provide them since it seems rather difficult to get them from the Azure API directly.
 
-        elif [ $user_cloud_env == 'OpenStack' ] ; then
-            ############################
-            # OpenStack questions
-            ############################
-			user_os_username='user_os_username'
-			ask_question "What is your OpenStack username (formatted as <tenant>:<username>)?" "$OS_USERNAME" "OpenStack username" $user_os_username
+      elif [ $user_cloud_env == 'OpenStack' ] ; then
+        ############################
+        # OpenStack questions
+        ############################
+        user_os_username='user_os_username'
+        ask_question "What is your OpenStack username (formatted as <tenant>:<username>)?" "$OS_USERNAME" "OpenStack username" $user_os_username
 
-			user_os_password='user_os_password'
-			ask_question "What is your OpenStack password?" "$OS_PASSWORD" "OpenStack password" $user_os_password
+        user_os_password='user_os_password'
+        ask_question "What is your OpenStack password?" "$OS_PASSWORD" "OpenStack password" $user_os_password
 
-			user_os_endpoint='user_os_endpoint'
-			ask_question "What is your OpenStack endpoint?" "$OS_ENDPOINT" "OpenStack endpoint" $user_os_endpoint
+        user_os_endpoint='user_os_endpoint'
+        ask_question "What is your OpenStack endpoint?" "$OS_ENDPOINT" "OpenStack endpoint" $user_os_endpoint
 
-			user_os_region='user_os_region'
-			ask_question "What is your OpenStack region?" "$OS_REGION" "OpenStack region" $user_os_region
+        user_os_region='user_os_region'
+        ask_question "What is your OpenStack region?" "$OS_REGION" "OpenStack region" $user_os_region
 
-            user_sec_grp='user_sec_grp'
-            ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
+        user_sec_grp='user_sec_grp'
+        ask_question "What is your Security Group?" "$SECURITY_GROUP" "Security Group" $user_sec_grp
 
-            user_os_network_id='user_os_network_id'
-            ask_question "What is your OpenStack network ID?" "$OS_NETWORK_ID" "Network ID" $user_os_network_id
+        user_os_network_id='user_os_network_id'
+        ask_question "What is your OpenStack network ID?" "$OS_NETWORK_ID" "Network ID" $user_os_network_id
 
-            user_os_zone=''
-            if [ ! -z $OS_ZONE ] ; then
-                read -ep $'What is your OpenStack zone? Previous value: \n' -i $OS_REGION user_os_zone
-            else
-                read -ep $'What is your OpenStack zone?\n' user_os_zone
-            fi
+        user_os_zone=''
+        if [ ! -z $OS_ZONE ] ; then
+            read -ep $'What is your OpenStack zone? Previous value: \n' -i $OS_REGION user_os_zone
         else
-        	 # Just in case some other value somehow gets in to $user_cloud_env
-            echo "Unrecognized cloud environment: $user_cloud_env, exiting..."
-            exit 1
+            read -ep $'What is your OpenStack zone?\n' user_os_zone
         fi
-        # echo "What version of the consonance_launcher do you wish to run (default will be \"latest\")?"
-        # read user_consonance_version
-        # They already pulled "latest", earlier in this script, so just stick with that. Future versions could ask this question, if necessary...
-        user_consonance_version="latest"
-
-
-		user_fleet_name=''
-
-        if [ $user_cloud_env == 'Azure' ] ; then
-        	# In Azure, the fleet name also gets used for the storage account name which may only contain lowercase letters, numbers, and dashes.
-	        if [ ! -z "$FLEET_NAME" ] ; then
-	            read -ep $'What would you like to name your fleet? Azure fleet names may only contain lowercase letter, numbers, and dashes. If you do not specify a name, a name will be generated randomly for you. Previous value: \n' -i "$FLEET_NAME" user_fleet_name
-	        else
-	            read -ep $'What would you like to name your fleet? Azure fleet names may only contain lowercase letter, numbers, and dashes. If you do not specify a name, a name will be generated randomly for you.\n' user_fleet_name
-	        fi
-	        user_fleet_name=${user_fleet_name,,}
-       		user_fleet_name=${user_fleet_name//[^[:alnum:]]/}
-       		# If the user didn't specify a fleet name we need to do it HERE because the start_launcher_container.sh script may generate fleet names
-			# that are not Azure-friendly.
-       		if [ -z $user_fleet_name ] ; then
-       			user_fleet_name=$(cat /dev/urandom | tr -dc 'a-z0-9-' | fold -w 10 | head -n 1)
-       		fi
-       		echo "Your Azure fleet name: $user_fleet_name"
+      else
+         # Just in case some other value somehow gets in to $user_cloud_env
+          echo "Unrecognized cloud environment: $user_cloud_env, exiting..."
+          exit 1
+      fi
+      # echo "What version of the consonance_launcher do you wish to run (default will be \"latest\")?"
+      # read user_consonance_version
+      # They already pulled "latest", earlier in this script, so just stick with that. Future versions could ask this question, if necessary...
+      user_consonance_version="latest"
+      user_fleet_name=''
+      if [ $user_cloud_env == 'Azure' ] ; then
+        # In Azure, the fleet name also gets used for the storage account name which may only contain lowercase letters, numbers, and dashes.
+        if [ ! -z "$FLEET_NAME" ] ; then
+            read -ep $'What would you like to name your fleet? Azure fleet names may only contain lowercase letter, numbers, and dashes. If you do not specify a name, a name will be generated randomly for you. Previous value: \n' -i "$FLEET_NAME" user_fleet_name
         else
-	        if [ ! -z "$FLEET_NAME" ] ; then
-	            read -ep $'What would you like to name your fleet? If you do not specify a name, a name will be generated randomly for you. Previous value: \n' -i "$FLEET_NAME" user_fleet_name
-	        else
-	            read -ep $'What would you like to name your fleet? If you do not specify a name, a name will be generated randomly for you.\n' user_fleet_name
-	        fi
-       	fi
-
-        # Build a flag for fleet names to get passed to the next script...
-        FLEET_NAME_STR=''
-        if [ ! -z "$user_fleet_name" ] ; then
-            # remove quotes from the fleet names, could have come from quoted previous fleet name in config
-            user_fleet_name=${user_fleet_name//\"/}
-            # replace space with underscore so we can pass to the next script without having to surround in quotes because that
-            # causes problems for other systems.
-            user_fleet_name=${user_fleet_name// /_}
-            FLEET_NAME_STR=" -f $user_fleet_name "
+            read -ep $'What would you like to name your fleet? Azure fleet names may only contain lowercase letter, numbers, and dashes. If you do not specify a name, a name will be generated randomly for you.\n' user_fleet_name
         fi
+        user_fleet_name=${user_fleet_name,,}
+         user_fleet_name=${user_fleet_name//[^[:alnum:]]/}
+         # If the user didn't specify a fleet name we need to do it HERE because the start_launcher_container.sh script may generate fleet names
+         # that are not Azure-friendly.
+         if [ -z $user_fleet_name ] ; then
+           user_fleet_name=$(cat /dev/urandom | tr -dc 'a-z0-9-' | fold -w 10 | head -n 1)
+         fi
+         echo "Your Azure fleet name: $user_fleet_name"
+      else
+        if [ ! -z "$FLEET_NAME" ] ; then
+            read -ep $'What would you like to name your fleet? If you do not specify a name, a name will be generated randomly for you. Previous value: \n' -i "$FLEET_NAME" user_fleet_name
+        else
+            read -ep $'What would you like to name your fleet? If you do not specify a name, a name will be generated randomly for you.\n' user_fleet_name
+        fi
+       fi
 
-		user_fleet_size='user_fleet_size'
-		# Loop until the user gives a valid integer.
-		while [[ -n ${user_fleet_size//[0-9]/} ]] ; do
-		  	user_fleet_size='user_fleet_size'
-			ask_question "What is the maximum number of worker VMs you want to run in your fleet?" "$FLEET_SIZE" "Maximum fleet size" $user_fleet_size
-			if [[ -n ${user_fleet_size//[0-9]/} ]] ; then
-				echo "Only positive integers are allowed."
-			fi
-		done
+      # Build a flag for fleet names to get passed to the next script...
+      FLEET_NAME_STR=''
+      if [ ! -z "$user_fleet_name" ] ; then
+          # remove quotes from the fleet names, could have come from quoted previous fleet name in config
+          user_fleet_name=${user_fleet_name//\"/}
+          # replace space with underscore so we can pass to the next script without having to surround in quotes because that
+          # causes problems for other systems.
+          user_fleet_name=${user_fleet_name// /_}
+          FLEET_NAME_STR=" -f $user_fleet_name "
+      fi
 
-		user_fleet_batch_size='user_fleet_batch_size'
-		# Loop until the user gives a valid integer.
-		while [[ -n ${user_fleet_batch_size//[0-9]/} ]] ; do
-		  	user_fleet_batch_size='user_fleet_batch_size'
-			ask_question "What is the maximum number of worker VMs you want to launch at a time?" "$FLEET_BATCH_SIZE" "Maximum fleet batch size" $user_fleet_batch_size
-			if [[ -n ${user_fleet_batch_size//[0-9]/} ]] ; then
-				echo "Only positive integers are allowed."
-			fi
-		done
+  user_fleet_size='user_fleet_size'
+  # Loop until the user gives a valid integer.
+  while [[ -n ${user_fleet_size//[0-9]/} ]] ; do
+      user_fleet_size='user_fleet_size'
+    ask_question "What is the maximum number of worker VMs you want to run in your fleet?" "$FLEET_SIZE" "Maximum fleet size" $user_fleet_size
+    if [[ -n ${user_fleet_size//[0-9]/} ]] ; then
+      echo "Only positive integers are allowed."
+    fi
+  done
 
-        # now wget the start_launcher_container script and call it with the values from above:
-        #$(wget -q -O start_launcher_container.sh https://github.com/ICGC-TCGA-PanCancer/consonance_launcher/releases/download/$PANCANCER_LAUNCHER_VERSION/start_launcher_container.sh)
- #		starter_script_url="https://github.com/ICGC-TCGA-PanCancer/consonance_launcher/releases/download/$PANCANCER_LAUNCHER_VERSION/start_launcher_container.sh"
+  user_fleet_batch_size='user_fleet_batch_size'
+  # Loop until the user gives a valid integer.
+  while [[ -n ${user_fleet_batch_size//[0-9]/} ]] ; do
+      user_fleet_batch_size='user_fleet_batch_size'
+    ask_question "What is the maximum number of worker VMs you want to launch at a time?" "$FLEET_BATCH_SIZE" "Maximum fleet batch size" $user_fleet_batch_size
+    if [[ -n ${user_fleet_batch_size//[0-9]/} ]] ; then
+      echo "Only positive integers are allowed."
+    fi
+  done
 
-#        set +e
-#        wget -O start_launcher_container.sh $starter_script_url 2>get_start_launcher_container.err
-#        get_starter_script_result=$?
-#        set -e
-#        if [ $get_starter_script_result -ne 0 ] ; then
-#            echo "There seems to have been a problem downloading the startup script from:   $starter_script_url"
-#            echo "Error is:"
-#            cat ./get_start_launcher_container.err
-#        fi
 
- #       chmod u+x start_launcher_container.sh
- #       CMD_STR="bash start_launcher_container.sh -p $user_pem_path -i $user_consonance_version -e ${user_cloud_env^^} $FLEET_NAME_STR"
+  email_address_for_owner_tag='email_address_for_owner_tag'
+  ask_question "What is the email address for the 'Owner' tag on the worker VM?" "$EMAIL_FOR_VM_OWNER_TAG" "Email for VM Owner tag" $email_address_for_owner_tag
+  sed -ie "s~{.*}~{\"Owner\":\"${email_address_for_owner_tag}\"}~" ./example_tags.json
 
-        # Now write a config for this file.
-        [[ -f consonance_launcher_config/compose.config ]] || mkdir -p consonance_launcher_config
-		# Note: You can't have ANY blank lines in .consonance/consonance.config because the python library that will eventually process it does not like blank lines and will fail.
-        # we need to override the ethernet device on some systems
 
-                echo "Installing various apt packages"
-        cat > consonance_launcher_config/compose.config <<CONFIG
+  # Now write a config for this file.
+  [[ -f commons_launcher_config/consonance.config ]] || mkdir -p commons_launcher_config
+  # Note: You can't have ANY blank lines in .consonance/consonance.config because the python library that will eventually process it does not like blank lines and will fail.
+  # we need to override the ethernet device on some systems
+
+  echo "Installing various apt packages"
+  cat > commons_launcher_config/consonance.config <<CONFIG
 {
-"LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/local-ipv4`",
+"ETH_DEV":"${eth_dev}",
+"LAUNCHER_IP_ADDRESS":"`ifconfig ${eth_dev} | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`",
 "PUBLIC_LAUNCHER_IP_ADDRESS":"`curl http://169.254.169.254/latest/meta-data/public-ipv4`",
-"CONSONANCE_BINARY_VERSION":"${CONSONANCE_BINARY_VERSION}",
-"CONSONANCE_HOST_BAG_VERSION":"${CONSONANCE_HOST_BAG_VERSION}",
-"CONSONANCE_DOCKSTORE_VERSION":"${CONSONANCE_DOCKSTORE_VERSION}",
 "AWS_ACCESS_KEY_ID":"${user_aws_key}",
 "AWS_SECRET_ACCESS_KEY":"${user_aws_secret_key}",
 "AWS_MAX_SPOT_PRICE":"${aws_max_spot_price}",
@@ -415,48 +424,32 @@ while [[ "${run_consonance_launcher^^}" != 'Y' &&  "${run_consonance_launcher^^}
 "OS_ENDPOINT":"${user_os_endpoint}",
 "OS_NETWORK_ID":"${user_os_network_id}",
 "OS_REGION":"${user_os_region}",
-"OS_ZONE":"${user_os_zone}"
+"OS_ZONE":"${user_os_zone}",
+"EMAIL_FOR_VM_OWNER_TAG":"${email_address_for_owner_tag}"
 }
 CONFIG
-    [[ -d "consonance_launcher_config" ]] || mkdir "consonance_launcher_config"
-    # cp ~/.consonance/compose.config consonance_launcher_config/compose.config
-    # template out stuff, grab template files for convenience if not running in a git repo
-    # note there should really be a better way of grabbing a directory, see https://github.com/dear-github/dear-github/issues/95
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_client.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_coordinator.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_provisioner.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/Dockerfile_webservice.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/aws.config.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/bag_params.json.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/config.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/docker-compose.yml
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/example_tags.json
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_client.sh
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_coordinator.sh
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_provisioner.sh
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/init_webservice.sh
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/key.pem.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/ssh.py
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/web.yml.template
-    wget --no-clobber https://raw.githubusercontent.com/Consonance/consonance/${CONSONANCE_LAUNCHER_VERSION}/container-admin/youxia_config.template
+  [[ -d "commons_launcher_config" ]] || mkdir "commons_launcher_config"
+  # template out stuff
+  mustache commons_launcher_config/consonance.config aws.config.template > aws.config
+  mustache commons_launcher_config/consonance.config bag_params.json.template  > bag_params.json
+  mustache commons_launcher_config/consonance.config config.template  > config
+  mustache commons_launcher_config/consonance.config youxia_config.template  > youxia_config
+  mustache commons_launcher_config/consonance.config web.yml.template  > web.yml
+  mustache commons_launcher_config/consonance.config boto.config.template > boto.config
+  cat ${user_pem_path} > key.pem
 
-    mustache consonance_launcher_config/compose.config Dockerfile_client.template > Dockerfile_client
-    mustache consonance_launcher_config/compose.config Dockerfile_coordinator.template > Dockerfile_coordinator
-    mustache consonance_launcher_config/compose.config Dockerfile_provisioner.template > Dockerfile_provisioner
-    mustache consonance_launcher_config/compose.config Dockerfile_webservice.template > Dockerfile_webservice
-    mustache consonance_launcher_config/compose.config aws.config.template > aws.config
-    mustache consonance_launcher_config/compose.config bag_params.json.template  > bag_params.json
-    mustache consonance_launcher_config/compose.config config.template  > config
-    mustache consonance_launcher_config/compose.config youxia_config.template  > youxia_config
-    mustache consonance_launcher_config/compose.config web.yml.template  > web.yml
-    cat ${user_pem_path} > key.pem
+  sudo docker-compose -f docker-compose.yml build
+  sudo docker-compose -f docker-compose.yml up -d
+  ################sudo docker-compose run client
+  cd ..
 
-    sudo docker-compose build
-    sudo docker-compose run client
-    elif [ "${run_consonance_launcher^^}" = 'N' ] ; then
-        echo "You can run this script at another time to run the consonance launcher"
-        exit 0
-    fi
+  # TODO: need to setup the consonance command line and config on the box, so can skip the launching the client docker
+
+  elif [ "${run_consonance_launcher^^}" = 'N' ] ; then
+    echo "You can run this script at another time to run the consonance installer"
+  fi
 done
-echo "Exiting now."
+
+# FINISHED INSTALLER
+echo "Done with installation, exiting now."
 set +e

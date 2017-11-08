@@ -1,3 +1,4 @@
+
 FROM ubuntu:16.04
 
 # Update the APT cache
@@ -6,16 +7,22 @@ RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y \
     python-software-properties \
+    python-pip \
     software-properties-common \
     git \
-    vim \
     telnet \
     && apt-get clean
 
 RUN apt-get install software-properties-common \
     && apt-add-repository ppa:ansible/ansible \
     && apt-get update \
-    && apt-get install -y ansible
+    && apt-get install -y libffi-dev python-dev libssl-dev
+#    && apt-get install -y ansible=2.2.1.0-1
+
+#Install PIP and then ansible.
+#Doing this because the latest version was setting ANSIBLE_SSH_CONTROL_PATH to None, so ssh.py was failing.
+RUN pip install ansible==2.2.1.0
+
 
 # grab oracle java (auto accept licence)
 RUN add-apt-repository -y ppa:webupd8team/java \
@@ -24,9 +31,13 @@ RUN add-apt-repository -y ppa:webupd8team/java \
     && apt-get install -y oracle-java8-installer
 
 # install Consonance services
-ENV consonance_version={{ CONSONANCE_BINARY_VERSION }}
+ENV consonance_version=cgp-2.0.0-alpha.16
 
-RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
+# Switch to BD2K fork over Consonance source for reaping fix
+RUN wget --no-verbose https://github.com/BD2KGenomics/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
+#RUN wget --no-verbose https://github.com/Consonance/consonance/releases/download/${consonance_version}/consonance-arch-${consonance_version}.jar
+# https://www.dropbox.com/s/giy9ayxlvpoohiz/consonance-arch-2.0-alpha.11-SNAPSHOT.jar
+# https://seqwaremaven.oicr.on.ca/artifactory/seqware-release/io/consonance/consonance-arch/${consonance_version}/consonance-arch-${consonance_version}.jar
 
 # install dockerize
 ENV DOCKERIZE_VERSION v0.2.0
@@ -40,13 +51,13 @@ ADD init_provisioner.sh .
 
 RUN git clone https://github.com/Consonance/container-host-bag.git  /container-host-bag
 # we need the branch that is compatible with Ansible 2
-#RUN (cd /container-host-bag && git checkout develop_2)
-RUN (cd /container-host-bag && git checkout {{ CONSONANCE_HOST_BAG_VERSION }})
+RUN (cd /container-host-bag && git checkout develop_2)
 
 RUN chmod u+x init_provisioner.sh
 # TODO: make sure you create these from the .template files and customize them
 RUN mkdir -p /root/.youxia /root/.consonance /root/.consonance/self-installs /root/.ssh
 COPY youxia_config /root/.youxia/config
+COPY logback.xml /root/logback.xml
 COPY config /root/.consonance/config
 COPY key.pem /root/.ssh/key.pem
 RUN chmod 600 /root/.ssh/key.pem
@@ -57,10 +68,27 @@ RUN mkdir /consonance_logs && chmod a+rx /consonance_logs
 COPY bag_params.json /container-host-bag/example_params.json
 COPY example_tags.json /container-host-bag/example_tags.json
 
+ # Remove ansible deprecation warnings
+ # Copy Ansible config
+COPY ansible.config /root/.ansible.cfg
+
 # patch for Ansible
 COPY ssh.py /usr/lib/python2.7/dist-packages/ansible/plugins/connection/ssh.py
 RUN rm -f /usr/lib/python2.7/dist-packages/ansible/plugins/connection/ssh.pyc
 
+# patch /usr/local/lib as well for Ansible
+COPY ssh.py /usr/local/lib/python2.7/dist-packages/ansible/plugins/connection/ssh.py
+RUN rm -f /usr/local/lib/python2.7/dist-packages/ansible/plugins/connection/ssh.pyc
+
+# Setting up cronjob for refreshing worker's instance
+COPY boto.config /root/.boto
+RUN pip install paramiko==2.1.2
+RUN pip install boto==2.38.0
+ADD refresh_worker_instances.py .
+ADD crontab /etc/cron.d/refresher-cron
+RUN chmod a+x refresh_worker_instances.py
+RUN chmod 0644 /etc/cron.d/refresher-cron
+#RUN cron -f -L 15 && echo "Cron Job set"
 # TODO: 1) update the above to have my AWS creds in it and 2) create the admin user in postgres db
 # Waiting for postgres and rabbitmq services
-CMD ["dockerize", "-wait", "tcp://webservice:8080", "-timeout", "60s", "./init_provisioner.sh"]
+CMD ["dockerize", "-wait", "tcp://consonance-webservice:8080", "-timeout", "60s", "./init_provisioner.sh"]

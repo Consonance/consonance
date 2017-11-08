@@ -53,6 +53,10 @@ import io.swagger.workflow.api.JobsApi;
 import io.swagger.workflow.api.RunApi;
 import io.swagger.workflow.api.impl.JobsApiServiceImpl;
 import io.swagger.workflow.api.impl.RunApiServiceImpl;
+
+import io.swagger.wes.api.impl.Ga4ghApiServiceImpl;
+import io.swagger.wes.api.Ga4ghApi;
+
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
@@ -144,15 +148,19 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         JobsApiServiceImpl.setOrderResource(orderResource);
         RunApiServiceImpl.setConfig(configuration);
         RunApiServiceImpl.setOrderResource(orderResource);
+        Ga4ghApiServiceImpl.setConfig(configuration);
+        Ga4ghApiServiceImpl.setOrderResource(orderResource);
 
         // hook up GA4GH APIs
         environment.jersey().register(new V1Api());
         environment.jersey().register(new RunApi());
         environment.jersey().register(new JobsApi());
+        environment.jersey().register(new Ga4ghApi());
 
         // implement
         JobsApiServiceImpl.setConfig(configuration);
         RunApiServiceImpl.setConfig(configuration);
+        Ga4ghApiServiceImpl.setConfig(configuration);
 
         // swagger stuff
 
