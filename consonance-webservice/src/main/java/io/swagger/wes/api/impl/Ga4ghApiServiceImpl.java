@@ -111,7 +111,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         job.setEndUser(user.getName());
         orderResource.addOrder(user, job);
 
-        Ga4ghWesWorkflowRunId runID = new Ga4ghWesWorkflowRunId();
+        //Ga4ghWesWorkflowRunId runID = new Ga4ghWesWorkflowRunId();
         Ga4ghWesWorkflowRequest request = new Ga4ghWesWorkflowRequest();
         return Response.ok().entity(request).build();
     }
