@@ -72,6 +72,7 @@ public class CommonTestUtilities {
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         TestingPostgres postgres = new TestingPostgres(parseConfig);
         postgres.clearDatabase();
+        // LEFT OFF HERE: would be nice to have a method here to clear out RabbitMQ too
     }
 
 }

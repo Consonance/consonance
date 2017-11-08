@@ -71,6 +71,7 @@ public class CommonServerTestUtilities {
      * @throws java.util.concurrent.TimeoutException
      */
     public static void clearState() throws IOException, TimeoutException {
+
         CommonTestUtilities.clearState();
 
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
@@ -96,7 +97,7 @@ public class CommonServerTestUtilities {
         channel.confirmSelect();
 
         String prefix = parseConfig.getString(Constants.RABBIT_QUEUE_NAME);
-        String[] queues = { prefix + "_jobs", prefix + "_orders", prefix + "_vms", prefix + "_for_CleanupJobs", prefix + "_for_CleanupVMs" };
+        String[] queues = { prefix + "_jobs", prefix + "_orders", prefix + "_vms", prefix + "_for_CleanupJobs", prefix + "_for_CleanupVMs", "consonance_arch_jobs_for_m1.test", "consonance_arch_jobs_for_m1.test2" };
         for (String queue : queues) {
             try {
                 channel.queueDelete(queue);

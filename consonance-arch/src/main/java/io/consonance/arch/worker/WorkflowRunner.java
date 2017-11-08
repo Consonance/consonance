@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 /**
@@ -104,8 +103,9 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 // java.lang.RuntimeException: java.lang.ClassNotFoundException: com.sun.ws.rs.ext.RuntimeDelegateImpl
                 // but that seems to not be present in the Dockstore client jar either... or the Jersey jars.  Not sure where this is coming from
                 //Client.main(s);
-                LOG.error("command: DOCKSTORE_ROOT=1 dockstore "+ Arrays.toString(s));
-                Utilities.executeCommand("DOCKSTORE_ROOT=1 dockstore " + Arrays.toString(s));
+                //DOCKSTORE_ROOT=1
+                LOG.error("command: dockstore "+ String.join(" ", s));
+                Utilities.executeCommand("/usr/local/bin/dockstore " + String.join(" ", s));
                 // LEFT OFF HERE: try switching to direct bash call, I cannot figure out the problem with calling the main in code!
 
 

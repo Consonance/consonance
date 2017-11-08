@@ -65,7 +65,10 @@ The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run
 Now run the full integration tests (assumes you have RabbitMQ and PostgreSQL installed):
 
     cd consonance-integration-testing
+    # run a particular test class
     mvn -Dtest=SystemMainIT test
+    # or even a speicifc test method!
+    mvn -Dtest=SystemMainIT#testGetConfiguration test
     # or all ITs
     cd ..
     mvn -B clean install -DskipITs=false

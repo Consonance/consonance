@@ -314,6 +314,7 @@ public class Main {
                     }
                     // TODO: this should determine whether we want to launch a cwl or wdl version of a tool
                     final SourceFile cwlFromServer = actualClient.getDescriptorFromServer(dockstoreID, format);
+                    job.setContainerImageDescriptorType(format);
                     job.setContainerImageDescriptor(cwlFromServer.getContent());
                     final List<SourceFile> descriptors = actualClient.downloadDescriptors(dockstoreID, format, tempDir);
                     for(SourceFile file : descriptors) {

@@ -388,7 +388,7 @@ public class WorkerRunnable implements Runnable {
             }
             workflowRunner.setConfigFilePath(dockstoreLauncherConfig.getAbsolutePath());
             // write out descriptors from message
-            final Path imageDescriptor = new File(System.getProperty("user.dir"), "image-descriptor.cwl").toPath();
+            final Path imageDescriptor = new File(System.getProperty("user.dir"), "image-descriptor."+job.getContainerImageDescriptorType()).toPath();
             final Path runDescriptor = new File(System.getProperty("user.dir"), "run-descriptor.json").toPath();
             FileUtils.writeStringToFile(imageDescriptor.toFile(), job.getContainerImageDescriptor(), StandardCharsets.UTF_8);
             FileUtils.writeStringToFile(runDescriptor.toFile(), job.getContainerRuntimeDescriptor(), StandardCharsets.UTF_8);

@@ -171,6 +171,10 @@ public class Job extends BaseBean{
     @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
     @Column(name="container_image_descriptor",columnDefinition="text")
     private String containerImageDescriptor;
+    @JsonProperty("container_image_descriptor_type")
+    @ApiModelProperty(value = "type of descriptor, typically CWL or WDL")
+    @Column(name="container_image_descriptor_type",columnDefinition="text")
+    private String containerImageDescriptorType;
     @JsonProperty("container_runtime_descriptor")
     @ApiModelProperty(value = "credentials or other files needed by your workflow, specify pairs of path=content")
     @Column(name="container_runtime_descriptor",columnDefinition="text")
@@ -325,6 +329,14 @@ public class Job extends BaseBean{
         this.containerImageDescriptor = containerImageDescriptor;
     }
 
+    public String getContainerImageDescriptorType() {
+        return containerImageDescriptorType;
+    }
+
+    public void setContainerImageDescriptorType(String containerImageDescriptorType) {
+        this.containerImageDescriptorType = containerImageDescriptorType;
+    }
+
     public String getContainerRuntimeDescriptor() {
         return containerRuntimeDescriptor;
     }
@@ -335,7 +347,7 @@ public class Job extends BaseBean{
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, state, uuid, vmUuid, messageType, extraFiles, stdout, stderr, containerImageDescriptor,
+        return Objects.hash(jobId, state, uuid, vmUuid, messageType, extraFiles, stdout, stderr, containerImageDescriptor, containerImageDescriptorType,
                 containerRuntimeDescriptor, endUser, flavour);
     }
 
@@ -353,6 +365,7 @@ public class Job extends BaseBean{
                 && Objects.equals(this.extraFiles, other.extraFiles) && Objects.equals(this.stdout, other.stdout)
                 && Objects.equals(this.stderr, other.stderr)
                 && Objects.equals(this.containerImageDescriptor, other.containerImageDescriptor)
+                && Objects.equals(this.containerImageDescriptorType, other.containerImageDescriptorType)
                 && Objects.equals(this.containerRuntimeDescriptor, other.containerRuntimeDescriptor)
                 && Objects.equals(this.endUser, other.endUser) && Objects.equals(this.flavour, other.flavour);
     }
