@@ -105,6 +105,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 //Client.main(s);
                 //DOCKSTORE_ROOT=1
                 LOG.error("command: dockstore "+ String.join(" ", s));
+                // TODO: this is a problem, I can't have a hard-coded path here
                 Utilities.executeCommand("/usr/local/bin/dockstore " + String.join(" ", s));
                 // LEFT OFF HERE: try switching to direct bash call, I cannot figure out the problem with calling the main in code!
 

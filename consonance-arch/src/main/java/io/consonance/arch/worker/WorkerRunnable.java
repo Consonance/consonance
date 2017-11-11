@@ -105,7 +105,7 @@ public class WorkerRunnable implements Runnable {
      * @param endless have the worker pick up new jobs as the current job finishes successfully
      * @param flavourOverride override detection of instance type
      */
-    WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
+    public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
 
         try {
 
