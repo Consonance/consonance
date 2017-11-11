@@ -44,13 +44,20 @@ via home brew:
     brew install rabbitmq
     /usr/local/sbin/rabbitmq-server
 
-### Config File
+### Consonance Config File
 
 By default the client looks for `~/.consonance/config`. You need this file for
 tests to pass:
 
     $bash> mkdir ~/.consonance/ && cp ./consonance-client/src/test/resources/config ~/.consonance/config
 
+### Dockstore CLI
+
+The integration tests (see below for how to trigger) will actually simulate the full lifecycle of a WDL workflow run using the Dockstore CLI.  See http://dockstore.org for how to install, you need the `dockstore` command in your path and properly configured in order for the full integration tests to pass.
+
+### Docker
+
+Related to the Dockstore CLI above, one of the WDL workflows used for testing requires Docker.  Make sure the system you are using for testing has Docker installed if you run the full integration tests.
 
 ## Building & Testing
 
@@ -61,6 +68,12 @@ The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run
  To avoid tests (probably a bad idea!):
 
     $bash> mvn -Dmaven.test.skip=true clean install
+
+Skip tests and use parallel build (see more info [here](https://zeroturnaround.com/rebellabs/your-maven-build-is-slow-speed-it-up/)):
+
+    mvn -Dmaven.test.skip=true -T 1C install -pl consonance-integration-testing -am
+
+This gives me a build time of 36 seconds vs. 1:21 min for `mvn clean install`
 
 Now run the full integration tests (assumes you have RabbitMQ and PostgreSQL installed):
 
