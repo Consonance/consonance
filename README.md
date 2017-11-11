@@ -69,6 +69,10 @@ The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run
 
     $bash> mvn -Dmaven.test.skip=true clean install
 
+Skip tests and use parallel build (see more info [here](https://zeroturnaround.com/rebellabs/your-maven-build-is-slow-speed-it-up/)):
+
+    mvn -Dmaven.test.skip=true -T 1C install -pl consonance-integration-testing -am
+
 Now run the full integration tests (assumes you have RabbitMQ and PostgreSQL installed):
 
     cd consonance-integration-testing
