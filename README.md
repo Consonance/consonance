@@ -73,6 +73,8 @@ Skip tests and use parallel build (see more info [here](https://zeroturnaround.c
 
     mvn -Dmaven.test.skip=true -T 1C install -pl consonance-integration-testing -am
 
+This gives me a build time of 36 seconds vs. 1:21 min for `mvn clean install`
+
 Now run the full integration tests (assumes you have RabbitMQ and PostgreSQL installed):
 
     cd consonance-integration-testing
