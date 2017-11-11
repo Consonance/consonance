@@ -209,7 +209,7 @@ public class WorkerRunnable implements Runnable {
 
             while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
-                log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
+                log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName + " for flavour " + this.flavour);
 
                 if (!endless) {
                     max--;
@@ -344,7 +344,6 @@ public class WorkerRunnable implements Runnable {
         }
     }
 
-    // TODO: obviously, this will need to launch something using Youxia in the future
     /**
      * This function will execute a workflow, based on the content of the Job object that is passed in.
      *

@@ -64,6 +64,8 @@ public class CommonTestUtilities {
     /**
      * Clears database state and known queues for testing.
      *
+     * @see io.consonance.arch.utils.CommonServerTestUtilities#clearState() for clearing out the RabbitMQ queues
+     *
      * @throws IOException
      * @throws java.util.concurrent.TimeoutException
      */
@@ -72,7 +74,6 @@ public class CommonTestUtilities {
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         TestingPostgres postgres = new TestingPostgres(parseConfig);
         postgres.clearDatabase();
-        // LEFT OFF HERE: would be nice to have a method here to clear out RabbitMQ too
     }
 
 }
