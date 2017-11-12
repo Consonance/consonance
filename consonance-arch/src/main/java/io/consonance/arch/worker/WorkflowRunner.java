@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.concurrent.Callable;
 
 /**
@@ -103,8 +104,16 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 // java.lang.RuntimeException: java.lang.ClassNotFoundException: com.sun.ws.rs.ext.RuntimeDelegateImpl
                 // but that seems to not be present in the Dockstore client jar either... or the Jersey jars.  Not sure where this is coming from
                 LOG.error("command: dockstore "+ String.join(" ", s));
+                // https://stackoverflow.com/questions/5389632/capturing-contents-of-standard-output-in-java
+                PrintStream originalStdOut = System.out;
+                PrintStream originalStdErr = System.err;
+                System.setOut(new PrintStream(this.outputStream, true, "UTF-8"));
+                System.setErr(new PrintStream(this.errorStream, true, "UTF-8"));
                 Client.main(s);
-                
+                System.setOut(originalStdOut);
+                System.setErr(originalStdErr);
+                // FIXME: this correclty redirects stderr/out but need to reset it so logging on the worker works
+
                 //DOCKSTORE_ROOT=1
                 // TODO: this is a problem, I can't have a hard-coded path here
                 //Utilities.executeCommand("/usr/local/bin/dockstore " + String.join(" ", s), this.outputStream, this.errorStream);
