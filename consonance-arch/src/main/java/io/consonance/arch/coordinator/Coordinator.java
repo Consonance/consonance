@@ -302,7 +302,7 @@ public class Coordinator extends Base {
                     }
                     // jchannel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    LOG.debug(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
+                    LOG.info(" [x] RECEIVED RESULT MESSAGE - Coordinator: '" + message + "'");
 
                     // now parse it as JSONObj
                     Status status = new Status().fromJSON(message);
@@ -312,12 +312,14 @@ public class Coordinator extends Base {
                     if (status.getState() == StatusState.SUCCESS && CommonServerTestUtilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         LOG.info("\n\n\nFINISHING THE JOB!!!!!!!!!!!!!!!\n\n");
+                        db.updateJobMessage(status.getJobUuid(), status.getStdout(), status.getStderr());
                         db.finishJob(status.getJobUuid());
                     } else if ((status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED || status.getState() == StatusState.PENDING)
                             && CommonServerTestUtilities.JOB_MESSAGE_TYPE.equals(status.getType())) {
                         // this is where it reaps, the job status message also contains the UUID for the VM
                         // convert from StatusState to JobState
                         JobState valueOf = JobState.valueOf(status.getState().toString());
+                        db.updateJobMessage(status.getJobUuid(), status.getStdout(), status.getStderr());
                         db.updateJob(status.getJobUuid(), status.getVmUuid(), valueOf);
                     }
 

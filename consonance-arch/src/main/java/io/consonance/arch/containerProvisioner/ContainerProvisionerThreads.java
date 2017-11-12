@@ -37,6 +37,7 @@ import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.arch.worker.Worker;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import joptsimple.ArgumentAcceptingOptionSpec;
@@ -82,6 +83,7 @@ public class ContainerProvisionerThreads extends Base {
     private static final int TWO_MINUTE_IN_MILLISECONDS = 2 * 60 * 1000;
 
     private final OptionSpecBuilder testSpec;
+    private final OptionSpecBuilder localSpec;
     private final ArgumentAcceptingOptionSpec<String> flavourSpec;
     private static final Logger LOG = LoggerFactory.getLogger(ContainerProvisionerThreads.class);
 
@@ -92,8 +94,9 @@ public class ContainerProvisionerThreads extends Base {
 
     private ContainerProvisionerThreads(String[] argv) throws IOException {
         super();
-        this.testSpec = super.parser.accepts("test", "in test mode, workers are created directly");
-        this.flavourSpec = super.parser.accepts("flavour", "in test mode, the flavour of instances the worker thread pretends to be").withOptionalArg().ofType(String.class)
+        this.testSpec = super.parser.accepts("test", "in test mode, workers are created directly but passed --test so they only perform mock work");
+        this.localSpec = super.parser.accepts("local", "in local mode, workers are created directly and the job is run locally");
+        this.flavourSpec = super.parser.accepts("flavour", "in test or local modes, the flavour of instances the worker thread pretends to be").withOptionalArg().ofType(String.class)
                 .describedAs("flavour value");
         super.parseOptions(argv);
     }
@@ -102,7 +105,7 @@ public class ContainerProvisionerThreads extends Base {
         ExecutorService pool = Executors.newFixedThreadPool(DEFAULT_THREADS);
         ProcessVMOrders processVMOrders = new ProcessVMOrders(this.configFile, this.options.has(this.endlessSpec));
         String flavour = (null == this.options.valueOf(this.flavourSpec)) ? "" : this.options.valueOf(this.flavourSpec).toString();
-        ProvisionVMs provisionVMs = new ProvisionVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec), flavour);
+        ProvisionVMs provisionVMs = new ProvisionVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec), this.options.has(localSpec), flavour);
         CleanupVMs cleanupVMs = new CleanupVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec));
         List<Future<?>> futures = new ArrayList<>();
         futures.add(pool.submit(processVMOrders));
@@ -196,12 +199,14 @@ public class ContainerProvisionerThreads extends Base {
         private final String configFile;
         private final boolean endless;
         private final boolean testMode;
+        private final boolean localMode;
         private final String testFlavour;
 
-        ProvisionVMs(String configFile, boolean endless, boolean testMode, String testFlavour) {
+        ProvisionVMs(String configFile, boolean endless, boolean testMode, boolean localMode, String testFlavour) {
             this.configFile = configFile;
             this.endless = endless;
             this.testMode = testMode;
+            this.localMode = localMode;
             this.testFlavour = testFlavour;
         }
 
@@ -234,7 +239,7 @@ public class ContainerProvisionerThreads extends Base {
                     
                     LOG.info("Found " + numberRunningContainers + " pending containers, " + numberPendingContainers + " running containers, and " + numberLostContainers + " lost containers.");
 
-                    if (testMode) {
+                    if (testMode || localMode) {
                         LOG.info("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
                         maxWorkers = settings.getLong(Constants.PROVISION_MAX_RUNNING_CONTAINERS);
 
@@ -250,7 +255,15 @@ public class ContainerProvisionerThreads extends Base {
                             // finished
                             // before it's marked as pending
                             //new WorkerRunnable(configFile, uuid, 1, false, false, testFlavour).run();
-                            LOG.info("\n\n\nI MOCK LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
+                            if (testMode) {
+                                LOG.info("\n\n\nI MOCK LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
+                                Worker.main(new String[] { "--config", this.configFile, "--uuid", uuid, "--pidFile",
+                                        "/var/run/arch3_worker"+uuid+".pid", "--flavour", testFlavour, "--test" });
+                            } else if(localMode) {
+                                LOG.info("\n\n\nLAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
+                                Worker.main(new String[] { "--config", this.configFile, "--uuid", uuid, "--pidFile",
+                                        "/var/run/arch3_worker"+uuid+".pid", "--flavour", testFlavour });
+                            }
                         }
                     } else {
                         long requiredVMs = numberRunningContainers + numberPendingContainers + numberLostContainers;
