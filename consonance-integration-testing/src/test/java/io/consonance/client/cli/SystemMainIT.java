@@ -175,9 +175,6 @@ public class SystemMainIT {
     public void testScheduleAndRunWdlLocally() throws Exception{
         final WebClient webClient = SystemClientIT.getWebClient();
 
-        // clear things out
-        CommonServerTestUtilities.clearState();
-
         // Consonance Client io.consonance.client.cli.Main
         Main main = new Main();
         main.setWebClient(SystemClientIT.getWebClient());
@@ -237,8 +234,6 @@ public class SystemMainIT {
         // status
         main.runMain(new String[] { "status", "--job_uuid", job.getJobUuid() });
 
-        // clear things out
-        //CommonServerTestUtilities.clearState();
     }
 
     // TODO: above with Docker-based WDL
@@ -247,7 +242,7 @@ public class SystemMainIT {
     public static void cleanup() throws IOException, TimeoutException {
 
         // clears the PostgreSQL DB and the rabbitMQ message queue
-        //CommonServerTestUtilities.clearState();
+        CommonServerTestUtilities.clearState();
 
     }
 
