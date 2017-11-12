@@ -103,7 +103,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 // FIXME: for some reason when I call this directly I get a:
                 // java.lang.RuntimeException: java.lang.ClassNotFoundException: com.sun.ws.rs.ext.RuntimeDelegateImpl
                 // but that seems to not be present in the Dockstore client jar either... or the Jersey jars.  Not sure where this is coming from
-                LOG.error("command: dockstore "+ String.join(" ", s));
+                LOG.info("command: dockstore "+ String.join(" ", s));
                 // https://stackoverflow.com/questions/5389632/capturing-contents-of-standard-output-in-java
                 PrintStream originalStdOut = System.out;
                 PrintStream originalStdErr = System.err;
