@@ -21,8 +21,8 @@ package io.consonance.arch.worker;
 
 //import io.cwl.avro.CommandLineTool;
 //import io.github.collaboratory.LauncherCWL;
-//import io.dockstore.client.cli.Client;
-import io.dockstore.common.Utilities;
+import io.dockstore.client.cli.Client;
+//import io.dockstore.common.Utilities;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 //import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -102,11 +102,12 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 // FIXME: for some reason when I call this directly I get a:
                 // java.lang.RuntimeException: java.lang.ClassNotFoundException: com.sun.ws.rs.ext.RuntimeDelegateImpl
                 // but that seems to not be present in the Dockstore client jar either... or the Jersey jars.  Not sure where this is coming from
-                //Client.main(s);
-                //DOCKSTORE_ROOT=1
                 LOG.error("command: dockstore "+ String.join(" ", s));
+                Client.main(s);
+                
+                //DOCKSTORE_ROOT=1
                 // TODO: this is a problem, I can't have a hard-coded path here
-                Utilities.executeCommand("/usr/local/bin/dockstore " + String.join(" ", s), this.outputStream, this.errorStream);
+                //Utilities.executeCommand("/usr/local/bin/dockstore " + String.join(" ", s), this.outputStream, this.errorStream);
                 // LEFT OFF HERE: try switching to direct bash call, I cannot figure out the problem with calling the main in code!
 
 

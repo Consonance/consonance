@@ -242,7 +242,7 @@ public class SystemMainIT {
     public static void cleanup() throws IOException, TimeoutException {
 
         // clears the PostgreSQL DB and the rabbitMQ message queue
-        CommonServerTestUtilities.clearState();
+        //CommonServerTestUtilities.clearState();
 
     }
 
