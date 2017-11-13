@@ -19,13 +19,9 @@
 
 package io.consonance.arch.worker;
 
-//import io.cwl.avro.CommandLineTool;
-//import io.github.collaboratory.LauncherCWL;
 import io.dockstore.client.cli.Client;
-//import io.dockstore.common.Utilities;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
-//import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,33 +88,19 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 Thread.sleep(this.preworkDelay);
             }
             // this is a blocking call, but the HeartbeatThread appears to be a in a separate thread
-            // TODO: this assumes consonance just takes CWL tool call requests
-            //launcher.run(CommandLineTool.class);
-
-            // TODO: this needs to expose stderr/stdout!
-            // example Dockstore launch: dockstore workflow launch --entry briandoconnor/dockstore-workflow-md5sum/dockstore-wdl-workflow-md5sum:1.3.0 --json run.wdl_workflow.json
-            // using the main Dockstore CLI class rather than reaching into the Dockstore CLI API, should be more stable/maintainable
             final String[] s = { "workflow", "launch", "--local-entry", imageDescriptorPath, "--json", runtimeDescriptorPath};
             try {
-                // FIXME: for some reason when I call this directly I get a:
-                // java.lang.RuntimeException: java.lang.ClassNotFoundException: com.sun.ws.rs.ext.RuntimeDelegateImpl
-                // but that seems to not be present in the Dockstore client jar either... or the Jersey jars.  Not sure where this is coming from
                 LOG.info("command: dockstore "+ String.join(" ", s));
-                // https://stackoverflow.com/questions/5389632/capturing-contents-of-standard-output-in-java
+                // see https://stackoverflow.com/questions/5389632/capturing-contents-of-standard-output-in-java for how I redirected stderr/out of the below
                 PrintStream originalStdOut = System.out;
                 PrintStream originalStdErr = System.err;
                 System.setOut(new PrintStream(this.outputStream, true, "UTF-8"));
                 System.setErr(new PrintStream(this.errorStream, true, "UTF-8"));
+                // this is the actual call to Dockstore CLI
+                // TODO: how do I set DOCKSTORE_ROOT=1?
                 Client.main(s);
                 System.setOut(originalStdOut);
                 System.setErr(originalStdErr);
-                // FIXME: this correclty redirects stderr/out but need to reset it so logging on the worker works
-
-                //DOCKSTORE_ROOT=1
-                // TODO: this is a problem, I can't have a hard-coded path here
-                //Utilities.executeCommand("/usr/local/bin/dockstore " + String.join(" ", s), this.outputStream, this.errorStream);
-                // LEFT OFF HERE: try switching to direct bash call, I cannot figure out the problem with calling the main in code!
-
 
             } catch (NoClassDefFoundError e) {
                 e.printStackTrace();

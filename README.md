@@ -53,7 +53,7 @@ tests to pass:
 
 ### Dockstore CLI
 
-The integration tests (see below for how to trigger) will actually simulate the full lifecycle of a WDL workflow run using the Dockstore CLI.  See http://dockstore.org for how to install, you need the `dockstore` command in your path and properly configured in order for the full integration tests to pass.
+The integration tests (see below for how to trigger) will actually simulate the full lifecycle of a WDL workflow run using the Dockstore CLI.  See http://dockstore.org for how to install, you need the `dockstore` command dependencies in your path and properly configured in order for the full integration tests to pass.  Consonance is using the Dockstore CLI library so you only need to install cwltool in your path if you want to test CWL workflows.  Cromwell for WDL workflows is baked into the Dockstore CLI library.
 
 ### Docker
 

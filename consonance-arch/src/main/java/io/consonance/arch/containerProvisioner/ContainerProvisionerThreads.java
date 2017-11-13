@@ -254,12 +254,13 @@ public class ContainerProvisionerThreads extends Base {
                             // now launch the VM... doing this after the update above to prevent race condition if the worker signals
                             // finished
                             // before it's marked as pending
-                            //new WorkerRunnable(configFile, uuid, 1, false, false, testFlavour).run();
                             if (testMode) {
+                                // this won't actually execute anything
                                 LOG.info("\n\n\nI MOCK LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
                                 Worker.main(new String[] { "--config", this.configFile, "--uuid", uuid, "--pidFile",
                                         "/var/run/arch3_worker"+uuid+".pid", "--flavour", testFlavour, "--test" });
                             } else if(localMode) {
+                                // this will actually execute locally
                                 LOG.info("\n\n\nLAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
                                 Worker.main(new String[] { "--config", this.configFile, "--uuid", uuid, "--pidFile",
                                         "/var/run/arch3_worker"+uuid+".pid", "--flavour", testFlavour });

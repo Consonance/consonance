@@ -215,18 +215,12 @@ public class SystemMainIT {
         // so this should take an order and split it into a VM order and a job in the m1.test2 queue
         Coordinator.main(new String[] { "--config", file2.getAbsolutePath() });
 
-        // this runs the worker daemon directly when in test mode
-        //ContainerProvisionerThreads.main(new String[] { "--config", file2.getAbsolutePath(), "--flavour", "m1.test2", "--test"});
+        // this runs the worker daemon directly and executes the command locally when in local mode
+        // if we used --test instead it would run the worker daemon locally too *but* it wouldn't actually execute anything
         ContainerProvisionerThreads.main(new String[] { "--config", file2.getAbsolutePath(), "--flavour", "m1.test2", "--local"});
 
-        // Executing the work locally, this works only if Dockstore CLI is installed in the path and using WDL workflow
-        // since CWL would require cwltool to be in the path, more difficult to setup due to typical use of virtualenv.
-        // The specified flavour below needs to match the flavour above.
-        //Worker.main(new String[] { "--config", file2.getAbsolutePath(), "--uuid", "12345", "--pidFile",
-        //        "/var/run/arch3_worker.pid", "--flavour","m1.test2" });
-
         // cleanup jobs
-        // I have to loop here because, without endless mode which woulnd't run in an integration test, I need multiple calls to empty the status queue
+        // I have to loop here because, without endless mode which wouldn't run in an integration test, I need multiple calls to empty the status queue
         for (int i=0; i<15; i++) {
             Coordinator.main(new String[]{"--config", file2.getAbsolutePath()});
         }
@@ -234,15 +228,17 @@ public class SystemMainIT {
         // status
         main.runMain(new String[] { "status", "--job_uuid", job.getJobUuid() });
 
+        // clear things out
+        CommonServerTestUtilities.clearState();
     }
 
-    // TODO: above with Docker-based WDL
+    // TODO: above with Docker-based WDL, the example WDL we have now only executes echo locally (not a docker-based tool)
 
     @AfterClass
     public static void cleanup() throws IOException, TimeoutException {
 
         // clears the PostgreSQL DB and the rabbitMQ message queue
-        //CommonServerTestUtilities.clearState();
+        CommonServerTestUtilities.clearState();
 
     }
 
