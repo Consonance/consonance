@@ -41,8 +41,8 @@ Now load the schema:
 The integration tests require RabbitMQ, here's how to install
 via home brew:
 
-    brew install rabbitmq
-    /usr/local/sbin/rabbitmq-server
+    $bash> brew install rabbitmq
+    $bash> /usr/local/sbin/rabbitmq-server
 
 ### Consonance Config File
 
@@ -71,20 +71,20 @@ The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run
 
 Skip tests and use parallel build (see more info [here](https://zeroturnaround.com/rebellabs/your-maven-build-is-slow-speed-it-up/)):
 
-    mvn -Dmaven.test.skip=true -T 1C install -pl consonance-integration-testing -am
+    $bash> mvn -Dmaven.test.skip=true -T 1C install -pl consonance-integration-testing -am
 
 This gives me a build time of 36 seconds vs. 1:21 min for `mvn clean install`
 
 Now run the full integration tests (assumes you have RabbitMQ and PostgreSQL installed):
 
-    cd consonance-integration-testing
+    $bash> cd consonance-integration-testing
     # run a particular test class
-    mvn -Dtest=SystemMainIT test
+    $bash> mvn -Dtest=SystemMainIT test
     # or even a speicifc test method!
-    mvn -Dtest=SystemMainIT#testGetConfiguration test
+    $bash> mvn -Dtest=SystemMainIT#testGetConfiguration test
     # or all ITs
-    cd ..
-    mvn -B clean install -DskipITs=false
+    $bash> cd ..
+    $bash> mvn -B clean install -DskipITs=false
 
 ## Monitoring Integration Tests
 
