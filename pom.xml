@@ -685,6 +685,11 @@
             <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
         </repository>
         <repository>
+            <id>seqwaremaven.oicr.on.ca2</id>
+            <name>seqwaremaven.oicr.on.ca-releases</name>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-release</url>
+        </repository>
+        <repository>
             <id>eclipse-egit-github</id>
             <name>Eclipse egit github repository</name>
             <url>https://repo.eclipse.org/content/repositories/egit-releases</url>
