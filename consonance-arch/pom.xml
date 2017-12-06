@@ -199,6 +199,7 @@
         <dependency>
             <groupId>io.cloudbindle</groupId>
             <artifactId>youxia-common</artifactId>
+            <version>${youxia.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.code.gson</groupId>
