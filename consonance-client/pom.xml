@@ -77,11 +77,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.consonance</groupId>
-            <artifactId>swagger-ga4gh-client</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
         </dependency>
