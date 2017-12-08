@@ -20,7 +20,7 @@ target
 .gradle
 build
 
-.travis
+.travis.yml
 .swagger-codegen-ignore
 build.sbt
 git_push.sh
