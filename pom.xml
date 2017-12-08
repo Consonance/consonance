@@ -586,6 +586,12 @@
                 <version>${dockstore.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-ga4gh-client</artifactId>
+                <version>1.0.0</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
                 <groupId>io.dockstore</groupId>
                 <artifactId>dockstore-client</artifactId>
                 <version>${dockstore.version}</version>
@@ -771,6 +777,7 @@
         <module>consonance-reporting</module>
         <module>consonance-webservice</module>
         <module>consonance-client</module>
+        <module>swagger-ga4gh-client</module>
         <module>swagger-java-client</module>
         <module>consonance-integration-testing</module>
     </modules>
