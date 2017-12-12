@@ -234,14 +234,14 @@ public class WorkflowExecutionServiceApi {
     
     @SuppressWarnings("rawtypes")
     private com.squareup.okhttp.Call getServiceInfoValidateBeforeCall(final ProgressResponseBody.ProgressListener progressListener, final ProgressRequestBody.ProgressRequestListener progressRequestListener) throws ApiException {
-        
-        
+
+
         com.squareup.okhttp.Call call = getServiceInfoCall(progressListener, progressRequestListener);
         return call;
 
-        
-        
-        
+
+
+
         
     }
 

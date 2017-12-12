@@ -20,27 +20,25 @@ import io.swagger.client.model.Ga4ghWesWorkflowLog;
 import io.swagger.client.model.Ga4ghWesWorkflowRequest;
 import io.swagger.client.model.Ga4ghWesWorkflowRunId;
 import io.swagger.client.model.Ga4ghWesWorkflowStatus;
+
 import org.junit.Test;
 import org.junit.Ignore;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * API tests for WorkflowExecutionServiceApi
  */
 @Ignore
 public class WorkflowExecutionServiceApiTest {
-
     private final WorkflowExecutionServiceApi api = new WorkflowExecutionServiceApi();
 
-    
     /**
      * Cancel a running workflow
      *
-     * 
+     *
      *
      * @throws ApiException
      *          if the Api call fails
@@ -52,18 +50,20 @@ public class WorkflowExecutionServiceApiTest {
 
         // TODO: test validations
     }
-    
+
     /**
      * Get information about Workflow Execution Service.  May include information related (but not limited to) the workflow descriptor formats, versions supported, the WES API versions supported, and information about general the service availability.
      *
-     * 
+     *
      *
      * @throws ApiException
      *          if the Api call fails
      */
     @Test
-    public void getServiceInfoTest() throws ApiException {
+    public void getServiceInfoTest() throws ApiException, IOException, TimeoutException {
+
         Ga4ghWesServiceInfo response = api.getServiceInfo();
+
         System.out.println(response.toString());
         // TODO: test validations
     }
