@@ -115,7 +115,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
 
     @Override
     public void run(ConsonanceWebserviceConfiguration configuration, Environment environment) {
-        // setup swagger
+        // setup swagger˜
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion("1.0.2");
         beanConfig.setSchemes(new String[] { "http" });
@@ -158,12 +158,13 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         environment.jersey().register(new V1Api());
         environment.jersey().register(new RunApi());
         environment.jersey().register(new JobsApi());
+        // TODO: Want to have auth.
         environment.jersey().register(new Ga4ghApi());
 
         // implement
         JobsApiServiceImpl.setConfig(configuration);
         RunApiServiceImpl.setConfig(configuration);
-
+        Ga4ghApiServiceImpl.setConfig(configuration);
 
         // swagger stuff
 

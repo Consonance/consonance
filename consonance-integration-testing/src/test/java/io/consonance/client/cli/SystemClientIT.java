@@ -34,14 +34,23 @@ import io.swagger.client.api.OrderApi;
 import io.swagger.client.api.UserApi;
 import io.swagger.client.model.ConsonanceUser;
 import io.swagger.client.model.Job;
+import io.swagger.wes.api.Ga4ghApi;
+import io.swagger.wes.api.NotFoundException;
+import io.swagger.wes.model.Ga4ghWesWorkflowListResponse;
+import io.swagger.wes.model.Ga4ghWesWorkflowRequest;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -154,6 +163,178 @@ public class SystemClientIT {
     }
 
 
+    @Test
+    public void testWesGetServiceInfo() throws NotFoundException {
+        //TODO: Implementation ready, develop test.
+        Ga4ghApi ga4ghApi = new Ga4ghApi();
+
+        io.consonance.webservice.core.ConsonanceUser user = new io.consonance.webservice.core.ConsonanceUser();
+
+        Response response = ga4ghApi.getServiceInfo(user);
+
+        System.out.println(response.getEntity());
+
+    }
+
+    @Test
+    public void testWesRunWorkflow() throws NotFoundException, IOException, TimeoutException, ApiException {
+        Ga4ghApi ga4ghApi = new Ga4ghApi();
+
+        io.consonance.webservice.core.ConsonanceUser user = new io.consonance.webservice.core.ConsonanceUser();
+
+        Ga4ghWesWorkflowRequest requestBody = new Ga4ghWesWorkflowRequest();
+
+        Job testRunJob = createClientJob();
+
+        requestBody.setWorkflowDescriptor(testRunJob.getContainerImageDescriptor());
+        requestBody.setWorkflowParams(testRunJob.getContainerRuntimeDescriptor());
+        requestBody.workflowType("cwl");
+        requestBody.setWorkflowTypeVersion("1.0");
+
+
+        WebClient client = getWebClient();
+        OrderApi jobApi = new OrderApi(client);
+        List<Job> allJobs = jobApi.listWorkflowRuns();
+        List<Job> myJobs = jobApi.listOwnedWorkflowRuns();
+        assertThat(allJobs.size() == 0 && myJobs.size() == 0);
+        Response response = ga4ghApi.runWorkflow(requestBody, user);
+
+        allJobs = jobApi.listWorkflowRuns();
+        myJobs = jobApi.listOwnedWorkflowRuns();
+
+        assertThat(response.getEntity().toString() == "1");
+        assertThat(myJobs.size() == 1 && allJobs.size() == 1);
+//        assertThat(myJobs.get(0).getEndUser().equals("admin@admin.com"));
+
+        // Update with another request. There should be 2 jobs running.
+        requestBody.setWorkflowDescriptor(createServerJob().getContainerImageDescriptor());
+        requestBody.setWorkflowParams(createServerJob().getContainerRuntimeDescriptor());
+        response = ga4ghApi.runWorkflow(requestBody, user);
+
+        allJobs = jobApi.listWorkflowRuns();
+        myJobs = jobApi.listOwnedWorkflowRuns();
+
+        assertThat(response.getEntity().toString() == "2");
+        assertThat(myJobs.size() == 2 && allJobs.size() == 2);
+    }
+
+    @Test
+    public void testListWorkflows() throws NotFoundException, IOException, TimeoutException, ApiException{
+        Ga4ghApi ga4ghApi = new Ga4ghApi();
+
+        io.consonance.webservice.core.ConsonanceUser user = new io.consonance.webservice.core.ConsonanceUser();
+
+        Ga4ghWesWorkflowRequest requestBody = new Ga4ghWesWorkflowRequest();
+
+        Job testRunJob = createClientJob();
+
+        requestBody.setWorkflowDescriptor(testRunJob.getContainerImageDescriptor());
+        requestBody.setWorkflowParams(testRunJob.getContainerRuntimeDescriptor());
+        requestBody.workflowType("cwl");
+        requestBody.setWorkflowTypeVersion("1.0");
+
+
+        WebClient client = getWebClient();
+        OrderApi jobApi = new OrderApi(client);
+
+        ga4ghApi.runWorkflow(requestBody, user);
+
+        Ga4ghWesWorkflowRequest requestBody2 = new Ga4ghWesWorkflowRequest();
+        requestBody2.setWorkflowDescriptor(testRunJob.getContainerImageDescriptor());
+        requestBody2.setWorkflowParams(testRunJob.getContainerRuntimeDescriptor());
+        requestBody2.workflowType("cwl");
+        requestBody2.setWorkflowTypeVersion("1.0");
+        // Update with another request. There should be 2 jobs running.
+        requestBody2.setWorkflowDescriptor(createServerJob().getContainerImageDescriptor());
+        requestBody2.setWorkflowParams(createServerJob().getContainerRuntimeDescriptor());
+        ga4ghApi.runWorkflow(requestBody2, user);
+
+        Response listWorkflows = ga4ghApi.listWorkflows(Long.valueOf(0), "0","", user);
+
+        Ga4ghWesWorkflowListResponse listResponse = (Ga4ghWesWorkflowListResponse) listWorkflows.getEntity();
+        Assert.assertEquals(2, listResponse.getWorkflows().size());
+    }
+
+    @Test
+    public void testGetWorkflowLog() throws IOException, TimeoutException, NotFoundException {
+        Ga4ghApi ga4ghApi = new Ga4ghApi();
+
+        io.consonance.webservice.core.ConsonanceUser user = new io.consonance.webservice.core.ConsonanceUser();
+
+        Ga4ghWesWorkflowRequest requestBody = new Ga4ghWesWorkflowRequest();
+
+        Job testRunJob = createClientJob();
+
+        requestBody.setWorkflowDescriptor(testRunJob.getContainerImageDescriptor());
+        requestBody.setWorkflowParams(testRunJob.getContainerRuntimeDescriptor());
+        requestBody.workflowType("cwl");
+        requestBody.setWorkflowTypeVersion("1.0");
+
+
+        WebClient client = getWebClient();
+        OrderApi jobApi = new OrderApi(client);
+
+        ga4ghApi.runWorkflow(requestBody, user);
+
+        Response workflowLogs = ga4ghApi.getWorkflowLog("1", user);
+
+
+        assertThat(getLogs().equals(workflowLogs.getEntity().toString()));
+    }
+
+    @Test
+    public void testGetWorkflowStatus() throws IOException, TimeoutException, NotFoundException {
+        Ga4ghApi ga4ghApi = new Ga4ghApi();
+
+        io.consonance.webservice.core.ConsonanceUser user = new io.consonance.webservice.core.ConsonanceUser();
+
+        Ga4ghWesWorkflowRequest requestBody = new Ga4ghWesWorkflowRequest();
+
+        Job testRunJob = createClientJob();
+
+        requestBody.setWorkflowDescriptor(testRunJob.getContainerImageDescriptor());
+        requestBody.setWorkflowParams(testRunJob.getContainerRuntimeDescriptor());
+        requestBody.workflowType("cwl");
+        requestBody.setWorkflowTypeVersion("1.0");
+
+
+        WebClient client = getWebClient();
+        OrderApi jobApi = new OrderApi(client);
+
+        ga4ghApi.runWorkflow(requestBody, user);
+
+        Response workflowLogs = ga4ghApi.getWorkflowStatus("1", user);
+
+        assertThat(getStatus().equals(workflowLogs));
+
+    }
+
+//    private class MyServletConfig implements ServletConfig{
+//
+//        @Override
+//        public String getServletName() {
+//            return null;
+//        }
+//
+//        @Override
+//        public ServletContext getServletContext() {
+//            return null;
+//        }
+//
+//        @Override
+//        public String getInitParameter(String s) {
+//            System.out.println("getting param! ");
+//
+//            if ("Ga4ghApi.implementation".equals(s)) {
+//                return "io.swagger.api.impl.Ga4ghApiServiceImpl";
+//            }
+//            return null;
+//        }
+//        @Override
+//        public Enumeration getInitParameterNames() {
+//            return null;
+//        }
+//    }
 
     private Job createClientJob() {
         final Job job = new Job();
@@ -177,6 +358,12 @@ public class SystemClientIT {
         return job;
     }
 
+    private String getStatus(){
+        return "class Ga4ghWesWorkflowStatus {\n" +
+                "    workflowId: 1\n" +
+                "    state: Queued\n" +
+                "}";
+    }
 
     private io.consonance.arch.beans.Job createServerJob() {
         final io.consonance.arch.beans.Job job = new io.consonance.arch.beans.Job();
@@ -200,4 +387,73 @@ public class SystemClientIT {
         return job;
     }
 
+    private String getLogs(){
+        return "class Ga4ghWesWorkflowLog {\n" +
+                "    workflowId: 1\n" +
+                "    request: class Ga4ghWesWorkflowRequest {\n" +
+                "        workflowDescriptor: {\n" +
+                "        \n" +
+                "            \"items\": [\n" +
+                "                {\n" +
+                "                    \"index\": 1,\n" +
+                "                    \"index_start_at\": 56,\n" +
+                "                    \"integer\": 19,\n" +
+                "                    \"float\": 15.1507,\n" +
+                "                    \"name\": \"Ashley\",\n" +
+                "                    \"surname\": \"Coley\",\n" +
+                "                    \"fullname\": \"Brenda Raynor\",\n" +
+                "                    \"email\": \"anita@poole.sy\",\n" +
+                "                    \"bool\": true\n" +
+                "                }\n" +
+                "            ]\n" +
+                "        \n" +
+                "        }\n" +
+                "        workflowParams: {\n" +
+                "        \n" +
+                "            \"items\": [\n" +
+                "                {\n" +
+                "                    \"index\": 1,\n" +
+                "                    \"index_start_at\": 56,\n" +
+                "                    \"integer\": 1,\n" +
+                "                    \"float\": 18.5884,\n" +
+                "                    \"name\": \"Lee\",\n" +
+                "                    \"surname\": \"Summers\",\n" +
+                "                    \"fullname\": \"Sandra Alexander\",\n" +
+                "                    \"email\": \"ronnie@byrne.gh\",\n" +
+                "                    \"bool\": false\n" +
+                "                }\n" +
+                "            ]\n" +
+                "        \n" +
+                "        }\n" +
+                "        workflowType: cwl\n" +
+                "        workflowTypeVersion: 1.0\n" +
+                "        keyValues: null\n" +
+                "    }\n" +
+                "    state: Queued\n" +
+                "    workflowLog: class Ga4ghWesLog {\n" +
+                "        name: CWL|WDL Job\n" +
+                "        cmd: [run workflow]\n" +
+                "        startTime: Tue Dec 19 16:47:50 PST 2017\n" +
+                "        endTime: Tue Dec 19 16:47:50 PST 2017\n" +
+                "        stdout: null\n" +
+                "        stderr: null\n" +
+                "        exitCode: 0\n" +
+                "    }\n" +
+                "    taskLogs: [class Ga4ghWesLog {\n" +
+                "        name: CWL|WDL Job\n" +
+                "        cmd: [run workflow]\n" +
+                "        startTime: Tue Dec 19 16:47:50 PST 2017\n" +
+                "        endTime: Tue Dec 19 16:47:50 PST 2017\n" +
+                "        stdout: null\n" +
+                "        stderr: null\n" +
+                "        exitCode: 0\n" +
+                "    }]\n" +
+                "    outputs: [class Ga4ghWesParameter {\n" +
+                "        name: null\n" +
+                "        value: null\n" +
+                "        location: null\n" +
+                "        type: null\n" +
+                "    }]\n" +
+                "}";
+    }
 }

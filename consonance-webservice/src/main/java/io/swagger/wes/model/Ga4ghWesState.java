@@ -30,7 +30,7 @@ public enum Ga4ghWesState {
   
   RUNNING("Running"),
   
-  PAUSED("Paused"),
+  PAUSED("Paused"), // TODO: Not available yet.
   
   COMPLETE("Complete"),
   
@@ -38,7 +38,7 @@ public enum Ga4ghWesState {
   
   SYSTEMERROR("SystemError"),
   
-  CANCELED("Canceled"),
+  CANCELED("Canceled"),  // TODO: Added feature
   
   INITIALIZING("Initializing");
 

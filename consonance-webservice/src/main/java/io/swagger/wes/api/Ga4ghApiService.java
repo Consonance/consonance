@@ -12,12 +12,14 @@ import io.swagger.wes.model.Ga4ghWesWorkflowRequest;
 import io.swagger.wes.model.Ga4ghWesWorkflowRunId;
 import io.swagger.wes.model.Ga4ghWesWorkflowStatus;
 
+import java.io.IOException;
 import java.util.List;
 import io.swagger.wes.api.NotFoundException;
 
 import io.consonance.webservice.core.ConsonanceUser;
 
 import java.io.InputStream;
+import java.util.concurrent.TimeoutException;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -30,5 +32,5 @@ public abstract class Ga4ghApiService {
     public abstract Response getWorkflowLog(String workflowId, ConsonanceUser user) throws NotFoundException;
     public abstract Response getWorkflowStatus(String workflowId, ConsonanceUser user) throws NotFoundException;
     public abstract Response listWorkflows(Long pageSize, String pageToken, String keyValueSearch, ConsonanceUser user) throws NotFoundException;
-    public abstract Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException;
+    public abstract Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException, IOException, TimeoutException;
 }
