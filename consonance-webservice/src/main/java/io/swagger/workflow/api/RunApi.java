@@ -19,7 +19,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.InputStream;
 
-@Path("/run")
+@Path("/ga4gh/wes/v1/run")
 
 @Produces({ "application/json" })
 @io.swagger.annotations.Api(description = "the run API")
@@ -34,7 +34,7 @@ public class RunApi  {
     @UnitOfWork
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "", notes = "Submit launch of a workflow ", response = void.class, tags={ "GA4GH-workflow-execution" })
+    @io.swagger.annotations.ApiOperation(value = "", notes = "Submit launch of a workflow ", response = void.class, tags={ "GA4GH Workflow Execution Service" })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 303, message = "Successful response", response = void.class) })
     public Response runPost(

@@ -72,7 +72,7 @@ import java.util.stream.Collectors;
  * @author dyuen
  */
 @Path("/order")
-@Api(value = "/order", tags = "order")
+@Api(value = "/order", tags = "Consonance Order")
 @Produces(MediaType.APPLICATION_JSON)
 public class OrderResource {
     public static final int DEFAULT_DISKSPACE = 1024;

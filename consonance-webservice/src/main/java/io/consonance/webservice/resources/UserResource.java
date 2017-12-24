@@ -53,7 +53,7 @@ import java.util.Random;
  * @author dyuen
  */
 @Path("/user")
-@Api(value = "/user", tags = "user")
+@Api(value = "/user", tags = "Consonance User")
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource {
     private final ConsonanceUserDAO dao;

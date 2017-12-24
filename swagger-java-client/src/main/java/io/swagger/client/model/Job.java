@@ -231,9 +231,9 @@ public enum StateEnum {
   }
 
   /**
-   * the image descriptor type, typicall CWL or WDL
+   * the image descriptor type, typically CWL or WDL
    **/
-  @ApiModelProperty(value = "the image descriptor type, typicall CWL or WDL")
+  @ApiModelProperty(value = "the image descriptor type, typically CWL or WDL")
   @JsonProperty("container_image_descriptor_type")
   public String getContainerImageDescriptorType() {
     return containerImageDescriptorType;

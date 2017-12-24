@@ -49,7 +49,7 @@ import java.util.TreeMap;
  * @author dyuen
  */
 @Path("/configuration")
-@Api(value = "/configuration", tags = "configuration")
+@Api(value = "/configuration", tags = "Consonance Configuration")
 @Produces(MediaType.APPLICATION_JSON)
 public class ConfigurationResource {
     private final HierarchicalINIConfiguration settings;

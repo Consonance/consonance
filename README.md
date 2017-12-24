@@ -69,7 +69,8 @@ The build uses maven (3.2.3, look at using [MVNVM](http://mvnvm.org/)), just run
 
     $bash> mvn -Dmaven.test.skip=true clean install
 
-Skip tests and use parallel build (see more info [here](https://zeroturnaround.com/rebellabs/your-maven-build-is-slow-speed-it-up/)):
+Skip tests and use parallel build (see more info [here](https://zeroturnaround.com/rebellabs/your-maven-build-is-slow-speed-it-up/)).
+You should really read up on these params, below I'm using `-T` for threads, `-pl` to skip a bunch of sub-projects, etc.
 
     $bash> mvn -Dmaven.test.skip=true -T 1C install -pl consonance-integration-testing -am
 
@@ -92,6 +93,10 @@ Now run the full integration tests (assumes you have RabbitMQ and PostgreSQL ins
 
 See http://localhost:15672/#/queues for your queues, username and password is guest by default.
 
+## Viewing Swagger Web Service API Documentation
+
+See the consonance-webservice [README](consonance-webservice/README.md) for how to setup and view the Swagger API documentation/client.
+
 ## Releasing
 
 See the [developer page](https://github.com/Consonance/consonance/wiki/developers) on our wiki.
@@ -106,8 +111,21 @@ See the [quickstart guide](https://github.com/Consonance/consonance/wiki/quickst
 
 ## TODO
 
-* test container-admin with pre-release locally with provisioning on AWS
 * review and merge the pull request
+* test container-admin with pre-release locally with provisioning on AWS
 * perform release
 * test container-admin with release on AWS, should be a safe harbor
 * then review/try WES support branch from Abraham
+
+### GA4GH API Notes
+
+Right now the GA4GH endpoints don't seem to be used at all.
+
+* `/jobs/ and /run in GA4GH-workflow-execution`
+* `v1/*` in TaskService
+
+    grep -R '/run' * | grep '\.java' | grep -v var
+    consonance-webservice/src/main/java/io/swagger/workflow/api/RunApi.java:@Path("/run")
+    grep -R '/v1' * | grep '\.java' | grep -v var
+    consonance-webservice/src/main/java/io/swagger/task/api/V1Api.java:@Path("/v1")
+

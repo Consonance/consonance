@@ -15,7 +15,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-@Path("/jobs")
+@Path("/ga4gh/wes/v1/jobs")
 
 @Produces({ "application/json" })
 @io.swagger.annotations.Api(description = "the jobs API")
@@ -30,7 +30,7 @@ public class JobsApi  {
     @Path("/{jobId}")
     @UnitOfWork
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "", notes = "Get status for a workflow ", response = JobStatus.class, tags={ "GA4GH-workflow-execution" })
+    @io.swagger.annotations.ApiOperation(value = "", notes = "Get status for a workflow ", response = JobStatus.class, tags={ "GA4GH Workflow Execution Service" })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description of job including its status", response = JobStatus.class) })
     public Response jobsDescriptorUrlGet(
