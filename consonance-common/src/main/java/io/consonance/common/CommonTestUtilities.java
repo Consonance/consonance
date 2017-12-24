@@ -64,6 +64,8 @@ public class CommonTestUtilities {
     /**
      * Clears database state and known queues for testing.
      *
+     * @see io.consonance.arch.utils.CommonServerTestUtilities#clearState() for clearing out the RabbitMQ queues
+     *
      * @throws IOException
      * @throws java.util.concurrent.TimeoutException
      */

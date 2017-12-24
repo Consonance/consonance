@@ -105,7 +105,7 @@ public class WorkerRunnable implements Runnable {
      * @param endless have the worker pick up new jobs as the current job finishes successfully
      * @param flavourOverride override detection of instance type
      */
-    WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
+    public WorkerRunnable(String configFile, String vmUuid, int maxRuns, boolean testMode, boolean endless, String flavourOverride) {
 
         try {
 
@@ -209,7 +209,7 @@ public class WorkerRunnable implements Runnable {
 
             while ((max > 0 || this.endless)) {
                 log.debug(max + " remaining jobs will be executed");
-                log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName);
+                log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName + " for flavour " + this.flavour);
 
                 if (!endless) {
                     max--;
@@ -344,7 +344,6 @@ public class WorkerRunnable implements Runnable {
         }
     }
 
-    // TODO: obviously, this will need to launch something using Youxia in the future
     /**
      * This function will execute a workflow, based on the content of the Job object that is passed in.
      *
@@ -388,7 +387,7 @@ public class WorkerRunnable implements Runnable {
             }
             workflowRunner.setConfigFilePath(dockstoreLauncherConfig.getAbsolutePath());
             // write out descriptors from message
-            final Path imageDescriptor = new File(System.getProperty("user.dir"), "image-descriptor.cwl").toPath();
+            final Path imageDescriptor = new File(System.getProperty("user.dir"), "image-descriptor."+job.getContainerImageDescriptorType()).toPath();
             final Path runDescriptor = new File(System.getProperty("user.dir"), "run-descriptor.json").toPath();
             FileUtils.writeStringToFile(imageDescriptor.toFile(), job.getContainerImageDescriptor(), StandardCharsets.UTF_8);
             FileUtils.writeStringToFile(runDescriptor.toFile(), job.getContainerRuntimeDescriptor(), StandardCharsets.UTF_8);

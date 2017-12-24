@@ -47,6 +47,7 @@ public enum StateEnum {
   private String jobUuid = null;
   private String vmUuid = null;
   private String containerImageDescriptor = null;
+  private String containerImageDescriptorType = null;
   private String containerRuntimeDescriptor = null;
 
   
@@ -229,6 +230,17 @@ public enum StateEnum {
     this.containerImageDescriptor = containerImageDescriptor;
   }
 
+  /**
+   * the image descriptor type, typicall CWL or WDL
+   **/
+  @ApiModelProperty(value = "the image descriptor type, typicall CWL or WDL")
+  @JsonProperty("container_image_descriptor_type")
+  public String getContainerImageDescriptorType() {
+    return containerImageDescriptorType;
+  }
+  public void setContainerImageDescriptorType(String containerImageDescriptorType) {
+    this.containerImageDescriptorType = containerImageDescriptorType;
+  }
   
   /**
    * credentials or other files needed by your workflow, specify pairs of path=content

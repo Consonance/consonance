@@ -44,15 +44,27 @@
         <seqware.version>1.1.1</seqware.version>
         <dropwizard.version>1.0.2</dropwizard.version>
         <swagger.version>1.5.9</swagger.version>
+        <swagger-annotations-version>1.5.9</swagger-annotations-version>
         <aws.version>1.10.77</aws.version>
         <powermock.version>1.6.3</powermock.version>
         <assertj.version>3.4.1</assertj.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
         <jackson.version>2.7.8</jackson.version>
         <jersey.version>2.23.2</jersey.version>
+        <jersey-version>2.23.2</jersey-version>
         <hibernate.version>5.1.0.Final</hibernate.version>
-        <dockstore.version>1.2.0-alpha.5</dockstore.version>
-        <cwlavro.version>1.0.7</cwlavro.version>
+        <dockstore.version>1.2.6</dockstore.version>
+        <cwlavro.version>2.0.0</cwlavro.version>
+        <junit-version>4.12</junit-version>
+        <logback.version>1.1.7</logback.version>
+        <aws.version>1.11.86</aws.version>
+        <powermock.version>1.6.5</powermock.version>
+        <okhttp.version>3.2.0</okhttp.version>
+        <slf4j.version>1.7.21</slf4j.version>
+        <maven-surefire.version>2.20</maven-surefire.version>
+        <maven-failsafe.version>2.19.1</maven-failsafe.version>
+        <httpcomponents.version>4.4.5</httpcomponents.version>
+        <mockito.version>1.10.19</mockito.version>
     </properties>
 
     <scm>
@@ -582,17 +594,36 @@
                         <groupId>io.dropwizard</groupId>
                         <artifactId>dropwizard-testing</artifactId>
                     </exclusion>
-                    <!-- ignore cromwell for now -->
                     <exclusion>
-                        <groupId>org.broadinstitute</groupId>
-                        <artifactId>cromwell_2.11</artifactId>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-reflect</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.broadinstitute</groupId>
-                        <artifactId>wdl4s_2.11</artifactId>
+                        <groupId>org.scalacheck</groupId>
+                        <artifactId>scalacheck_2.11</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.typelevel</groupId>
+                        <artifactId>macro-compat_2.11</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-reflect</artifactId>
+                <version>2.11.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scalacheck</groupId>
+                <artifactId>scalacheck_2.11</artifactId>
+                <version>1.12.5</version>
+            </dependency>
+            <dependency>
+                <groupId>org.typelevel</groupId>
+                <artifactId>macro-compat_2.11</artifactId>
+                <version>1.1.1</version>
+            </dependency>
+
             <dependency>
                 <groupId>io.cwl</groupId>
                 <artifactId>cwlavro</artifactId>
@@ -644,9 +675,46 @@
 
     <repositories>
         <repository>
+            <id>artifacts.oicr.on.ca</id>
+            <name>artifacts.oicr.on.ca</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+        </repository>
+        <repository>
+            <id>seqwaremaven.oicr.on.ca</id>
+            <name>seqwaremaven.oicr.on.ca-releases</name>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
+        </repository>
+        <repository>
+            <id>seqwaremaven.oicr.on.ca2</id>
+            <name>seqwaremaven.oicr.on.ca-releases</name>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-release</url>
+        </repository>
+        <repository>
+            <id>eclipse-egit-github</id>
+            <name>Eclipse egit github repository</name>
+            <url>https://repo.eclipse.org/content/repositories/egit-releases</url>
+        </repository>
+        <!-- broad -->
+        <repository>
+            <id>artifactory.broadinstitute.org</id>
+            <name>artifactory.broadinstitute.org</name>
+            <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>sagebionetworks</id>
+            <name>sagebionetworks-releases</name>
+            <url>http://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
+        </repository>
+        <repository>
             <id>seqware.sourceforge.net</id>
             <name>SeqWare Maven Repository</name>
-            <url>http://seqwaremaven.oicr.on.ca/artifactory/seqware-release</url>
+            <url>http://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
             <releases>
                 <enabled>true</enabled>
             </releases>

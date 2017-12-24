@@ -89,6 +89,7 @@ CREATE TABLE job (
     create_timestamp timestamp without time zone,
     update_timestamp timestamp without time zone,
     container_image_descriptor text,
+    container_image_descriptor_type text,
     container_runtime_descriptor text,
     end_user text,
     flavour text,

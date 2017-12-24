@@ -265,6 +265,7 @@ public class Main {
             out("Required parameters:");
             out("  --flavour <flavour>              The type of machine that the job should execute on");
             out("  --run-descriptor <file>          Path to the runtime descriptor, supports http");
+            out("  --format <cwl|wdl>               A necessary hint specifying the workflow/tool descriptor format");
             out("Optional parameters:");
             out("  --extra-file <path=file=keep>    The path where a particular file should be provisioned, a path to the contents "
                     + "of that file, and whether this file should be kept after execution. Can repeat to specify multiple files");
@@ -274,9 +275,11 @@ public class Main {
             String imageDescriptor = optVal(args, "--image-descriptor", "/foobar");
             String runDescriptor = reqVal(args, "--run-descriptor");
             List<String> extraFiles = optVals(args, "--extra-file");
+            String format = reqVal(args, "--format");
             try {
                 Job job = new Job();
                 job.setFlavour(flavour);
+                job.setContainerImageDescriptorType(format);
                 // attempt to read descriptors from URIs
                 UrlValidator urlValidator = new UrlValidator();
                 if (Files.exists(Paths.get(imageDescriptor))){
@@ -292,6 +295,7 @@ public class Main {
                     // if we're dealing with a Dockstore id
                     String toolDockstoreID = optVal(args, "--tool-dockstore-id", null);
                     String workflowDockstoreID = optVal(args, "--workflow-dockstore-id", null);
+                    String dockstoreID = null;
                     Client client = new Client();
                     try {
                         client.setupClientEnvironment(Lists.newArrayList());
@@ -302,15 +306,17 @@ public class Main {
                     AbstractEntryClient actualClient = null;
                     if (toolDockstoreID != null){
                         actualClient = client.getToolClient();
+                        dockstoreID = toolDockstoreID;
                     } else if (workflowDockstoreID != null){
                         actualClient = client.getWorkflowClient();
+                        dockstoreID = workflowDockstoreID;
                     } else{
                         kill("consonance: missing required parameter for scheduling jobs");
                     }
                     // TODO: this should determine whether we want to launch a cwl or wdl version of a tool
-                    final SourceFile cwlFromServer = actualClient.getDescriptorFromServer(toolDockstoreID, "cwl");
+                    final SourceFile cwlFromServer = actualClient.getDescriptorFromServer(dockstoreID, format);
                     job.setContainerImageDescriptor(cwlFromServer.getContent());
-                    final List<SourceFile> descriptors = actualClient.downloadDescriptors(toolDockstoreID, "cwl", tempDir);
+                    final List<SourceFile> descriptors = actualClient.downloadDescriptors(dockstoreID, format, tempDir);
                     for(SourceFile file : descriptors) {
                         ExtraFile extraFile = new ExtraFile();
                         extraFile.setContents(file.getContent());

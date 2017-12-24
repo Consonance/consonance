@@ -37,9 +37,10 @@ import io.consonance.arch.beans.Status;
 import io.consonance.arch.beans.StatusState;
 import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.arch.utils.CommonServerTestUtilities;
+import io.consonance.arch.worker.Worker;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
-import io.consonance.arch.worker.WorkerRunnable;
+import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionSpecBuilder;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
@@ -82,6 +83,8 @@ public class ContainerProvisionerThreads extends Base {
     private static final int TWO_MINUTE_IN_MILLISECONDS = 2 * 60 * 1000;
 
     private final OptionSpecBuilder testSpec;
+    private final OptionSpecBuilder localSpec;
+    private final ArgumentAcceptingOptionSpec<String> flavourSpec;
     private static final Logger LOG = LoggerFactory.getLogger(ContainerProvisionerThreads.class);
 
     public static void main(String[] argv) throws Exception {
@@ -91,15 +94,19 @@ public class ContainerProvisionerThreads extends Base {
 
     private ContainerProvisionerThreads(String[] argv) throws IOException {
         super();
-        this.testSpec = super.parser.accepts("test", "in test mode, workers are created directly");
+        this.testSpec = super.parser.accepts("test", "in test mode, workers are created directly but passed --test so they only perform mock work");
+        this.localSpec = super.parser.accepts("local", "in local mode, workers are created directly and the job is run locally");
+        this.flavourSpec = super.parser.accepts("flavour", "in test or local modes, the flavour of instances the worker thread pretends to be").withOptionalArg().ofType(String.class)
+                .describedAs("flavour value");
         super.parseOptions(argv);
     }
 
     private void startThreads() throws InterruptedException {
         ExecutorService pool = Executors.newFixedThreadPool(DEFAULT_THREADS);
         ProcessVMOrders processVMOrders = new ProcessVMOrders(this.configFile, this.options.has(this.endlessSpec));
-        ProvisionVMs provisionVMs = new ProvisionVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec));
-        CleanupVMs cleanupVMs = new CleanupVMs(this.configFile, this.options.has(this.endlessSpec));
+        String flavour = (null == this.options.valueOf(this.flavourSpec)) ? "" : this.options.valueOf(this.flavourSpec).toString();
+        ProvisionVMs provisionVMs = new ProvisionVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec), this.options.has(localSpec), flavour);
+        CleanupVMs cleanupVMs = new CleanupVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec));
         List<Future<?>> futures = new ArrayList<>();
         futures.add(pool.submit(processVMOrders));
         futures.add(pool.submit(provisionVMs));
@@ -192,11 +199,15 @@ public class ContainerProvisionerThreads extends Base {
         private final String configFile;
         private final boolean endless;
         private final boolean testMode;
+        private final boolean localMode;
+        private final String testFlavour;
 
-        ProvisionVMs(String configFile, boolean endless, boolean testMode) {
+        ProvisionVMs(String configFile, boolean endless, boolean testMode, boolean localMode, String testFlavour) {
             this.configFile = configFile;
             this.endless = endless;
             this.testMode = testMode;
+            this.localMode = localMode;
+            this.testFlavour = testFlavour;
         }
 
         @Override
@@ -228,7 +239,7 @@ public class ContainerProvisionerThreads extends Base {
                     
                     LOG.info("Found " + numberRunningContainers + " pending containers, " + numberPendingContainers + " running containers, and " + numberLostContainers + " lost containers.");
 
-                    if (testMode) {
+                    if (testMode || localMode) {
                         LOG.info("  CHECKING NUMBER OF RUNNING: " + numberRunningContainers);
                         maxWorkers = settings.getLong(Constants.PROVISION_MAX_RUNNING_CONTAINERS);
 
@@ -243,8 +254,17 @@ public class ContainerProvisionerThreads extends Base {
                             // now launch the VM... doing this after the update above to prevent race condition if the worker signals
                             // finished
                             // before it's marked as pending
-                            new WorkerRunnable(configFile, uuid, 1).run();
-                            LOG.info("\n\n\nI LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
+                            if (testMode) {
+                                // this won't actually execute anything
+                                LOG.info("\n\n\nI MOCK LAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
+                                Worker.main(new String[] { "--config", this.configFile, "--uuid", uuid, "--pidFile",
+                                        "/var/run/arch3_worker"+uuid+".pid", "--flavour", testFlavour, "--test" });
+                            } else if(localMode) {
+                                // this will actually execute locally
+                                LOG.info("\n\n\nLAUNCHED A WORKER THREAD FOR VM " + uuid + " AND IT'S RELEASED!!!\n\n");
+                                Worker.main(new String[] { "--config", this.configFile, "--uuid", uuid, "--pidFile",
+                                        "/var/run/arch3_worker"+uuid+".pid", "--flavour", testFlavour });
+                            }
                         }
                     } else {
                         long requiredVMs = numberRunningContainers + numberPendingContainers + numberLostContainers;
@@ -292,7 +312,7 @@ public class ContainerProvisionerThreads extends Base {
                                 } catch (Exception e) {
                                     LOG.error("Youxia deployer threw the following exception", e);
                                     // call the reaper to do cleanup when deployment fails
-                                    runReaper(settings, null, null);
+                                    runReaper(settings, null, null, testMode);
                                 }
                             }
                         }
@@ -318,11 +338,13 @@ public class ContainerProvisionerThreads extends Base {
         static final Logger LOG = LoggerFactory.getLogger(CleanupVMs.class);
         private final String configFile;
         private final boolean endless;
+        private final boolean testMode;
         private Set<String> existingJobQueues = new HashSet<>();
 
-        CleanupVMs(String configFile, boolean endless) {
+        CleanupVMs(String configFile, boolean endless, boolean testMode) {
             this.configFile = configFile;
             this.endless = endless;
+            this.testMode = testMode;
         }
 
         @Override
@@ -370,7 +392,7 @@ public class ContainerProvisionerThreads extends Base {
                         for(Provision p : provisions) {
                             if (j.getUuid().equals(p.getJobUUID())) {
                                 synchronized (ContainerProvisionerThreads.class) {
-                                    runReaper(settings, p.getIpAddress(), j.getVmUuid());
+                                    runReaper(settings, p.getIpAddress(), j.getVmUuid(), this.testMode);
                                 }
                             }
                         }
@@ -403,7 +425,7 @@ public class ContainerProvisionerThreads extends Base {
                         for (Provision p : provisions) {
                             if (j.getUuid().equals(p.getJobUUID())) {
                                 synchronized (ContainerProvisionerThreads.class) {
-                                    runReaper(settings, p.getIpAddress(), j.getVmUuid());
+                                    runReaper(settings, p.getIpAddress(), j.getVmUuid(), this.testMode);
                                 }
                             }
                         }
@@ -434,14 +456,14 @@ public class ContainerProvisionerThreads extends Base {
                             // this is where it reaps, the job status message also contains the UUID for the VM
                             db.finishContainer(status.getVmUuid());
                             synchronized (ContainerProvisionerThreads.class) {
-                                runReaper(settings, status.getIpAddress(), status.getVmUuid());
+                                runReaper(settings, status.getIpAddress(), status.getVmUuid(), this.testMode);
                             }
                         } else if (reapFailedWorkers && status.getState() == StatusState.FAILED) {
                             // reaped failed workers need to be set to the failed state
                             ProvisionState provisionState = ProvisionState.FAILED;
                             db.updateProvisionByJobUUID(status.getJobUuid(), status.getVmUuid(), provisionState, status.getIpAddress());
                             synchronized (ContainerProvisionerThreads.class) {
-                                runReaper(settings, status.getIpAddress(), status.getVmUuid());
+                                runReaper(settings, status.getIpAddress(), status.getVmUuid(), this.testMode);
                             }
                         } else if (status.getState() == StatusState.RUNNING || status.getState() == StatusState.FAILED
                                 || status.getState() == StatusState.PENDING || status.getState() == StatusState.PROVISIONING) {
@@ -482,7 +504,7 @@ public class ContainerProvisionerThreads extends Base {
      *            specify an ip address (otherwise cleanup only failed deployments)
      * @throws IOException
      */
-    private static void runReaper(HierarchicalINIConfiguration settings, String ipAddress, String vmName) throws IOException {
+    private static void runReaper(HierarchicalINIConfiguration settings, String ipAddress, String vmName, boolean testMode) throws IOException {
         String param = settings.getString(Constants.PROVISION_YOUXIA_REAPER);
         CommandLine parse = CommandLine.parse("dummy " + (param == null ? "" : param));
         List<String> arguments = new ArrayList<>();
@@ -508,11 +530,12 @@ public class ContainerProvisionerThreads extends Base {
         String[] toArray = arguments.toArray(new String[arguments.size()]);
         LOG.info("Running youxia reaper with following parameters:" + Arrays.toString(toArray));
         // need to make sure reaper and deployer do not overlap
-
-        try {
-            Reaper.main(toArray);
-        } catch (Exception e) {
-            LOG.error("Youxia reaper threw the following exception", e);
+        if(!testMode) {
+            try {
+                Reaper.main(toArray);
+            } catch (Exception e) {
+                LOG.error("Youxia reaper threw the following exception", e);
+            }
         }
     }
 }

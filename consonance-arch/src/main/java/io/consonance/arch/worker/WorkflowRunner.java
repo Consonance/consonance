@@ -19,14 +19,14 @@
 
 package io.consonance.arch.worker;
 
-import io.cwl.avro.CommandLineTool;
-import io.github.collaboratory.LauncherCWL;
+import io.dockstore.client.cli.Client;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.concurrent.Callable;
 
 /**
@@ -73,14 +73,14 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
 
     @Override
     public WorkflowResult call() throws IOException, ConfigurationException {
-        LOG.info("Executing cwlLauncher:");
+        LOG.info("Executing Dockstore CLI programmatically:");
         LOG.info("Image descriptor is: " + imageDescriptorPath);
         LOG.info("Runtime descriptor is: " + runtimeDescriptorPath);
         LOG.info("Config is: " + configFilePath);
         WorkflowResult result = new WorkflowResult();
 
         // TODO: wrap with try
-        LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
+        //LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
 
         try {
             if (this.preworkDelay > 0) {
@@ -88,8 +88,25 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 Thread.sleep(this.preworkDelay);
             }
             // this is a blocking call, but the HeartbeatThread appears to be a in a separate thread
-            // TODO: this assumes consonance just takes CWL tool call requests
-            launcher.run(CommandLineTool.class);
+            final String[] s = { "workflow", "launch", "--local-entry", imageDescriptorPath, "--json", runtimeDescriptorPath};
+            try {
+                LOG.info("command: dockstore "+ String.join(" ", s));
+                // see https://stackoverflow.com/questions/5389632/capturing-contents-of-standard-output-in-java for how I redirected stderr/out of the below
+                PrintStream originalStdOut = System.out;
+                PrintStream originalStdErr = System.err;
+                System.setOut(new PrintStream(this.outputStream, true, "UTF-8"));
+                System.setErr(new PrintStream(this.errorStream, true, "UTF-8"));
+                // this is the actual call to Dockstore CLI
+                // TODO: how do I set DOCKSTORE_ROOT=1?
+                Client.main(s);
+                System.setOut(originalStdOut);
+                System.setErr(originalStdErr);
+
+            } catch (NoClassDefFoundError e) {
+                e.printStackTrace();
+            }
+
+            // FIXME: this needs to use the streams from the Dockstore CLI
             result.setWorkflowStdout(this.getStdOut(DEFAULT_OUTPUT_LINE_LIMIT));
             result.setWorkflowStdErr(this.getStdErr(DEFAULT_OUTPUT_LINE_LIMIT));
             // exit code is artificial since the CWL runner actually runs more than one command

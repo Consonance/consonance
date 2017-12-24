@@ -67,10 +67,14 @@ public class CommonServerTestUtilities {
     /**
      * Clears database state and known queues for testing.
      *
+     * @see io.consonance.common.CommonTestUtilities#clearState() for clearing out the DB, which is called below
+     *
      * @throws IOException
      * @throws java.util.concurrent.TimeoutException
      */
     public static void clearState() throws IOException, TimeoutException {
+
+        // resets the DB
         CommonTestUtilities.clearState();
 
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
@@ -96,7 +100,7 @@ public class CommonServerTestUtilities {
         channel.confirmSelect();
 
         String prefix = parseConfig.getString(Constants.RABBIT_QUEUE_NAME);
-        String[] queues = { prefix + "_jobs", prefix + "_orders", prefix + "_vms", prefix + "_for_CleanupJobs", prefix + "_for_CleanupVMs" };
+        String[] queues = { prefix + "_jobs", prefix + "_orders", prefix + "_vms", prefix + "_for_CleanupJobs", prefix + "_for_CleanupVMs", "consonance_arch_jobs_for_m1.test", "consonance_arch_jobs_for_m1.test2", "testing_queue", "consonance_arch_orders", "consonance_arch_jobs_for_m1.xlarge" };
         for (String queue : queues) {
             try {
                 channel.queueDelete(queue);
@@ -104,6 +108,8 @@ public class CommonServerTestUtilities {
                 Log.info("Could not delete " + queue);
             }
         }
+
+        // TODO: do I need a sleep here???
     }
 
     /**

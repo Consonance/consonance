@@ -67,7 +67,7 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-generated</artifactId>
             <exclusions>
@@ -84,7 +84,7 @@
                     <artifactId>gson</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
+        </dependency-->
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
@@ -199,6 +199,7 @@
         <dependency>
             <groupId>io.cloudbindle</groupId>
             <artifactId>youxia-common</artifactId>
+            <version>${youxia.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.code.gson</groupId>
@@ -288,9 +289,41 @@
             <artifactId>commons-pool2</artifactId>
             <scope>compile</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
+            <version>${dockstore.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.dropwizard</groupId>
+                    <artifactId>dropwizard-testing</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency-->
+        <!--dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>swagger-java-client</artifactId>
+            <version>${dockstore.version}</version>
+        </dependency-->
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-client</artifactId>
+            <version>${dockstore.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.dropwizard</groupId>
+                    <artifactId>dropwizard-testing</artifactId>
+                </exclusion>
+                <!-- ignore cromwell for now -->
+                <exclusion>
+                    <groupId>org.broadinstitute</groupId>
+                    <artifactId>cromwell_2.11</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.broadinstitute</groupId>
+                    <artifactId>wdl4s_2.11</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -302,12 +335,32 @@
             <artifactId>logback-classic</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>1.10.19</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                            <outputXML>true</outputXML>
+                            <ignoreNonCompile>true</ignoreNonCompile>
+                        </configuration>
+                    </execution>
+                </executions>
                 <configuration>
                     <usedDependencies>
                         <usedDependency>org.apache.commons:commons-pool2</usedDependency>
