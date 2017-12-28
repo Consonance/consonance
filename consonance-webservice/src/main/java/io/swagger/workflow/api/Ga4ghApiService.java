@@ -1,5 +1,6 @@
 package io.swagger.workflow.api;
 
+import io.consonance.webservice.core.ConsonanceUser;
 import io.swagger.workflow.api.*;
 import io.swagger.workflow.model.*;
 
@@ -28,4 +29,5 @@ public abstract class Ga4ghApiService {
     public abstract Response getWorkflowStatus(String workflowId,SecurityContext securityContext) throws NotFoundException;
     public abstract Response listWorkflows( Long pageSize, String pageToken, String keyValueSearch,SecurityContext securityContext) throws NotFoundException;
     public abstract Response runWorkflow(Ga4ghWesWorkflowRequest body,SecurityContext securityContext) throws NotFoundException;
+    public abstract Response runWorkflow(Ga4ghWesWorkflowRequest body,ConsonanceUser user) throws NotFoundException;
 }

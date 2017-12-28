@@ -29,6 +29,26 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.*;
 import javax.validation.constraints.*;
 
+import io.consonance.webservice.core.ConsonanceUser;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
+import io.swagger.annotations.ApiParam;
+import io.swagger.workflow.api.factories.RunApiServiceFactory;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import java.io.InputStream;
+
+
 @Path("/ga4gh")
 @Consumes({ "application/json" })
 @Produces({ "application/json" })
@@ -36,6 +56,12 @@ import javax.validation.constraints.*;
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2017-12-24T02:51:26.646Z")
 public class Ga4ghApi  {
    private final Ga4ghApiService delegate;
+
+    // new
+    private final RunApiService delegate2 = RunApiServiceFactory.getRunApi();
+    //new
+    @Context
+    private UriInfo uriInfo;
 
    public Ga4ghApi(@Context ServletConfig servletContext) {
       Ga4ghApiService delegate = null;
@@ -120,15 +146,31 @@ public class Ga4ghApi  {
         return delegate.listWorkflows(pageSize,pageToken,keyValueSearch,securityContext);
     }
     @POST
+    @UnitOfWork
     @Path("/wes/v1/workflows")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
     @io.swagger.annotations.ApiOperation(value = "Run a workflow, this endpoint will allow you to create a new workflow request and retrieve its tracking ID to monitor its progress.  An important assumption in this endpoint is that the workflow_params JSON will include parameterizations along with input and output files.  The latter two may be on S3, Google object storage, local filesystems, etc.  This specification makes no distinction.  However, it is assumed that the submitter is using URLs that this system both understands and can access. For Amazon S3, this could be accomplished by given the credentials associated with a WES service access to a particular bucket.  The details are important for a production system and user on-boarding but outside the scope of this spec.", notes = "", response = Ga4ghWesWorkflowRunId.class, tags={ "GA4GH Workflow Execution Service", })
-    @io.swagger.annotations.ApiResponses(value = { 
+    @io.swagger.annotations.ApiResponses(value = {
+        @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowRunId.class) })
+    public Response runWorkflow(@ApiParam(value = "" ,required=true) Ga4ghWesWorkflowRequest body
+,@Auth ConsonanceUser user)
+    throws NotFoundException {
+        return delegate.runWorkflow(body,user);
+    }
+
+    /*
+    @POST
+    @Path("/wes/v1/workflows")
+    @Consumes({ "application/json" })
+    @Produces({ "application/json" })
+    @io.swagger.annotations.ApiOperation(value = "Run a workflow, this endpoint will allow you to create a new workflow request and retrieve its tracking ID to monitor its progress.  An important assumption in this endpoint is that the workflow_params JSON will include parameterizations along with input and output files.  The latter two may be on S3, Google object storage, local filesystems, etc.  This specification makes no distinction.  However, it is assumed that the submitter is using URLs that this system both understands and can access. For Amazon S3, this could be accomplished by given the credentials associated with a WES service access to a particular bucket.  The details are important for a production system and user on-boarding but outside the scope of this spec.", notes = "", response = Ga4ghWesWorkflowRunId.class, tags={ "GA4GH Workflow Execution Service", })
+    @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowRunId.class) })
     public Response runWorkflow(@ApiParam(value = "" ,required=true) Ga4ghWesWorkflowRequest body
 ,@Context SecurityContext securityContext)
     throws NotFoundException {
         return delegate.runWorkflow(body,securityContext);
     }
+     */
 }
