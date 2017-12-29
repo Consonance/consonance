@@ -154,23 +154,9 @@ public class Ga4ghApi  {
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowRunId.class) })
     public Response runWorkflow(@ApiParam(value = "" ,required=true) Ga4ghWesWorkflowRequest body
-,@Auth ConsonanceUser user)
+,@ApiParam(hidden = true) @Auth ConsonanceUser user)
     throws NotFoundException {
         return delegate.runWorkflow(body,user);
     }
 
-    /*
-    @POST
-    @Path("/wes/v1/workflows")
-    @Consumes({ "application/json" })
-    @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Run a workflow, this endpoint will allow you to create a new workflow request and retrieve its tracking ID to monitor its progress.  An important assumption in this endpoint is that the workflow_params JSON will include parameterizations along with input and output files.  The latter two may be on S3, Google object storage, local filesystems, etc.  This specification makes no distinction.  However, it is assumed that the submitter is using URLs that this system both understands and can access. For Amazon S3, this could be accomplished by given the credentials associated with a WES service access to a particular bucket.  The details are important for a production system and user on-boarding but outside the scope of this spec.", notes = "", response = Ga4ghWesWorkflowRunId.class, tags={ "GA4GH Workflow Execution Service", })
-    @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowRunId.class) })
-    public Response runWorkflow(@ApiParam(value = "" ,required=true) Ga4ghWesWorkflowRequest body
-,@Context SecurityContext securityContext)
-    throws NotFoundException {
-        return delegate.runWorkflow(body,securityContext);
-    }
-     */
 }

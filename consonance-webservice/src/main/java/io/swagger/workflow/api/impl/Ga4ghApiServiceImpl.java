@@ -89,7 +89,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
             final Ga4ghWesWorkflowRunId result = new Ga4ghWesWorkflowRunId();
             result.setWorkflowId(job1.getUuid());
             //final URI uri = new URI(uriInfo.getBaseUri() + "jobs/" + job1.getUuid());
-            return Response.ok().entity(job1).build(); //seeOther(uri).build();
+            return Response.ok().entity(result).build(); //seeOther(uri).build();
         } catch (Exception e) {
             throw new WebApplicationException(e, HttpStatus.SC_BAD_REQUEST);
         }
