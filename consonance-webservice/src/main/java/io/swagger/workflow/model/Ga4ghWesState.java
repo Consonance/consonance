@@ -23,7 +23,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
  * Gets or Sets ga4gh_wes_state
  */
 public enum Ga4ghWesState {
-  
+
+  COMPLETE("Complete"),
+
   UNKNOWN("Unknown"),
   
   QUEUED("Queued"),
@@ -31,9 +33,7 @@ public enum Ga4ghWesState {
   RUNNING("Running"),
   
   PAUSED("Paused"),
-  
-  COMPLETE("Complete"),
-  
+
   ERROR("Error"),
   
   SYSTEMERROR("SystemError"),

@@ -23,9 +23,9 @@ import javax.ws.rs.core.SecurityContext;
 import javax.validation.constraints.*;
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2017-12-24T02:51:26.646Z")
 public abstract class Ga4ghApiService {
-    public abstract Response cancelJob(String workflowId,SecurityContext securityContext) throws NotFoundException;
-    public abstract Response getServiceInfo(SecurityContext securityContext) throws NotFoundException;
-    public abstract Response getWorkflowLog(String workflowId,SecurityContext securityContext) throws NotFoundException;
+    public abstract Response cancelJob(String workflowId,ConsonanceUser user) throws NotFoundException;
+    public abstract Response getServiceInfo(ConsonanceUser user) throws NotFoundException;
+    public abstract Response getWorkflowLog(String workflowId,ConsonanceUser user) throws NotFoundException;
     public abstract Response getWorkflowStatus(String workflowId,ConsonanceUser user) throws NotFoundException;
     public abstract Response listWorkflows( Long pageSize, String pageToken, String keyValueSearch,ConsonanceUser user) throws NotFoundException;
     public abstract Response runWorkflow(Ga4ghWesWorkflowRequest body,ConsonanceUser user) throws NotFoundException;

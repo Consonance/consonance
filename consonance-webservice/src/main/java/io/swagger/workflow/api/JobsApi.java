@@ -26,6 +26,7 @@ public class JobsApi  {
     @Context
     private UriInfo uriInfo;
 
+    /*
     @GET
     @Path("/{jobId}")
     @UnitOfWork
@@ -38,5 +39,5 @@ public class JobsApi  {
             @Auth ConsonanceUser user)
     throws NotFoundException {
         return delegate.jobsDescriptorUrlGet(jobId, user, uriInfo);
-    }
+    }*/
 }

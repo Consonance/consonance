@@ -127,16 +127,10 @@ key values in order to support this.  Right now lookup with key-values isn't sup
     * double-check the way I do token offsets in Ga4ghApiServiceImpl.java, specifically listWorkflows.  The value right now is an offset not a page. E.g. when you put in a page_token of 1 it starts at the second result not the second page of results!
     * related to this, if the page_token is empty it should go to page 1
     * `GET /ga4gh/wes/v1/workflows/{workflow_id}`'s response is actually complex. I only modeled a few fields.  Since Consonance is tied to Dockstore CLI (what the worker daemon launches) we should coordinate with the Dockstore CLI developers to make sure this info is reported back from the Dockstore CLI regardless if WDL or CWL workflows is run.  And the Consonance worker daemon then needs to report back this info.
-
-### GA4GH API Notes
-
-Right now the GA4GH endpoints don't seem to be used at all.
-
-* `/jobs/ and /run in GA4GH-workflow-execution`
-* `v1/*` in TaskService
-
-    grep -R '/run' * | grep '\.java' | grep -v var
-    consonance-webservice/src/main/java/io/swagger/workflow/api/RunApi.java:@Path("/run")
-    grep -R '/v1' * | grep '\.java' | grep -v var
-    consonance-webservice/src/main/java/io/swagger/task/api/V1Api.java:@Path("/v1")
+    * the status endpoint needs:
+        * location e.g. geo coordinates
+        * URL for user login
+        * description, more information URL
+* TES support issues
+    * I think all the TES endpoints are really out of date, we could get TES to work in Consonance but I'm most interested in WES
 

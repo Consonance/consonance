@@ -30,6 +30,7 @@ public class RunApi  {
     @Context
     private UriInfo uriInfo;
 
+    /*
     @POST
     @UnitOfWork
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
@@ -45,4 +46,5 @@ public class RunApi  {
     throws NotFoundException {
         return delegate.runPost(wf,inputStream, fileDetail,user, uriInfo);
     }
+    */
 }

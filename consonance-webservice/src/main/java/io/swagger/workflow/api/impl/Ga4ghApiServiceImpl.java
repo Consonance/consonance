@@ -20,7 +20,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.*;
+
 import io.swagger.workflow.api.NotFoundException;
 
 import java.io.InputStream;
@@ -49,19 +50,96 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
     }
 
     @Override
-    public Response cancelJob(String workflowId, SecurityContext securityContext) throws NotFoundException {
+    public Response cancelJob(String workflowId, ConsonanceUser user) throws NotFoundException {
         // do some magic!
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "delete is not yet supported in Consonance!")).build();
     }
     @Override
-    public Response getServiceInfo(SecurityContext securityContext) throws NotFoundException {
-        // do some magic!
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+    public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
+        try {
+            Ga4ghWesServiceInfo serviceInfo = new Ga4ghWesServiceInfo();
+
+            // types
+            Ga4ghWesWorkflowTypeVersion wtv = new Ga4ghWesWorkflowTypeVersion();
+            wtv.addWorkflowTypeVersionItem("1.0.0");
+            Map<String, Ga4ghWesWorkflowTypeVersion> map = new HashMap<String, Ga4ghWesWorkflowTypeVersion>();
+            map.put("CWL", wtv);
+            map.put("WDL", wtv);
+            serviceInfo.setWorkflowTypeVersions(map);
+
+            // wes version
+            serviceInfo.setSupportedWesVersions(Arrays.asList("1.0.0"));
+
+            // engine
+            Map<String, String> engineMap = new HashMap<String, String>();
+            // FIXME: these need to be coordinated with the versions installed by the playbook for the worker
+            engineMap.put("Cromwell", "29");
+            engineMap.put("cwltool", "1.0.20170828135420");
+            serviceInfo.setEngineVersions(engineMap);
+
+            // FIXME: need to confirm this list with the Dockstore CLI
+            serviceInfo.setSupportedFilesystemProtocols(Arrays.asList("http", "https", "s3", "file"));
+
+            return Response.ok().entity(serviceInfo).build();
+        } catch (Exception e) {
+            // FIXME: is there a better error to return here?
+            System.err.println(e.toString());
+            e.printStackTrace();
+            throw new WebApplicationException(e, HttpStatus.SC_BAD_REQUEST);
+        }
     }
     @Override
-    public Response getWorkflowLog(String workflowId, SecurityContext securityContext) throws NotFoundException {
-        // do some magic!
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+    public Response getWorkflowLog(String workflowId, ConsonanceUser user) throws NotFoundException {
+        try {
+            Job job = orderResource.getWorkflowRun(user, workflowId);
+
+            // log object
+            Ga4ghWesWorkflowLog workflowLog = new Ga4ghWesWorkflowLog();
+            workflowLog.setWorkflowId(job.getUuid());
+
+            // workflow status
+            Ga4ghWesWorkflowDesc workflow = new Ga4ghWesWorkflowDesc();
+            convertStatus(job, workflow);
+            workflowLog.setState(workflow.getState());
+
+            //request
+            Ga4ghWesWorkflowRequest request = new Ga4ghWesWorkflowRequest();
+            request.setWorkflowDescriptor(job.getContainerImageDescriptor());
+            request.setWorkflowParams(job.getContainerRuntimeDescriptor());
+            request.setWorkflowType(job.getContainerImageDescriptorType());
+            // FIXME: we need to track the version of WDL/CWL, just passing in empty string for now
+            request.setWorkflowTypeVersion("");
+            workflowLog.setRequest(request);
+
+            // FIXME: it's going to take a lot of work to parse all this info from the various workflow engines!
+            // task log will be null for now
+            workflowLog.setTaskLogs(null);
+
+            // workflow log
+            Ga4ghWesLog log = new Ga4ghWesLog();
+            log.setCmd(Arrays.asList("dockstore"));
+            log.setStartTime(job.getCreateTimestamp().toString());
+            log.setEndTime(job.getUpdateTimestamp().toString());
+            // FIXME: is this properly converting to an int, 0 == success?
+            log.setExitCode(job.getState().ordinal());
+            log.setName("dockstore");
+            log.setStderr(job.getStderr());
+            log.setStdout(job.getStdout());
+            workflowLog.setWorkflowLog(log);
+
+            // outputs
+            // FIXME: need to parse the outputs, pass along to Job object, and convert here
+            // FIXME: is this the best way or should I pass null for now?
+            workflowLog.setOutputs(Arrays.asList(new Ga4ghWesParameter()));
+
+            return Response.ok().entity(workflowLog).build();
+
+        } catch (Exception e) {
+            // FIXME: is there a better error to return here?
+            System.err.println(e.toString());
+            e.printStackTrace();
+            throw new WebApplicationException(e, HttpStatus.SC_BAD_REQUEST);
+        }
     }
     @Override
     public Response getWorkflowStatus(String workflowId, ConsonanceUser user) throws NotFoundException {

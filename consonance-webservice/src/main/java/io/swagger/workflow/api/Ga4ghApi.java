@@ -85,6 +85,7 @@ public class Ga4ghApi  {
    }
 
     @DELETE
+    @UnitOfWork
     @Path("/wes/v1/workflows/{workflow_id}")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
@@ -92,22 +93,24 @@ public class Ga4ghApi  {
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowRunId.class) })
     public Response cancelJob(@ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId
-,@Context SecurityContext securityContext)
+,@ApiParam(hidden = true) @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.cancelJob(workflowId,securityContext);
+        return delegate.cancelJob(workflowId,user);
     }
     @GET
+    @UnitOfWork
     @Path("/wes/v1/service-info")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
     @io.swagger.annotations.ApiOperation(value = "Get information about Workflow Execution Service.  May include information related (but not limited to) the workflow descriptor formats, versions supported, the WES API versions supported, and information about general the service availability.", notes = "", response = Ga4ghWesServiceInfo.class, tags={ "GA4GH Workflow Execution Service", })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesServiceInfo.class) })
-    public Response getServiceInfo(@Context SecurityContext securityContext)
+    public Response getServiceInfo(@ApiParam(hidden = true) @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.getServiceInfo(securityContext);
+        return delegate.getServiceInfo(user);
     }
     @GET
+    @UnitOfWork
     @Path("/wes/v1/workflows/{workflow_id}")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
@@ -115,9 +118,9 @@ public class Ga4ghApi  {
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowLog.class) })
     public Response getWorkflowLog(@ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId
-,@Context SecurityContext securityContext)
+,@ApiParam(hidden = true) @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.getWorkflowLog(workflowId,securityContext);
+        return delegate.getWorkflowLog(workflowId,user);
     }
     @GET
     @UnitOfWork
