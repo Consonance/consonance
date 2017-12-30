@@ -67,8 +67,16 @@ import java.util.UUID;
                 query = "SELECT j FROM Job j"
         ),
         @NamedQuery(
+                name = "io.consonance.arch.beans.core.Job.findAllCount",
+                query = "SELECT count(j) FROM Job j"
+        ),
+        @NamedQuery(
                 name = "io.consonance.arch.beans.core.Job.findAllByUser",
                 query = "SELECT j FROM Job j WHERE endUser LIKE :endUser"
+        ),
+        @NamedQuery(
+                name = "io.consonance.arch.beans.core.Job.findAllCountByUser",
+                query = "SELECT count(j) FROM Job j WHERE endUser LIKE :endUser"
         ),
         @NamedQuery(
                 name = "io.consonance.arch.beans.core.Job.findByJobUUID",

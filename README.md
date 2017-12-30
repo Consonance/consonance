@@ -36,6 +36,10 @@ Now load the schema:
 
     $bash> cat ~/gitroot/Consonance/consonance/consonance-arch/sql/schema.sql | "/Applications/Postgres.app/Contents/Versions/10/bin/psql" -p5432 -d "queue_status"
 
+After starting the web service you may have to manually insert the test admin creds:
+
+    postgres=# insert into consonance_user(user_id, admin, hashed_password, name) VALUES (1,true,'8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918','admin@admin.com');
+
 ### RabbitMQ
 
 The integration tests require RabbitMQ, here's how to install
@@ -116,6 +120,12 @@ See the [quickstart guide](https://github.com/Consonance/consonance/wiki/quickst
 * perform release
 * test container-admin with release on AWS, should be a safe harbor
 * then review/try WES support branch from Abraham
+* WES support issues
+    * it looks like Consonance doesn't have the equivalent of key-values like WES requires. Need to add support for tagging orders with
+key values in order to support this.  Right now lookup with key-values isn't supported (it's ignored)
+    * caps and defaults for page size should be implemented (see Ga4ghAPI.java)
+    * double-check the way I do token offsets in Ga4ghApiServiceImpl.java, specifically listWorkflows.  The value right now is an offset not a page. E.g. when you put in a page_token of 1 it starts at the second result not the second page of results!
+    * related to this, if the page_token is empty it should go to page 1
 
 ### GA4GH API Notes
 

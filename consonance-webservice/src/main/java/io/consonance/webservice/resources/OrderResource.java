@@ -44,13 +44,14 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.GET;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.POST;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -109,6 +110,41 @@ public class OrderResource {
     public List<Job> listWorkflowRuns(@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser) {
         if (consonanceUser.isAdmin()) {
             return dao.findAll();
+        }
+        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+    }
+
+    @GET
+    @Path("/listOwnedPaged")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List all jobs owned by the logged-in consonanceUser", notes = "List the jobs owned by the consonanceUser", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    public List<Job> listOwnedWorkflowRunsPaged(@ApiParam(value = "OPTIONAL Number of workflows to return at once. Defaults to 256, and max is 2048.") @QueryParam("page_size") Long pageSize
+            ,@ApiParam(value = "OPTIONAL Token to use to indicate where to start getting results. If unspecified, returns the first page of results.") @QueryParam("page_token") String pageToken
+            ,@ApiParam(value = "OPTIONAL For each key, if the key's value is empty string then match workflows that are tagged with this key regardless of value.") @QueryParam("key_value_search") String keyValueSearch
+            ,@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser) {
+        return dao.findPaged(Integer.parseInt(pageToken), pageSize.intValue(), consonanceUser.getName());
+    }
+
+    public Long countOwned(ConsonanceUser consonanceUser) {
+        return dao.findAllCount(consonanceUser.getName());
+    }
+
+    public Long countAll() {
+        return dao.findAllCount();
+    }
+
+    @GET
+    @Path("/listAllPaged")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List all known jobs", notes = "List all jobs", response = Job.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    public List<Job> listWorkflowRunsPaged(@ApiParam(value = "OPTIONAL Number of workflows to return at once. Defaults to 256, and max is 2048.") @QueryParam("page_size") Long pageSize
+            ,@ApiParam(value = "OPTIONAL Token to use to indicate where to start getting results. If unspecified, returns the first page of results.") @QueryParam("page_token") String pageToken
+            ,@ApiParam(value = "OPTIONAL For each key, if the key's value is empty string then match workflows that are tagged with this key regardless of value.") @QueryParam("key_value_search") String keyValueSearch
+            ,@ApiParam(hidden=true) @Auth ConsonanceUser consonanceUser) {
+        if (consonanceUser.isAdmin()) {
+            return dao.findPaged(Integer.parseInt(pageToken), pageSize.intValue());
         }
         throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
     }

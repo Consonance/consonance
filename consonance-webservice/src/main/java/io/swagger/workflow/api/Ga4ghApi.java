@@ -131,7 +131,10 @@ public class Ga4ghApi  {
     throws NotFoundException {
         return delegate.getWorkflowStatus(workflowId,securityContext);
     }
+    // FIXME: filtering by key-value currently isn't supported and needs to be added
+    // FIXME: caps and defaults for page size should be implemented
     @GET
+    @UnitOfWork
     @Path("/wes/v1/workflows")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
@@ -141,9 +144,9 @@ public class Ga4ghApi  {
     public Response listWorkflows(@ApiParam(value = "OPTIONAL Number of workflows to return at once. Defaults to 256, and max is 2048.") @QueryParam("page_size") Long pageSize
 ,@ApiParam(value = "OPTIONAL Token to use to indicate where to start getting results. If unspecified, returns the first page of results.") @QueryParam("page_token") String pageToken
 ,@ApiParam(value = "OPTIONAL For each key, if the key's value is empty string then match workflows that are tagged with this key regardless of value.") @QueryParam("key_value_search") String keyValueSearch
-,@Context SecurityContext securityContext)
+,@ApiParam(hidden = true) @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.listWorkflows(pageSize,pageToken,keyValueSearch,securityContext);
+       return delegate.listWorkflows(pageSize,pageToken,keyValueSearch,user);
     }
     @POST
     @UnitOfWork
