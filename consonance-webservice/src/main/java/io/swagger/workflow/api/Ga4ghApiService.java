@@ -26,7 +26,7 @@ public abstract class Ga4ghApiService {
     public abstract Response cancelJob(String workflowId,SecurityContext securityContext) throws NotFoundException;
     public abstract Response getServiceInfo(SecurityContext securityContext) throws NotFoundException;
     public abstract Response getWorkflowLog(String workflowId,SecurityContext securityContext) throws NotFoundException;
-    public abstract Response getWorkflowStatus(String workflowId,SecurityContext securityContext) throws NotFoundException;
+    public abstract Response getWorkflowStatus(String workflowId,ConsonanceUser user) throws NotFoundException;
     public abstract Response listWorkflows( Long pageSize, String pageToken, String keyValueSearch,ConsonanceUser user) throws NotFoundException;
     public abstract Response runWorkflow(Ga4ghWesWorkflowRequest body,ConsonanceUser user) throws NotFoundException;
 }

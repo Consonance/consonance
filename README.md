@@ -126,6 +126,7 @@ key values in order to support this.  Right now lookup with key-values isn't sup
     * caps and defaults for page size should be implemented (see Ga4ghAPI.java)
     * double-check the way I do token offsets in Ga4ghApiServiceImpl.java, specifically listWorkflows.  The value right now is an offset not a page. E.g. when you put in a page_token of 1 it starts at the second result not the second page of results!
     * related to this, if the page_token is empty it should go to page 1
+    * `GET /ga4gh/wes/v1/workflows/{workflow_id}`'s response is actually complex. I only modeled a few fields.  Since Consonance is tied to Dockstore CLI (what the worker daemon launches) we should coordinate with the Dockstore CLI developers to make sure this info is reported back from the Dockstore CLI regardless if WDL or CWL workflows is run.  And the Consonance worker daemon then needs to report back this info.
 
 ### GA4GH API Notes
 

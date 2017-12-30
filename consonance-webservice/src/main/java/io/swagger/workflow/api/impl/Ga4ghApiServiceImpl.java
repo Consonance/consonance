@@ -64,9 +64,21 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
     @Override
-    public Response getWorkflowStatus(String workflowId, SecurityContext securityContext) throws NotFoundException {
-        // do some magic!
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+    public Response getWorkflowStatus(String workflowId, ConsonanceUser user) throws NotFoundException {
+        try {
+            Job job = orderResource.getWorkflowRun(user, workflowId);
+            Ga4ghWesWorkflowStatus status = new Ga4ghWesWorkflowStatus();
+            Ga4ghWesWorkflowDesc workflow = new Ga4ghWesWorkflowDesc();
+            convertStatus(job, workflow);
+            status.setState(workflow.getState());
+            status.setWorkflowId(job.getUuid());
+            return Response.ok().entity(status).build();
+        } catch (Exception e) {
+            // FIXME: is there a better error to return here?
+            System.err.println(e.toString());
+            e.printStackTrace();
+            throw new WebApplicationException(e, HttpStatus.SC_BAD_REQUEST);
+        }
     }
     @Override
     public Response listWorkflows( Long pageSize,  String pageToken,  String keyValueSearch, ConsonanceUser user) throws NotFoundException {
@@ -91,32 +103,41 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
             }
             for (Job job : jobs) {
                 Ga4ghWesWorkflowDesc workflow = new Ga4ghWesWorkflowDesc();
-                if (job.getState() == JobState.FAILED) {
-                    workflow.setState(Ga4ghWesState.ERROR);
-                } else if (job.getState() == JobState.PENDING) {
-                    workflow.setState(Ga4ghWesState.QUEUED);
-                } else if (job.getState() == JobState.LOST) {
-                    workflow.setState(Ga4ghWesState.SYSTEMERROR);
-                } else if (job.getState() == JobState.RUNNING) {
-                    workflow.setState(Ga4ghWesState.RUNNING);
-                } else if (job.getState() == JobState.START) {
-                    workflow.setState(Ga4ghWesState.INITIALIZING);
-                } else if (job.getState() == JobState.SUCCESS) {
-                    workflow.setState(Ga4ghWesState.COMPLETE);
-                } else {
-                    workflow.setState(Ga4ghWesState.UNKNOWN);
-                }
+                convertStatus(job, workflow);
                 workflow.setWorkflowId(job.getUuid());
                 workflowListResponse.addWorkflowsItem(workflow);
             }
             return Response.ok().entity(workflowListResponse).build();
         } catch (Exception e) {
+            // FIXME: is there a better error to return here?
             System.err.println(e.toString());
             e.printStackTrace();
             throw new WebApplicationException(e, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
+    /**
+     * Converts status field from job to workflow objects
+     * @param job
+     * @param workflow
+     */
+    protected void convertStatus (Job job, Ga4ghWesWorkflowDesc workflow) {
+        if (job.getState() == JobState.FAILED) {
+            workflow.setState(Ga4ghWesState.ERROR);
+        } else if (job.getState() == JobState.PENDING) {
+            workflow.setState(Ga4ghWesState.QUEUED);
+        } else if (job.getState() == JobState.LOST) {
+            workflow.setState(Ga4ghWesState.SYSTEMERROR);
+        } else if (job.getState() == JobState.RUNNING) {
+            workflow.setState(Ga4ghWesState.RUNNING);
+        } else if (job.getState() == JobState.START) {
+            workflow.setState(Ga4ghWesState.INITIALIZING);
+        } else if (job.getState() == JobState.SUCCESS) {
+            workflow.setState(Ga4ghWesState.COMPLETE);
+        } else {
+            workflow.setState(Ga4ghWesState.UNKNOWN);
+        }
+    }
 
     @Override
     public Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException {

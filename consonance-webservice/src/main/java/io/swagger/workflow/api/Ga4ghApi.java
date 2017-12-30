@@ -120,6 +120,7 @@ public class Ga4ghApi  {
         return delegate.getWorkflowLog(workflowId,securityContext);
     }
     @GET
+    @UnitOfWork
     @Path("/wes/v1/workflows/{workflow_id}/status")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
@@ -127,12 +128,14 @@ public class Ga4ghApi  {
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "", response = Ga4ghWesWorkflowStatus.class) })
     public Response getWorkflowStatus(@ApiParam(value = "",required=true) @PathParam("workflow_id") String workflowId
-,@Context SecurityContext securityContext)
+,@ApiParam(hidden = true) @Auth ConsonanceUser user)
     throws NotFoundException {
-        return delegate.getWorkflowStatus(workflowId,securityContext);
+        return delegate.getWorkflowStatus(workflowId,user);
     }
     // FIXME: filtering by key-value currently isn't supported and needs to be added
     // FIXME: caps and defaults for page size should be implemented
+    // FIXME: a null page_token should be considered 0
+    // FIXME: page_token is currently interpreted as an offset which is not correct
     @GET
     @UnitOfWork
     @Path("/wes/v1/workflows")
