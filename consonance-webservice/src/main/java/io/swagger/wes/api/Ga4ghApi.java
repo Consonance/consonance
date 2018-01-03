@@ -58,7 +58,7 @@ public class Ga4ghApi  {
         return delegate.cancelJob(workflowId, user);
     }
 
-    @UnitOfWork
+
     @GET
     @Path("/wes/v1/service-info")
     @Consumes({ "application/json" })
@@ -83,7 +83,7 @@ public class Ga4ghApi  {
     throws NotFoundException {
         return delegate.getWorkflowLog(workflowId, user);
     }
-
+    @UnitOfWork
     @GET
     @Path("/wes/v1/workflows/{workflow_id}/status")
     @Consumes({ "application/json" })
@@ -95,7 +95,7 @@ public class Ga4ghApi  {
     throws NotFoundException {
         return delegate.getWorkflowStatus(workflowId, user);
     }
-
+    @UnitOfWork
     @GET
     @Path("/wes/v1/workflows")
     @Consumes({ "application/json" })

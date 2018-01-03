@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.gson.Gson;
 
+import io.consonance.arch.beans.JobState;
 import io.consonance.client.WebClient;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
@@ -17,7 +18,7 @@ import io.swagger.models.auth.In;
 import io.swagger.wes.api.*;
 import io.swagger.wes.model.*;
 
-import io.swagger.client.model.Job;
+import io.consonance.arch.beans.Job;
 
 import io.swagger.wes.model.Ga4ghWesServiceInfo;
 import io.swagger.wes.model.Ga4ghWesWorkflowListResponse;
@@ -173,82 +174,75 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         Ga4ghWesWorkflowLog log = new Ga4ghWesWorkflowLog();
         log.setWorkflowId(workflowId);
 
-        WebClient client = getClient();
-        OrderApi jobApi = new OrderApi(client);
+//        WebClient client = getClient();
+//        OrderApi jobApi = new OrderApi(client);
+
         final String[] jobUuid = {"-1"};
 
-        try {
-            List<Job> allJobs = jobApi.listWorkflowRuns();
-            allJobs.stream().filter((Job t) ->
-                t.getJobId().toString().equals(workflowId)).forEach(s -> jobUuid[0] = s.getJobUuid());
+        // Changing return typt to models [ arch.beans to -> client.model]
+        List<Job> allJobs = orderResource.listWorkflowRuns(user);
+        allJobs.stream().filter((Job t) -> String.valueOf(t.getJobId()).equals(workflowId)).forEach(s -> jobUuid[0] = s.getUuid());
 
-            LOG.info(jobApi.getWorkflowRun(jobUuid[0]).toString());
-            Job parseJob = jobApi.getWorkflowRun(jobUuid[0]);
+        LOG.info(orderResource.getWorkflowRun(user, jobUuid[0]).toString());
+        Job parseJob = orderResource.getWorkflowRun(user, jobUuid[0]);
 
-            // Instantiate request
-            Ga4ghWesWorkflowRequest request = new Ga4ghWesWorkflowRequest();
+        // Instantiate request
+        Ga4ghWesWorkflowRequest request = new Ga4ghWesWorkflowRequest();
 
-            // Parse response
-            request.setWorkflowDescriptor(parseJob.getContainerImageDescriptor());
-            request.setWorkflowParams(parseJob.getContainerRuntimeDescriptor());
-            request.setWorkflowType(parseJob.getContainerImageDescriptorType());
-            request.setWorkflowTypeVersion("1.0");
+        // Parse response
+        request.setWorkflowDescriptor(parseJob.getContainerImageDescriptor());
+        request.setWorkflowParams(parseJob.getContainerRuntimeDescriptor());
+        request.setWorkflowType(parseJob.getContainerImageDescriptorType());
+        request.setWorkflowTypeVersion("1.0");
 
-            // Set request to response
-            log.setRequest(request);
+        // Set request to response
+        log.setRequest(request);
 
-            // Set Job State
-            log.setState(mapState(parseJob.getState()));
+        // Set Job State
+        log.setState(mapState(parseJob.getState()));
 
-            // Instantiate Log
-            Ga4ghWesLog workflowLog = new Ga4ghWesLog();
-            // Parse job object to ga4gh log object, hardcode undefined parameters.
-            workflowLog.setName("CWL|WDL Job");
-            workflowLog.addCmdItem("run workflow");
-            workflowLog.setStartTime(String.valueOf(parseJob.getCreateTimestamp()));
-            workflowLog.setEndTime(String.valueOf(parseJob.getUpdateTimestamp()));
-            workflowLog.setStdout(parseJob.getStdout());
-            workflowLog.setStderr(parseJob.getStderr());
-            workflowLog.setExitCode(0);
+        // Instantiate Log
+        Ga4ghWesLog workflowLog = new Ga4ghWesLog();
+        // Parse job object to ga4gh log object, hardcode undefined parameters.
+        workflowLog.setName("CWL|WDL Job");
+        workflowLog.addCmdItem("run workflow");
+        workflowLog.setStartTime(String.valueOf(parseJob.getCreateTimestamp()));
+        workflowLog.setEndTime(String.valueOf(parseJob.getUpdateTimestamp()));
+        workflowLog.setStdout(parseJob.getStdout());
+        workflowLog.setStderr(parseJob.getStderr());
+        workflowLog.setExitCode(0);
 
-            // Add instance to log object
-            log.setWorkflowLog(workflowLog);
+        // Add instance to log object
+        log.setWorkflowLog(workflowLog);
 
-            // Iterative method across the whole registry/ update constantly. //TODO: Implement methos accross system.
-            log.addTaskLogsItem(workflowLog);
+        // Iterative method across the whole registry/ update constantly. //TODO: Implement methos accross system.
+        log.addTaskLogsItem(workflowLog);
 
-            Ga4ghWesParameter outputParameter = new Ga4ghWesParameter();
+        Ga4ghWesParameter outputParameter = new Ga4ghWesParameter();
 
-            // Nothing to pull out. //TODO: Implement methos correctly across consonance.
-            log.addOutputsItem(outputParameter);
+        // Nothing to pull out. //TODO: Implement methos correctly across consonance.
+        log.addOutputsItem(outputParameter);
 
 
-        } catch (ApiException e) {
-            e.printStackTrace();
-        }
-                LOG.info(log.toString());
+        LOG.info(log.toString());
         return Response.ok().entity(log).build();
     }
 
     @Override
     public Response getWorkflowStatus(String workflowId, ConsonanceUser user) throws NotFoundException {
 //        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowStatus()");
-        WebClient client = getClient();
-        OrderApi jobApi = new OrderApi(client);
+//        WebClient client = getClient();
+//        OrderApi jobApi = new OrderApi(client);
 
         Ga4ghWesWorkflowStatus workflowStatus = new Ga4ghWesWorkflowStatus();
 
-        try {
-            List<Job> allJobs = jobApi.listWorkflowRuns();
-            allJobs.stream().filter((Job t) -> t.getJobId().toString().equals(workflowId)).forEach(
-                    s -> {
-                        workflowStatus.setState(mapState(s.getState()));
-                        workflowStatus.setWorkflowId(s.getJobId().toString());
-                    });
+        List<Job> allJobs = orderResource.listWorkflowRuns(user);
+        allJobs.stream().filter((Job t) -> String.valueOf(t.getJobId()).equals(workflowId)).forEach(
+                s -> {
+                    workflowStatus.setState(mapState(s.getState()));
+                    workflowStatus.setWorkflowId(String.valueOf(s.getJobId()));
+                });
 
-        } catch (ApiException e) {
-            e.printStackTrace();
-        }
         LOG.info(workflowStatus.toString());
 
         return Response.ok().entity(workflowStatus).build();
@@ -271,21 +265,17 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
         Ga4ghWesWorkflowListResponse list = new Ga4ghWesWorkflowListResponse();
 
-        WebClient client = getClient();
-        OrderApi jobApi = new OrderApi(client);
+//        WebClient client = getClient();
+//        OrderApi jobApi = new OrderApi(client);
 
-        try {
-            List<Job> allJobs = jobApi.listWorkflowRuns();
-            allJobs.stream().map((Job t) -> {
-                        Ga4ghWesWorkflowDesc descriptor = new Ga4ghWesWorkflowDesc();
-                        descriptor.setWorkflowId(t.getJobId().toString());
-                        descriptor.setState(mapState(t.getState()));
-                        return descriptor;
-            }).forEach(e -> list.addWorkflowsItem(e)); // Correct call integrate with GA4GH protocols
+        List<Job> allJobs = orderResource.listWorkflowRuns(user);
+        allJobs.stream().map((Job t) -> {
+                    Ga4ghWesWorkflowDesc descriptor = new Ga4ghWesWorkflowDesc();
+                    descriptor.setWorkflowId(String.valueOf(t.getJobId()));
+                    descriptor.setState(mapState(t.getState()));
+                    return descriptor;
+        }).forEach(e -> list.addWorkflowsItem(e)); // Correct call integrate with GA4GH protocols
 
-        } catch (ApiException e) {
-            e.printStackTrace();
-        }
         // Authenticate ConsonanceUser
         if (user != null) {
             // TODO: Autheticate, refer to DB and confirm refgister user.
@@ -338,16 +328,16 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
         }
 
-        // TODO: Might not require to build this whole chunk, Job was incorrect. Correct and try again.
-        Boolean correctUser = true;
-        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        WebClient client = new WebClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig.getString(Constants.WEBSERVICE_TOKEN) : "foobar"));
+//        // TODO: Might not require to build this whole chunk, Job was incorrect. Correct and try again.
+//        Boolean correctUser = true;
+//        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+//        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+//        WebClient client = new WebClient();
+//        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+//        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig.getString(Constants.WEBSERVICE_TOKEN) : "foobar"));
 
         // Do something with client.
-        OrderApi jobApi = new OrderApi(client);
+//        OrderApi jobApi = new OrderApi(client);
 
         Ga4ghWesWorkflowRunId runId = new Ga4ghWesWorkflowRunId();
 
@@ -356,21 +346,14 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         newJob.setContainerImageDescriptor(workflowDescriptor);
         newJob.setContainerImageDescriptorType(workflowType);
 
-        try {
-            jobApi.addOrder(newJob);
-            runId.setWorkflowId(String.valueOf(jobApi.listOwnedWorkflowRuns().get(0).getJobId()));
-            LOG.info(runId.toString());
-            return Response.ok().entity(runId).build();
-        } catch (io.swagger.client.ApiException e) {
-            e.printStackTrace();
-
-            runId.setWorkflowId("-1");
-            return Response.ok().entity(runId).build();
-        }
+        orderResource.addOrder(user, newJob);
+        runId.setWorkflowId(String.valueOf(orderResource.listOwnedWorkflowRuns(user).get(0).getJobId()));
+        LOG.info(runId.toString());
+        return Response.ok().entity(runId).build();
 
     }
 
-    private Ga4ghWesState mapState(Job.StateEnum state) {
+    private Ga4ghWesState mapState(JobState state) {
 
         Ga4ghWesState ga4ghState = Ga4ghWesState.UNKNOWN;
 
@@ -398,14 +381,14 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         return ga4ghState;
     }
 
-    private WebClient getClient(){
-        Boolean correctUser = true;
-        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        WebClient client = new WebClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig.getString(Constants.WEBSERVICE_TOKEN) : "foobar"));
-
-        return client;
-    }
+//    private WebClient getClient(){
+//        Boolean correctUser = true;
+//        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+//        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+//        WebClient client = new WebClient();
+//        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+//        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig.getString(Constants.WEBSERVICE_TOKEN) : "foobar"));
+//
+//        return client;
+//    }
 }
