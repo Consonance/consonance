@@ -41,30 +41,55 @@
         <skipITs>true</skipITs>
         <youxia.version>1.1.0-rc.8</youxia.version>
         <cobertura.version>2.1.1</cobertura.version>
-        <seqware.version>1.1.1</seqware.version>
-        <dropwizard.version>1.0.2</dropwizard.version>
-        <swagger.version>1.5.9</swagger.version>
-        <swagger-annotations-version>1.5.9</swagger-annotations-version>
-        <aws.version>1.10.77</aws.version>
-        <powermock.version>1.6.3</powermock.version>
-        <assertj.version>3.4.1</assertj.version>
-        <swagger-ui.version>2.1.4</swagger-ui.version>
-        <jackson.version>2.7.8</jackson.version>
-        <jersey.version>2.23.2</jersey.version>
-        <jersey-version>2.23.2</jersey-version>
-        <hibernate.version>5.1.0.Final</hibernate.version>
-        <dockstore.version>1.2.6</dockstore.version>
-        <cwlavro.version>2.0.0</cwlavro.version>
+        <!--seqware.version>1.1.1</seqware.version-->
+        <dropwizard.version>1.1.3</dropwizard.version>
+        <swagger.version>1.5.17</swagger.version>
+        <swagger-annotations-version>1.5.17</swagger-annotations-version>
+        <!--aws.version>1.10.77</aws.version-->
+        <assertj.version>3.6.2</assertj.version>
+        <swagger-ui.version>3.1.7</swagger-ui.version>
+        <jackson.version>2.8.9</jackson.version>
+        <!--jersey.version>2.23.2</jersey.version>
+        <jersey-version>2.23.2</jersey-version-->
+        <!--jersey.version>2.25.1</jersey.version>
+        <jersey-version>2.25.1</jersey-version-->
+        <jersey.version>2.25.1</jersey.version>
+        <jersey-version>2.25.1</jersey-version>
+        <hibernate-validator.version>5.3.4.Final</hibernate-validator.version>
+        <hibernate-core.version>5.2.8.Final</hibernate-core.version>
+        <!--hibernate.version>5.2.8.Final</hibernate.version-->
+        <!--dockstore.version>1.2.6</dockstore.version-->
+        <dockstore.version>1.4.0-alpha.3</dockstore.version>
+        <cwlavro.version>2.0.3</cwlavro.version>
         <junit-version>4.12</junit-version>
-        <logback.version>1.1.7</logback.version>
+        <logback.version>1.2.3</logback.version>
+        <!--aws.version>1.11.86</aws.version-->
         <aws.version>1.11.86</aws.version>
         <powermock.version>1.6.5</powermock.version>
         <okhttp.version>3.2.0</okhttp.version>
-        <slf4j.version>1.7.21</slf4j.version>
+        <slf4j.version>1.7.25</slf4j.version>
+        <jcl-over-slf4j.version>1.7.25</jcl-over-slf4j.version>
         <maven-surefire.version>2.20</maven-surefire.version>
         <maven-failsafe.version>2.19.1</maven-failsafe.version>
         <httpcomponents.version>4.4.5</httpcomponents.version>
         <mockito.version>1.10.19</mockito.version>
+        <!-- try 2.1 -->
+        <javax.ws.rs.version>2.0.1</javax.ws.rs.version>
+        <org.glassfish.hk2.external.version>2.5.0-b42</org.glassfish.hk2.external.version>
+        <commons-vfs2.version>2.2</commons-vfs2.version>
+        <guava.version>21.0</guava.version>
+        <slf4j-api.version>1.7.25</slf4j-api.version>
+        <commons-lang3.version>3.5</commons-lang3.version>
+        <snakeyaml.version>1.18</snakeyaml.version>
+        <scala-library.version>2.11.11</scala-library.version>
+        <jetty-servlet.version>9.4.6.v20170531</jetty-servlet.version>
+        <joda-time.version>2.9.7</joda-time.version>
+        <objenesis.version>2.5.1</objenesis.version>
+        <usertype.core.version>6.0.1.GA</usertype.core.version>
+        <javassist.version>3.21.0-GA</javassist.version>
+        <logback-classic.version>1.2.1</logback-classic.version>
+        <logback-core.version>1.2.1</logback-core.version>
+        <classmate.version>1.3.1</classmate.version>
     </properties>
 
     <scm>
@@ -117,6 +142,26 @@
                 <version>${youxia.version}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>org.apache.httpcomponents</groupId>
+                      <artifactId>httpcore</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>org.slf4j</groupId>
+                      <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>org.slf4j</groupId>
+                      <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>com.google.guava</groupId>
+                      <artifactId>guava</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>stax</groupId>
                         <artifactId>stax-api</artifactId>
                     </exclusion>
@@ -144,6 +189,14 @@
                 <version>${youxia.version}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>com.google.guava</groupId>
+                      <artifactId>guava</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>stax</groupId>
                         <artifactId>stax-api</artifactId>
                     </exclusion>
@@ -158,6 +211,22 @@
                 <artifactId>youxia-reaper</artifactId>
                 <version>${youxia.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>org.slf4j</groupId>
+                      <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>com.google.guava</groupId>
+                      <artifactId>guava</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>stax</groupId>
                         <artifactId>stax-api</artifactId>
@@ -230,7 +299,8 @@
             <dependency>
                 <groupId>org.glassfish.hk2.external</groupId>
                 <artifactId>javax.inject</artifactId>
-                <version>2.5.0-b05</version>
+                <!--version>2.5.0-b05</version-->
+                <version>${org.glassfish.hk2.external.version}</version>
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/com.sun.jersey.contribs/jersey-multipart -->
@@ -269,17 +339,23 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.21</version>
+                <version>${slf4j-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.1.7</version>
+                <version>${logback-classic.version}</version>
+                <exclusions>
+                  <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                  </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.1.7</version>
+                <version>${logback-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.cobertura</groupId>
@@ -287,6 +363,10 @@
                 <version>${cobertura.version}</version>
                 <scope>provided</scope>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>ch.qos.logback</groupId>
                         <artifactId>logback-access</artifactId>
@@ -312,7 +392,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>19.0</version>
+                <version>${guava.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.jopt-simple</groupId>
@@ -342,7 +422,7 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.20.0-GA</version>
+                <version>${javassist.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -452,12 +532,12 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.16</version>
+                <version>${snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.4</version>
+                <version>${commons-lang3.version}</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
             <dependency>
@@ -498,7 +578,7 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>2.3</version>
+                <version>${objenesis.version}</version>
                 <scope>test</scope>
             </dependency>
 
@@ -540,12 +620,12 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.9.4</version>
+                <version>${joda-time.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>${hibernate.version}</version>
+                <version>${hibernate-core.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.javassist</groupId>
@@ -556,18 +636,18 @@
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.2.4.Final</version>
+                <version>${hibernate-validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml</groupId>
                 <artifactId>classmate</artifactId>
-                <version>1.3.0</version>
+                <version>${classmate.version}</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/org.jadira.usertype/usertype.core -->
             <dependency>
                 <groupId>org.jadira.usertype</groupId>
                 <artifactId>usertype.core</artifactId>
-                <version>5.0.0.GA</version>
+                <version>${usertype.core.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.dockstore</groupId>
@@ -591,6 +671,26 @@
                 <version>${dockstore.version}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>org.apache.httpcomponents</groupId>
+                      <artifactId>httpcore</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>org.slf4j</groupId>
+                      <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                      <groupId>org.postgresql</groupId>
+                      <artifactId>postgresql</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>io.dropwizard</groupId>
                         <artifactId>dropwizard-testing</artifactId>
                     </exclusion>
@@ -606,7 +706,17 @@
                         <groupId>org.typelevel</groupId>
                         <artifactId>macro-compat_2.11</artifactId>
                     </exclusion>
+                    <exclusion> <!-- excluded because of commons-compress:1.13 vs 1.8.1 mismatch, could cause problems -->
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
                 </exclusions>
+            </dependency>
+            <!-- for dockstore overrides -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.15</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
@@ -647,7 +757,7 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
-                <version>2.11.8</version>
+                <version>${scala-library.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -1058,6 +1168,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>2.19.1</version>
+                <configuration>
+                    <excludes>
+                        <!-- I'm excluding this since it requires credentials in the youxia and consonance configs -->
+                        <exclude>**/SystemMainAwsIT.java</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>integration-test</id>
