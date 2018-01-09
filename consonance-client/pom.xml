@@ -32,10 +32,29 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <powermock.version>1.6.2</powermock.version>
+        <powermock.version>1.6.5</powermock.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.consonance</groupId>
+            <artifactId>swagger-java-client</artifactId>
+            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey.contribs</groupId>
+                    <artifactId>jersey-multipart</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-common</artifactId>
@@ -56,25 +75,6 @@
                     <artifactId>servlet-api-2.5</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.consonance</groupId>
-            <artifactId>swagger-java-client</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
-            <!--exclusions>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey.contribs</groupId>
-                    <artifactId>jersey-multipart</artifactId>
-                </exclusion>
-            </exclusions-->
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
