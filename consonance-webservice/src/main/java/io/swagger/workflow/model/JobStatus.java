@@ -40,15 +40,20 @@ public class JobStatus   {
    * Current status for the job
    */
   public enum StateEnum {
-    RUNNING("Running"),
-
-        PAUSED("Paused"),
 
         SUCCESS("Success"),
 
+        RUNNING("Running"),
+
+        PAUSED("Paused"),
+
         FAILED("Failed"),
 
-        CANCELLED("Cancelled");
+        CANCELLED("Cancelled"),
+
+        LOST("Lost")
+
+    ;
     private String value;
 
     StateEnum(String value) {

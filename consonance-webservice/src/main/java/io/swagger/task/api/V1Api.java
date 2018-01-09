@@ -19,7 +19,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
-@Path("/v1")
+@Path("/ga4gh/tes/v1")
 @Consumes({ "application/json" })
 @Produces({ "application/json" })
 @io.swagger.annotations.Api(description = "the v1 API")
@@ -32,7 +32,7 @@ public class V1Api  {
     @Path("/jobs/{value}")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Cancel a running task", notes = "", response = Ga4ghTaskExecJobId.class, tags={ "TaskService",  })
+    @io.swagger.annotations.ApiOperation(value = "Cancel a running task", notes = "", response = Ga4ghTaskExecJobId.class, tags={ "GA4GH Task Execution Service",  })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description", response = Ga4ghTaskExecJobId.class) })
     public Response cancelJob(
@@ -47,7 +47,7 @@ public class V1Api  {
     @Path("/jobs/{value}")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Get info about a running task", notes = "", response = Ga4ghTaskExecJob.class, tags={ "TaskService",  })
+    @io.swagger.annotations.ApiOperation(value = "Get info about a running task", notes = "", response = Ga4ghTaskExecJob.class, tags={ "GA4GH Task Execution Service",  })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description", response = Ga4ghTaskExecJob.class) })
     public Response getJob(
@@ -61,7 +61,7 @@ public class V1Api  {
     @Path("/jobs")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "List the TaskOps", notes = "", response = Ga4ghTaskExecJobListResponse.class, tags={ "TaskService",  })
+    @io.swagger.annotations.ApiOperation(value = "List the TaskOps", notes = "", response = Ga4ghTaskExecJobListResponse.class, tags={ "GA4GH Task Execution Service",  })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description", response = Ga4ghTaskExecJobListResponse.class) })
     public Response listJobs(@Auth ConsonanceUser user)
@@ -74,7 +74,7 @@ public class V1Api  {
     @Path("/jobs")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Run a task", notes = "", response = Ga4ghTaskExecJobId.class, tags={ "TaskService" })
+    @io.swagger.annotations.ApiOperation(value = "Run a task", notes = "", response = Ga4ghTaskExecJobId.class, tags={ "GA4GH Task Execution Service" })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Description", response = Ga4ghTaskExecJobId.class) })
     public Response runTask(

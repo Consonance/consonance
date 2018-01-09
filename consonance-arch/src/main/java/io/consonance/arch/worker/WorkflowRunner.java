@@ -94,13 +94,13 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 // see https://stackoverflow.com/questions/5389632/capturing-contents-of-standard-output-in-java for how I redirected stderr/out of the below
                 PrintStream originalStdOut = System.out;
                 PrintStream originalStdErr = System.err;
-                System.setOut(new PrintStream(this.outputStream, true, "UTF-8"));
-                System.setErr(new PrintStream(this.errorStream, true, "UTF-8"));
+                //System.setOut(new PrintStream(this.outputStream, true, "UTF-8"));
+                //System.setErr(new PrintStream(this.errorStream, true, "UTF-8"));
                 // this is the actual call to Dockstore CLI
                 // TODO: how do I set DOCKSTORE_ROOT=1?
                 Client.main(s);
-                System.setOut(originalStdOut);
-                System.setErr(originalStdErr);
+                //System.setOut(originalStdOut);
+                //System.setErr(originalStdErr);
 
             } catch (NoClassDefFoundError e) {
                 e.printStackTrace();

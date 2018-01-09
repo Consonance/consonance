@@ -21,7 +21,7 @@ package io.consonance.webservice.jdbi;
 import io.consonance.arch.beans.Job;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
-
+import org.hibernate.Criteria;
 import java.util.List;
 
 /**
@@ -29,6 +29,7 @@ import java.util.List;
  * @author dyuen
  */
 public class JobDAO extends AbstractDAO<Job> {
+
     public JobDAO(SessionFactory factory) {
         super(factory);
     }
@@ -45,6 +46,17 @@ public class JobDAO extends AbstractDAO<Job> {
         return list(namedQuery("io.consonance.arch.beans.core.Job.findAll"));
     }
 
+    public List<Job> findPaged(int first, int max) {
+        Criteria criteria = criteria();
+        criteria.setFirstResult(first);
+        criteria.setMaxResults(max);
+        return (criteria.list());
+    }
+
+    public List<Job> findPaged(int first, int max, String endUser) {
+        return list(namedQuery("io.consonance.arch.beans.core.Job.findAllByUser").setString("endUser",endUser).setFirstResult(first).setMaxResults(max));
+    }
+
     public Job findJobByUUID(String uuid){
         return uniqueResult(namedQuery("io.consonance.arch.beans.core.Job.findByJobUUID").setString("jobuuid",uuid));
     }
@@ -52,4 +64,15 @@ public class JobDAO extends AbstractDAO<Job> {
     public List<Job> findAll(String endUser) {
         return list(namedQuery("io.consonance.arch.beans.core.Job.findAllByUser").setString("endUser",endUser));
     }
+
+    public Long findAllCount() {
+        return (Long) namedQuery("io.consonance.arch.beans.core.Job.findAllCount").uniqueResult();
+    }
+
+    public Long findAllCount(String endUser) {
+        return (Long) namedQuery("io.consonance.arch.beans.core.Job.findAllCountByUser").setString("endUser",endUser).uniqueResult();
+    }
+
+
+
 }

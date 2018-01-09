@@ -6,8 +6,8 @@ This is the prototype web service for consonance.
 
 ### Starting Up
 
-1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.stash)
-2. Start with java -jar target/consonance-webservice-*.jar server ~/.stash/run-fox.yml
+1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.consonance)
+2. Start with `java -jar target/consonance-webservice-*SNAPSHOT.jar server ~/.consonance/run-fox.yml`
 
 ### View Swagger UI
 
