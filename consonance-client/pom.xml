@@ -32,14 +32,13 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <powermock.version>1.6.5</powermock.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun.jersey</groupId>
@@ -58,7 +57,7 @@
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-common</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
@@ -132,17 +131,17 @@
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
+            <version>${commons-config.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.0.1</version>
+            <version>${javax.ws.rs.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -297,7 +296,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>${maven-surefire.version}</version>
                 <configuration>
                     <testFailureIgnore>false</testFailureIgnore>
                 </configuration>
