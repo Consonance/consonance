@@ -210,7 +210,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-joda</artifactId>
-            <version>2.5.1</version>
+            <version>${jackson-datatype.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>joda-time</groupId>
@@ -229,7 +229,7 @@
         <dependency>
             <groupId>net.sourceforge.cobertura</groupId>
             <artifactId>cobertura</artifactId>
-            <version>2.1.1</version>
+            <version>${cobertura.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

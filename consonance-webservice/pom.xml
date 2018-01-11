@@ -67,12 +67,12 @@
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-common</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
         </dependency>
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-server-common</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.javassist</groupId>
@@ -320,7 +320,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit.version}</version>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -335,7 +335,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.1.7</version>
+            <version>${logback-classic.version}</version>
             <exclusions>
               <exclusion>
                 <groupId>org.slf4j</groupId>
@@ -391,12 +391,12 @@
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-annotation</artifactId>
-            <version>3.2.2</version>
+            <version>${metrics-annotation.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-healthchecks</artifactId>
-            <version>3.2.2</version>
+            <version>${metrics-annotation.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -406,12 +406,12 @@
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
-            <version>1.1.0.Final</version>
+            <version>${javax-validation.version}</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>9.4-1201-jdbc41</version>
+            <version>${postgresql.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -425,7 +425,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5</version>
+            <version>${http-client.version}</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -444,7 +444,7 @@
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
-            <version>1.1.1</version>
+            <version>${javax-jsr311.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -454,7 +454,7 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>3.1.0</version>
+            <version>${javax-servlet.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -464,7 +464,7 @@
         <dependency>
             <groupId>net.sourceforge.cobertura</groupId>
             <artifactId>cobertura</artifactId>
-            <version>2.1.1</version>
+            <version>${cobertura.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -474,12 +474,12 @@
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
+            <version>${commons-config.version}</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
             <artifactId>hibernate-jpa-2.1-api</artifactId>
-            <version>1.0.0.Final</version>
+            <version>${hibernate-jpa.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

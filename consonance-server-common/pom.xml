@@ -38,7 +38,7 @@
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-common</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -57,13 +57,13 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>9.4-1201-jdbc41</version>
+            <version>${postgresql.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
-            <version>1.1.1</version>
+            <version>${json-simple.version}</version>
         </dependency>
         <dependency>
             <groupId>com.rabbitmq</groupId>
@@ -104,7 +104,7 @@
         <dependency>
             <groupId>commons-dbutils</groupId>
             <artifactId>commons-dbutils</artifactId>
-            <version>1.6</version>
+            <version>${commons-dbutils.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -121,12 +121,12 @@
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
+            <version>${commons-config.version}</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
             <artifactId>hibernate-jpa-2.1-api</artifactId>
-            <version>1.0.0.Final</version>
+            <version>${hibernate-jpa.version}</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -145,7 +145,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
+            <version>${commons-lang3.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

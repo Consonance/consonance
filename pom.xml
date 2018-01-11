@@ -41,48 +41,58 @@
         <skipITs>true</skipITs>
         <youxia.version>1.1.0-rc.8</youxia.version>
         <cobertura.version>2.1.1</cobertura.version>
-        <!--seqware.version>1.1.1</seqware.version-->
+        <consonance.version>2.0.0-alpha.16-SNAPSHOT</consonance.version>
+        <commons-config.version>1.10</commons-config.version>
+        <commons-exec.version>1.3</commons-exec.version>
+        <commons-dbutils.version>1.6</commons-dbutils.version>
         <dropwizard.version>1.1.3</dropwizard.version>
         <swagger.version>1.5.17</swagger.version>
         <swagger-annotations-version>1.5.17</swagger-annotations-version>
-        <!--aws.version>1.10.77</aws.version-->
         <assertj.version>3.6.2</assertj.version>
         <swagger-ui.version>3.1.7</swagger-ui.version>
         <jackson.version>2.8.9</jackson.version>
-        <!--jersey.version>2.23.2</jersey.version>
-        <jersey-version>2.23.2</jersey-version-->
-        <!--jersey.version>2.25.1</jersey.version>
-        <jersey-version>2.25.1</jersey-version-->
+        <jackson-datatype.version>2.5.1</jackson-datatype.version>
         <jersey.version>2.25.1</jersey.version>
-        <jersey-version>2.25.1</jersey-version>
         <hibernate-validator.version>5.3.4.Final</hibernate-validator.version>
         <hibernate-core.version>5.2.8.Final</hibernate-core.version>
-        <!--hibernate.version>5.2.8.Final</hibernate.version-->
-        <!--dockstore.version>1.2.6</dockstore.version-->
+        <hibernate-jpa.version>1.0.0.Final</hibernate-jpa.version>
         <dockstore.version>1.4.0-alpha.3</dockstore.version>
         <cwlavro.version>2.0.3</cwlavro.version>
-        <junit-version>4.12</junit-version>
+        <junit.version>4.12</junit.version>
         <logback.version>1.2.3</logback.version>
-        <!--aws.version>1.11.86</aws.version-->
         <aws.version>1.11.86</aws.version>
+        <appache-ant.version>1.8.3</appache-ant.version>
         <powermock.version>1.6.5</powermock.version>
         <okhttp.version>3.2.0</okhttp.version>
         <slf4j.version>1.7.25</slf4j.version>
         <jcl-over-slf4j.version>1.7.25</jcl-over-slf4j.version>
         <maven-surefire.version>2.20</maven-surefire.version>
         <maven-failsafe.version>2.19.1</maven-failsafe.version>
+        <maven-enforcer.version>1.4.1</maven-enforcer.version>
+        <metrics-annotation.version>3.2.2</metrics-annotation.version>
         <httpcomponents.version>4.4.5</httpcomponents.version>
+        <http-client.version>4.5</http-client.version>
         <mockito.version>1.10.19</mockito.version>
         <!-- try 2.1 -->
         <javax.ws.rs.version>2.0.1</javax.ws.rs.version>
+        <javax-validation.version>1.1.0.Final</javax-validation.version>
+        <javax-jsr311.version>1.1.1</javax-jsr311.version>
+        <javax-servlet.version>3.1.0</javax-servlet.version>
+        <jsonevent.version>1.3</jsonevent.version>
+        <json-simple.version>1.1.1</json-simple.version>
+        <sqlite-jdbc.version>3.8.7</sqlite-jdbc.version>
         <org.glassfish.hk2.external.version>2.5.0-b42</org.glassfish.hk2.external.version>
+        <postgresql.version>9.4-1201-jdbc41</postgresql.version>
         <commons-vfs2.version>2.2</commons-vfs2.version>
         <guava.version>21.0</guava.version>
         <slf4j-api.version>1.7.25</slf4j-api.version>
+        <system-rules.version>1.12.1</system-rules.version>
+        <simpleslackapi.version>0.4.0</simpleslackapi.version>
         <commons-lang3.version>3.5</commons-lang3.version>
         <snakeyaml.version>1.18</snakeyaml.version>
         <scala-library.version>2.11.11</scala-library.version>
         <jetty-servlet.version>9.4.6.v20170531</jetty-servlet.version>
+        <jetty-util.version>6.1.14</jetty-util.version>
         <joda-time.version>2.9.7</joda-time.version>
         <objenesis.version>2.5.1</objenesis.version>
         <usertype.core.version>6.0.1.GA</usertype.core.version>
@@ -481,7 +491,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>9.4-1201-jdbc41</version>
+                <version>${postgresql.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
@@ -585,7 +595,7 @@
             <dependency>
                 <groupId>commons-configuration</groupId>
                 <artifactId>commons-configuration</artifactId>
-                <version>1.10</version>
+                <version>${commons-config.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -937,7 +947,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.4.1</version>
+                    <version>${maven-enforcer.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1033,7 +1043,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.4.1</version>
+                <version>${maven-enforcer.version}</version>
                 <executions>
                     <execution>
                         <id>enforce</id>
