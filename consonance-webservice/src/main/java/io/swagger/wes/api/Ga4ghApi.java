@@ -60,6 +60,7 @@ public class Ga4ghApi  {
 
 
     @GET
+    @UnitOfWork
     @Path("/wes/v1/service-info")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })

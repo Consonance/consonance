@@ -100,6 +100,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
     /**
      * Provides information on the service, versions ...
      * */
+
     @Override
     public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
         LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getServiceInfo()");
@@ -144,6 +145,14 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
         // System state counts
         // TODO: cordinate this message for endpoint, each state requires to be acknowledge
+        List<Job> jobs = orderResource.listOwnedWorkflowRuns(user);
+        List<Ga4ghWesState> states = null;
+
+        jobs.stream().forEach((Job t) -> {
+            states.add(mapState(t.getState()));
+        });
+        LOG.info(String.valueOf(jobs));
+
         serviceInfo.putSystemStateCountsItem("Unknown", (long) 0);
         serviceInfo.putSystemStateCountsItem("Queued", (long) 0);
         serviceInfo.putSystemStateCountsItem("Running", (long) 0);
@@ -291,7 +300,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
      */
     @Override
     public Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException, IOException, TimeoutException {
-//        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.runWorkflow()");
+
         LOG.info(body.toString());
 
         // TODO: Check if version in body, matches consonance version. Confirm non-empty value.
@@ -318,26 +327,15 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
             return Response.noContent().build();
         }
 
+        // TODO: What optional parameters can be implemented.
         // Optional parameters.
         Map workflowKeyValues = body.getKeyValues();
 
-
+        String flavour = (String) workflowKeyValues.get("flavour");
+        LOG.info(flavour);
         // Authenticate ConsonanceUser
-        if (user != null) {
-            // TODO: Autheticate, refer to DB and confirm refgister user.
+        // No need, order resources authenticates.
 
-        }
-
-//        // TODO: Might not require to build this whole chunk, Job was incorrect. Correct and try again.
-//        Boolean correctUser = true;
-//        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-//        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-//        WebClient client = new WebClient();
-//        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-//        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig.getString(Constants.WEBSERVICE_TOKEN) : "foobar"));
-
-        // Do something with client.
-//        OrderApi jobApi = new OrderApi(client);
 
         Ga4ghWesWorkflowRunId runId = new Ga4ghWesWorkflowRunId();
 
@@ -345,11 +343,18 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         newJob.setContainerRuntimeDescriptor(workflowParams);
         newJob.setContainerImageDescriptor(workflowDescriptor);
         newJob.setContainerImageDescriptorType(workflowType);
+        newJob.setFlavour(flavour);
+
+        Integer workflowsBeforeOrder = orderResource.listOwnedWorkflowRuns(user).size();
 
         orderResource.addOrder(user, newJob);
-        runId.setWorkflowId(String.valueOf(orderResource.listOwnedWorkflowRuns(user).get(0).getJobId()));
-        LOG.info(runId.toString());
-        return Response.ok().entity(runId).build();
+        Integer allWorkflows = orderResource.listOwnedWorkflowRuns(user).size();
+        if(workflowsBeforeOrder < allWorkflows){
+            runId.setWorkflowId(String.valueOf(orderResource.listOwnedWorkflowRuns(user).get(allWorkflows - 1).getJobId()));
+            return Response.ok().entity(runId).build();
+        }
+        else return Response.serverError().build();
+
 
     }
 
@@ -381,14 +386,4 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         return ga4ghState;
     }
 
-//    private WebClient getClient(){
-//        Boolean correctUser = true;
-//        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-//        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-//        WebClient client = new WebClient();
-//        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-//        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig.getString(Constants.WEBSERVICE_TOKEN) : "foobar"));
-//
-//        return client;
-//    }
 }
