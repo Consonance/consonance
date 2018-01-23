@@ -331,7 +331,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         // Optional parameters.
         Map workflowKeyValues = body.getKeyValues();
 
-        String flavour = (String) workflowKeyValues.get("flavour");
+        String flavour = workflowKeyValues.get("flavour").toString();
         LOG.info(flavour);
         // Authenticate ConsonanceUser
         // No need, order resources authenticates.

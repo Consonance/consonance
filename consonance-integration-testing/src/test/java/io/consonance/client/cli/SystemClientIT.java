@@ -54,7 +54,9 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -207,6 +209,10 @@ public class SystemClientIT {
         requestBody.setWorkflowParams(testRunJob.getContainerRuntimeDescriptor());
         requestBody.workflowType("cwl");
         requestBody.setWorkflowTypeVersion("1.0");
+        Map keyValues = new HashMap();
+        keyValues.put("flavour", "m1.large");
+        System.out.println(keyValues.toString());
+        requestBody.setKeyValues(keyValues);
 
 
         WebClient client = getWebClient();
