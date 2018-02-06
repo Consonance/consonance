@@ -1,8 +1,10 @@
 package io.swagger.wes.api.impl;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
 import io.consonance.arch.beans.JobState;
@@ -10,10 +12,14 @@ import io.consonance.client.WebClient;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
 import io.consonance.common.Utilities;
+import io.dockstore.client.cli.Client;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.OrderApi;
 
+import io.swagger.client.model.ExtraFile;
+import io.swagger.client.model.SourceFile;
 import io.swagger.models.auth.In;
 import io.swagger.wes.api.*;
 import io.swagger.wes.model.*;
@@ -27,23 +33,24 @@ import io.swagger.wes.model.Ga4ghWesWorkflowRequest;
 import io.swagger.wes.model.Ga4ghWesWorkflowRunId;
 import io.swagger.wes.model.Ga4ghWesWorkflowStatus;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+
 import io.swagger.wes.api.NotFoundException;
 
-import java.io.InputStream;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
+import static java.nio.file.StandardOpenOption.*;
+
+
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
@@ -58,6 +65,8 @@ import javax.validation.constraints.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.validator.routines.UrlValidator;
+
+import static io.dockstore.client.cli.ArgumentUtility.kill;
 
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2017-09-15T17:06:31.319-07:00")
 public class Ga4ghApiServiceImpl extends Ga4ghApiService {
@@ -131,7 +140,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         serviceInfo.addSupportedWesVersionsItem(wesApiVersion);
 
         // Supported file system protocol
-        List<String> supportedFileProtocols = Arrays.asList("http", "https", "sftp", "s3", "gs", "file", "synapse");
+        List<String> supportedFileProtocols = Arrays.asList("http", "https", "sftp", "s3", "gs", "synapse");
         // Add to map
         serviceInfo.setSupportedFilesystemProtocols(supportedFileProtocols);
 
@@ -145,23 +154,40 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
         // System state counts
         // TODO: cordinate this message for endpoint, each state requires to be acknowledge
-        List<Job> jobs = orderResource.listOwnedWorkflowRuns(user);
-        List<Ga4ghWesState> states = null;
 
-        jobs.stream().forEach((Job t) -> {
-            states.add(mapState(t.getState()));
-        });
-        LOG.info(String.valueOf(jobs));
 
-        serviceInfo.putSystemStateCountsItem("Unknown", (long) 0);
-        serviceInfo.putSystemStateCountsItem("Queued", (long) 0);
-        serviceInfo.putSystemStateCountsItem("Running", (long) 0);
-        serviceInfo.putSystemStateCountsItem("Paused", (long) 0);
-        serviceInfo.putSystemStateCountsItem("Complete", (long) 0);
-        serviceInfo.putSystemStateCountsItem("Error", (long) 0);
-        serviceInfo.putSystemStateCountsItem("SystemError", (long) 0);
-        serviceInfo.putSystemStateCountsItem("Canceled", (long) 0);
-        serviceInfo.putSystemStateCountsItem("Initializing", (long) 0);
+        Map <String, Long> systemState = new HashMap<String, Long>();
+        systemState.put("Unknown",(long) 0);
+        systemState.put("Queued", (long) 0);
+        systemState.put("Running", (long) 0);
+        systemState.put("Paused", (long) 0);
+        systemState.put("Complete", (long) 0);
+        systemState.put("Error", (long) 0);
+        systemState.put("SystemError", (long) 0);
+        systemState.put("Canceled", (long) 0);
+        systemState.put("Initializing", (long) 0);
+
+
+        List<Job> allJobs = orderResource.listWorkflowRuns(user);
+
+        allJobs.stream().map((Job t) -> {
+            systemState.put(mapState(t.getState()).toString(), systemState.get(mapState(t.getState()).toString())+1);
+            return systemState;
+            }).forEach(stringLongMap -> { for (String key : stringLongMap.keySet()){
+                serviceInfo.putSystemStateCountsItem(key, stringLongMap.get(key));
+            }
+        }); // Corre ct call integrate with GA4GH protocols
+
+
+        serviceInfo.putSystemStateCountsItem("Unknown", systemState.get("Unknown"));
+        serviceInfo.putSystemStateCountsItem("Queued", systemState.get("Queued"));
+        serviceInfo.putSystemStateCountsItem("Running", systemState.get("Running"));
+        serviceInfo.putSystemStateCountsItem("Paused", systemState.get("Paused"));
+        serviceInfo.putSystemStateCountsItem("Complete", systemState.get("Complete"));
+        serviceInfo.putSystemStateCountsItem("Error", systemState.get("Error"));
+        serviceInfo.putSystemStateCountsItem("SystemError", systemState.get("SystemError"));
+        serviceInfo.putSystemStateCountsItem("Canceled", systemState.get("Canceled"));
+        serviceInfo.putSystemStateCountsItem("Initializing", systemState.get("Initializing"));
 
         //TODO: properly design the report-back metadata parametes.
         serviceInfo.putKeyValuesItem("Metadata", "Nothing to report");
@@ -278,6 +304,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 //        OrderApi jobApi = new OrderApi(client);
 
         List<Job> allJobs = orderResource.listWorkflowRuns(user);
+        LOG.info(allJobs.toString());
         allJobs.stream().map((Job t) -> {
                     Ga4ghWesWorkflowDesc descriptor = new Ga4ghWesWorkflowDesc();
                     descriptor.setWorkflowId(String.valueOf(t.getJobId()));
@@ -302,6 +329,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
     public Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException, IOException, TimeoutException {
 
         LOG.info(body.toString());
+        Map workflowKeyValues = body.getKeyValues();
 
         // TODO: Check if version in body, matches consonance version. Confirm non-empty value.
         String workflowTypeVersion = body.getWorkflowTypeVersion(); // Version of runner tool.
@@ -311,39 +339,97 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
             String currentRunnerVersion = "RandomVersionTEMP";
         }
 
+        final Job newJob = new Job();
+
         // Process deserialize body. TODO: Confirm non-empty values.
+        UrlValidator urlValidator = new UrlValidator();
         String workflowDescriptor = body.getWorkflowDescriptor(); // Runner descriptor, < cwl || wdl> file.
         if (workflowDescriptor.isEmpty()) {
             return Response.noContent().build();
         }
+        else if (urlValidator.isValid(workflowDescriptor)){
+            URL jobURL = new URL(workflowDescriptor);
+            final Path tempFile = Files.createTempFile("image", "cwl");
+            FileUtils.copyURLToFile(jobURL, tempFile.toFile());
+            newJob.setContainerImageDescriptor(FileUtils.readFileToString(tempFile.toFile(), StandardCharsets.UTF_8));
+        }
+        else if(workflowDescriptor.indexOf("dockstore") != -1){
+            String toolDockstoreID = workflowDescriptor;
+            String dockstoreID = null;
+            Client client = new Client();
+
+            try {
+                //Lists.newArrayList()
+                client.setupClientEnvironment(Lists.newArrayList());
+            } catch (ConfigurationException e) {
+                kill("consonance: need dockstore config file to schedule dockstore entries");
+            }
+            final File tempDir = Files.createTempDirectory("tmp").toFile();
+            AbstractEntryClient actualClient = null;
+            if (toolDockstoreID != null) {
+                actualClient = client.getToolClient();
+                dockstoreID = toolDockstoreID;
+            }else{
+                kill("consonance: missing required parameter for scheduling jobs");
+            }
+            // TODO: this should determine whether we want to launch a cwl or wdl version of a tool
+            final SourceFile cwlFromServer;
+            try {
+                cwlFromServer = actualClient.getDescriptorFromServer(dockstoreID, body.getWorkflowType());
+                newJob.setContainerImageDescriptor(cwlFromServer.getContent());
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+        }
+        else { // TODO String sequence contains the word 'dockstore' is a dockstore id. Otherwise is a file
+            newJob.setContainerImageDescriptor(workflowDescriptor);
+        }
+
 
         String workflowParams = body.getWorkflowParams(); // Runtime descriptor, <json> file.
         if (workflowParams.isEmpty()) {
             return Response.noContent().build();
+        }else{
+            newJob.setContainerRuntimeDescriptor(workflowParams);
         }
 
         String workflowType = body.getWorkflowType(); // <CWL | WDL> param.
         if (workflowType.isEmpty()) {
             return Response.noContent().build();
         }
+        else {
+            newJob.setContainerImageDescriptorType(workflowType);
+        }
+
 
         // TODO: What optional parameters can be implemented.
         // Optional parameters.
-        Map workflowKeyValues = body.getKeyValues();
+
 
         String flavour = workflowKeyValues.get("flavour").toString();
+//        Integer numberOfExtraFiles = (Integer) workflowKeyValues.get("extra_files");
+
+        //TODO: For loop through number of files. Align them `{"path/name": "File content \n\n" }` and
+        // build the jobObject with the extra files.
+
         LOG.info(flavour);
-        // Authenticate ConsonanceUser
-        // No need, order resources authenticates.
+
+
+//        for (String key : result.keySet() ){
+//
+//            String value = result.get(key);
+//            LOG.info("Reading file: "+ value);
+//            Job.ExtraFile file = new Job.ExtraFile(value, false);
+//            LOG.info("File Content: " +file.toString());
+//            map.put(key, file);
+//            LOG.info("map: "+map.toString());
+//        }
+//        newJob.setExtraFiles(map);
+        newJob.setFlavour(flavour);
 
 
         Ga4ghWesWorkflowRunId runId = new Ga4ghWesWorkflowRunId();
 
-        final Job newJob = new Job();
-        newJob.setContainerRuntimeDescriptor(workflowParams);
-        newJob.setContainerImageDescriptor(workflowDescriptor);
-        newJob.setContainerImageDescriptorType(workflowType);
-        newJob.setFlavour(flavour);
 
         Integer workflowsBeforeOrder = orderResource.listOwnedWorkflowRuns(user).size();
 
