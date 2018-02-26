@@ -7,7 +7,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
+import io.consonance.arch.Base;
 import io.consonance.arch.beans.JobState;
+import io.consonance.arch.persistence.PostgreSQL;;
 import io.consonance.client.WebClient;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
@@ -65,6 +67,7 @@ import javax.validation.constraints.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.validator.routines.UrlValidator;
+import scala.Int;
 
 import static io.dockstore.client.cli.ArgumentUtility.kill;
 
@@ -82,6 +85,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
     private static final Logger LOG = LoggerFactory.getLogger(Ga4ghApiServiceImpl.class);
 
+    private HierarchicalINIConfiguration settings = null;
     private static ConsonanceWebserviceConfiguration config;
     private static OrderResource orderResource;
     private static Gson gson = new Gson();
@@ -102,7 +106,20 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 //        final Job workflowRun = orderResource.getWorkflowRun(user, workflowId);
         // no-op, Consonance doesn't really support cancellation
         Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
-//        id.setWorkflowId(workflowRun.getUuid());
+
+        List<Job> allJobs = orderResource.listWorkflowRuns(user);
+        boolean jobInDB;
+        allJobs.stream().filter((Job t) -> String.valueOf(t.getJobId()).equals(workflowId)).forEach( s -> {
+            LOG.info("CANCELING JOB WITH ID "+ workflowId);
+            File configFile = FileUtils.getFile("/root/.consonance", "config");
+            HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+            PostgreSQL postgres = new PostgreSQL(parseConfig);
+            postgres.cancelJob(workflowId.toString());
+            id.setWorkflowId(workflowId.toString());
+        });
+        if (!workflowId.isEmpty()){
+            LOG.info("NO Workflow was found with iD: "+workflowId);
+        }
         return Response.ok().entity(workflowId).build();
     }
 
@@ -112,9 +129,8 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
     @Override
     public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getServiceInfo()");
+
         Ga4ghWesServiceInfo serviceInfo = new Ga4ghWesServiceInfo();
-        // TODO: Query DB to obtain this values.
         // Supported formats
         String cwl = "cwl";
         String wdl = "wdl";
@@ -125,22 +141,26 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         // Supported WDL version
         Ga4ghWesWorkflowTypeVersion versionTypeWDL = new Ga4ghWesWorkflowTypeVersion();
         versionTypeWDL.addWorkflowTypeVersionItem(wdlVersion);
+
         // Add to Map the WDL specifics
         serviceInfo.putWorkflowTypeVersionsItem(wdl, versionTypeWDL);
 
         // Supported CWL version
         Ga4ghWesWorkflowTypeVersion versionTypeCWL = new Ga4ghWesWorkflowTypeVersion();
         versionTypeCWL.addWorkflowTypeVersionItem(cwlVersion);
+
         // Add it to the map
         serviceInfo.putWorkflowTypeVersionsItem(cwl, versionTypeCWL);
 
         // WES version supported
         String wesApiVersion = "v1.0";
+
         // Add to map
         serviceInfo.addSupportedWesVersionsItem(wesApiVersion);
 
         // Supported file system protocol
         List<String> supportedFileProtocols = Arrays.asList("http", "https", "sftp", "s3", "gs", "synapse");
+
         // Add to map
         serviceInfo.setSupportedFilesystemProtocols(supportedFileProtocols);
 
@@ -153,41 +173,37 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         serviceInfo.putEngineVersionsItem(dockstore, dockstoreVersion);
 
         // System state counts
-        // TODO: cordinate this message for endpoint, each state requires to be acknowledge
-
-
-        Map <String, Long> systemState = new HashMap<String, Long>();
-        systemState.put("Unknown",(long) 0);
-        systemState.put("Queued", (long) 0);
-        systemState.put("Running", (long) 0);
-        systemState.put("Paused", (long) 0);
-        systemState.put("Complete", (long) 0);
-        systemState.put("Error", (long) 0);
-        systemState.put("SystemError", (long) 0);
-        systemState.put("Canceled", (long) 0);
-        systemState.put("Initializing", (long) 0);
-
+        Map <JobState, Long> systemState = new HashMap<JobState, Long>();
 
         List<Job> allJobs = orderResource.listWorkflowRuns(user);
+        if (allJobs.isEmpty()){
+            serviceInfo.putSystemStateCountsItem("Unknown", (long) 0);
+        }
 
-        allJobs.stream().map((Job t) -> {
-            systemState.put(mapState(t.getState()).toString(), systemState.get(mapState(t.getState()).toString())+1);
-            return systemState;
-            }).forEach(stringLongMap -> { for (String key : stringLongMap.keySet()){
-                serviceInfo.putSystemStateCountsItem(key, stringLongMap.get(key));
+        for (Job jobInList : allJobs){
+            try{
+                Long updatedValue = systemState.get(jobInList.getState())+((long) 1) ;
+                systemState.put(jobInList.getState(), updatedValue);
+            }catch (Exception e){
+                systemState.put(jobInList.getState(), (long) 1);
             }
-        }); // Corre ct call integrate with GA4GH protocols
+        }
 
+        for (JobState key : systemState.keySet()){
+            Ga4ghWesState mappedValue = mapState(key);
+            serviceInfo.putSystemStateCountsItem(mappedValue.toString(), systemState.get(key));
+        }
 
-        serviceInfo.putSystemStateCountsItem("Unknown", systemState.get("Unknown"));
-        serviceInfo.putSystemStateCountsItem("Queued", systemState.get("Queued"));
-        serviceInfo.putSystemStateCountsItem("Running", systemState.get("Running"));
-        serviceInfo.putSystemStateCountsItem("Paused", systemState.get("Paused"));
-        serviceInfo.putSystemStateCountsItem("Complete", systemState.get("Complete"));
-        serviceInfo.putSystemStateCountsItem("Error", systemState.get("Error"));
-        serviceInfo.putSystemStateCountsItem("SystemError", systemState.get("SystemError"));
-        serviceInfo.putSystemStateCountsItem("Canceled", systemState.get("Canceled"));
-        serviceInfo.putSystemStateCountsItem("Initializing", systemState.get("Initializing"));
+//        Stream.of(systemState).filter(t -> );
+//        systemState.put("Unknown",(long) 0);
+//        systemState.put("Queued", (long) 0);
+//        systemState.put("Running", (long) 0);
+//        systemState.put("Paused", (long) 0);
+//        systemState.put("Complete", (long) 0);
+//        systemState.put("Error", (long) 0);
+//        systemState.put("SystemError", (long) 0);
+//        systemState.put("Canceled", (long) 0);
+//        systemState.put("Initializing", (long) 0);
 
         //TODO: properly design the report-back metadata parametes.
         serviceInfo.putKeyValuesItem("Metadata", "Nothing to report");
@@ -198,27 +214,21 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
     }
 
     /**
-     * Ultimo ;)
+     *
      */
     @Override
     public Response getWorkflowLog(String workflowId, ConsonanceUser user) throws NotFoundException {
-//        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowLog()");
-
 
         // Initializing structure
         Ga4ghWesWorkflowLog log = new Ga4ghWesWorkflowLog();
         log.setWorkflowId(workflowId);
 
-//        WebClient client = getClient();
-//        OrderApi jobApi = new OrderApi(client);
-
         final String[] jobUuid = {"-1"};
 
-        // Changing return typt to models [ arch.beans to -> client.model]
+
         List<Job> allJobs = orderResource.listWorkflowRuns(user);
         allJobs.stream().filter((Job t) -> String.valueOf(t.getJobId()).equals(workflowId)).forEach(s -> jobUuid[0] = s.getUuid());
 
-        LOG.info(orderResource.getWorkflowRun(user, jobUuid[0]).toString());
         Job parseJob = orderResource.getWorkflowRun(user, jobUuid[0]);
 
         // Instantiate request
@@ -234,10 +244,12 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         log.setRequest(request);
 
         // Set Job State
-        log.setState(mapState(parseJob.getState()));
+        JobState workflowState = parseJob.getState();
+        log.setState(mapState(workflowState));
 
         // Instantiate Log
         Ga4ghWesLog workflowLog = new Ga4ghWesLog();
+
         // Parse job object to ga4gh log object, hardcode undefined parameters.
         workflowLog.setName("CWL|WDL Job");
         workflowLog.addCmdItem("run workflow");
@@ -248,26 +260,24 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         workflowLog.setExitCode(0);
 
         // Add instance to log object
-        log.setWorkflowLog(workflowLog);
+//        log.setWorkflowLog(workflowLog);
 
-        // Iterative method across the whole registry/ update constantly. //TODO: Implement methos accross system.
+        // Iterative method across the whole registry/ update constantly.
         log.addTaskLogsItem(workflowLog);
 
         Ga4ghWesParameter outputParameter = new Ga4ghWesParameter();
 
-        // Nothing to pull out. //TODO: Implement methos correctly across consonance.
+        // Nothing to pull out.
         log.addOutputsItem(outputParameter);
 
-
-        LOG.info(log.toString());
         return Response.ok().entity(log).build();
     }
 
+    /**
+     *
+     */
     @Override
     public Response getWorkflowStatus(String workflowId, ConsonanceUser user) throws NotFoundException {
-//        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.getWorkflowStatus()");
-//        WebClient client = getClient();
-//        OrderApi jobApi = new OrderApi(client);
 
         Ga4ghWesWorkflowStatus workflowStatus = new Ga4ghWesWorkflowStatus();
 
@@ -287,48 +297,36 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
      * If there is jobs in the queue, and running.
      * Listing workflows will show their Id, and Status.
      */
-
     @Override
     public Response listWorkflows(Long pageSize, String pageToken, String keyValueSearch, ConsonanceUser user) throws NotFoundException {
-//        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.listWorkflows()");
-//        LOG.info("Listing workflows with page size " + pageSize + ", pageToken=" + pageToken + ", and keyValueSearch=" + keyValueSearch);
-
         Long optionalPageSize = pageSize;
         String optionalPageToken = pageToken;
         String optionalKeyFilter = keyValueSearch;
 
-
         Ga4ghWesWorkflowListResponse list = new Ga4ghWesWorkflowListResponse();
 
-//        WebClient client = getClient();
-//        OrderApi jobApi = new OrderApi(client);
-
         List<Job> allJobs = orderResource.listWorkflowRuns(user);
-        LOG.info(allJobs.toString());
-        allJobs.stream().map((Job t) -> {
-                    Ga4ghWesWorkflowDesc descriptor = new Ga4ghWesWorkflowDesc();
-                    descriptor.setWorkflowId(String.valueOf(t.getJobId()));
-                    descriptor.setState(mapState(t.getState()));
-                    return descriptor;
-        }).forEach(e -> list.addWorkflowsItem(e)); // Correct call integrate with GA4GH protocols
+        Map <Integer, JobState> serialize = new TreeMap<Integer, JobState>();
 
-        // Authenticate ConsonanceUser
-        if (user != null) {
-            // TODO: Autheticate, refer to DB and confirm refgister user.
+        allJobs.stream().forEach((Job j) -> serialize.put(j.getJobId(), j.getState()));
 
+        for (Integer key: serialize.keySet()){
+            Ga4ghWesWorkflowDesc descriptor = new Ga4ghWesWorkflowDesc();
+            descriptor.setWorkflowId(String.valueOf(key));
+            descriptor.setState(mapState(serialize.get(key)));
+            list.addWorkflowsItem(descriptor);
         }
-        LOG.info(list.toString());
+
         return Response.ok().entity(list).build();
     }
 
     /**
      * Calls on existing method to schedule a job.
-     * Requires authenticate user (DB?)
+     * Requires user with the request to be authenticated
      */
     @Override
     public Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException, IOException, TimeoutException {
 
-        LOG.info(body.toString());
         Map workflowKeyValues = body.getKeyValues();
 
         // TODO: Check if version in body, matches consonance version. Confirm non-empty value.
@@ -412,19 +410,6 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         //TODO: For loop through number of files. Align them `{"path/name": "File content \n\n" }` and
         // build the jobObject with the extra files.
 
-        LOG.info(flavour);
-
-
-//        for (String key : result.keySet() ){
-//
-//            String value = result.get(key);
-//            LOG.info("Reading file: "+ value);
-//            Job.ExtraFile file = new Job.ExtraFile(value, false);
-//            LOG.info("File Content: " +file.toString());
-//            map.put(key, file);
-//            LOG.info("map: "+map.toString());
-//        }
-//        newJob.setExtraFiles(map);
         newJob.setFlavour(flavour);
 
 
@@ -446,30 +431,36 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
     private Ga4ghWesState mapState(JobState state) {
 
-        Ga4ghWesState ga4ghState = Ga4ghWesState.UNKNOWN;
+        Ga4ghWesState ga4ghState = null;
+        if (state != null) {
+            switch (state) {
+                case LOST:
+                    ga4ghState = Ga4ghWesState.SYSTEMERROR;
+                    return ga4ghState;
 
-        switch (state){
-            case LOST:
-                ga4ghState = Ga4ghWesState.SYSTEMERROR;
+                case START:
+                    ga4ghState = Ga4ghWesState.INITIALIZING;
+                    return ga4ghState;
 
-            case START:
-                ga4ghState = Ga4ghWesState.INITIALIZING;
+                case FAILED:
+                    ga4ghState = Ga4ghWesState.ERROR;
+                    return ga4ghState;
 
-            case FAILED:
-                ga4ghState = Ga4ghWesState.ERROR;
+                case SUCCESS:
+                    ga4ghState = Ga4ghWesState.COMPLETE;
+                    return ga4ghState;
 
-            case SUCCESS:
-                ga4ghState = Ga4ghWesState.COMPLETE;
+                case RUNNING:
+                    ga4ghState = Ga4ghWesState.RUNNING;
+                    return ga4ghState;
 
-            case RUNNING:
-                ga4ghState = Ga4ghWesState.RUNNING;
+                case PENDING:
+                    ga4ghState = Ga4ghWesState.QUEUED;
+                    return ga4ghState;
 
-            case PENDING:
-                ga4ghState = Ga4ghWesState.QUEUED;
-
+            }
         }
-
-        return ga4ghState;
+        return Ga4ghWesState.UNKNOWN;
     }
 
 }

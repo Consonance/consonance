@@ -128,6 +128,13 @@ This will spin up containers that will launch Workers.
 
     java -cp target/consonance-arch-*.jar io.consonance.arch.containerProvisioner.ContainerProvisionerThreads --config conf/config.json [--endless]
 
+For our security group, we needed to expose the following ports:
+
+- all TCP traffic between nodes in the security group should be allowed (this uses private ip addresses as sources)
+- all TCP traffic from the public sensu-server ip address should be allowed (this uses the public ip address as a source)
+- SSH should be open across the board
+- port 3000 (uchiwa), 4567 (rabbitmq) and 5671 (sensu-api) should be open from your institution
+
 ### Worker
 
 If you need to create a worker, use the following Ansible playbook https://github.com/ICGC-TCGA-PanCancer/container-host-bag
