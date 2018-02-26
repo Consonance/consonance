@@ -105,22 +105,22 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
 //        final Job workflowRun = orderResource.getWorkflowRun(user, workflowId);
         // no-op, Consonance doesn't really support cancellation
-        Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
-
-        List<Job> allJobs = orderResource.listWorkflowRuns(user);
-        boolean jobInDB;
-        allJobs.stream().filter((Job t) -> String.valueOf(t.getJobId()).equals(workflowId)).forEach( s -> {
-            LOG.info("CANCELING JOB WITH ID "+ workflowId);
-            File configFile = FileUtils.getFile("/root/.consonance", "config");
-            HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-            PostgreSQL postgres = new PostgreSQL(parseConfig);
-            postgres.cancelJob(workflowId.toString());
-            id.setWorkflowId(workflowId.toString());
-        });
-        if (!workflowId.isEmpty()){
-            LOG.info("NO Workflow was found with iD: "+workflowId);
-        }
-        return Response.ok().entity(workflowId).build();
+//        Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
+//
+//        List<Job> allJobs = orderResource.listWorkflowRuns(user);
+//        boolean jobInDB;
+//        allJobs.stream().filter((Job t) -> String.valueOf(t.getJobId()).equals(workflowId)).forEach( s -> {
+//            LOG.info("CANCELING JOB WITH ID "+ workflowId);
+//            File configFile = FileUtils.getFile("/root/.consonance", "config");
+//            HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+//            PostgreSQL postgres = new PostgreSQL(parseConfig);
+//            postgres.cancelJob(s.getUuid());
+//            id.setWorkflowId(workflowId.toString());
+//        });
+//        if (!id.getWorkflowId().isEmpty()){
+//            LOG.info("NO Workflow was found with iD: "+workflowId);
+//        }
+        return Response.ok().entity(-1).build();
     }
 
     /**
