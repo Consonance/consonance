@@ -206,7 +206,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 //        systemState.put("Initializing", (long) 0);
 
         //TODO: properly design the report-back metadata parametes.
-        serviceInfo.putKeyValuesItem("Metadata", "Nothing to report");
+        serviceInfo.putKeyValuesItem("flavour", "e.g. (r2.medium), instance type descriptor for AWS");
 
 
         return Response.ok().entity(serviceInfo).build();
