@@ -49,12 +49,12 @@
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-common</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
         </dependency>
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-server-common</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.javassist</groupId>
@@ -330,7 +330,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>9.4-1201-jdbc41</version>
+            <version>${postgresql.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -451,17 +451,17 @@
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-client</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
         </dependency>
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-client</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
         </dependency>
         <dependency>
             <groupId>io.consonance</groupId>
             <artifactId>consonance-client</artifactId>
-            <version>2.0.0-alpha.16-SNAPSHOT</version>
+            <version>${consonance.version}</version>
         </dependency>
     </dependencies>
 
@@ -498,9 +498,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <failOnError>false</failOnError>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
