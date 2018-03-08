@@ -364,7 +364,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
             }
             final File tempDir = Files.createTempDirectory("tmp").toFile();
             AbstractEntryClient actualClient = null;
-            if (toolDockstoreID != null) {
+            if (!toolDockstoreID.equals(null)) {
                 actualClient = client.getToolClient();
                 dockstoreID = toolDockstoreID;
             }else{
