@@ -9,7 +9,7 @@ import com.google.gson.Gson;
 
 import io.consonance.arch.Base;
 import io.consonance.arch.beans.JobState;
-import io.consonance.arch.persistence.PostgreSQL;;
+import io.consonance.arch.persistence.PostgreSQL;
 import io.consonance.client.WebClient;
 import io.consonance.common.CommonTestUtilities;
 import io.consonance.common.Constants;
@@ -98,35 +98,15 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         Ga4ghApiServiceImpl.orderResource = orderResource;
     }
 
+    // Cancels a running workflow by providing the id of the workflow
     @Override
     public Response cancelJob(String workflowId, ConsonanceUser user) throws NotFoundException {
-        LOG.info("Hit WES API! Called Ga4ghApiServiceImpl.cancelJob()");
-        LOG.info("Cancelling job " + workflowId);
 
-//        final Job workflowRun = orderResource.getWorkflowRun(user, workflowId);
-        // no-op, Consonance doesn't really support cancellation
-//        Ga4ghWesWorkflowRunId id = new Ga4ghWesWorkflowRunId();
-//
-//        List<Job> allJobs = orderResource.listWorkflowRuns(user);
-//        boolean jobInDB;
-//        allJobs.stream().filter((Job t) -> String.valueOf(t.getJobId()).equals(workflowId)).forEach( s -> {
-//            LOG.info("CANCELING JOB WITH ID "+ workflowId);
-//            File configFile = FileUtils.getFile("/root/.consonance", "config");
-//            HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-//            PostgreSQL postgres = new PostgreSQL(parseConfig);
-//            postgres.cancelJob(s.getUuid());
-//            id.setWorkflowId(workflowId.toString());
-//        });
-//        if (!id.getWorkflowId().isEmpty()){
-//            LOG.info("NO Workflow was found with iD: "+workflowId);
-//        }
-        return Response.ok().entity(-1).build();
+        return Response.ok().build();
     }
 
-    /**
-     * Provides information on the service, versions ...
-     * */
 
+    //Provides information on the service, versions ...
     @Override
     public Response getServiceInfo(ConsonanceUser user) throws NotFoundException {
 
@@ -194,18 +174,6 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
             serviceInfo.putSystemStateCountsItem(mappedValue.toString(), systemState.get(key));
         }
 
-//        Stream.of(systemState).filter(t -> );
-//        systemState.put("Unknown",(long) 0);
-//        systemState.put("Queued", (long) 0);
-//        systemState.put("Running", (long) 0);
-//        systemState.put("Paused", (long) 0);
-//        systemState.put("Complete", (long) 0);
-//        systemState.put("Error", (long) 0);
-//        systemState.put("SystemError", (long) 0);
-//        systemState.put("Canceled", (long) 0);
-//        systemState.put("Initializing", (long) 0);
-
-        //TODO: properly design the report-back metadata parametes.
         serviceInfo.putKeyValuesItem("flavour", "e.g. (r2.medium), instance type descriptor for AWS");
 
 
@@ -213,9 +181,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
     }
 
-    /**
-     *
-     */
+    // Returns logs of a given workflow, by id
     @Override
     public Response getWorkflowLog(String workflowId, ConsonanceUser user) throws NotFoundException {
 
@@ -251,16 +217,11 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         Ga4ghWesLog workflowLog = new Ga4ghWesLog();
 
         // Parse job object to ga4gh log object, hardcode undefined parameters.
-        workflowLog.setName("CWL|WDL Job");
-        workflowLog.addCmdItem("run workflow");
+        workflowLog.setName(parseJob.getContainerImageDescriptorType());
         workflowLog.setStartTime(String.valueOf(parseJob.getCreateTimestamp()));
         workflowLog.setEndTime(String.valueOf(parseJob.getUpdateTimestamp()));
         workflowLog.setStdout(parseJob.getStdout());
         workflowLog.setStderr(parseJob.getStderr());
-        workflowLog.setExitCode(0);
-
-        // Add instance to log object
-//        log.setWorkflowLog(workflowLog);
 
         // Iterative method across the whole registry/ update constantly.
         log.addTaskLogsItem(workflowLog);
@@ -273,9 +234,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         return Response.ok().entity(log).build();
     }
 
-    /**
-     *
-     */
+    // Get the specific status of a workflow, i.e. STARTING, RUNNING, QUEUED... etc
     @Override
     public Response getWorkflowStatus(String workflowId, ConsonanceUser user) throws NotFoundException {
 
@@ -293,10 +252,8 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         return Response.ok().entity(workflowStatus).build();
     }
 
-    /***
-     * If there is jobs in the queue, and running.
-     * Listing workflows will show their Id, and Status.
-     */
+    // If there is jobs in the queue, and running.
+    // Listing workflows will show their Id, and Status.
     @Override
     public Response listWorkflows(Long pageSize, String pageToken, String keyValueSearch, ConsonanceUser user) throws NotFoundException {
         Long optionalPageSize = pageSize;
@@ -306,58 +263,54 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         Ga4ghWesWorkflowListResponse list = new Ga4ghWesWorkflowListResponse();
 
         List<Job> allJobs = orderResource.listWorkflowRuns(user);
-        Map <Integer, JobState> serialize = new TreeMap<Integer, JobState>();
+        Map <Integer, JobState> serialized = new TreeMap<Integer, JobState>();
 
-        allJobs.stream().forEach((Job j) -> serialize.put(j.getJobId(), j.getState()));
+        allJobs.stream().forEach((Job j) -> serialized.put(j.getJobId(), j.getState()));
 
-        for (Integer key: serialize.keySet()){
+        for (Integer key: serialized.keySet()){
             Ga4ghWesWorkflowDesc descriptor = new Ga4ghWesWorkflowDesc();
             descriptor.setWorkflowId(String.valueOf(key));
-            descriptor.setState(mapState(serialize.get(key)));
+            descriptor.setState(mapState(serialized.get(key)));
             list.addWorkflowsItem(descriptor);
         }
 
         return Response.ok().entity(list).build();
     }
 
-    /**
-     * Calls on existing method to schedule a job.
-     * Requires user with the request to be authenticated
-     */
+
+     //Calls on existing method to schedule a job.
+     //Requires user with the request to be authenticated
     @Override
     public Response runWorkflow(Ga4ghWesWorkflowRequest body, ConsonanceUser user) throws NotFoundException, IOException, TimeoutException {
 
         Map workflowKeyValues = body.getKeyValues();
 
-        // TODO: Check if version in body, matches consonance version. Confirm non-empty value.
+
         String workflowTypeVersion = body.getWorkflowTypeVersion(); // Version of runner tool.
         if (workflowTypeVersion.isEmpty()) {
             return Response.noContent().build();
-        } else {
-            String currentRunnerVersion = "RandomVersionTEMP";
         }
 
         final Job newJob = new Job();
 
-        // Process deserialize body. TODO: Confirm non-empty values.
+        // Process deserialize body.
         UrlValidator urlValidator = new UrlValidator();
         String workflowDescriptor = body.getWorkflowDescriptor(); // Runner descriptor, < cwl || wdl> file.
         if (workflowDescriptor.isEmpty()) {
             return Response.noContent().build();
         }
-        else if (urlValidator.isValid(workflowDescriptor)){
+        else if (urlValidator.isValid(workflowDescriptor)){ // A descriptor file hosted in the web.
             URL jobURL = new URL(workflowDescriptor);
             final Path tempFile = Files.createTempFile("image", "cwl");
             FileUtils.copyURLToFile(jobURL, tempFile.toFile());
             newJob.setContainerImageDescriptor(FileUtils.readFileToString(tempFile.toFile(), StandardCharsets.UTF_8));
         }
-        else if(workflowDescriptor.indexOf("dockstore") != -1){
+        else if(workflowDescriptor.indexOf("dockstore") != -1){ // A descriptor hosted in Dockstore
             String toolDockstoreID = workflowDescriptor;
             String dockstoreID = null;
             Client client = new Client();
 
             try {
-                //Lists.newArrayList()
                 client.setupClientEnvironment(Lists.newArrayList());
             } catch (ConfigurationException e) {
                 kill("consonance: need dockstore config file to schedule dockstore entries");
@@ -370,7 +323,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
             }else{
                 kill("consonance: missing required parameter for scheduling jobs");
             }
-            // TODO: this should determine whether we want to launch a cwl or wdl version of a tool
+            // This should determine whether we want to launch a cwl or wdl version of a tool
             final SourceFile cwlFromServer;
             try {
                 cwlFromServer = actualClient.getDescriptorFromServer(dockstoreID, body.getWorkflowType());
@@ -379,7 +332,7 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
                 e.printStackTrace();
             }
         }
-        else { // TODO String sequence contains the word 'dockstore' is a dockstore id. Otherwise is a file
+        else { //String sequence contains the word 'dockstore' is a dockstore id. Otherwise is a file
             newJob.setContainerImageDescriptor(workflowDescriptor);
         }
 
@@ -400,15 +353,10 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         }
 
 
-        // TODO: What optional parameters can be implemented.
+        // TODO: What optional parameters can be implemented. `Active dev...`
         // Optional parameters.
 
-
         String flavour = workflowKeyValues.get("flavour").toString();
-//        Integer numberOfExtraFiles = (Integer) workflowKeyValues.get("extra_files");
-
-        //TODO: For loop through number of files. Align them `{"path/name": "File content \n\n" }` and
-        // build the jobObject with the extra files.
 
         newJob.setFlavour(flavour);
 
