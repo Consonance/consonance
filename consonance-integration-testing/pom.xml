@@ -129,7 +129,7 @@
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>1.4.1</version>
                 <configuration>
-                    <fail>false</fail>
+                    <fail>true</fail>
                 </configuration>
             </plugin>
             <plugin>

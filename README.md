@@ -103,3 +103,11 @@ See the container-admin [README](container-admin/README.md) for information on q
 ## Using
 
 See the [quickstart guide](https://github.com/Consonance/consonance/wiki/quickstart) and the [non-quickstart guide](https://github.com/Consonance/consonance/wiki/non-quickstart-users) on our wiki.
+
+## TODO
+
+* test container-admin with pre-release locally with provisioning on AWS
+* review and merge the pull request
+* perform release
+* test container-admin with release on AWS, should be a safe harbor
+* then review/try WES support branch from Abraham

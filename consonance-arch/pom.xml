@@ -67,7 +67,7 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-generated</artifactId>
             <exclusions>
@@ -84,7 +84,7 @@
                     <artifactId>gson</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
+        </dependency-->
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
@@ -289,7 +289,7 @@
             <artifactId>commons-pool2</artifactId>
             <scope>compile</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
             <version>${dockstore.version}</version>
@@ -299,12 +299,12 @@
                     <artifactId>dropwizard-testing</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
+        </dependency-->
+        <!--dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
             <version>${dockstore.version}</version>
-        </dependency>
+        </dependency-->
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
@@ -355,7 +355,7 @@
                             <goal>analyze-only</goal>
                         </goals>
                         <configuration>
-                            <failOnWarning>false</failOnWarning>
+                            <failOnWarning>true</failOnWarning>
                             <outputXML>true</outputXML>
                             <ignoreNonCompile>true</ignoreNonCompile>
                         </configuration>
