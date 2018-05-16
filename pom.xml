@@ -41,20 +41,22 @@
         <maven-surefire.version>2.20</maven-surefire.version>
         <maven-failsafe.version>2.19.1</maven-failsafe.version>
         <mockito.version>1.10.19</mockito.version>
-        <hibernate.version>5.1.0.Final</hibernate.version>
         <httpcomponents.version>4.4.5</httpcomponents.version>
+        <hibernate.version>5.1.0.Final</hibernate.version>
         <okhttp.version>3.2.0</okhttp.version>
         <assertj.version>3.4.1</assertj.version>
         <aws.version>1.10.77</aws.version>
+        <!--<aws.version>1.11.86</aws.version>--> <!--Dockstore's version-->
         <powermock.version>1.6.5</powermock.version>
         <postgresql.version>42.1.4</postgresql.version>
         <jackson.version>2.8.9</jackson.version>
-        <jackson-yaml.version>2.7.6</jackson-yaml.version>
+        <jackson-yaml.version>2.8.9</jackson-yaml.version>
+        <javax-api.version>2.0.1</javax-api.version>
         <jersey.version>2.23.2</jersey.version>
         <jersey-version>2.23.2</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.1.7</logback.version>
-        <dropwizard.version>1.0.2</dropwizard.version>
+        <dropwizard.version>1.0.5</dropwizard.version>
         <dockstore.version>1.2.9</dockstore.version>
         <cobertura.version>2.1.1</cobertura.version>
         <consonance.version>2.0.0-alpha.16-SNAPSHOT</consonance.version>
@@ -132,10 +134,6 @@
                     <exclusion>
                         <groupId>com.sun.jersey</groupId>
                         <artifactId>jersey-json</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.jersey</groupId>
-                        <artifactId>jersey-client</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -453,7 +451,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.16</version>
+                <version>1.17</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
