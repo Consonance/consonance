@@ -27,7 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 /**
  * This class will make a command-line call to run a workflow. <br/>
@@ -70,25 +73,42 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         return StringUtils.join(this.errorStream.getLastNLines(n), "\n");
     }
 
+    private boolean IdFileType(String format, String key, String fileName){
+        boolean masterBoolean = false;
+        try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
+            masterBoolean = stream // Assigns it
+                    .filter(line -> line.startsWith(format))
+                    .anyMatch(line -> line.contains(key));
+        } catch (IOException e) {
+            System.out.println("Continue");
+        }
+        return masterBoolean;
+    }
+
 
     @Override
-    public WorkflowResult call() throws IOException, ConfigurationException {
+    public WorkflowResult call() throws IOException {
         LOG.info("Executing Dockstore CLI programmatically:");
         LOG.info("Image descriptor is: " + imageDescriptorPath);
         LOG.info("Runtime descriptor is: " + runtimeDescriptorPath);
         LOG.info("Config is: " + configFilePath);
+
+        String pipelineType = "";
+        if(IdFileType("class", "Tool", imageDescriptorPath)){pipelineType = "tool";} // CWL-TOOL
+        else if(IdFileType("class", "Workflow", imageDescriptorPath)){pipelineType = "workflow";} // CWL-WORKFLOW
+        else if(IdFileType("workflow", "{", imageDescriptorPath)){pipelineType = "workflow";} // WDL-WORKFLOW
+        else{
+            LOG.error("Could not recognize descriptor file format!");
+            System.exit(1);
+        }
         WorkflowResult result = new WorkflowResult();
-
-        // TODO: wrap with try
-        //LauncherCWL launcher = new LauncherCWL(configFilePath, imageDescriptorPath, runtimeDescriptorPath, outputStream, errorStream);
-
         try {
             if (this.preworkDelay > 0) {
                 LOG.info("Sleeping before executing workflow for " + this.preworkDelay + " ms.");
                 Thread.sleep(this.preworkDelay);
             }
-            // this is a blocking call, but the HeartbeatThread appears to be a in a separate thread
-            final String[] s = { "workflow", "launch", "--local-entry", imageDescriptorPath, "--json", runtimeDescriptorPath};
+            final String[] p = {"plugin", "download"}; //For dockstore provisioner to run, s3.
+            final String[] s = { pipelineType, "launch", "--script", "--local-entry", imageDescriptorPath, "--json", runtimeDescriptorPath};
             try {
                 LOG.info("command: dockstore "+ String.join(" ", s));
                 // see https://stackoverflow.com/questions/5389632/capturing-contents-of-standard-output-in-java for how I redirected stderr/out of the below
@@ -96,8 +116,10 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
                 PrintStream originalStdErr = System.err;
                 System.setOut(new PrintStream(this.outputStream, true, "UTF-8"));
                 System.setErr(new PrintStream(this.errorStream, true, "UTF-8"));
-                // this is the actual call to Dockstore CLI
                 // TODO: how do I set DOCKSTORE_ROOT=1?
+                LOG.info("Provisioning plugins");
+                Client.main(p);
+                // this is the actual call to Dockstore CLI
                 Client.main(s);
                 System.setOut(originalStdOut);
                 System.setErr(originalStdErr);
