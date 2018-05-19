@@ -20,7 +20,6 @@
 package io.consonance.arch.worker;
 
 import io.dockstore.client.cli.Client;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +72,7 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         return StringUtils.join(this.errorStream.getLastNLines(n), "\n");
     }
 
-    private boolean IdFileType(String format, String key, String fileName){
+    private boolean idFileType(String format, String key, String fileName) {
         boolean masterBoolean = false;
         try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
             masterBoolean = stream // Assigns it
@@ -94,10 +93,13 @@ public class WorkflowRunner implements Callable<WorkflowResult> {
         LOG.info("Config is: " + configFilePath);
 
         String pipelineType = "";
-        if(IdFileType("class", "Tool", imageDescriptorPath)){pipelineType = "tool";} // CWL-TOOL
-        else if(IdFileType("class", "Workflow", imageDescriptorPath)){pipelineType = "workflow";} // CWL-WORKFLOW
-        else if(IdFileType("workflow", "{", imageDescriptorPath)){pipelineType = "workflow";} // WDL-WORKFLOW
-        else{
+        if(idFileType("class", "Tool", imageDescriptorPath)){
+            pipelineType = "tool"; // CWL-TOOL
+        } else if(idFileType("class", "Workflow", imageDescriptorPath)){
+            pipelineType = "workflow"; // CWL-WORKFLOW
+        } else if(idFileType("workflow", "{", imageDescriptorPath)){
+            pipelineType = "workflow";// WDL-WORKFLOW
+        } else{
             LOG.error("Could not recognize descriptor file format!");
             System.exit(1);
         }
