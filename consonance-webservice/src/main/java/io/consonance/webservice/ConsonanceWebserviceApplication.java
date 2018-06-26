@@ -44,15 +44,22 @@ import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
+
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+
 import io.swagger.task.api.V1Api;
 import io.swagger.task.api.impl.V1ApiServiceImpl;
+
 import io.swagger.workflow.api.JobsApi;
 import io.swagger.workflow.api.RunApi;
 import io.swagger.workflow.api.impl.JobsApiServiceImpl;
 import io.swagger.workflow.api.impl.RunApiServiceImpl;
+
+import io.swagger.wes.api.Ga4ghApi;
+import io.swagger.wes.api.impl.Ga4ghApiServiceImpl;
+
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
@@ -108,7 +115,7 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
 
     @Override
     public void run(ConsonanceWebserviceConfiguration configuration, Environment environment) {
-        // setup swagger
+        // setup swagger˜
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion("1.0.2");
         beanConfig.setSchemes(new String[] { "http" });
@@ -144,15 +151,20 @@ public class ConsonanceWebserviceApplication extends Application<ConsonanceWebse
         JobsApiServiceImpl.setOrderResource(orderResource);
         RunApiServiceImpl.setConfig(configuration);
         RunApiServiceImpl.setOrderResource(orderResource);
+        Ga4ghApiServiceImpl.setConfig(configuration);
+        Ga4ghApiServiceImpl.setOrderResource(orderResource);
 
         // hook up GA4GH APIs
         environment.jersey().register(new V1Api());
         environment.jersey().register(new RunApi());
         environment.jersey().register(new JobsApi());
+        // TODO: Want to have auth.
+        environment.jersey().register(new Ga4ghApi());
 
         // implement
         JobsApiServiceImpl.setConfig(configuration);
         RunApiServiceImpl.setConfig(configuration);
+        Ga4ghApiServiceImpl.setConfig(configuration);
 
         // swagger stuff
 

@@ -64,7 +64,7 @@ import java.util.UUID;
 @NamedQueries({
         @NamedQuery(
                 name = "io.consonance.arch.beans.core.Job.findAll",
-                query = "SELECT j FROM Job j"
+                query = "SELECT j FROM Job j ORDER BY job_id ASC"
         ),
         @NamedQuery(
                 name = "io.consonance.arch.beans.core.Job.findAllByUser",

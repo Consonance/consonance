@@ -27,6 +27,7 @@ import io.consonance.common.Constants;
 import io.consonance.common.Utilities;
 import io.consonance.webservice.ConsonanceWebserviceApplication;
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
+import io.dropwizard.hibernate.UnitOfWork;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
@@ -34,15 +35,28 @@ import io.swagger.client.api.OrderApi;
 import io.swagger.client.api.UserApi;
 import io.swagger.client.model.ConsonanceUser;
 import io.swagger.client.model.Job;
+import io.swagger.wes.api.Ga4ghApi;
+import io.swagger.wes.api.NotFoundException;
+import io.swagger.wes.model.Ga4ghWesServiceInfo;
+import io.swagger.wes.model.Ga4ghWesWorkflowListResponse;
+import io.swagger.wes.model.Ga4ghWesWorkflowRequest;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -153,8 +167,6 @@ public class SystemClientIT {
         assertThat(allJobs.size() == 1 && myJobs.size() == 0);
     }
 
-
-
     private Job createClientJob() {
         final Job job = new Job();
         job.setJobUuid("42");
@@ -176,7 +188,6 @@ public class SystemClientIT {
         job.setFlavour("m1.funky");
         return job;
     }
-
 
     private io.consonance.arch.beans.Job createServerJob() {
         final io.consonance.arch.beans.Job job = new io.consonance.arch.beans.Job();

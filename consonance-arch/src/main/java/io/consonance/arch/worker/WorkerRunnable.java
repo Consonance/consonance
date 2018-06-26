@@ -80,6 +80,7 @@ public class WorkerRunnable implements Runnable {
     public static final int DEFAULT_POSTSLEEP = 1;
     private String networkAddress;
     private String flavour = null;
+    private ExecutorService exService;
 
     /**
      * Create a new Worker.
@@ -109,7 +110,7 @@ public class WorkerRunnable implements Runnable {
 
         try {
 
-            log.debug("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
+            log.info("WorkerRunnable created with args:\n\tconfigFile: " + configFile + "\n\tvmUuid: " + vmUuid + "\n\tmaxRuns: " + maxRuns
                     + "\n\ttestMode: " + testMode + "\n\tendless: " + endless);
 
             int tries = Base.DEFAULT_NETWORK_RETRIES;
@@ -179,7 +180,7 @@ public class WorkerRunnable implements Runnable {
             // the VM UUID
             log.info(" WORKER VM UUID provided as: '" + vmUuid + "'");
 
-            HttpClient client = new DefaultHttpClient();
+            HttpClient client = new DefaultHttpClient(); //TASK: 2) Deprecated library, does it affect the call!?
             // make really sure that we get a flavour
             while (flavour == null) {
                 String responseBody;
@@ -208,7 +209,7 @@ public class WorkerRunnable implements Runnable {
             job = null;
 
             while ((max > 0 || this.endless)) {
-                log.debug(max + " remaining jobs will be executed");
+                log.info(max + " remaining jobs will be executed");
                 log.info(" WORKER IS PREPARING TO PULL JOB FROM QUEUE " + this.jobQueueName + " for flavour " + this.flavour);
 
                 if (!endless) {
@@ -216,7 +217,8 @@ public class WorkerRunnable implements Runnable {
                 }
 
                 // Do the actual work
-                processJobMessage(workflowResult, statusJSON, job);
+                log.info("workflowResult: "+workflowResult+"\nstatusJson: "+statusJSON+"\njob: "+job);
+                processJobMessage(workflowResult, statusJSON, job); // TASK: 3) Call to another service! -> processJobMessage()
 
             }
 
@@ -227,8 +229,8 @@ public class WorkerRunnable implements Runnable {
                 resultsChannel.close();
                 resultsChannel.getConnection().close();
             }
-            log.debug("result channel open: " + (resultsChannel != null ? resultsChannel.isOpen() : null));
-            log.debug("result channel connection open: " + (resultsChannel != null ? resultsChannel.getConnection().isOpen() : null));
+            log.info("result channel open: " + (resultsChannel != null ? resultsChannel.isOpen() : null));
+            log.info("result channel connection open: " + (resultsChannel != null ? resultsChannel.getConnection().isOpen() : null));
 
         } catch (Exception ex) {
 
@@ -311,7 +313,7 @@ public class WorkerRunnable implements Runnable {
                     workflowResult.setWorkflowStdout("everything is awesome");
                     workflowResult.setExitCode(0);
                 } else {
-                    workflowResult = launchJob(statusJSON, job);
+                    workflowResult = launchJob(statusJSON, job); //TASK: 4) call to launchJob!
                 }
 
                 status = new Status(vmUuid, job.getUuid(),
@@ -355,7 +357,7 @@ public class WorkerRunnable implements Runnable {
      */
     private WorkflowResult launchJob(String message, Job job) {
         WorkflowResult workflowResult = null;
-        ExecutorService exService = Executors.newFixedThreadPool(2);
+        ExecutorService exService = Executors.newFixedThreadPool(2); // NOTE: Init threads.
         WorkflowRunner workflowRunner = new WorkflowRunner();
         try {
 

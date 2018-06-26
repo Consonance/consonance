@@ -4,6 +4,10 @@ This is the prototype web service for consonance.
 
 ## Usage
 
+### WES support updates
+1. postgresql: 9.4-1201-jdbc41 -> 42.1.4
+2. jackson-databind: 2.7.8 -> 2.8.9
+
 ### Starting Up
 
 1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.stash)

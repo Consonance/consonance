@@ -101,10 +101,10 @@ public class ContainerProvisionerThreads extends Base {
         super.parseOptions(argv);
     }
 
-    private void startThreads() throws InterruptedException {
+    private void startThreads() {
         ExecutorService pool = Executors.newFixedThreadPool(DEFAULT_THREADS);
         ProcessVMOrders processVMOrders = new ProcessVMOrders(this.configFile, this.options.has(this.endlessSpec));
-        String flavour = (null == this.options.valueOf(this.flavourSpec)) ? "" : this.options.valueOf(this.flavourSpec).toString();
+        String flavour = (null == this.options.valueOf(this.flavourSpec)) ? "" : this.options.valueOf(this.flavourSpec);
         ProvisionVMs provisionVMs = new ProvisionVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec), this.options.has(localSpec), flavour);
         CleanupVMs cleanupVMs = new CleanupVMs(this.configFile, this.options.has(this.endlessSpec), this.options.has(testSpec));
         List<Future<?>> futures = new ArrayList<>();
@@ -415,21 +415,21 @@ public class ContainerProvisionerThreads extends Base {
                     }
 
                     // TODO: this logic isnt' quite right to find orphan workers VMs... the DB has none as RUNNING now... so I'm not sure what I will need to do to see if these are actually running
-                    LOG.info("CHECKING DB FOR SUCCESS/FAILED JOB VMS TO REAP");
-                    final List<Job> doneJobs = db.getJobs(JobState.SUCCESS);
-                    final List<Job> failedJobs = db.getJobs(JobState.FAILED);
-                    doneJobs.addAll(failedJobs);
-                    for(Job j : doneJobs) {
-                        // if the VM assigned is running, reap it
-                        List<Provision> provisions = db.getProvisions(ProvisionState.RUNNING);
-                        for (Provision p : provisions) {
-                            if (j.getUuid().equals(p.getJobUUID())) {
-                                synchronized (ContainerProvisionerThreads.class) {
-                                    runReaper(settings, p.getIpAddress(), j.getVmUuid(), this.testMode);
-                                }
-                            }
-                        }
-                    }
+//                    LOG.info("CHECKING DB FOR SUCCESS/FAILED JOB VMS TO REAP");
+//                    final List<Job> doneJobs = db.getJobs(JobState.SUCCESS);
+//                    final List<Job> failedJobs = db.getJobs(JobState.FAILED);
+//                    doneJobs.addAll(failedJobs);
+//                    for(Job j : doneJobs) {
+//                        // if the VM assigned is running, reap it
+//                        List<Provision> provisions = db.getProvisions(ProvisionState.RUNNING);
+//                        for (Provision p : provisions) {
+//                            if (j.getUuid().equals(p.getJobUUID())) {
+//                                synchronized (ContainerProvisionerThreads.class) {
+//                                    runReaper(settings, p.getIpAddress(), j.getVmUuid(), this.testMode);
+//                                }
+//                            }
+//                        }
+//                    }
 
                     LOG.info("CHECKING QUEUE FOR VMS TO REAP");
 
