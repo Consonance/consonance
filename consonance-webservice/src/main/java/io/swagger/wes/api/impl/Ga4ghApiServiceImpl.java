@@ -1,28 +1,17 @@
 package io.swagger.wes.api.impl;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
-import io.consonance.arch.Base;
 import io.consonance.arch.beans.JobState;
-import io.consonance.arch.persistence.PostgreSQL;
-import io.consonance.client.WebClient;
-import io.consonance.common.CommonTestUtilities;
-import io.consonance.common.Constants;
-import io.consonance.common.Utilities;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
-import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.OrderApi;
 
-import io.swagger.client.model.ExtraFile;
 import io.swagger.client.model.SourceFile;
-import io.swagger.models.auth.In;
 import io.swagger.wes.api.*;
 import io.swagger.wes.model.*;
 
@@ -40,21 +29,15 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import io.swagger.wes.api.NotFoundException;
 
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
-import static java.nio.file.StandardOpenOption.*;
-
-
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.consonance.webservice.core.ConsonanceUser;
@@ -62,13 +45,10 @@ import io.consonance.webservice.resources.OrderResource;
 
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-import javax.validation.constraints.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.validator.routines.UrlValidator;
-import scala.Int;
 
 import static io.dockstore.client.cli.ArgumentUtility.kill;
 
@@ -371,7 +351,6 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
         catch (InternalServerErrorException ise){
             return Response.serverError().entity(ise).build();
         }
-
     }
 
     private Ga4ghWesState mapState(JobState state) {
