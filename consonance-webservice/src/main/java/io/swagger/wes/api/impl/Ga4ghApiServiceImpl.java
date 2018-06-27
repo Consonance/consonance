@@ -60,6 +60,7 @@ import io.consonance.webservice.ConsonanceWebserviceConfiguration;
 import io.consonance.webservice.core.ConsonanceUser;
 import io.consonance.webservice.resources.OrderResource;
 
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.validation.constraints.*;
@@ -362,18 +363,14 @@ public class Ga4ghApiServiceImpl extends Ga4ghApiService {
 
 
         Ga4ghWesWorkflowRunId runId = new Ga4ghWesWorkflowRunId();
-
-
-        Integer workflowsBeforeOrder = orderResource.listOwnedWorkflowRuns(user).size();
-
-        orderResource.addOrder(user, newJob);
-        Integer allWorkflows = orderResource.listOwnedWorkflowRuns(user).size();
-        if(workflowsBeforeOrder < allWorkflows){
-            runId.setWorkflowId(String.valueOf(orderResource.listOwnedWorkflowRuns(user).get(allWorkflows - 1).getJobId()));
+        try {
+            Job orderedJob = orderResource.addOrder(user, newJob);
+            runId.setWorkflowId(String.valueOf(orderedJob.getJobId()));
             return Response.ok().entity(runId).build();
         }
-        else return Response.serverError().build();
-
+        catch (InternalServerErrorException ise){
+            return Response.serverError().entity(ise).build();
+        }
 
     }
 
